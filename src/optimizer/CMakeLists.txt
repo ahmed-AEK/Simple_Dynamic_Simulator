@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.11)
+
+project(optimizer)
+
+add_library(NLOptimizer 
+flatmap.hpp
+Equation.hpp
+NLEquation.cpp NLEquation.hpp
+NLSolver.cpp NLSolver.hpp
+DiffEquation.cpp DiffEquation.hpp
+DiffSolver.cpp DiffSolver.hpp
+NLDiffSolver.cpp NLDiffSolver.hpp
+FatAny.cpp FatAny.hpp
+NLStatefulEquation.cpp NLStatefulEquation.hpp
+Observer.cpp Observer.hpp
+)
+
+target_include_directories(NLOptimizer PRIVATE ".")
+target_include_directories(NLOptimizer PUBLIC "..")
+target_include_directories(NLOptimizer SYSTEM PUBLIC "../../external/boost")
+
+target_link_libraries(NLOptimizer PUBLIC NLopt::nlopt)
