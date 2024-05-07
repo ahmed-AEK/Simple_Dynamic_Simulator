@@ -58,6 +58,7 @@ public:
 	void ClearSegment(NetSegment* segment);
 protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
 	void OnSetSpaceRect(const SDL_Rect& rect) override;
 private:
 	SDL_Point m_centerPoint;
@@ -68,6 +69,7 @@ private:
 	NodeSocket* m_socket = nullptr;
 	static constexpr int m_width = 10;
 	static constexpr int m_height = 10;
+	bool b_being_deleted = false;
 };
 
 constexpr int NET_SEGMENT_OBJECT_Z = 50;

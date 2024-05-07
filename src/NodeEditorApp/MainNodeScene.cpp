@@ -1,6 +1,6 @@
 #include "MainNodeScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include "ButtonWidget.hpp"
+#include "toolgui/ButtonWidget.hpp"
 #include "BoxObject.hpp"
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -34,8 +34,9 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
             {
                 if (GraphicsObject* object = item.GetObjectPtr())
                 {
-                    if (object->GetObjectType() == ObjectType::node)
+                    if (ObjectType::node == object->GetObjectType())
                     {
+                        static_cast<Node*>(object)->DisconnectSockets();
                         scene->PopObject(object);
                     }
                 }

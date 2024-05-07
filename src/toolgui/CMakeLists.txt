@@ -18,6 +18,7 @@ NetObject.cpp NetObject.hpp
 NewNet.cpp NewNet.hpp
 NewNetJunction.cpp NewNetJunction.hpp
 Handle.hpp
+ButtonWidget.cpp ButtonWidget.hpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

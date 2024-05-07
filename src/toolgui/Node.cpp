@@ -7,36 +7,7 @@
 node::Node::Node(SDL_Rect rect, GraphicsScene* scene)
 	: DraggableObject(rect, ObjectType::node, scene)
 {
-
 }
-
-node::Node::~Node()
-{
-    for (auto& socketData : m_input_sockets)
-    {
-        if (socketData.socket->GetConnectedNode())
-        {
-            socketData.socket->SetConnectedNode(nullptr);
-        }
-    }
-
-    for (auto& socketData : m_output_sockets)
-    {
-        if (socketData.socket->GetConnectedNode())
-        {
-            socketData.socket->SetConnectedNode(nullptr);
-        }
-    }
-
-    for (auto& socketData : m_inout_sockets)
-    {
-        if (socketData.socket->GetConnectedNode())
-        {
-            socketData.socket->SetConnectedNode(nullptr);
-        }
-    }
-}
-
 
 void node::Node::Draw(SDL_Renderer* renderer)
 {
@@ -80,9 +51,10 @@ MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 
 MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
 {
-    if (GetScene()->GetMode() == GraphicsSceneMode::Delete)
+    if (GraphicsSceneMode::Delete == GetScene()->GetMode())
     {
         GetScene()->SetCurrentHover(nullptr);
+        DisconnectSockets();
         auto ptr = GetScene()->PopObject(this);
         return MI::ClickEvent::CAPTURE_END;
     }
@@ -125,6 +97,33 @@ std::vector<node::NodeSocket*> node::Node::GetSockets()
         out.push_back(item.socket.get());
     }
     return out;
+}
+
+void node::Node::DisconnectSockets()
+{
+    for (auto& socketData : m_input_sockets)
+    {
+        if (socketData.socket->GetConnectedNode())
+        {
+            socketData.socket->SetConnectedNode(nullptr);
+        }
+    }
+
+    for (auto& socketData : m_output_sockets)
+    {
+        if (socketData.socket->GetConnectedNode())
+        {
+            socketData.socket->SetConnectedNode(nullptr);
+        }
+    }
+
+    for (auto& socketData : m_inout_sockets)
+    {
+        if (socketData.socket->GetConnectedNode())
+        {
+            socketData.socket->SetConnectedNode(nullptr);
+        }
+    }
 }
 
 void node::Node::OnSetSpaceRect(const SDL_Rect& rect)

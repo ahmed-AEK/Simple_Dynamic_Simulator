@@ -76,7 +76,7 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 		b_being_dragged = false;
 		return MI::ClickEvent::CAPTURE_END;
 	}
-	if (b_being_deleted)
+	if (GraphicsSceneMode::Delete == GetScene()->GetMode() && b_being_deleted)
 	{
 		std::unique_ptr<GraphicsObject> this_ptr = GetScene()->PopObject(this);
 		NetNode* start_node = m_startNode;
@@ -272,6 +272,12 @@ void node::NetNode::ClearSegment(NetSegment* segment)
 MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
+	if (GraphicsSceneMode::Delete == GetScene()->GetMode())
+	{
+			b_being_deleted = true;
+			GetScene()->SetCurrentHover(this);
+			return MI::ClickEvent::CAPTURE_START;
+	}
 	if (!m_socket && 1 == GetConnectedSegmentsCount())
 	{
 		if (node::NewNetObject::TryCreate(this, GetScene()))
@@ -280,6 +286,37 @@ MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
 		}
 	}
 	return MI::ClickEvent::CLICKED;
+}
+
+MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
+{
+	if (GraphicsSceneMode::Delete == GetScene()->GetMode() && b_being_deleted)
+	{
+		std::array<NetSegment*, 4> segments{ m_northSegment, m_southSegment, m_eastSegment, m_westSegment };
+		for (auto segment : segments)
+		{
+			if (segment)
+			{
+				NetNode* otherNode = segment->getStartNode();
+				if (otherNode == this)
+				{
+					otherNode = segment->getEndNode();
+				}
+				segment->Disconnect();
+				GetScene()->PopObject(segment);
+				if (!otherNode->GetConnectedSegmentsCount())
+				{
+					otherNode->SetConnectedSocket(nullptr);
+					GetScene()->PopObject(otherNode);
+				}
+			}
+		}
+		SetConnectedSocket(nullptr);
+		std::unique_ptr<GraphicsObject> this_ptr = GetScene()->PopObject(this);
+		GetScene()->SetCurrentHover(nullptr);
+		return MI::ClickEvent::CAPTURE_END;
+	}
+	return GraphicsObject::OnLMBUp(current_mouse_point);
 }
 
 void node::NetNode::OnSetSpaceRect(const SDL_Rect& rect)

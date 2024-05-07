@@ -19,11 +19,11 @@ class TOOLGUI_API Node: public DraggableObject
 {
 public:
     Node(SDL_Rect rect,GraphicsScene* scene);
-    ~Node();
     virtual void Draw(SDL_Renderer* renderer);
     void AddInputSocket(int id);
     void AddOutputSocket(int id);
     std::vector<NodeSocket*> GetSockets();
+    void DisconnectSockets();
 protected:
     virtual void OnSetSpaceRect(const SDL_Rect& rect);
     virtual void PositionSockets();

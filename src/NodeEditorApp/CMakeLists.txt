@@ -5,7 +5,6 @@ project(node_editor)
 add_executable(NodeEditor main.cpp 
 NodeEditorApp.cpp NodeEditorApp.hpp
 MainNodeScene.cpp MainNodeScene.hpp
-ButtonWidget.cpp ButtonWidget.hpp
 BoxObject.cpp BoxObject.hpp
 ExampleContextMenu.cpp ExampleContextMenu.hpp
 NodeGraphicsScene.cpp NodeGraphicsScene.hpp

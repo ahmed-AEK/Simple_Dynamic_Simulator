@@ -1,6 +1,5 @@
 #include "ButtonWidget.hpp"
 #include "toolgui/NodeMacros.h"
-#include "ExampleContextMenu.hpp"
 #include "toolgui/Scene.hpp"
 
 node::ButtonWidget::ButtonWidget(int x, int y, int width, int height, std::string label, std::function<void(void)> action, node::Scene* parent)
