@@ -67,6 +67,10 @@ void node::NetSegment::OnMouseMove(const SDL_Point& current_mouse_point)
 		m_startNode->UpdateConnectedSegments();
 		m_endNode->UpdateConnectedSegments();
 	}
+	if (b_being_deleted && !SDL_PointInRect(&current_mouse_point, &GetSpaceRect()))
+	{
+		b_being_deleted = false;
+	}
 }
 MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 {
@@ -103,11 +107,6 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CAPTURE_END;
 	}
 	return MI::ClickEvent::NONE;
-}
-
-void node::NetSegment::OnMouseOut()
-{
-	b_being_deleted = false;
 }
 
 void node::NetSegment::Connect(NetNode* start, NetNode* end, const NetOrientation& orientation)
@@ -317,6 +316,14 @@ MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CAPTURE_END;
 	}
 	return GraphicsObject::OnLMBUp(current_mouse_point);
+}
+
+void node::NetNode::OnMouseMove(const SDL_Point& current_mouse_point)
+{
+	if (!SDL_PointInRect(&current_mouse_point, &GetSpaceRect()))
+	{
+		b_being_deleted = false;
+	}
 }
 
 void node::NetNode::OnSetSpaceRect(const SDL_Rect& rect)

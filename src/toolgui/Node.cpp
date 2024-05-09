@@ -44,6 +44,7 @@ MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 {
     if (GetScene()->GetMode() == GraphicsSceneMode::Delete)
     {
+        b_being_deleted = true;
         return MI::ClickEvent::CAPTURE_START;
     }
     return DraggableObject::OnLMBUp(current_mouse_point);
@@ -51,7 +52,7 @@ MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 
 MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
 {
-    if (GraphicsSceneMode::Delete == GetScene()->GetMode())
+    if (b_being_deleted && GraphicsSceneMode::Delete == GetScene()->GetMode())
     {
         GetScene()->SetCurrentHover(nullptr);
         DisconnectSockets();
@@ -59,6 +60,14 @@ MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
         return MI::ClickEvent::CAPTURE_END;
     }
     return DraggableObject::OnLMBUp(current_mouse_point);
+}
+
+void node::Node::OnMouseMove(const SDL_Point& current_mouse_point)
+{
+    if (b_being_deleted && !SDL_PointInRect(&current_mouse_point, &GetSpaceRect()))
+    {
+        b_being_deleted = false;
+    }
 }
 
 

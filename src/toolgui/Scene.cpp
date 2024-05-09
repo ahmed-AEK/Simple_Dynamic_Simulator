@@ -45,7 +45,7 @@ node::SceneWidgetIterator node::Scene::end()
 
 void node::Scene::OnMouseMove(const SDL_Point& p)
 {
-    if (!b_dragging)
+    if (!b_mouseCaptured)
     {
         node::Widget* current_hover = this->GetInteractableAt(p);
         node::Widget* old_hover = nullptr;
@@ -162,12 +162,12 @@ bool node::Scene::OnLMBDown(const SDL_Point& p)
             using enum MI::ClickEvent;
             case CAPTURE_START:
             {
-                this->b_dragging = true;
+                this->b_mouseCaptured = true;
                 break;
             }
             case CAPTURE_END:
             {
-                this->b_dragging = false;
+                this->b_mouseCaptured = false;
                 break;
             }
             case CLICKED:
@@ -210,12 +210,12 @@ bool node::Scene::OnRMBDown(const SDL_Point& p)
             using enum MI::ClickEvent;
             case CAPTURE_START:
             {
-                this->b_dragging = true;
+                this->b_mouseCaptured = true;
                 break;
             }
             case CAPTURE_END:
             {
-                this->b_dragging = false;
+                this->b_mouseCaptured = false;
                 break;
             }
             case CLICKED:
@@ -258,12 +258,12 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
             using enum MI::ClickEvent;
             case CAPTURE_START:
             {
-                this->b_dragging = true;
+                this->b_mouseCaptured = true;
                 break;
             }
             case CAPTURE_END:
             {
-                this->b_dragging = false;
+                this->b_mouseCaptured = false;
                 break;
             }
             case CLICKED:
@@ -286,7 +286,7 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
 bool node::Scene::OnLMBUp(const SDL_Point& p)
 {
     node::Widget* current_hover;
-    if (b_dragging && m_current_mouse_hover.isAlive())
+    if (m_current_mouse_hover.isAlive())
     {
         current_hover = m_current_mouse_hover.GetObjectPtr();
     }
@@ -306,12 +306,12 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
             using enum MI::ClickEvent;
             case CAPTURE_START:
             {
-                this->b_dragging = true;
+                this->b_mouseCaptured = true;
                 break;
             }
             case CAPTURE_END:
             {
-                this->b_dragging = false;
+                this->b_mouseCaptured = false;
                 break;
             }
             case CLICKED:

@@ -59,6 +59,7 @@ public:
 protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	virtual void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	void OnSetSpaceRect(const SDL_Rect& rect) override;
 private:
 	SDL_Point m_centerPoint;
@@ -92,7 +93,6 @@ protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
 	void OnMouseMove(const SDL_Point& current_mouse_point);
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
-	void OnMouseOut() override;
 private:
 	NetNode* m_startNode;
 	NetNode* m_endNode;

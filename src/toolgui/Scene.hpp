@@ -62,7 +62,7 @@ namespace node
 
         node::HandlePtr<node::Widget> m_current_mouse_hover;
         
-        bool b_dragging = false;
+        bool b_mouseCaptured = false;
     };
     struct SceneWidgetIterator
     {
