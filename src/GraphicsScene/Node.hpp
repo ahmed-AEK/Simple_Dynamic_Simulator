@@ -1,7 +1,9 @@
 #pragma once
 
-#include "toolgui/toolgui_exports.h"
-#include "toolgui/DraggableObject.hpp"
+#include "GraphicsScene/GraphicsScene_exports.h"
+
+#include "GraphicsScene/DraggableObject.hpp"
+
 #include <memory>
 #include <vector>
 
@@ -9,16 +11,16 @@ namespace node
 {
 class NodeSocket;
 
-struct TOOLGUI_API SocketData
+struct GRAPHICSSCENE_API SocketData
 {
     int id;
     std::unique_ptr<NodeSocket> socket;
 };
 
-class TOOLGUI_API Node: public DraggableObject
+class GRAPHICSSCENE_API Node: public DraggableObject
 {
 public:
-    Node(SDL_Rect rect,GraphicsScene* scene);
+    Node(SDL_Rect rect, GraphicsScene* scene);
     virtual void Draw(SDL_Renderer* renderer);
     void AddInputSocket(int id);
     void AddOutputSocket(int id);

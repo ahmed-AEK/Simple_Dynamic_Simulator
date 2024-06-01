@@ -1,4 +1,6 @@
-#include "toolgui/DraggableObject.hpp"
+#pragma once
+
+#include "GraphicsScene/DraggableObject.hpp"
 
 namespace node{
 

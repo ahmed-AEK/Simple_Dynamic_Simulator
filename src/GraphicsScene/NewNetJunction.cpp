@@ -1,5 +1,7 @@
 #include "NewNet.hpp"
 #include "NewNetJunction.hpp"
+#include "GraphicsScene.hpp"
+#include "NetObject.hpp"
 #include <cassert>
 
 node::NewNetJunctionObject* node::NewNetJunctionObject::TryCreate(NetSegment* startSegment,const SDL_Point& startPoint, GraphicsScene* scene)

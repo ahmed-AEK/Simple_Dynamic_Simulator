@@ -6,12 +6,11 @@ project(dummy_nodeEditor)
 
 set(CMAKE_CXX_STANDARD 20)
 
-if (WIN32)
+if(MSVC)
     set(CMAKE_CXX_FLAGS "-W4 -EHsc -WX")
-endif (WIN32)
-if (UNIX)
+else(MSVC)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror")
-endif (UNIX)
+endif (MSVC)
 
 # if (UNIX AND ${CMAKE_BUILD_TYPE} MATCHES "Debug")
 #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
@@ -30,6 +29,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 enable_testing()
 set(DRAWRECT_ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries (DLLs).")
+
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -38,9 +40,12 @@ find_package(NLopt REQUIRED)
 
 add_subdirectory(src/SDL_Framework)
 add_subdirectory(src/toolgui)
+add_subdirectory(src/GraphicsScene)
 add_subdirectory(external/googletest)
+add_subdirectory(external/SQLiteCpp)
 add_subdirectory(src/toolguitest)
 add_subdirectory(src/NodeEditorApp)
 add_subdirectory(src/optimizer)
 add_subdirectory(src/optimizertest)
 add_subdirectory(src/optimizer_perf)
+add_subdirectory(src/sqlite_cpp_ex)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "toolgui/GraphicsObject.hpp"
+#include "GraphicsScene/GraphicsObject.hpp"
 
 namespace node
 {
@@ -16,7 +16,7 @@ enum class SocketType
 	inout
 };
 
-class NodeSocket: public GraphicsObject
+class GRAPHICSSCENE_API NodeSocket: public GraphicsObject
 {
 public:
 	void SetConnectedNode(NetNode* node);

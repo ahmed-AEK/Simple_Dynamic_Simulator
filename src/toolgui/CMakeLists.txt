@@ -8,17 +8,10 @@ Application.cpp Application.hpp
 Widget.cpp Widget.hpp
 Scene.cpp Scene.hpp
 DraggableWidget.cpp DraggableWidget.hpp
-GraphicsScene.cpp GraphicsScene.hpp
-GraphicsObject.cpp GraphicsObject.hpp
-DraggableObject.cpp DraggableObject.hpp
 ContextMenu.cpp ContextMenu.hpp
-Node.cpp Node.hpp
-NodeSocket.cpp NodeSocket.hpp
-NetObject.cpp NetObject.hpp
-NewNet.cpp NewNet.hpp
-NewNetJunction.cpp NewNetJunction.hpp
 Handle.hpp
 ButtonWidget.cpp ButtonWidget.hpp
+NodeMacros.h
 )
 
 target_include_directories(toolgui PRIVATE ".")

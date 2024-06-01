@@ -1,8 +1,9 @@
 #include "NetObject.hpp"
-#include "toolgui/NodeSocket.hpp"
-#include "toolgui/Node.hpp"
-#include "toolgui/NewNet.hpp"
-#include "toolgui/NewNetJunction.hpp"
+#include "NodeSocket.hpp"
+#include "Node.hpp"
+#include "NewNet.hpp"
+#include "NewNetJunction.hpp"
+#include "GraphicsScene.hpp"
 #include <cmath>
 
 node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNode, NetNode* endNode, node::GraphicsScene* scene)

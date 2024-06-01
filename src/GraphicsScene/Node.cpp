@@ -2,7 +2,7 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "GraphicsScene.hpp"
 #include "NodeSocket.hpp"
-#include "toolgui/NetObject.hpp"
+#include "GraphicsScene/NetObject.hpp"
 
 node::Node::Node(SDL_Rect rect, GraphicsScene* scene)
 	: DraggableObject(rect, ObjectType::node, scene)

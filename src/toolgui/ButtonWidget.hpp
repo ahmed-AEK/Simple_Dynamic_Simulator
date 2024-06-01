@@ -1,4 +1,7 @@
+#pragma once
+
 #include "toolgui/Widget.hpp"
+
 #include "SDL_Framework/SDLCPP.hpp"
 #include <functional>
 

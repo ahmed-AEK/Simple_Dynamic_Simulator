@@ -1,6 +1,7 @@
 #include "BoxObject.hpp"
 #include "ExampleContextMenu.hpp"
-#include "toolgui/GraphicsScene.hpp"
+#include "GraphicsScene/GraphicsScene.hpp"
+#include "toolgui/Scene.hpp"
 
 node::BoxObject::BoxObject(SDL_Rect sceneRect, GraphicsScene* scene)
 : node::DraggableObject(sceneRect, ObjectType::logic, scene)

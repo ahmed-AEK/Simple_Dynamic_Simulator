@@ -5,11 +5,15 @@
 #include "SDL_Framework/SDLFramework.hpp"
 #include "SDL_Framework/SDLRenderer.hpp"
 #include "SDL_Framework/SDLCPP.hpp"
-#include "toolgui/Scene.hpp"
+
 #include <memory>
+#include <string>
 
 namespace node
 {
+
+class Scene;
+
 class TOOLGUI_API Application
 {
 public:
@@ -19,7 +23,7 @@ public:
     int Run();
     void Stop();
     void SetScene(std::unique_ptr<Scene> scene);
-    virtual ~Application() noexcept {};
+    virtual ~Application();
     const SDL_Rect& getRect() const;
     void InvalidateRect();
     const TTFFont& getFont() { return m_appFont; }

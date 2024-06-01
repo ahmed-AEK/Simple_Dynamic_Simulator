@@ -1,6 +1,8 @@
 #include "NodeGraphicsScene.hpp"
 #include "ExampleContextMenu.hpp"
 #include "SDL2/SDL_ttf.h"
+#include "GraphicsScene/GraphicsObject.hpp"
+#include "toolgui/Scene.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(SDL_Rect rect, node::Scene* parent)
 : node::GraphicsScene(rect, parent)

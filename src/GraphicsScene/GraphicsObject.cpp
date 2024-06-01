@@ -1,5 +1,6 @@
 #include "GraphicsObject.hpp"
 #include "GraphicsScene.hpp"
+#include "toolgui/NodeMacros.h"
 
 node::GraphicsObject::GraphicsObject(SDL_Rect sceneRect, ObjectType type, node::GraphicsScene* scene)
 :m_obj_type(type), m_pScene(scene), m_spaceRect{sceneRect}

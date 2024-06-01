@@ -1,5 +1,6 @@
 #include "Widget.hpp"
 #include "Scene.hpp"
+#include "toolgui/ContextMenu.hpp"
 
 namespace node
 {

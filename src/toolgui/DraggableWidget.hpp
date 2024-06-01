@@ -2,8 +2,8 @@
 
 #include "toolgui/toolgui_exports.h"
 
-#include <memory>
 #include "toolgui/Widget.hpp"
+#include <memory>
 
 namespace node
 {

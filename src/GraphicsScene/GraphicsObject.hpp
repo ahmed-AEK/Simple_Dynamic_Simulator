@@ -1,7 +1,7 @@
 #pragma once
-#include "toolgui/toolgui_exports.h"
 
-#include "toolgui/NodeMacros.h"
+#include "GraphicsScene/GraphicsScene_exports.h"
+
 #include "toolgui/MouseInteractable.hpp"
 #include "toolgui/Handle.hpp"
 
@@ -20,7 +20,7 @@ enum class ObjectType
 };
 
 class GraphicsScene;
-class TOOLGUI_API GraphicsObject: public MI::MouseInteractable<GraphicsObject>
+class GRAPHICSSCENE_API GraphicsObject: public MI::MouseInteractable<GraphicsObject>
 {
 public:
     GraphicsObject(SDL_Rect sceneRect, ObjectType type, GraphicsScene* scene);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "toolgui/GraphicsScene.hpp"
+#include "GraphicsScene/GraphicsScene.hpp"
 
 namespace node
 {

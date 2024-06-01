@@ -1,4 +1,7 @@
 #include "NewNet.hpp"
+#include "GraphicsScene.hpp"
+#include "GraphicsScene/NetObject.hpp"
+
 
 node::NewNetObject* node::NewNetObject::TryCreate(NetNode* endNode, GraphicsScene* scene)
 {

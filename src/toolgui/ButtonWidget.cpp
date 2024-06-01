@@ -1,6 +1,8 @@
 #include "ButtonWidget.hpp"
 #include "toolgui/NodeMacros.h"
 #include "toolgui/Scene.hpp"
+#include "toolgui/ContextMenu.hpp"
+#include "toolgui/Application.hpp"
 
 node::ButtonWidget::ButtonWidget(int x, int y, int width, int height, std::string label, std::function<void(void)> action, node::Scene* parent)
 : Widget({x,y, width, height}, parent), m_label(std::move(label)), m_action(std::move(action))

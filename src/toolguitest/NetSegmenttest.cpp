@@ -1,7 +1,7 @@
 //#pragma warning( push , 0)
 #include "gtest/gtest.h"
 //#pragma warning( pop ) 
-#include "toolgui/NetObject.hpp"
+#include "GraphicsScene/NetObject.hpp"
 
 bool operator==(const SDL_Rect& in1, const SDL_Rect& in2)
 {

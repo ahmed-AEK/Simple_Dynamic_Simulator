@@ -1,13 +1,15 @@
 #pragma once
 
 #include "toolgui/toolgui_exports.h"
+#include "toolgui/NodeMacros.h"
+
+#include "toolgui/Handle.hpp"
 
 #include <memory_resource>
 #include <SDL_Framework/SDL_headers.h>
+#pragma once
+
 #include <memory>
-#include <atomic>
-#include "toolgui/Handle.hpp"
-#include "toolgui/NodeMacros.h"
 
 namespace MI{
 
@@ -18,8 +20,6 @@ enum class ClickEvent: int
     CAPTURE_END,
     CLICKED
 };
-
-
 
 template <typename T>
 class TOOLGUI_API MouseInteractable

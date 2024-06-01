@@ -1,5 +1,6 @@
 #include "DraggableWidget.hpp"
 #include "Scene.hpp"
+#include "toolgui/ContextMenu.hpp"
 
 node::DragableWidget::DragableWidget(const SDL_Rect& rect, node::Scene* parent)
 : node::Widget(rect, parent)

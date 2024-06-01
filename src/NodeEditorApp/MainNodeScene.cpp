@@ -4,8 +4,8 @@
 #include "BoxObject.hpp"
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
-#include "toolgui/Node.hpp"
-#include "toolgui/NodeSocket.hpp"
+#include "GraphicsScene/Node.hpp"
+#include "GraphicsScene/NodeSocket.hpp"
 
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)

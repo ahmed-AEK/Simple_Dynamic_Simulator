@@ -1,6 +1,6 @@
 #include "NodeEditorApp.hpp"
 #include "NodeEditorApp/MainNodeScene.hpp"
-#include "toolgui/GraphicsScene.hpp"
+#include "NodeEditorApp/NodeGraphicsScene.hpp"
 
 namespace node
 {
@@ -10,6 +10,12 @@ namespace node
         std::unique_ptr<Scene> scene = std::make_unique<MainNodeScene>(getRect(), this);
         SetScene(std::move(scene));
     }
+
+    MainNodeScene* NodeEditorApplication::GetScene() noexcept
+    {
+        return static_cast<MainNodeScene*>(Application::GetScene());
+    }
+
     bool NodeEditorApplication::HandleEvent(SDL_Event& e)
     {
         switch (e.type)

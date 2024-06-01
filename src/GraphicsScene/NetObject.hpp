@@ -2,7 +2,6 @@
 
 #include "DraggableObject.hpp"
 #include "NodeSocket.hpp"
-#include "GraphicsScene.hpp"
 #include <vector>
 #include <variant>
 #include <list>
@@ -12,6 +11,7 @@ namespace node {
 struct NetObject;
 class NetSegment;
 class NetNode;
+class GraphicsScene;
 
 enum class NetOrientation
 {
@@ -28,7 +28,7 @@ enum class NetSide
 };
 
 constexpr int NET_NODE_OBJECT_Z = 100;
-class NetNode : public GraphicsObject
+class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
 	NetNode(const SDL_Point& center, GraphicsScene* scene = nullptr);
@@ -75,7 +75,7 @@ private:
 
 constexpr int NET_SEGMENT_OBJECT_Z = 50;
 
-class NetSegment : public GraphicsObject
+class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
 	NetSegment(const NetOrientation& orientation, 
@@ -102,7 +102,7 @@ private:
 	bool b_being_deleted = false;
 };
 
-struct NetObject
+struct GRAPHICSSCENE_API NetObject
 {
 	std::string net_name = "net1";
 	std::vector<NetNode*> m_nodes;

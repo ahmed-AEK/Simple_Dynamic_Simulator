@@ -1,7 +1,5 @@
 #define SDL_MAIN_HANDLED
 
-#include <span>
-#include <vector>
 #include "NodeEditorApp.hpp"
 #include "toolgui/NodeMacros.h"
 

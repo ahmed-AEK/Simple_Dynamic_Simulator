@@ -1,8 +1,11 @@
 #include "GraphicsScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include "toolgui/Node.hpp"
-#include "toolgui/NodeSocket.hpp"
+#include "GraphicsScene/Node.hpp"
+#include "GraphicsScene/NodeSocket.hpp"
 #include <algorithm>
+#include "GraphicsScene/GraphicsObject.hpp"
+#include "toolgui/Scene.hpp"
+#include "toolgui/ContextMenu.hpp"
 
 node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -11,16 +14,6 @@ m_spaceRect{0, 0, 200, 200 * rect.h/rect.w},
 m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w)
 {
     
-}
-
-void node::GraphicsScene::SetScrollRatio(double scroll_ratio)
-{
-    m_scroll_ratio = scroll_ratio;
-}
-
-double node::GraphicsScene::GetScrollRatio() const noexcept
-{
-    return m_scroll_ratio;
 }
 
 void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order)

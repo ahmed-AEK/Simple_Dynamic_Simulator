@@ -1,11 +1,14 @@
 #pragma once
+
+#include "GraphicsScene/NewNet.hpp"
+
 #include <array>
-#include "toolgui/GraphicsObject.hpp"
-#include "toolgui/NewNet.hpp"
 
 namespace node {
 
-class NewNetJunctionObject : public node::NewNetObject
+class NetSegment;
+
+class GRAPHICSSCENE_API NewNetJunctionObject : public node::NewNetObject
 {
 public:
 	static NewNetJunctionObject* TryCreate(NetSegment* startSegment, const SDL_Point& startPoint, GraphicsScene* scene);

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Application.hpp"
 #include "SDL_Framework/SDL_headers.h"
+#include "toolgui/Scene.hpp"
 
 namespace node
 {
@@ -10,6 +11,8 @@ namespace node
     {
         this->OnInit();
     }
+
+    Application::~Application() = default;
 
     int Application::Run()
     {

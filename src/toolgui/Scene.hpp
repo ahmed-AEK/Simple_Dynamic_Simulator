@@ -1,26 +1,26 @@
 #pragma once
 
+#include "toolgui/MouseInteractable.hpp"
+
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/toolgui_exports.h"
-#include "toolgui/Widget.hpp"
 #include <vector>
 #include <memory>
 #include "toolgui/NodeMacros.h"
-#include "toolgui/Application.hpp"
-#include "toolgui/MouseInteractable.hpp"
-#include "toolgui/ContextMenu.hpp"
 
 namespace node
 {
     class Application;
-    
+    class Widget;
     struct SceneWidgetIterator;
+    class ContextMenu;
 
     struct TOOLGUI_API WidgetSlot
     {
         std::unique_ptr<node::Widget> m_ptr;
         int z_order;
     };
+
     class TOOLGUI_API Scene
     {
         friend SceneWidgetIterator;
@@ -28,7 +28,7 @@ namespace node
         Scene(SDL_Rect rect, Application* parent);
         void Draw(SDL_Renderer* renderer);
         void SetRect(const SDL_Rect& rect);
-        virtual ~Scene() noexcept {};
+        virtual ~Scene();
         Application* GetApp() { return p_parent; }
         void AddWidget(std::unique_ptr<Widget> widget, int z_order);
         virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}
@@ -64,6 +64,7 @@ namespace node
         
         bool b_mouseCaptured = false;
     };
+
     struct SceneWidgetIterator
     {
         SceneWidgetIterator(Scene* scene, size_t position) : p_scene{ scene }, m_position{ position } {}

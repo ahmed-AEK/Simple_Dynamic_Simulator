@@ -1,9 +1,14 @@
 #pragma once
+
+#include "GraphicsScene/GraphicsObject.hpp"
+
 #include <array>
-#include "toolgui/GraphicsObject.hpp"
-#include "toolgui/NetObject.hpp"
 
 namespace node {
+
+class NetNode;
+class NetSegment;
+
 enum class NewNetMode
 {
 	Horizontal,
@@ -13,7 +18,7 @@ enum class NewNetMode
 	Lmode
 };
 
-class NewNetObject : public node::GraphicsObject
+class GRAPHICSSCENE_API NewNetObject : public node::GraphicsObject
 {
 public:
 	static NewNetObject* TryCreate(NetNode* endNode, GraphicsScene* scene);

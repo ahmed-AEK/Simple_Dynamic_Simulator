@@ -1,13 +1,14 @@
 #pragma once
-#include "toolgui/toolgui_exports.h"
 
-#include "toolgui/GraphicsObject.hpp"
+#include "GraphicsScene/GraphicsScene_exports.h"
+
+#include "GraphicsScene/GraphicsObject.hpp"
 
 namespace node
 {
 class GraphicsScene;
 
-class TOOLGUI_API DraggableObject: public GraphicsObject
+class GRAPHICSSCENE_API DraggableObject: public GraphicsObject
 {
 public:
     DraggableObject(const SDL_Rect& sceneRect, ObjectType type, node::GraphicsScene* parent);

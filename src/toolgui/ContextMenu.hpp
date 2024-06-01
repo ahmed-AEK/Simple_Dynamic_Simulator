@@ -3,9 +3,10 @@
 #include "toolgui/toolgui_exports.h"
 
 #include "toolgui/Widget.hpp"
+
+#include "SDL_Framework/SDLCPP.hpp"
 #include <unordered_map>
 #include <string>
-#include "SDL_Framework/SDLCPP.hpp"
 
 namespace node
 {

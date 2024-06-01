@@ -3,6 +3,9 @@
 #include "Scene.hpp"
 #include "algorithm"
 #include "SDL_Framework/SDL_headers.h"
+#include "toolgui/ContextMenu.hpp"
+#include "toolgui/Application.hpp"
+#include "toolgui/Widget.hpp"
 
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
@@ -345,6 +348,8 @@ node::Scene::Scene(SDL_Rect rect, Application* parent)
 {
 
 }
+
+node::Scene::~Scene() = default;
 
 void node::Scene::InvalidateRect()
 {
