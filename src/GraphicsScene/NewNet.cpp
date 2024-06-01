@@ -5,7 +5,7 @@
 
 node::NewNetObject* node::NewNetObject::TryCreate(NetNode* endNode, GraphicsScene* scene)
 {
-	constexpr auto find_next_node = [](NetSegment* segment, NetNode* node)
+	constexpr auto find_next_node = [](const NetSegment* segment, NetNode* node)
 		{
 			NetSegment* other_segment;
 			for (int i = 0; i < 4; i++)

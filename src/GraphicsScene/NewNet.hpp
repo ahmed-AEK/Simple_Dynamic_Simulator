@@ -27,7 +27,7 @@ public:
 	NetNode* GetStartNode() const { return p_startNode; }
 	NetNode* GetEndNode() const { return p_endNode; }
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point);
+	void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
 	virtual void Draw(SDL_Renderer* renderer) override;
 private:

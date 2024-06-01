@@ -9,7 +9,7 @@ TEST(testNLStatefulEquation, testApply)
 		opt::NLStatefulEquation::NLStatefulFunctor{ [](auto inputs, auto output, const auto&, const auto&) -> opt::FatAny
 		{
 			output[0] = inputs[0] + inputs[1] + inputs[2];
-			return double{ 5 };
+			return opt::FatAny{ double{ 5 } };
 		} });
 
 	std::vector<double> inputs{ 1,2,3 };
@@ -19,7 +19,7 @@ TEST(testNLStatefulEquation, testApply)
 	{
 		input_buffer[i] = inputs[i];
 	}
-	auto result = eq.Apply(0, 5);
+	auto result = eq.Apply(0, opt::FatAny{ 5 });
 	auto output_buffer = eq.get_output_buffer();
 
 	EXPECT_EQ(result.contains<double>(), true);

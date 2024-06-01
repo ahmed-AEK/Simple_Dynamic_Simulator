@@ -23,10 +23,10 @@ public:
 	NetNode* GetConnectedNode() noexcept;
 	static constexpr int nodeLength = 15;
 	NodeSocket(SocketType type, GraphicsScene* parentScene, Node* parentNode);
-	void OnSetSpaceRect(const SDL_Rect& rect);
+	void OnSetSpaceRect(const SDL_Rect& rect) override;
 	void SetPosition(SDL_Point p);
 	SDL_Point GetCenter();
-	virtual void Draw(SDL_Renderer* renderer);
+	void Draw(SDL_Renderer* renderer) override;
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
 private:
 	Node* m_parentNode;

@@ -7,6 +7,6 @@ namespace node
     class ExampleContextMenu: public node::ContextMenu
     {
     public:
-        ExampleContextMenu(node::Scene* parent);
+        explicit ExampleContextMenu(node::Scene* parent);
     };
 }

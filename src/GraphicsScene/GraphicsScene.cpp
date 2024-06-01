@@ -23,13 +23,13 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
     SDL_Point{obj->GetSpaceRect().x, obj->GetSpaceRect().y}
     );
     ObjectSlot slot = {std::move(obj), z_order};
-    auto iter = std::lower_bound(m_objects.begin(), m_objects.end(), slot, [](auto& obj1, auto& obj2) {return obj1.z_order > obj2.z_order;} );
+    auto iter = std::lower_bound(m_objects.begin(), m_objects.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
     m_objects.insert(iter, std::move(slot));
 }
 
-std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(node::GraphicsObject* obj)
+std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node::GraphicsObject* obj)
 {
-    auto iter = std::find_if(m_objects.begin(), m_objects.end(), [=](auto& item) {return item.m_ptr.get() == obj;});
+    auto iter = std::find_if(m_objects.begin(), m_objects.end(), [=](const auto& item) {return item.m_ptr.get() == obj;});
     if (iter != m_objects.end())
     {
         std::unique_ptr<node::GraphicsObject> ret_obj = std::move((*iter).m_ptr);
@@ -84,12 +84,11 @@ node::NodeSocket* node::GraphicsScene::GetSocketAt(const SDL_Point space_point)
         if (ObjectType::node == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point, &(object.m_ptr->GetSpaceRect())))
         {
             node::Node* node_pointer = static_cast<node::Node*>(object.m_ptr.get());
-            for (auto socket_ptr : node_pointer->GetSockets())
+            auto&& range = node_pointer->GetSockets();
+            auto it = std::find_if(range.begin(), range.end(), [=](const auto& socket_ptr) { return SDL_PointInRect(&space_point, &(socket_ptr->GetSpaceRect())); });
+            if (it != range.end())
             {
-                if (SDL_PointInRect(&space_point, &(socket_ptr->GetSpaceRect())))
-                {
-                    return socket_ptr;
-                }
+                return *it;
             }
         }
     }
@@ -120,8 +119,7 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
         {
-            node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
-            current_hover = GetInteractableAt(p);
+            node::GraphicsObject* current_hover = GetInteractableAt(p);
             SetCurrentHover(current_hover);
             if (current_hover)
             {

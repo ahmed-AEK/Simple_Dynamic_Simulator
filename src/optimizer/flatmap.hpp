@@ -13,7 +13,7 @@ namespace opt
 class FlatMap
 {
 public:
-	constexpr FlatMap(size_t size = 0) : m_data(size) {};
+	explicit constexpr FlatMap(size_t size = 0) : m_data(size) {};
 
 	constexpr void modify(const size_t& index, const double& item)
 	{

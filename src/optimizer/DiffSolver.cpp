@@ -7,7 +7,7 @@ class DiffSystem {
 
     opt::DiffSolver& m_solver;
 public:
-    DiffSystem(opt::DiffSolver& solver) : m_solver(solver) { }
+    explicit DiffSystem(opt::DiffSolver& solver) : m_solver(solver) { }
 
     void operator() (const opt::DiffSolver::state_type& x, opt::DiffSolver::state_type& dxdt, const double t)
     {

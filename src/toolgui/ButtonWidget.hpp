@@ -11,12 +11,12 @@ namespace node
     {
     public:
         ButtonWidget(int x, int y, int width, int height, std::string label, std::function<void(void)> action, node::Scene* parent);
-        virtual void Draw(SDL_Renderer* renderer);
+        void Draw(SDL_Renderer* renderer) override;
     protected:
         virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
     private:
-        const int w_margin = 5;
-        const int h_margin = 5;
+        constexpr static int w_margin = 5;
+        constexpr static int h_margin = 5;
         std::string m_label;
         SDLSurface m_textSurface;
         SDLTexture m_textTexture;

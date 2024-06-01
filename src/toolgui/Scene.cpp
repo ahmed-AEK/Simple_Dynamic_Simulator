@@ -109,7 +109,7 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
 void node::Scene::AddWidget(std::unique_ptr<Widget> widget, int z_order)
 {
     WidgetSlot slot = {std::move(widget), z_order};
-    auto iter = std::lower_bound(m_widgets.begin(), m_widgets.end(), slot, [](auto& obj1, auto& obj2) {return obj1.z_order > obj2.z_order;} );
+    auto iter = std::lower_bound(m_widgets.begin(), m_widgets.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
     m_widgets.insert(iter, std::move(slot));
 }
 

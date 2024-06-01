@@ -7,9 +7,11 @@ node::GraphicsObject::GraphicsObject(SDL_Rect sceneRect, ObjectType type, node::
 {
     if (scene)
     {
-        SetRect(m_pScene->SpaceToScreenRect(m_spaceRect));
+        SetRectImpl(m_pScene->SpaceToScreenRect(m_spaceRect));
     }
 }
+
+node::GraphicsObject::~GraphicsObject() = default;
 
 void node::GraphicsObject::InvalidateRect()
 {
@@ -27,7 +29,7 @@ void node::GraphicsObject::SetSpaceRect(const SDL_Rect& rect)
     if (m_pScene) {
         const SDL_Point p1 = m_pScene->SpaceToScreenPoint({ rect.x, rect.y });
         const SDL_Point p2 = m_pScene->SpaceToScreenVector({ rect.w, rect.h });
-        SetRect({
+        SetRectImpl({
             p1.x,
             p1.y,
             p2.x,
@@ -59,7 +61,7 @@ node::GraphicsObject* node::GraphicsObject::OnGetInteractableAtPoint(const SDL_P
 
 void node::GraphicsObject::UpdateRect()
 {
-    SetRect(this->m_pScene->SpaceToScreenRect(m_spaceRect));
+    SetRectImpl(this->m_pScene->SpaceToScreenRect(m_spaceRect));
     OnUpdateRect();
 }
 

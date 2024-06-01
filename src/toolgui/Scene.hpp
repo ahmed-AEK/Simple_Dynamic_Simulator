@@ -71,8 +71,8 @@ namespace node
         SceneWidgetIterator operator++(int) { return SceneWidgetIterator(p_scene, m_position++); }
         SceneWidgetIterator& operator++() { m_position++; return *this; }
         node::Widget& operator*() const { return *(p_scene->m_widgets[m_position].m_ptr.get()); }
-        bool operator==(SceneWidgetIterator& rhs) const { return this->m_position == rhs.m_position; }
-        bool operator!=(SceneWidgetIterator& rhs) const { return this->m_position != rhs.m_position; }
+        bool operator==(const SceneWidgetIterator& rhs) const { return this->m_position == rhs.m_position; }
+        bool operator!=(const SceneWidgetIterator& rhs) const { return this->m_position != rhs.m_position; }
         node::Widget* get() {return p_scene->m_widgets[m_position].m_ptr.get(); }
     private:
         Scene* p_scene;

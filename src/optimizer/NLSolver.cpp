@@ -172,17 +172,15 @@ void opt::NLSolver::Initialize()
 
     for (const auto& item : m_equations)
     {
-        for (const auto& output_id : item.get_output_ids())
-        {
-            m_output_ids.push_back(output_id);
-        }
+		auto&& range = item.get_output_ids();
+        std::transform(range.begin(), range.end(), std::back_inserter(m_output_ids), 
+            [](const auto& item) { return item; });
     }
     for (const auto& item : m_stateful_equations)
     {
-        for (const auto& output_id : item.get_output_ids())
-        {
-            m_output_ids.push_back(output_id);
-        }
+		auto&& range = item.get_output_ids();
+        std::transform(range.begin(), range.end(), std::back_inserter(m_output_ids),
+            [](const auto& item) { return item; });
     }
     m_equations_states.resize(m_stateful_equations.size());
     m_optimizer = nlopt::opt(nlopt::LD_SLSQP, static_cast<unsigned int>(m_output_ids.size()));

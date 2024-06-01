@@ -13,7 +13,7 @@ namespace SDL
     {
         public:
         Renderer();
-        Renderer(SDL_Window* wnd);
+        explicit Renderer(SDL_Window* wnd);
         ~Renderer() noexcept;
         Renderer& operator=(Renderer&) = delete;
         Renderer(Renderer&) = delete;

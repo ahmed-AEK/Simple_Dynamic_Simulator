@@ -13,7 +13,7 @@ TEST(testNLSolver, testAddStateful)
 	solver.AddStatefulEquation({ {}, { 0 }, [](auto, auto out, const auto& t, const auto&) ->opt::FatAny
 		{
 			out[0] = t;
-			return t;
+			return opt::FatAny{ t };
 		} });
 	solver.Initialize();
 	opt::FlatMap state(1);
@@ -35,7 +35,7 @@ TEST(testNLSolver, testStateful_runs)
 				recorded_double = state.get<double>();
 			}
 			out[0] = t;
-			return t;
+			return opt::FatAny{ t };
 		} });
 	solver.Initialize();
 	opt::FlatMap state(1);

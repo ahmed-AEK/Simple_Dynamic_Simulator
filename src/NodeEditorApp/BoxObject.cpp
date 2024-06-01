@@ -19,7 +19,7 @@ void node::BoxObject::Draw(SDL_Renderer* renderer)
     {
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     }
-    SDL_RenderFillRect(renderer, &GetRect());
+    SDL_RenderFillRect(renderer, &GetRectImpl());
 }
 
 

@@ -28,7 +28,7 @@ class FatAny
 	struct Empty_t {};
 public:
 	template <no_except_move_constructible T>
-	constexpr FatAny(T obj)
+	explicit constexpr FatAny(T obj)
 		: m_manager{
 				+[](void* ptr) { static_cast<T*>(ptr)->~T(); },
 				+[](void* src, void* dst) { new (dst) T(std::move(*static_cast<T*>(src)));} },

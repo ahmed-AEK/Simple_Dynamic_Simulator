@@ -4,6 +4,9 @@
 #include "NodeSocket.hpp"
 #include "GraphicsScene/NetObject.hpp"
 
+#include <algorithm>
+#include <iterator>
+
 node::Node::Node(SDL_Rect rect, GraphicsScene* scene)
 	: DraggableObject(rect, ObjectType::node, scene)
 {
@@ -20,9 +23,9 @@ void node::Node::Draw(SDL_Renderer* renderer)
     {
         SDL_SetRenderDrawColor(renderer, 235, 128, 52, 255);
     }
-	SDL_RenderFillRect(renderer, &GetRect());
+	SDL_RenderFillRect(renderer, &GetRectImpl());
     SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ GetRect().x + 2, GetRect().y + 2, GetRect().w - 4, GetRect().h - 4 };
+	SDL_Rect inner_rect{ GetRectImpl().x + 2, GetRectImpl().y + 2, GetRectImpl().w - 4, GetRectImpl().h - 4 };
 	SDL_RenderFillRect(renderer, &inner_rect);
 
     for (auto&& sock : m_input_sockets)
@@ -93,18 +96,11 @@ std::vector<node::NodeSocket*> node::Node::GetSockets()
 {
     std::vector<node::NodeSocket*> out;
     out.reserve(m_input_sockets.size() + m_output_sockets.size() + m_inout_sockets.size());
-    for (auto& item : m_input_sockets)
-    {
-        out.push_back(item.socket.get());
-    }
-    for (auto& item : m_output_sockets)
-    {
-        out.push_back(item.socket.get());
-    }
-    for (auto& item : m_inout_sockets)
-    {
-        out.push_back(item.socket.get());
-    }
+
+    std::transform(m_input_sockets.begin(), m_input_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
+    std::transform(m_output_sockets.begin(), m_output_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
+    std::transform(m_inout_sockets.begin(), m_inout_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
+    
     return out;
 }
 

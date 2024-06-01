@@ -31,7 +31,7 @@ constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
-	NetNode(const SDL_Point& center, GraphicsScene* scene = nullptr);
+	explicit NetNode(const SDL_Point& center, GraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
 	const SDL_Point& getCenter() noexcept { return m_centerPoint; }
 	void setSegment(NetSegment* segment, NetSide side);
@@ -55,7 +55,7 @@ public:
 	void SetConnectedSocket(NodeSocket* socket);
 	NodeSocket* GetConnectedSocket() noexcept;
 	uint8_t GetConnectedSegmentsCount();
-	void ClearSegment(NetSegment* segment);
+	void ClearSegment(const NetSegment* segment);
 protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
@@ -78,7 +78,7 @@ constexpr int NET_SEGMENT_OBJECT_Z = 50;
 class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
-	NetSegment(const NetOrientation& orientation, 
+	explicit NetSegment(const NetOrientation& orientation, 
 	NetNode* startNode = nullptr, NetNode* endNode = nullptr, GraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
 	const NetOrientation& getOrientation() noexcept { return m_orientation; }
@@ -91,7 +91,7 @@ public:
 	int GetWidth() const { return c_width; }
 protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	void OnMouseMove(const SDL_Point& current_mouse_point);
+	void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
 private:
 	NetNode* m_startNode;

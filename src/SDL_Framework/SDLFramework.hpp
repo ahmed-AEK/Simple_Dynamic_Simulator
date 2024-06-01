@@ -11,7 +11,7 @@ namespace SDL
         ~SDLFramework();
         SDLFramework(SDLFramework&) = delete;
         SDLFramework& operator=(SDLFramework&) = delete;
-        SDLFramework(uint32_t flags = 0);
+        explicit SDLFramework(uint32_t flags = 0);
     private:
         bool m_SDL_init_done;
         bool m_SDL_TTF_init_done;

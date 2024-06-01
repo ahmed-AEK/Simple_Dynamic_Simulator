@@ -37,8 +37,8 @@ public:
     MouseInteractable() = default;
     MouseInteractable(MouseInteractable&& other) noexcept;
     MouseInteractable& operator=(MouseInteractable<T>&& other) noexcept;
-    const SDL_Rect& GetRect() const noexcept { return m_rect; }
-    void SetRect(const SDL_Rect& rect) noexcept { m_rect = rect; }
+    const SDL_Rect& GetRectImpl() const noexcept { return m_rect; }
+    void SetRectImpl(const SDL_Rect& rect) noexcept { m_rect = rect; }
 protected:
     virtual T* OnGetInteractableAtPoint(const SDL_Point& point) = 0;
     virtual void OnMouseOut();
@@ -66,6 +66,7 @@ MouseInteractable<T>& MouseInteractable<T>::operator=(MouseInteractable<T>&& oth
     this->m_rect = other.m_rect;
     this->MI_handle_ptr.m_ptr = std::move(other.MI_handle_ptr.m_ptr);
     this->MI_handle_ptr.m_ptr.ptr->object = this;
+	return *this;
 }
 
 template <typename T>

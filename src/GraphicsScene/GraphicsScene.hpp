@@ -51,7 +51,7 @@ public:
     double GetZoomScale() const { return m_zoomScale; }
 
     void AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order);
-    std::unique_ptr<node::GraphicsObject> PopObject(node::GraphicsObject* obj);
+    std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
 
     void UpdateObjectsRect();
 

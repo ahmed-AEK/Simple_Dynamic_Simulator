@@ -22,7 +22,7 @@ node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNo
 void node::NetSegment::Draw(SDL_Renderer* renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-	SDL_RenderFillRect(renderer, &(this->GetRect()));
+	SDL_RenderFillRect(renderer, &(this->GetRectImpl()));
 }
 
 MI::ClickEvent node::NetSegment::OnLMBDown(const SDL_Point& current_mouse_point)
@@ -84,6 +84,7 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 	if (GraphicsSceneMode::Delete == GetScene()->GetMode() && b_being_deleted)
 	{
 		std::unique_ptr<GraphicsObject> this_ptr = GetScene()->PopObject(this);
+		UNUSED_PARAM(this_ptr);
 		NetNode* start_node = m_startNode;
 		m_startNode->ClearSegment(this);
 		if (0 == start_node->GetConnectedSegmentsCount())
@@ -93,6 +94,7 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 				start_node->SetConnectedSocket(nullptr);
 			}
 			std::unique_ptr<GraphicsObject> unique_start_node = GetScene()->PopObject(start_node);
+			UNUSED_PARAM(unique_start_node);
 		}
 		NetNode* end_node = m_endNode;
 		m_endNode->ClearSegment(this);
@@ -103,6 +105,7 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 				end_node->SetConnectedSocket(nullptr);
 			}
 			std::unique_ptr<GraphicsObject> unique_end_node = GetScene()->PopObject(end_node);
+			UNUSED_PARAM(unique_end_node);
 		}
 		GetScene()->SetCurrentHover(nullptr);
 		return MI::ClickEvent::CAPTURE_END;
@@ -210,7 +213,7 @@ node::NetNode::NetNode(const SDL_Point& center, GraphicsScene* scene)
 void node::NetNode::Draw(SDL_Renderer* renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &(this->GetRect()));
+	SDL_RenderFillRect(renderer, &(this->GetRectImpl()));
 }
 
 void node::NetNode::UpdateConnectedSegments()
@@ -253,7 +256,7 @@ uint8_t node::NetNode::GetConnectedSegmentsCount()
 	return ret_val;
 }
 
-void node::NetNode::ClearSegment(NetSegment* segment)
+void node::NetNode::ClearSegment(const NetSegment* segment)
 {
 
 	auto clearSegment = [&](NetSegment*& target_segment)
@@ -313,6 +316,7 @@ MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
 		}
 		SetConnectedSocket(nullptr);
 		std::unique_ptr<GraphicsObject> this_ptr = GetScene()->PopObject(this);
+		UNUSED_PARAM(this_ptr);
 		GetScene()->SetCurrentHover(nullptr);
 		return MI::ClickEvent::CAPTURE_END;
 	}

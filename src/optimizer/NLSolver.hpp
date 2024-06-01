@@ -29,7 +29,7 @@ private:
 	std::vector<NLStatefulEquation> m_stateful_equations;
 	std::vector<FatAny> m_equations_states;
 	opt::FlatMap m_current_state;
-	double m_current_time;
+	double m_current_time = 0;
 	std::vector<int64_t> m_output_ids;
 	nlopt::opt m_optimizer;
 };

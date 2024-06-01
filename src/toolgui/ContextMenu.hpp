@@ -14,7 +14,7 @@ namespace node
 class TOOLGUI_API ContextMenu : public node::Widget
 {
 public:
-    ContextMenu(node::Scene* parent);
+    explicit ContextMenu(node::Scene* parent);
     virtual void Draw(SDL_Renderer* renderer) override;
 protected:
     void OnMouseMove(const SDL_Point& current_mouse_point) override;

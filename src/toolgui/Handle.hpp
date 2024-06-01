@@ -23,7 +23,7 @@ class HandlePtr
     std::shared_ptr<Handle<T>> m_ptr;
 public:
     HandlePtr() = default;
-    HandlePtr(std::shared_ptr<Handle<T>> ptr) : m_ptr(std::move(ptr)) {}
+    explicit HandlePtr(std::shared_ptr<Handle<T>> ptr) : m_ptr(std::move(ptr)) {}
     T* GetObjectPtr() { if (m_ptr) { return m_ptr->object;} else { return nullptr;}}
     const T* GetObjectPtr() const { if (m_ptr) { return m_ptr->object; } else { return nullptr; } }
     bool isAlive() const {if (m_ptr && m_ptr->isAlive()) {return true;} else { return false; }}
@@ -34,7 +34,7 @@ class HandleOwnigPtr
 {
     std::shared_ptr<Handle<T>> m_ptr;
 public:
-    HandleOwnigPtr(std::shared_ptr<Handle<T>> ptr): m_ptr{ptr} {}
+    explicit HandleOwnigPtr(std::shared_ptr<Handle<T>> ptr): m_ptr{ptr} {}
     HandleOwnigPtr(const HandleOwnigPtr<T>&) = delete;
     HandleOwnigPtr& operator=(const HandleOwnigPtr<T>&) = delete;
     HandleOwnigPtr(HandleOwnigPtr<T>&&) = delete;
@@ -42,8 +42,8 @@ public:
     ~HandleOwnigPtr(){ m_ptr->Destroy();}
     std::shared_ptr<Handle<T>> Reset() { return std::exchange(m_ptr, nullptr); };
     void Destroy() { m_ptr->object.Destroy(); }
-    HandlePtr<T> GetHandlePtr() { return { m_ptr }; }
-    const HandlePtr<T> GetHandlePtr() const { return { m_ptr }; }
+    HandlePtr<T> GetHandlePtr() { return HandlePtr<T>{ m_ptr }; }
+    const HandlePtr<T> GetHandlePtr() const { return HandlePtr<T>{ m_ptr }; }
 };
 
 template <typename T>
@@ -72,7 +72,7 @@ HandleOwnigPtr<T> HandleAllocator<T>::CreateHandle(T *ptr)
 
     std::pmr::polymorphic_allocator<Handle<T>> alloc(&poolResource);
     std::shared_ptr<Handle<T>> obj = std::allocate_shared<Handle<T>>(alloc, ptr);
-    return obj;
+    return node::HandleOwnigPtr<T>{obj};
 }
 
 

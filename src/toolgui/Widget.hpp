@@ -19,6 +19,7 @@ namespace node
     public:
         Widget(SDL_Rect rect, Scene* parent);
         void SetRect(const SDL_Rect& rect);
+        const SDL_Rect& GetRect() const noexcept { return MI::MouseInteractable<Widget>::GetRectImpl(); }
         virtual void Draw(SDL_Renderer* renderer) = 0;
         virtual ~Widget() noexcept {};
         const SDL_Rect& GetBaseRect() noexcept;
