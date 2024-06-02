@@ -7,9 +7,9 @@ project(dummy_nodeEditor)
 set(CMAKE_CXX_STANDARD 20)
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "-W4 -EHsc -WX")
+    set(CMAKE_CXX_FLAGS "-W4 -EHsc -WX /GR-")
 else(MSVC)
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror -fno-rtti")
 endif (MSVC)
 
 # if (UNIX AND ${CMAKE_BUILD_TYPE} MATCHES "Debug")

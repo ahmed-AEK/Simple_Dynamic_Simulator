@@ -1,6 +1,5 @@
 #include "FatAny.hpp"
 #include "toolgui/NodeMacros.h"
-#include <stdexcept>
 
 
 constexpr opt::AnyManager empty_manager =
@@ -10,26 +9,26 @@ constexpr opt::AnyManager empty_manager =
 };
 
 opt::FatAny::FatAny(opt::FatAny&& other) noexcept
-	: m_manager(other.m_manager), m_contained(other.m_contained)
+	: m_manager(other.m_manager), p_manager(other.p_manager)
 {
-	m_manager.move_construct(other.m_data.data(), m_data.data());
+	m_manager.move_construct(other.m_data.buff.data(), m_data.buff.data());
 }
 
 opt::FatAny& opt::FatAny::operator=(opt::FatAny&& other) noexcept
 {
 	if (&other != this)
 	{
-		if (m_contained != std::type_index(typeid(nullptr)))
+		if (p_manager != nullptr)
 		{
 			try {
-				m_manager.destruct(m_data.data());
+				m_manager.destruct(m_data.buff.data());
 			}
 			catch (...)
 			{ }
 		}
-		other.m_manager.move_construct(other.m_data.data(), m_data.data());
+		other.m_manager.move_construct(other.m_data.buff.data(), m_data.buff.data());
 		m_manager = other.m_manager;
-		m_contained = other.m_contained;
+		p_manager = other.p_manager;
 	}
 
 	return *this;
@@ -37,5 +36,5 @@ opt::FatAny& opt::FatAny::operator=(opt::FatAny&& other) noexcept
 
 opt::FatAny::~FatAny()
 {
-	m_manager.destruct(m_data.data());
+	m_manager.destruct(m_data.buff.data());
 }

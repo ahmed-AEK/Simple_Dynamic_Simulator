@@ -2,11 +2,12 @@
 #include "Application.hpp"
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/Scene.hpp"
+#include <cassert>
 
 namespace node
 {
     Application::Application(int width, int height, std::string title)
-    :m_title(title), m_framework(SDL_INIT_VIDEO), m_width(width), m_height(height), m_rect_base{0,0, width, height},
+    :m_title(title), m_framework(), m_width(width), m_height(height), m_rect_base{0,0, width, height},
         m_rect{ 0,0,width,height }, m_appFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) }
     {
         this->OnInit();
@@ -16,11 +17,19 @@ namespace node
 
     int Application::Run()
     {
+
+        if (!m_framework.Init(SDL_INIT_VIDEO))
+        {
+            assert(false);
+            return -1;
+        }
+
 #if defined linux && SDL_VERSION_ATLEAST(2, 0, 8)
         // Disable compositor bypass
         if(!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
         {
-            std::cout << "SDL can not disable compositor bypass!" << std::endl;
+            SDL_Log("SDL can not disable compositor bypass!");
+            assert(false);
             return -1;
         }
 #endif
@@ -33,15 +42,18 @@ namespace node
                                             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE));
         if(!m_window)
         {
-            std::cout << "Window could not be created!" << std::endl
-                    << "SDL_Error: " << SDL_GetError() << std::endl;
-            throw std::runtime_error("Couldn't create SDL window.");
+            SDL_Log("Window could not be created!");
+            std::cout << "SDL_Error: " << SDL_GetError() << std::endl;
+            assert(false);
+            return -1;
         }
+
         // Create renderer
-        m_renderer = SDL::Renderer(m_window.get());
-        if (!m_renderer)
+        if (!m_renderer.Init(m_window.get()))
         {
             SDL_Log("Failed to initialize Renderer.");
+            assert(false);
+            return -1;
         }
 
         b_running = true;

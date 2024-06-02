@@ -1,5 +1,5 @@
 #include "SDLRenderer.hpp"
-#include <stdexcept>
+#include <utility>
 
 void swap(SDL::Renderer& first, SDL::Renderer& second) noexcept
 {
@@ -11,16 +11,6 @@ namespace SDL
     Renderer::Renderer()
     : p_renderer(nullptr)
     {
-    }
-
-    Renderer::Renderer(SDL_Window *wnd)
-    : p_renderer(nullptr)
-    {
-        p_renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
-        if (!p_renderer)
-        {
-            throw std::runtime_error("Couldn't initialize SDL Renderer");
-        }
     }
 
     Renderer::~Renderer() noexcept
@@ -45,6 +35,17 @@ namespace SDL
     Renderer::operator SDL_Renderer *() const noexcept
     {
         return p_renderer;
+    }
+
+    bool Renderer::Init(SDL_Window* wnd)
+    {
+        p_renderer = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
+        if (!p_renderer)
+        {
+            SDL_Log("Couldn't initialize SDL Renderer");
+            return false;
+        }
+        return true;
     }
 }
 

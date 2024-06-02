@@ -13,13 +13,13 @@ namespace SDL
     {
         public:
         Renderer();
-        explicit Renderer(SDL_Window* wnd);
         ~Renderer() noexcept;
         Renderer& operator=(Renderer&) = delete;
         Renderer(Renderer&) = delete;
         Renderer& operator=(Renderer&&) noexcept;
         Renderer(Renderer&&) noexcept;
         operator SDL_Renderer*() const noexcept;
+        bool Init(SDL_Window* wnd);
         friend void ::swap(Renderer& first, Renderer& second) noexcept;
         private:
         SDL_Renderer* p_renderer;

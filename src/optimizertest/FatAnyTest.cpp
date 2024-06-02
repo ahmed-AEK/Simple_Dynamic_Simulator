@@ -76,7 +76,7 @@ TEST(testFatAny, testdestructor)
 	struct increment_on_destruct
 	{
 		int* value;
-		increment_on_destruct(int* value) : value(value) {}
+		explicit increment_on_destruct(int* value) : value(value) {}
 		increment_on_destruct(increment_on_destruct&& other) noexcept : 
 			value(std::exchange(other.value, nullptr)) { }
 		~increment_on_destruct() { if (value) *value += 1; }

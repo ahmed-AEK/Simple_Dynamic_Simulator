@@ -8,10 +8,11 @@ namespace SDL
     class SDLFramework
     {
     public:
-        ~SDLFramework();
         SDLFramework(SDLFramework&) = delete;
         SDLFramework& operator=(SDLFramework&) = delete;
-        explicit SDLFramework(uint32_t flags = 0);
+        SDLFramework();
+        bool Init(uint32_t flags = 0);
+        ~SDLFramework();
     private:
         bool m_SDL_init_done;
         bool m_SDL_TTF_init_done;

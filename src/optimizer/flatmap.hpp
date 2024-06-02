@@ -5,7 +5,6 @@
 #include <span>
 #include <boost/container/flat_map.hpp>
 #include <string>
-#include <stdexcept>
 
 namespace opt
 {
