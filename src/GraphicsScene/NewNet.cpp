@@ -49,13 +49,12 @@ node::NewNetObject* node::NewNetObject::TryCreate(NetNode* endNode, GraphicsScen
 	segments[0] = segment0;
 	std::unique_ptr<NewNetObject> net_ptr = std::make_unique<NewNetObject>(nodes, segments, scene);
 	NewNetObject* ptr = net_ptr.get();
-	scene->SetCurrentHover(ptr);
-	scene->AddObject(std::move(net_ptr), 0);
+	scene->SetGraphicsLogic(std::move(net_ptr));
 	return ptr;
 }
 
 node::NewNetObject::NewNetObject(NetNode* startNode, NetNode* endNode, GraphicsScene* scene)
-	:GraphicsObject({0,0,0,0}, ObjectType::logic, scene), p_startNode(startNode), p_endNode(endNode)
+	:GraphicsLogic(scene), p_startNode(startNode), p_endNode(endNode)
 {
 	for (int i = 0; i < 2; i++)
 	{
@@ -92,7 +91,7 @@ node::NewNetObject::NewNetObject(NetNode* startNode, NetNode* endNode, GraphicsS
 }
 
 node::NewNetObject::NewNetObject(std::array<NetNode*, 4> nodes, std::array<NetSegment*, 3> segments, GraphicsScene* scene)
-	: GraphicsObject({ 0,0,0,0 }, ObjectType::logic, scene), p_startNode(nodes[0]), p_endNode(nodes[3]),
+	: GraphicsLogic(scene), p_startNode(nodes[0]), p_endNode(nodes[3]),
 	m_intermediateNodes{nodes[1], nodes[2]}, m_segments{segments.begin(), segments.end()}
 {
 	UpdateConnectedSegments();
@@ -122,13 +121,8 @@ void node::NewNetObject::OnMouseMove(const SDL_Point& current_mouse_point)
 MI::ClickEvent node::NewNetObject::OnLMBUp(const SDL_Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
-	GetScene()->PopObject(this);
+	GetScene()->SetGraphicsLogic(nullptr);
 	return MI::ClickEvent::CAPTURE_END;
-}
-
-void node::NewNetObject::Draw(SDL_Renderer* renderer)
-{
-	UNUSED_PARAM(renderer);
 }
 
 void node::NewNetObject::UpdateConnectedSegments()

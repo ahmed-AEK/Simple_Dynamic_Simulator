@@ -1,13 +1,14 @@
 #pragma once
 
-#include "GraphicsScene/GraphicsObject.hpp"
 
+#include "GraphicsScene/GraphicsLogic.hpp"
 #include <array>
 
 namespace node {
 
 class NetNode;
 class NetSegment;
+class GraphicsScene;
 
 enum class NewNetMode
 {
@@ -18,7 +19,7 @@ enum class NewNetMode
 	Lmode
 };
 
-class GRAPHICSSCENE_API NewNetObject : public node::GraphicsObject
+class GRAPHICSSCENE_API NewNetObject : public node::GraphicsLogic
 {
 public:
 	static NewNetObject* TryCreate(NetNode* endNode, GraphicsScene* scene);
@@ -29,7 +30,6 @@ public:
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
-	virtual void Draw(SDL_Renderer* renderer) override;
 private:
 	void UpdateConnectedSegments();
 	void UpdateToHorizontal();

@@ -20,7 +20,7 @@ struct GRAPHICSSCENE_API SocketData
 class GRAPHICSSCENE_API Node: public DraggableObject
 {
 public:
-    Node(SDL_Rect rect, GraphicsScene* scene);
+    Node(SDL_Rect rect, IGraphicsScene* scene);
     void Draw(SDL_Renderer* renderer) override;
     void AddInputSocket(int id);
     void AddOutputSocket(int id);

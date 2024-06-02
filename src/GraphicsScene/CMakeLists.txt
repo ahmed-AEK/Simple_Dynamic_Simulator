@@ -12,6 +12,11 @@ NetObject.cpp NetObject.hpp
 NewNet.cpp NewNet.hpp
 NewNetJunction.cpp NewNetJunction.hpp
 GraphicsScene_exports.h
+SpaceScreenTransformer.cpp SpaceScreenTransformer.hpp
+IGraphicsScene.hpp
+GraphicsLogic.cpp GraphicsLogic.hpp
+IGraphicsSceneController.hpp
+GraphicsSceneController.cpp GraphicsSceneController.hpp
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")

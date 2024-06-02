@@ -1,9 +1,9 @@
 #include "NodeSocket.hpp"
 #include "Node.hpp"
-#include "GraphicsScene.hpp"
 #include "SDL_Framework/SDL_headers.h"
 #include "NetObject.hpp"
-#include "NewNet.hpp"
+#include "IGraphicsScene.hpp"
+#include "IGraphicsSceneController.hpp"
 
 void node::NodeSocket::SetConnectedNode(NetNode* node)
 {
@@ -28,7 +28,7 @@ node::NetNode* node::NodeSocket::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
-node::NodeSocket::NodeSocket(SocketType type, GraphicsScene* parentScene, Node* parentNode)
+node::NodeSocket::NodeSocket(SocketType type, IGraphicsScene* parentScene, Node* parentNode)
 	: GraphicsObject(SDL_Rect{0,0,nodeLength,nodeLength}, ObjectType::socket, parentScene),
 	m_parentNode(parentNode), m_socktType(type)
 {
@@ -95,6 +95,7 @@ void node::NodeSocket::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::NodeSocket::OnLMBDown(const SDL_Point& current_mouse_point)
 {
+	/*
 	if (!m_connected_node)
 	{
 		std::unique_ptr<NetNode> node1_ptr = std::make_unique<NetNode>(this->GetCenter(), this->GetScene());
@@ -114,4 +115,17 @@ MI::ClickEvent node::NodeSocket::OnLMBDown(const SDL_Point& current_mouse_point)
 	{
 		return MI::ClickEvent::CLICKED;
 	}
+	*/
+	auto&& scene = GetScene();
+	if (!scene)
+	{
+		return MI::ClickEvent::NONE;
+	}
+	auto&& controller = scene->GetController();
+	if (!controller)
+	{
+		return MI::ClickEvent::NONE;
+	}
+
+	return controller->OnSocketLMBDown(current_mouse_point, *this);
 }

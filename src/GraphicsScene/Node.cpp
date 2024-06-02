@@ -1,13 +1,13 @@
 #include "Node.hpp"
 #include "SDL_Framework/SDL_headers.h"
-#include "GraphicsScene.hpp"
 #include "NodeSocket.hpp"
 #include "GraphicsScene/NetObject.hpp"
-
+#include "IGraphicsScene.hpp"
+#include "IGraphicsSceneController.hpp"
 #include <algorithm>
 #include <iterator>
 
-node::Node::Node(SDL_Rect rect, GraphicsScene* scene)
+node::Node::Node(SDL_Rect rect, IGraphicsScene* scene)
 	: DraggableObject(rect, ObjectType::node, scene)
 {
 }
@@ -15,7 +15,7 @@ node::Node::Node(SDL_Rect rect, GraphicsScene* scene)
 void node::Node::Draw(SDL_Renderer* renderer)
 {
 
-    if (!GetScene()->isObjectSelected(*this))
+    if (!GetScene()->IsObjectSelected(*this))
     {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     }
@@ -45,17 +45,31 @@ void node::Node::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 {
-    if (GetScene()->GetMode() == GraphicsSceneMode::Delete)
+    /*if (GetScene()->GetMode() == GraphicsSceneMode::Delete)
     {
         b_being_deleted = true;
         return MI::ClickEvent::CAPTURE_START;
     }
     return DraggableObject::OnLMBUp(current_mouse_point);
+    */
+    auto&& scene = GetScene();
+    if (!scene)
+    {
+        return MI::ClickEvent::NONE;
+    }
+    auto&& controller = scene->GetController();
+    if (!controller)
+    {
+        return MI::ClickEvent::NONE;
+    }
+
+    return controller->OnNodeLMBDown(current_mouse_point, *this);
 }
 
 MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
 {
-    if (b_being_deleted && GraphicsSceneMode::Delete == GetScene()->GetMode())
+    UNUSED_PARAM(current_mouse_point);
+    /*if (b_being_deleted && GraphicsSceneMode::Delete == GetScene()->GetMode())
     {
         GetScene()->SetCurrentHover(nullptr);
         DisconnectSockets();
@@ -63,6 +77,8 @@ MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
         return MI::ClickEvent::CAPTURE_END;
     }
     return DraggableObject::OnLMBUp(current_mouse_point);
+    */
+    return MI::ClickEvent::NONE;
 }
 
 void node::Node::OnMouseMove(const SDL_Point& current_mouse_point)

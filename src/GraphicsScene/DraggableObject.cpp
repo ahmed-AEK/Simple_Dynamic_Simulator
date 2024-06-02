@@ -1,8 +1,6 @@
 #include "DraggableObject.hpp"
 
-#include "GraphicsScene.hpp"
-
-node::DraggableObject::DraggableObject(const SDL_Rect& sceneRect, ObjectType type, node::GraphicsScene* parent)
+node::DraggableObject::DraggableObject(const SDL_Rect& sceneRect, ObjectType type, node::IGraphicsScene* parent)
 : node::GraphicsObject(sceneRect, type, parent)
 {
     b_draggable = true;

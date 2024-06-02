@@ -11,7 +11,7 @@ namespace node {
 struct NetObject;
 class NetSegment;
 class NetNode;
-class GraphicsScene;
+class IGraphicsScene;
 
 enum class NetOrientation
 {
@@ -31,7 +31,7 @@ constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
-	explicit NetNode(const SDL_Point& center, GraphicsScene* scene = nullptr);
+	explicit NetNode(const SDL_Point& center, IGraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
 	const SDL_Point& getCenter() noexcept { return m_centerPoint; }
 	void setSegment(NetSegment* segment, NetSide side);
@@ -79,7 +79,7 @@ class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
 	explicit NetSegment(const NetOrientation& orientation, 
-	NetNode* startNode = nullptr, NetNode* endNode = nullptr, GraphicsScene* scene = nullptr);
+	NetNode* startNode = nullptr, NetNode* endNode = nullptr, IGraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
 	const NetOrientation& getOrientation() noexcept { return m_orientation; }
 	NetNode* getStartNode() noexcept { return m_startNode; }

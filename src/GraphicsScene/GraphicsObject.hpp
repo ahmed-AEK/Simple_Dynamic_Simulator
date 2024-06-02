@@ -15,15 +15,15 @@ enum class ObjectType
     netNode,
     net,
     interactive,
-    logic,
     OBJECTTYPE_COUNT
 };
 
-class GraphicsScene;
+class IGraphicsScene;
+
 class GRAPHICSSCENE_API GraphicsObject: public MI::MouseInteractable<GraphicsObject>
 {
 public:
-    GraphicsObject(SDL_Rect sceneRect, ObjectType type, GraphicsScene* scene);
+    GraphicsObject(SDL_Rect sceneRect, ObjectType type, IGraphicsScene* scene);
     virtual ~GraphicsObject();
 
     virtual void Draw(SDL_Renderer* renderer) = 0;
@@ -36,10 +36,10 @@ public:
     void SetSpaceOrigin(const SDL_Point& p);
     virtual void UpdateRect();
 
-    void setScene(GraphicsScene* scene);
+    void setScene(IGraphicsScene* scene);
     node::HandlePtr<GraphicsObject> GetFocusHandlePtr();
-    const GraphicsScene* GetScene() const { return m_pScene; }
-    GraphicsScene* GetScene() { return m_pScene; }
+    const IGraphicsScene* GetScene() const { return m_pScene; }
+    IGraphicsScene* GetScene() { return m_pScene; }
 
     bool isSelectable() const { return b_selectable; }
     bool isDraggable() const { return b_draggable; }
@@ -56,7 +56,7 @@ protected:
     bool b_aligned = true;
 private:
     ObjectType m_obj_type;
-    GraphicsScene* m_pScene;
+    IGraphicsScene* m_pScene;
     SDL_Rect m_spaceRect;
     node::HandleOwnigPtr<GraphicsObject> m_focusHandle = node::HandleAllocator<GraphicsObject>::CreateHandle(this); 
 };

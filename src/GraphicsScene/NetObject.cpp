@@ -3,10 +3,11 @@
 #include "Node.hpp"
 #include "NewNet.hpp"
 #include "NewNetJunction.hpp"
-#include "GraphicsScene.hpp"
+#include "IGraphicsScene.hpp"
+#include "IGraphicsSceneController.hpp"
 #include <cmath>
 
-node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNode, NetNode* endNode, node::GraphicsScene* scene)
+node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
 	: GraphicsObject({0,0,0,0}, ObjectType::net, scene),
 	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation)
 {
@@ -27,6 +28,7 @@ void node::NetSegment::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::NetSegment::OnLMBDown(const SDL_Point& current_mouse_point)
 {
+	/*
 	UNUSED_PARAM(current_mouse_point);
 	if (GraphicsSceneMode::Insert == GetScene()->GetMode())
 	{
@@ -49,9 +51,24 @@ MI::ClickEvent node::NetSegment::OnLMBDown(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CAPTURE_START;
 	}
 	return MI::ClickEvent::NONE;
+	*/
+	auto&& scene = GetScene();
+	if (!scene)
+	{
+		return MI::ClickEvent::NONE;
+	}
+	auto&& controller = scene->GetController();
+	if (!controller)
+	{
+		return MI::ClickEvent::NONE;
+	}
+
+	return controller->OnSegmentLMBDown(current_mouse_point, *this);
 }
 void node::NetSegment::OnMouseMove(const SDL_Point& current_mouse_point)
 {
+	UNUSED_PARAM(current_mouse_point);
+	/*
 	if (b_being_dragged)
 	{
 		switch(m_orientation)
@@ -72,9 +89,12 @@ void node::NetSegment::OnMouseMove(const SDL_Point& current_mouse_point)
 	{
 		b_being_deleted = false;
 	}
+	*/
 }
 MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 {
+	UNUSED_PARAM(current_mouse_point);
+	/*
 	UNUSED_PARAM(current_mouse_point);
 	if (b_being_dragged)
 	{
@@ -110,6 +130,8 @@ MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
 		GetScene()->SetCurrentHover(nullptr);
 		return MI::ClickEvent::CAPTURE_END;
 	}
+	return MI::ClickEvent::NONE;
+	*/
 	return MI::ClickEvent::NONE;
 }
 
@@ -203,7 +225,7 @@ void node::NetSegment::CalcRect()
 	}
 }
 
-node::NetNode::NetNode(const SDL_Point& center, GraphicsScene* scene)
+node::NetNode::NetNode(const SDL_Point& center, IGraphicsScene* scene)
 	: GraphicsObject({center.x - m_width/2, center.y - m_height/2, m_width, m_height}, ObjectType::netNode, scene), m_centerPoint(center)
 {
 	b_draggable = false;
@@ -274,6 +296,7 @@ void node::NetNode::ClearSegment(const NetSegment* segment)
 
 MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
 {
+	/*
 	UNUSED_PARAM(current_mouse_point);
 	if (GraphicsSceneMode::Delete == GetScene()->GetMode())
 	{
@@ -289,10 +312,25 @@ MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
 		}
 	}
 	return MI::ClickEvent::CLICKED;
+	*/
+	auto&& scene = GetScene();
+	if (!scene)
+	{
+		return MI::ClickEvent::NONE;
+	}
+	auto&& controller = scene->GetController();
+	if (!controller)
+	{
+		return MI::ClickEvent::NONE;
+	}
+
+	return controller->OnNetNodeLMBDown(current_mouse_point, *this);
 }
 
 MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
 {
+	UNUSED_PARAM(current_mouse_point);
+	/*
 	if (GraphicsSceneMode::Delete == GetScene()->GetMode() && b_being_deleted)
 	{
 		std::array<NetSegment*, 4> segments{ m_northSegment, m_southSegment, m_eastSegment, m_westSegment };
@@ -321,6 +359,8 @@ MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CAPTURE_END;
 	}
 	return GraphicsObject::OnLMBUp(current_mouse_point);
+	*/
+	return MI::ClickEvent::NONE;
 }
 
 void node::NetNode::OnMouseMove(const SDL_Point& current_mouse_point)
@@ -335,6 +375,7 @@ void node::NetNode::OnSetSpaceRect(const SDL_Rect& rect)
 {
 	m_centerPoint = { rect.x + rect.w/2, rect.y + rect.h/2 };
 }
+
 void node::NetNode::setSegment(NetSegment* segment, NetSide side)
 {
 	switch (side)

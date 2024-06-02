@@ -2,6 +2,7 @@
 #include "ExampleContextMenu.hpp"
 #include "SDL2/SDL_ttf.h"
 #include "GraphicsScene/GraphicsObject.hpp"
+#include "GraphicsScene/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(SDL_Rect rect, node::Scene* parent)
@@ -23,8 +24,9 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     const int start_x = static_cast<int>(GetSpaceRect().x / m_dotspace) * m_dotspace;
     const int start_y = static_cast<int>(GetSpaceRect().y / m_dotspace) * m_dotspace;
-    const SDL_Point start_point_screen = SpaceToScreenPoint({ start_x, start_y });
-    SDL_Point step_screen = SpaceToScreenVector({ m_dotspace, m_dotspace });
+    auto&& transformer = GetSpaceScreenTransformer();
+    const SDL_Point start_point_screen = transformer.SpaceToScreenPoint({ start_x, start_y });
+    SDL_Point step_screen = transformer.SpaceToScreenVector({ m_dotspace, m_dotspace });
     int dot_width = 2;
     if (GetZoomScale() > 1.3)
     {
@@ -91,6 +93,7 @@ MI::ClickEvent node::NodeGraphicsScene::OnRMBUp(const SDL_Point& p)
 void node::NodeGraphicsScene::OnMouseMove(const SDL_Point& p)
 {
     node::GraphicsScene::OnMouseMove(p);
-    m_current_hover_point = ScreenToSpacePoint(p);
+    auto&& transformer = GetSpaceScreenTransformer();
+    m_current_hover_point = transformer.ScreenToSpacePoint(p);
     m_screen_hover_point = p;
 }

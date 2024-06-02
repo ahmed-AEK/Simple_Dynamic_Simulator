@@ -20,8 +20,7 @@ node::NewNetJunctionObject* node::NewNetJunctionObject::TryCreate(NetSegment* st
 	
 	std::unique_ptr<NewNetJunctionObject> net_ptr = std::make_unique<NewNetJunctionObject>(start, end, scene, startSegment);
 	NewNetJunctionObject* ptr = net_ptr.get();
-	scene->SetCurrentHover(ptr);
-	scene->AddObject(std::move(net_ptr), 0);
+	scene->SetGraphicsLogic(std::move(net_ptr));
 	return ptr;
 }
 

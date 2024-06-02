@@ -22,7 +22,7 @@ public:
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
 	static constexpr int nodeLength = 15;
-	NodeSocket(SocketType type, GraphicsScene* parentScene, Node* parentNode);
+	NodeSocket(SocketType type, IGraphicsScene* parentScene, Node* parentNode);
 	void OnSetSpaceRect(const SDL_Rect& rect) override;
 	void SetPosition(SDL_Point p);
 	SDL_Point GetCenter();

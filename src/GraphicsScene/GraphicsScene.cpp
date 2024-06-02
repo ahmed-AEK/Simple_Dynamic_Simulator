@@ -4,6 +4,7 @@
 #include "GraphicsScene/NodeSocket.hpp"
 #include <algorithm>
 #include "GraphicsScene/GraphicsObject.hpp"
+#include "GraphicsScene/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
 
@@ -11,7 +12,8 @@ node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
 :Widget(rect, parent), 
 m_spaceRect_base{0, 0, 1000, 1000 * rect.h/rect.w}, 
 m_spaceRect{0, 0, 200, 200 * rect.h/rect.w},
-m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w)
+m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w),
+m_spaceScreenTransformer(GetRect(), m_spaceRect)
 {
     
 }
@@ -99,7 +101,7 @@ bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
 {
     if (object->isSelectable())
     {
-        if (!isObjectSelected(*object))
+        if (!IsObjectSelected(*object))
         {
             ClearCurrentSelection();
             AddSelection(object->GetFocusHandlePtr());
@@ -123,7 +125,8 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
             SetCurrentHover(current_hover);
             if (current_hover)
             {
-                current_hover->MouseMove(ScreenToSpacePoint(p));
+                auto&& transformer = GetSpaceScreenTransformer();
+                current_hover->MouseMove(transformer.ScreenToSpacePoint(p));
             }
             break;
         }
@@ -131,13 +134,15 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     {
         node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
         SDL_assert(current_hover);
-        current_hover->MouseMove(ScreenToSpacePoint(p));
+        auto&& transformer = GetSpaceScreenTransformer();
+        current_hover->MouseMove(transformer.ScreenToSpacePoint(p));
         break;
     }
     case node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG:
     {
         SDL_assert(m_drag_objects.size());
-        const SDL_Point drag_vector = ScreenToSpaceVector({p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y});
+        auto&& transformer = GetSpaceScreenTransformer();
+        const SDL_Point drag_vector = transformer.ScreenToSpaceVector({p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y});
         for (auto&& drag_object : m_drag_objects)
         {
             node::GraphicsObject* object =  drag_object.m_object.GetObjectPtr();
@@ -155,7 +160,8 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     }
     case node::GraphicsScene::CAPTURE_MODE::SCREEN_DRAG:
     {
-        const SDL_Point current_position_difference_space_vector = ScreenToSpaceVector({
+        auto&& transformer = GetSpaceScreenTransformer();
+        const SDL_Point current_position_difference_space_vector = transformer.ScreenToSpaceVector({
         p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y
             });
 
@@ -181,7 +187,8 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
         InternalSelectObject(current_hover);
         
         // do Click
-        SDL_Point SpacePoint = ScreenToSpacePoint(p);
+        auto&& transformer = GetSpaceScreenTransformer();
+        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
         MI::ClickEvent result = current_hover->LMBDown(SpacePoint);
         switch (result)
         {
@@ -252,7 +259,8 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
         node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
         if (current_hover)
         {
-            SDL_Point SpacePoint = ScreenToSpacePoint(p);
+            auto&& transformer = GetSpaceScreenTransformer();
+            SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
             current_hover->LMBUp(SpacePoint);
             m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
             return MI::ClickEvent::CAPTURE_END;
@@ -279,6 +287,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
 void node::GraphicsScene::SetSpaceRect(const SDL_Rect& rect)
 {
     m_spaceRect = rect;
+    m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
 }
 const SDL_Rect& node::GraphicsScene::GetSpaceRect() const noexcept
 {
@@ -304,7 +313,7 @@ void node::GraphicsScene::AddSelection(HandlePtr<GraphicsObject> handle)
     this->m_current_selection.push_back(handle);
 }
 
-bool node::GraphicsScene::isObjectSelected(const GraphicsObject& obj) const
+bool node::GraphicsScene::IsObjectSelected(const GraphicsObject& obj) const
 {
     const node::GraphicsObject* obj_ptr = &obj;
     auto iter = std::find_if(m_current_selection.begin(), m_current_selection.end(),
@@ -345,7 +354,8 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
         {
             return false;
         }
-        old_position = ScreenToSpacePoint(p);
+        auto&& transformer = GetSpaceScreenTransformer();
+        old_position = transformer.ScreenToSpacePoint(p);
         m_zoomScale /= m_scroll_ratio;
         if (m_zoomScale < 0.3)
         {
@@ -359,7 +369,8 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
         {
             return false;
         }
-        old_position = ScreenToSpacePoint(p);
+        auto&& transformer = GetSpaceScreenTransformer();
+        old_position = transformer.ScreenToSpacePoint(p);
         m_zoomScale *= m_scroll_ratio;
         if (m_zoomScale > 2)
         {
@@ -373,7 +384,8 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
     new_rect.w = static_cast<int>(GetBaseRect().w * m_zoomScale);
     new_rect.h = static_cast<int>(GetBaseRect().h * m_zoomScale);
     SetSpaceRect(new_rect);
-    SDL_Point new_position = ScreenToSpacePoint(p);
+    auto&& transformer = GetSpaceScreenTransformer();
+    SDL_Point new_position = transformer.ScreenToSpacePoint(p);
     new_rect = GetSpaceRect();
     new_rect.x = new_rect.x + old_position.x - new_position.x;
     new_rect.y = new_rect.y + old_position.y - new_position.y;
@@ -391,12 +403,32 @@ void node::GraphicsScene::UpdateObjectsRect()
     }
 }
 
+void node::GraphicsScene::InvalidateRect()
+{
+    Widget::InvalidateRect();
+}
+
+void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
+{
+    if (m_graphicsLogic)
+    {
+        m_graphicsLogic->Cancel();
+    }
+    m_graphicsLogic = std::move(logic);
+}
+
+node::IGraphicsSceneController* node::GraphicsScene::GetController() const
+{
+    return nullptr;
+}
+
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)
 {
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
     m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio);
     m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio);
+    m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
     Widget::OnSetRect(rect);
 }
 
@@ -413,53 +445,9 @@ node::GraphicsObject* node::GraphicsScene::GetInteractableAt(const SDL_Point& p)
     return nullptr;
 }
 
-SDL_Point node::GraphicsScene::ScreenToSpacePoint(const SDL_Point& p) const noexcept
+const node::SpaceScreenTransformer& node::GraphicsScene::GetSpaceScreenTransformer() const
 {
-    return SDL_Point{
-        static_cast<int>(
-        static_cast<double>(p.x - GetRect().x) / (GetRect().w) * m_spaceRect.w + m_spaceRect.x),
-        static_cast<int>(
-        static_cast<double>(p.y - GetRect().y) / (GetRect().h) * m_spaceRect.h + m_spaceRect.y)
-    };
-}
-SDL_Point node::GraphicsScene::SpaceToScreenPoint(const SDL_Point& p) const noexcept
-{
-    return SDL_Point{static_cast<int>(
-        static_cast<double>(p.x - m_spaceRect.x)/(m_spaceRect.w)* GetRect().w + GetRect().x),
-        static_cast<int>(
-        static_cast<double>(p.y - m_spaceRect.y)/(m_spaceRect.h)* GetRect().h + GetRect().y)
-    };
-}
-
-SDL_Point node::GraphicsScene::ScreenToSpaceVector(const SDL_Point& p) const noexcept
-{
-    return SDL_Point{
-        static_cast<int>(
-        static_cast<double>(p.x)/(GetRect().w)*m_spaceRect.w),
-        static_cast<int>(
-        static_cast<double>(p.y)/(GetRect().h)*m_spaceRect.h)
-    };
-}
-SDL_Point node::GraphicsScene::SpaceToScreenVector(const SDL_Point& p) const noexcept
-{
-    return SDL_Point{static_cast<int>(
-            static_cast<double>(p.x)/(m_spaceRect.w)* GetRect().w),
-            static_cast<int>(
-            static_cast<double>(p.y)/(m_spaceRect.h)* GetRect().h)
-        };
-}
-
-SDL_Rect node::GraphicsScene::ScreenToSpaceRect(const SDL_Rect& rect) const noexcept
-{
-    SDL_Point p1 = ScreenToSpacePoint({rect.x, rect.y});
-    SDL_Point p2 = ScreenToSpaceVector({rect.w, rect.h});
-    return {p1.x, p1.y, p2.x, p2.y};
-}
-SDL_Rect node::GraphicsScene::SpaceToScreenRect(const SDL_Rect& rect) const noexcept
-{
-    SDL_Point p1 = SpaceToScreenPoint({rect.x, rect.y});
-    SDL_Point p2 = SpaceToScreenVector({rect.w, rect.h});
-    return {p1.x, p1.y, p2.x, p2.y};
+    return m_spaceScreenTransformer;
 }
 
 SDL_Point node::GraphicsScene::QuantizePoint(const SDL_Point& p)

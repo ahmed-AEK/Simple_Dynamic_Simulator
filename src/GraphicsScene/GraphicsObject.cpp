@@ -1,13 +1,15 @@
 #include "GraphicsObject.hpp"
-#include "GraphicsScene.hpp"
+#include "IGraphicsScene.hpp"
+#include "SpaceScreenTransformer.hpp"
 #include "toolgui/NodeMacros.h"
 
-node::GraphicsObject::GraphicsObject(SDL_Rect sceneRect, ObjectType type, node::GraphicsScene* scene)
+node::GraphicsObject::GraphicsObject(SDL_Rect sceneRect, ObjectType type, node::IGraphicsScene* scene)
 :m_obj_type(type), m_pScene(scene), m_spaceRect{sceneRect}
 {
     if (scene)
     {
-        SetRectImpl(m_pScene->SpaceToScreenRect(m_spaceRect));
+        auto&& transformer = scene->GetSpaceScreenTransformer();
+        SetRectImpl(transformer.SpaceToScreenRect(m_spaceRect));
     }
 }
 
@@ -27,8 +29,10 @@ void node::GraphicsObject::SetSpaceRect(const SDL_Rect& rect)
 {
     m_spaceRect = rect;
     if (m_pScene) {
-        const SDL_Point p1 = m_pScene->SpaceToScreenPoint({ rect.x, rect.y });
-        const SDL_Point p2 = m_pScene->SpaceToScreenVector({ rect.w, rect.h });
+        auto&& transformer = GetScene()->GetSpaceScreenTransformer();
+
+        const SDL_Point p1 = transformer.SpaceToScreenPoint({ rect.x, rect.y });
+        const SDL_Point p2 = transformer.SpaceToScreenVector({ rect.w, rect.h });
         SetRectImpl({
             p1.x,
             p1.y,
@@ -61,11 +65,12 @@ node::GraphicsObject* node::GraphicsObject::OnGetInteractableAtPoint(const SDL_P
 
 void node::GraphicsObject::UpdateRect()
 {
-    SetRectImpl(this->m_pScene->SpaceToScreenRect(m_spaceRect));
+    auto&& transformer = GetScene()->GetSpaceScreenTransformer();
+    SetRectImpl(transformer.SpaceToScreenRect(m_spaceRect));
     OnUpdateRect();
 }
 
-void node::GraphicsObject::setScene(GraphicsScene* scene)
+void node::GraphicsObject::setScene(IGraphicsScene* scene)
 {
     m_pScene = scene;
     if (scene)
