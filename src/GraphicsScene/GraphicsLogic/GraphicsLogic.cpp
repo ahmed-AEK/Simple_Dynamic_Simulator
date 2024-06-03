@@ -99,8 +99,3 @@ void node::GraphicsLogic::OnCancel()
 {
 }
 
-void node::GraphicsLogic::SetDone(bool value)
-{
-    b_done = value;
-}
-

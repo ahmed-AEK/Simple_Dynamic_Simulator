@@ -48,12 +48,14 @@ void node::NodeSocket::OnSetSpaceRect(const SDL_Rect& rect)
 
 void node::NodeSocket::SetPosition(SDL_Point p)
 {
+	// set socket position
 	SetSpaceRect({ p.x, p.y, nodeLength, nodeLength });
 	if (!m_connected_node)
 	{
 		return;
 	}
 
+	// set connected node position
 	m_connected_node->setCenter(GetCenter());
 	NetSegment* next_segment = m_connected_node->getSegment(NetSide::East);
 	if (!next_segment) 
@@ -66,6 +68,8 @@ void node::NodeSocket::SetPosition(SDL_Point p)
 	{
 		next_node = next_segment->getEndNode();
 	}
+	
+	// set position of the first node after one segment
 	next_node->setCenter({next_node->getCenter().x, GetCenter().y});
 	next_node->UpdateConnectedSegments();
 }

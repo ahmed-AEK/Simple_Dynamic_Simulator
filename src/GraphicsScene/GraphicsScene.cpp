@@ -4,9 +4,10 @@
 #include "GraphicsScene/NodeSocket.hpp"
 #include <algorithm>
 #include "GraphicsScene/GraphicsObject.hpp"
-#include "GraphicsScene/GraphicsLogic.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
+#include "IGraphicsSceneController.hpp"
 
 node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -16,6 +17,11 @@ m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w),
 m_spaceScreenTransformer(GetRect(), m_spaceRect)
 {
     
+}
+
+node::GraphicsScene::~GraphicsScene()
+{
+
 }
 
 void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order)
@@ -117,6 +123,14 @@ bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
 
 void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 {
+    if (m_graphicsLogic)
+    {
+        auto&& transformer = GetSpaceScreenTransformer();
+        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
+        m_graphicsLogic->MouseMove(SpacePoint);
+        return;
+    }
+
     switch (m_mouse_capture_mode)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
@@ -180,6 +194,13 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 
 MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 {
+    if (m_graphicsLogic)
+    {
+        auto&& transformer = GetSpaceScreenTransformer();
+        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
+       return m_graphicsLogic->LMBDown(SpacePoint);
+    }
+
     node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
     if (current_hover)
     {
@@ -247,6 +268,13 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 
 MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
 {
+    if (m_graphicsLogic)
+    {
+        auto&& transformer = GetSpaceScreenTransformer();
+        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
+        return m_graphicsLogic->LMBUp(SpacePoint);
+    }
+
     switch (m_mouse_capture_mode)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
@@ -410,7 +438,7 @@ void node::GraphicsScene::InvalidateRect()
 
 void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
 {
-    if (m_graphicsLogic)
+    if (m_graphicsLogic && !m_graphicsLogic->IsDone())
     {
         m_graphicsLogic->Cancel();
     }
@@ -419,7 +447,12 @@ void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
 
 node::IGraphicsSceneController* node::GraphicsScene::GetController() const
 {
-    return nullptr;
+    return m_controller.get();
+}
+
+void node::GraphicsScene::SetController(std::unique_ptr<IGraphicsSceneController> ptr)
+{
+    m_controller = std::move(ptr);
 }
 
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)

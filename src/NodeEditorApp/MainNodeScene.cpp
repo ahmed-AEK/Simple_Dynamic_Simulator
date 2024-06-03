@@ -6,12 +6,15 @@
 #include "NodeGraphicsScene.hpp"
 #include "GraphicsScene/Node.hpp"
 #include "GraphicsScene/NodeSocket.hpp"
+#include "GraphicsScene/GraphicsSceneController.hpp"
 
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
 
     std::unique_ptr<GraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
+    gScene->SetController(std::make_unique<GraphicsSceneController>(gScene.get()));
+
     std::unique_ptr<node::Node> obj = std::make_unique<node::Node>(SDL_Rect{10,10,100,100}, gScene.get());
     obj->AddInputSocket(0);
     obj->AddOutputSocket(1);

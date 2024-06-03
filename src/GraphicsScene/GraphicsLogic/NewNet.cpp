@@ -1,4 +1,4 @@
-#include "NewNet.hpp"
+#include "GraphicsLogic/NewNet.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsScene/NetObject.hpp"
 

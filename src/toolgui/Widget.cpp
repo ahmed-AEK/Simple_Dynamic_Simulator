@@ -24,6 +24,12 @@ namespace node
     {
         MI::MouseInteractable<Widget>::SetRectImpl(rect);
     }
+
+    Widget::~Widget()
+    {
+
+    }
+
     Widget::Widget(SDL_Rect rect, Scene* parent)
     :p_parent(parent), m_rect_base(rect)
     {

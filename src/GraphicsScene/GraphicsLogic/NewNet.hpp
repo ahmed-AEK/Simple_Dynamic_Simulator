@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "GraphicsScene/GraphicsLogic.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include <array>
 
 namespace node {

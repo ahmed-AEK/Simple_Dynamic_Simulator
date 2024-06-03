@@ -28,6 +28,7 @@ public:
 	SDL_Point GetCenter();
 	void Draw(SDL_Renderer* renderer) override;
 	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+	SocketType GetSocketType() const { return m_socktType; }
 private:
 	Node* m_parentNode;
 	SocketType m_socktType;

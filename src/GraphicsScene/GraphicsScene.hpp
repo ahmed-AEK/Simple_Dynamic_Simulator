@@ -14,6 +14,7 @@ class Node;
 class NodeSocket;
 class GraphicsObject;
 class GraphicsLogic;
+class IGraphicsSceneController;
 class Scene;
 
 struct GRAPHICSSCENE_API ObjectSlot
@@ -47,6 +48,7 @@ public:
 
 
     GraphicsScene(SDL_Rect rect, node::Scene* parent);
+    ~GraphicsScene() override;
 
     void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
     double GetScrollRatio() const noexcept { return m_scroll_ratio; }
@@ -85,6 +87,7 @@ public:
     void SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic);
     GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
     IGraphicsSceneController* GetController() const override;
+    void SetController(std::unique_ptr<IGraphicsSceneController> ptr);
 
 protected:
     virtual void OnSetRect(const SDL_Rect& rect) override;
@@ -108,6 +111,7 @@ private:
     std::vector<DragObject> m_drag_objects;
     std::unique_ptr<GraphicsLogic> m_graphicsLogic;
     SpaceScreenTransformer m_spaceScreenTransformer;
+    std::unique_ptr<IGraphicsSceneController> m_controller;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
     GraphicsSceneMode m_SceneMode = GraphicsSceneMode::Normal;
 };

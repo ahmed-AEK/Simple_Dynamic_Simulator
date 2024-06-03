@@ -21,7 +21,7 @@ namespace node
         void SetRect(const SDL_Rect& rect);
         const SDL_Rect& GetRect() const noexcept { return MI::MouseInteractable<Widget>::GetRectImpl(); }
         virtual void Draw(SDL_Renderer* renderer) = 0;
-        virtual ~Widget() noexcept {};
+        virtual ~Widget();
         const SDL_Rect& GetBaseRect() noexcept;
         void InvalidateRect();
         WidgetScaling GetScalingType() const;

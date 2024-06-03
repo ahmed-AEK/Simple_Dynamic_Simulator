@@ -1,8 +1,8 @@
 #include "NetObject.hpp"
 #include "NodeSocket.hpp"
 #include "Node.hpp"
-#include "NewNet.hpp"
-#include "NewNetJunction.hpp"
+#include "GraphicsLogic/NewNet.hpp"
+#include "GraphicsLogic/NewNetJunction.hpp"
 #include "IGraphicsScene.hpp"
 #include "IGraphicsSceneController.hpp"
 #include <cmath>

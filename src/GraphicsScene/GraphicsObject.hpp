@@ -38,8 +38,7 @@ public:
 
     void setScene(IGraphicsScene* scene);
     node::HandlePtr<GraphicsObject> GetFocusHandlePtr();
-    const IGraphicsScene* GetScene() const { return m_pScene; }
-    IGraphicsScene* GetScene() { return m_pScene; }
+    IGraphicsScene* GetScene() const { return m_pScene; }
 
     bool isSelectable() const { return b_selectable; }
     bool isDraggable() const { return b_draggable; }

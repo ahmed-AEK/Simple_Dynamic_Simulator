@@ -45,13 +45,6 @@ void node::Node::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 {
-    /*if (GetScene()->GetMode() == GraphicsSceneMode::Delete)
-    {
-        b_being_deleted = true;
-        return MI::ClickEvent::CAPTURE_START;
-    }
-    return DraggableObject::OnLMBUp(current_mouse_point);
-    */
     auto&& scene = GetScene();
     if (!scene)
     {
@@ -65,30 +58,6 @@ MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
 
     return controller->OnNodeLMBDown(current_mouse_point, *this);
 }
-
-MI::ClickEvent node::Node::OnLMBUp(const SDL_Point& current_mouse_point)
-{
-    UNUSED_PARAM(current_mouse_point);
-    /*if (b_being_deleted && GraphicsSceneMode::Delete == GetScene()->GetMode())
-    {
-        GetScene()->SetCurrentHover(nullptr);
-        DisconnectSockets();
-        auto ptr = GetScene()->PopObject(this);
-        return MI::ClickEvent::CAPTURE_END;
-    }
-    return DraggableObject::OnLMBUp(current_mouse_point);
-    */
-    return MI::ClickEvent::NONE;
-}
-
-void node::Node::OnMouseMove(const SDL_Point& current_mouse_point)
-{
-    if (b_being_deleted && !SDL_PointInRect(&current_mouse_point, &GetSpaceRect()))
-    {
-        b_being_deleted = false;
-    }
-}
-
 
 void node::Node::AddInputSocket(int id)
 {

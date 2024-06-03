@@ -32,8 +32,6 @@ protected:
     virtual GraphicsObject* OnGetInteractableAtPoint(const SDL_Point& point) override;
     void OnUpdateRect() override;
     virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-    virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
-    virtual void OnMouseMove(const SDL_Point& current_mouse_point) override;
 private:
     std::vector<SocketData> m_input_sockets;
     std::vector<SocketData> m_output_sockets;

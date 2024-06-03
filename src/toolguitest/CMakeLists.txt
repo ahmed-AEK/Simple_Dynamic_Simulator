@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.11)
 
 project(guitest)
 
-add_executable(toolguitest NetSegmenttest.cpp)
-target_link_libraries(toolguitest PRIVATE GTest::gtest_main toolgui GraphicsScene)
+add_executable(toolguitest 
+NetSegmenttest.cpp
+Nodetest.cpp
+)
+target_link_libraries(toolguitest PRIVATE GTest::gtest_main GTest::gmock_main toolgui GraphicsScene)
 target_include_directories(toolguitest PRIVATE '.')
 
 include(GoogleTest)

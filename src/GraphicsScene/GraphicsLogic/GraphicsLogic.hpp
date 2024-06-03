@@ -13,12 +13,11 @@ namespace node
     class GRAPHICSSCENE_API GraphicsLogic
     {
     public:
-        GraphicsLogic(GraphicsScene* scene);
+        explicit GraphicsLogic(GraphicsScene* scene);
         virtual ~GraphicsLogic();
 
         void setScene(GraphicsScene* scene);
-        const GraphicsScene* GetScene() const { return m_pScene; }
-        GraphicsScene* GetScene() { return m_pScene; }
+        GraphicsScene* GetScene() const { return m_pScene; }
 
         void MouseOut();
         void MouseIn();
@@ -28,6 +27,7 @@ namespace node
         MI::ClickEvent RMBDown(const SDL_Point& current_mouse_point);
         MI::ClickEvent RMBUp(const SDL_Point& current_mouse_point);
         void Cancel();
+        bool IsDone() const { return b_done; }
     protected:
         virtual void OnMouseOut();
         virtual void OnMouseIn();
@@ -37,7 +37,7 @@ namespace node
         virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point);
         virtual MI::ClickEvent OnRMBUp(const SDL_Point& current_mouse_point);
         virtual void OnCancel();
-        void SetDone(bool value = true);
+        void SetDone(bool value = true) { b_done = value; }
     private:
         GraphicsScene* m_pScene;
         bool b_done = false;
