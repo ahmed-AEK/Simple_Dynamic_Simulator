@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(optimizer)
 
 add_executable(Optimizer_Perf
 main.cpp

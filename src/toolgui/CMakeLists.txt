@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(toolgui)
-
 add_library(toolgui 
 MouseInteractable.cpp MouseInteractable.hpp
 Application.cpp Application.hpp

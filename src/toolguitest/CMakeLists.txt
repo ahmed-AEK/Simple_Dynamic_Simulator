@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(guitest)
-
 add_executable(toolguitest 
 NetSegmenttest.cpp
 Nodetest.cpp

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(node_editor)
-
 add_library(GraphicsScene 
 GraphicsScene.cpp GraphicsScene.hpp
 GraphicsObject.cpp GraphicsObject.hpp

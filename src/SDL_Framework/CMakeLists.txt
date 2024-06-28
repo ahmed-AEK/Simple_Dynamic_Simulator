@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(SDL_Framwork)
-
 add_library(SDL_Framework 
 SDLFramework.cpp SDLFramework.hpp
 SDLRenderer.cpp SDLRenderer.hpp

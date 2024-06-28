@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(node_editor)
-
 add_executable(NodeEditor main.cpp 
 NodeEditorApp.cpp NodeEditorApp.hpp
 MainNodeScene.cpp MainNodeScene.hpp

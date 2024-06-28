@@ -40,6 +40,8 @@ find_package(NLopt REQUIRED)
 
 add_subdirectory(src/SDL_Framework)
 add_subdirectory(src/toolgui)
+add_subdirectory(src/NodeModels)
+add_subdirectory(src/NodeModelstest)
 add_subdirectory(src/GraphicsScene)
 add_subdirectory(external/googletest)
 add_subdirectory(external/SQLiteCpp)
