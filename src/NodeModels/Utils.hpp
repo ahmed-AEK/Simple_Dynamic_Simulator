@@ -18,5 +18,11 @@ struct Rect
 	Point origin;
 	node_int width;
 	node_int height;
+
+	bool operator==(const Rect& other) const noexcept
+	{
+		return (origin.x == other.origin.x) && (origin.y == other.origin.y) &&
+			(width == other.width) && (height == other.height);
+	}
 };
 }

@@ -10,12 +10,7 @@
 namespace node::model
 {
 
-enum class NodeSocketType
-{
-	input,
-	output,
-	inout,
-};
+
 
 struct NodeSocketId
 {
@@ -26,21 +21,35 @@ struct NodeSocketId
 class NodeSocketModel
 {
 public:
+
+	enum class SocketType
+	{
+		input = 0,
+		output= 1,
+		inout = 2,
+	};
+
 	explicit NodeSocketModel(
-		NodeSocketType type, NodeSocketId id, const Point& position = {}
+		SocketType type, NodeSocketId id, const Point& position = {},
+		std::optional<id_int> connectedNetNode = {}
 	)
-		: m_position{ position }, m_Id{ id }, m_type{ type } {}
+		: m_Id{ id }, m_position{ position }, m_type{ type },
+		m_connectedNetNode{ connectedNetNode } {}
 
 	const Point& GetPosition() const noexcept { return m_position; }
 	void SetPosition(const Point& origin) { m_position = origin; }
 
 	const NodeSocketId& GetId() const noexcept { return m_Id; }
 
-	const NodeSocketType& GetType() const noexcept { return m_type; }
+	const SocketType& GetType() const noexcept { return m_type; }
+	const std::optional<id_int> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
+	void SetConnectedNetNode(id_int node_id) { m_connectedNetNode = node_id; }
+
 private:
-	Point m_position;
 	NodeSocketId m_Id;
-	NodeSocketType m_type;
+	Point m_position;
+	SocketType m_type;
+	std::optional<id_int> m_connectedNetNode;
 };
 
 class NodeModel
@@ -65,10 +74,10 @@ public:
 	std::optional<std::reference_wrapper<NodeSocketModel>>
 		GetSocketById(id_int id);
 
-	std::span<NodeSocketModel>
-		GetSockets() { return m_sockets; }
+	auto GetSockets() const { return std::span{ m_sockets }; }
+	auto GetSockets() { return std::span{ m_sockets }; }
 
-	const id_int GetId() const noexcept { return m_Id; }
+	const id_int& GetId() const noexcept { return m_Id; }
 
 	void ReserveSockets(size_t size) { m_sockets.reserve(size); }
 private:

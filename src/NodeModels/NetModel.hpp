@@ -14,8 +14,10 @@ struct NetNodeModel
 {
 	NetNodeModel(const id_int& id, const Point& position = {})
 		:m_Id{ id }, m_position{ position } {}
-	id_int GetId() const noexcept { return m_Id; }
+	const id_int& GetId() const noexcept { return m_Id; }
+private:
 	id_int m_Id;
+public:
 	Point m_position;
 	std::optional<id_int> m_northSegmentId = 0;
 	std::optional<id_int> m_southSegmentId = 0;
@@ -31,7 +33,7 @@ enum class NetSegmentOrientation
 
 struct NetSegmentModel
 {
-	const id_int GetId() const noexcept { return m_Id; }
+	const id_int& GetId() const noexcept { return m_Id; }
 	NetSegmentModel(id_int id, id_int first_node, id_int second_node, NetSegmentOrientation orientation)
 		:m_Id{ id }, m_firstNodeId{ first_node }, m_secondNodeId{ second_node }, m_orientation{ orientation } {}
 private:
@@ -48,7 +50,7 @@ class NetModel
 public:
 	NetModel(id_int id, std::optional<std::string> name = std::nullopt)
 		: m_name{ name }, m_Id{ id } {}
-	id_int GetId() const noexcept { return m_Id; }
+	const id_int& GetId() const noexcept { return m_Id; }
 	const std::optional<std::reference_wrapper<const std::string>> GetName() const noexcept { 
 		return m_name.has_value() ? 
 			*m_name :

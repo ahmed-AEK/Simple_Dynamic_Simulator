@@ -10,7 +10,7 @@ TEST(testScene, testCreate)
 	id_int node_id = 1;
 	id_int sock_id = 2;
 	NodeModel node1{ node_id, {1,1,10,10} };
-	NodeSocketModel sock1{ NodeSocketType::input, {sock_id,node1.GetId()} };
+	NodeSocketModel sock1{ NodeSocketModel::SocketType::input, {sock_id,node1.GetId()} };
 
 	node1.AddSocket(std::move(sock1));
 	scene.AddNode(std::move(node1));

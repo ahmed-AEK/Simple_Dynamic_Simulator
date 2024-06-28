@@ -10,7 +10,8 @@ class NodeSceneModel
 {
 public:
 
-	std::span<NodeModel> GetNodes() { return m_nodes; }
+	auto GetNodes() const { return std::span{ m_nodes }; }
+	auto GetNodes() { return std::span{ m_nodes }; }
 
 	void AddNode(NodeModel node) { m_nodes.push_back(std::move(node)); }
 
@@ -18,7 +19,8 @@ public:
 		GetNodeById(const id_int id);
 	void RemoveNodeById(id_int id);
 
-	std::span<NetModel> getNets() { return m_nets; }
+	auto GetNets() const { return std::span{ m_nets }; }
+	auto GetNets() { return std::span{ m_nets }; }
 
 	void AddNet(NetModel net) { m_nets.push_back(std::move(net)); }
 
