@@ -21,21 +21,21 @@ void node::model::NodeSceneModel::RemoveNetById(id_int id)
 	m_nets.erase(it);
 }
 
-std::optional<std::reference_wrapper<node::model::NodeModel>>
+std::shared_ptr<node::model::NodeModel>
 node::model::NodeSceneModel::GetNodeById(const id_int id)
 {
 	auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
-		[id](const NodeModel& node) {return id == node.GetId(); });
+		[id](const NodeModelPtr& node) {return id == node->GetId(); });
 	if (iter != m_nodes.end())
 	{
-		return { *iter };
+		return *iter;
 	}
-	return std::nullopt;
+	return {};
 }
 
 void node::model::NodeSceneModel::RemoveNodeById(id_int id) {
 	auto it = std::find_if(m_nodes.begin(), m_nodes.end(),
-		[&](const NodeModel& node) { return node.GetId() == id; });
+		[&](const NodeModelPtr& node) { return node->GetId() == id; });
 
 	assert(it != m_nodes.end());
 	m_nodes.erase(it);

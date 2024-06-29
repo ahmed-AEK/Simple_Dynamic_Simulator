@@ -1,18 +1,18 @@
 #include "SQLNodeLoader.hpp"
 #include "toolgui/NodeMacros.h"
 
-bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModel& node)
+bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModelPtr& node)
 {
 	{
 		SQLite::Statement query{ m_db, "INSERT INTO nodes VALUES (?,?,?,?,?)" };
-		query.bind(1, node.GetId());
-		query.bind(2, node.GetBounds().origin.x);
-		query.bind(3, node.GetBounds().origin.y);
-		query.bind(4, node.GetBounds().width);
-		query.bind(5, node.GetBounds().height);
+		query.bind(1, node->GetId());
+		query.bind(2, node->GetBounds().origin.x);
+		query.bind(3, node->GetBounds().origin.y);
+		query.bind(4, node->GetBounds().width);
+		query.bind(5, node->GetBounds().height);
 		query.exec();
 	}
-	auto&& sockets = node.GetSockets();
+	auto&& sockets = node->GetSockets();
 	if (!std::all_of(sockets.begin(), sockets.end(),
 	[&](const auto& socket) { return AddSocket(socket); }))
 	{
@@ -34,7 +34,7 @@ bool node::loader::SQLNodeLoader::DeleteNodeAndSockets(const node::model::id_int
 	return true;
 }
 
-std::optional<node::model::NodeModel>
+std::shared_ptr<node::model::NodeModel>
 node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
 {
 	using namespace node::model;
@@ -44,11 +44,12 @@ node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
 	{
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		NodeModel node{ node_id, bounds };
-		LoadSocketsForNode(node);
+		std::shared_ptr<NodeModel> node = 
+			std::make_shared<NodeModel>(node_id, bounds);
+		LoadSocketsForNode(*node);
 		return node;
 	}
-	return std::nullopt;
+	return {};
 }
 
 
@@ -126,19 +127,20 @@ node::model::id_int node::loader::SQLNodeLoader::GetNextNodeIdx()
 	return static_cast<node::model::id_int>(query.getColumn(0)) + 1;
 }
 
-std::vector<node::model::NodeModel> node::loader::SQLNodeLoader::GetNodes()
+std::vector<std::shared_ptr<node::model::NodeModel>> node::loader::SQLNodeLoader::GetNodes()
 {
 	using namespace node::model;
 
-	std::vector<NodeModel> nodes;
+	std::vector<std::shared_ptr<NodeModel>> nodes;
 	SQLite::Statement query{ m_db, "SELECT * FROM nodes" };
 	while (query.executeStep())
 	{
 		id_int node_id = query.getColumn(0);
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		NodeModel node{ node_id, bounds };
-		LoadSocketsForNode(node);
+		std::shared_ptr<NodeModel> node = 
+			std::make_shared<NodeModel>(node_id, bounds);
+		LoadSocketsForNode(*node);
 		nodes.push_back(std::move(node));
 	}
 	return nodes;

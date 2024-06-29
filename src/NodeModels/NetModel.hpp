@@ -10,14 +10,26 @@
 namespace node::model
 {
 
-struct NetNodeModel
+class NetNodeModel
 {
+public:
+	enum class ConnectedSegmentSide
+	{
+		north=0,
+		south=1,
+		west=2,
+		east=3,
+	};
+
 	NetNodeModel(const id_int& id, const Point& position = {})
 		:m_Id{ id }, m_position{ position } {}
 	const id_int& GetId() const noexcept { return m_Id; }
+	const Point& GetPosition() const noexcept { return m_position; };
+	void SetPosition(const Point& position) { m_position = position; }
+	std::optional<id_int> GetSegmentAt(const ConnectedSegmentSide side);
+	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<id_int> segment);
 private:
 	id_int m_Id;
-public:
 	Point m_position;
 	std::optional<id_int> m_northSegmentId = 0;
 	std::optional<id_int> m_southSegmentId = 0;
@@ -25,14 +37,16 @@ public:
 	std::optional<id_int> m_eastSegmentId = 0;
 };
 
-enum class NetSegmentOrientation 
-{
-	horizontal,
-	vertical,
-};
+
 
 struct NetSegmentModel
 {
+	enum class NetSegmentOrientation
+	{
+		horizontal = 0,
+		vertical = 1,
+	};
+
 	const id_int& GetId() const noexcept { return m_Id; }
 	NetSegmentModel(id_int id, id_int first_node, id_int second_node, NetSegmentOrientation orientation)
 		:m_Id{ id }, m_firstNodeId{ first_node }, m_secondNodeId{ second_node }, m_orientation{ orientation } {}

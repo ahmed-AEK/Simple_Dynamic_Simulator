@@ -6,21 +6,22 @@
 #include <functional>
 #include <span>
 #include <cassert>
+#include "NodeModels/Observer.hpp"
+#include <variant>
+#include <memory>
 
 namespace node::model
 {
 
-
-
-struct NodeSocketId
-{
-	id_int m_Id = 0;
-	id_int m_nodeId = 0;
-};
-
 class NodeSocketModel
 {
 public:
+
+	struct SocketId
+	{
+		id_int m_Id = 0;
+		id_int m_nodeId = 0;
+	};
 
 	enum class SocketType
 	{
@@ -30,7 +31,7 @@ public:
 	};
 
 	explicit NodeSocketModel(
-		SocketType type, NodeSocketId id, const Point& position = {},
+		SocketType type, SocketId id, const Point& position = {},
 		std::optional<id_int> connectedNetNode = {}
 	)
 		: m_Id{ id }, m_position{ position }, m_type{ type },
@@ -39,35 +40,63 @@ public:
 	const Point& GetPosition() const noexcept { return m_position; }
 	void SetPosition(const Point& origin) { m_position = origin; }
 
-	const NodeSocketId& GetId() const noexcept { return m_Id; }
+	const SocketId& GetId() const noexcept { return m_Id; }
 
 	const SocketType& GetType() const noexcept { return m_type; }
 	const std::optional<id_int> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
 	void SetConnectedNetNode(id_int node_id) { m_connectedNetNode = node_id; }
 
 private:
-	NodeSocketId m_Id;
+	SocketId m_Id;
 	Point m_position;
 	SocketType m_type;
 	std::optional<id_int> m_connectedNetNode;
 };
 
-class NodeModel
+using NodeSocketId = NodeSocketModel::SocketId;
+
+class NodeModel;
+
+enum class NodeEvent
+{
+	PositionChanged,
+	BoundsChanged,
+	SocketsChanged,
+	SocketConnected,
+};
+
+struct NodeEventArg
+{
+	NodeModel& object;
+	const NodeEvent event;
+};
+
+class NodeModel : public Publisher<NodeEventArg>
 {
 public:
 	explicit NodeModel(id_int id, const Rect& bounds = {})
 		:m_bounds{ bounds }, m_Id{ id } {}
 
-	void SetPosition(const Point& origin) { m_bounds.origin = origin; }
+	void SetPosition(const Point& origin) { 
+		m_bounds.origin = origin; 
+		NodeEventArg event{ *this, NodeEvent::PositionChanged };
+		Notify(event);
+	}
 	const Point& GetPosition() const noexcept { return m_bounds.origin; }
 
-	void SetBounds(const Rect& bounds) { m_bounds = bounds; }
+	void SetBounds(const Rect& bounds) { 
+		m_bounds = bounds;
+		NodeEventArg event{ *this, NodeEvent::BoundsChanged };
+		Notify(event);
+	}
 	const Rect& GetBounds() const noexcept { return m_bounds; }
 
 	void AddSocket(NodeSocketModel socket) 
 	{
 		assert(socket.GetId().m_nodeId == GetId());
 		m_sockets.push_back(std::move(socket));
+		NodeEventArg event{ *this, NodeEvent::SocketsChanged };
+		Notify(event);
 	}
 	void RemoveSocketById(id_int id);
 
@@ -80,11 +109,13 @@ public:
 	const id_int& GetId() const noexcept { return m_Id; }
 
 	void ReserveSockets(size_t size) { m_sockets.reserve(size); }
+
 private:
 	Rect m_bounds;
 	std::vector<NodeSocketModel> m_sockets;
 	id_int m_Id;
 };
 
+using NodeModelPtr = std::shared_ptr<NodeModel>;
 
 }

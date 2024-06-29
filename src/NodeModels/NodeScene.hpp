@@ -2,6 +2,7 @@
 
 #include "NodeModels/NodeModel.hpp"
 #include "NodeModels/NetModel.hpp"
+#include <memory>
 
 namespace node::model
 {
@@ -13,9 +14,10 @@ public:
 	auto GetNodes() const { return std::span{ m_nodes }; }
 	auto GetNodes() { return std::span{ m_nodes }; }
 
-	void AddNode(NodeModel node) { m_nodes.push_back(std::move(node)); }
+	void AddNode(NodeModelPtr node)
+	{ m_nodes.push_back(std::move(node)); }
 
-	std::optional<std::reference_wrapper<NodeModel>> 
+	std::shared_ptr<node::model::NodeModel>
 		GetNodeById(const id_int id);
 	void RemoveNodeById(id_int id);
 
@@ -31,7 +33,7 @@ public:
 	void ReserveNodes(size_t size) { m_nodes.reserve(size); }
 	void ReserveNets(size_t size) { m_nets.reserve(size); }
 private:
-	std::vector<NodeModel> m_nodes;
+	std::vector<NodeModelPtr> m_nodes;
 	std::vector<NetModel> m_nets;
 };
 

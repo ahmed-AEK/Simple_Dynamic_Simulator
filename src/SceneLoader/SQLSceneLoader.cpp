@@ -1,6 +1,7 @@
 #include "SQLSceneLoader.hpp"
 #include "toolgui/NodeMacros.h"
 #include "SQLNodeLoader.hpp"
+#include "SQLNetLoader.hpp"
 #include <iostream>
 
 std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
@@ -59,7 +60,12 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
     }
 }
 
-std::unique_ptr<node::loader::NodeLoader> node::loader::SQLSceneLoader::GetNodeLoader()
+std::shared_ptr<node::loader::NodeLoader> node::loader::SQLSceneLoader::GetNodeLoader()
 {
-    return std::make_unique<SQLNodeLoader>(m_dbname, m_db);
+    return m_nodeLoader;
+}
+
+std::shared_ptr<node::loader::NetLoader> node::loader::SQLSceneLoader::GetNetLoader()
+{
+    return m_netLoader;
 }

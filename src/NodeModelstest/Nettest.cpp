@@ -9,10 +9,11 @@ TEST(testNet, testCreate)
     NetModel net1{ 0 };
     NetNodeModel node1{ 1 };
     id_int segment_id = 1;
-    node1.m_eastSegmentId = segment_id;
+    node1.SetSegmentAt(NetNodeModel::ConnectedSegmentSide::east, segment_id);
     NetNodeModel node2{ 2 };
-    node2.m_westSegmentId = segment_id;
-    NetSegmentModel segment1{ 1, node1.GetId(), node2.GetId(), NetSegmentOrientation::horizontal };
+    node2.SetSegmentAt(NetNodeModel::ConnectedSegmentSide::west, segment_id);
+    NetSegmentModel segment1{ 1, node1.GetId(), node2.GetId(), 
+        NetSegmentModel::NetSegmentOrientation::horizontal };
 
     net1.AddNetNode(node1);
     net1.AddNetNode(node2);

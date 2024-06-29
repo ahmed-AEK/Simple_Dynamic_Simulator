@@ -9,6 +9,9 @@ void node::model::NodeModel::RemoveSocketById(id_int id)
 	assert(it != m_sockets.end());
 
 	m_sockets.erase(it);
+
+	NodeEventArg event{ *this, NodeEvent::SocketsChanged };
+	Notify(event);
 }
 
 std::optional<std::reference_wrapper<node::model::NodeSocketModel>> 
