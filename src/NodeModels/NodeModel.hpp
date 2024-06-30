@@ -13,9 +13,12 @@
 namespace node::model
 {
 
+class NodeModel;
+
 class NodeSocketModel
 {
 public:
+	friend class NodeModel;
 
 	struct SocketId
 	{
@@ -38,13 +41,12 @@ public:
 		m_connectedNetNode{ connectedNetNode } {}
 
 	const Point& GetPosition() const noexcept { return m_position; }
-	void SetPosition(const Point& origin) { m_position = origin; }
 
 	const SocketId& GetId() const noexcept { return m_Id; }
 
 	const SocketType& GetType() const noexcept { return m_type; }
 	const std::optional<id_int> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
-	void SetConnectedNetNode(id_int node_id) { m_connectedNetNode = node_id; }
+	// SetConnectedNode in in Node to emit signals
 
 private:
 	SocketId m_Id;
@@ -55,13 +57,13 @@ private:
 
 using NodeSocketId = NodeSocketModel::SocketId;
 
-class NodeModel;
 
 enum class NodeEvent
 {
 	PositionChanged,
 	BoundsChanged,
 	SocketsChanged,
+	SocketsRepositioned,
 	SocketConnected,
 };
 
@@ -79,15 +81,15 @@ public:
 
 	void SetPosition(const Point& origin) { 
 		m_bounds.origin = origin; 
-		NodeEventArg event{ *this, NodeEvent::PositionChanged };
-		Notify(event);
+		NodeEventArg event1{ *this, NodeEvent::PositionChanged };
+		Notify(event1);
 	}
 	const Point& GetPosition() const noexcept { return m_bounds.origin; }
 
 	void SetBounds(const Rect& bounds) { 
 		m_bounds = bounds;
-		NodeEventArg event{ *this, NodeEvent::BoundsChanged };
-		Notify(event);
+		NodeEventArg event1{ *this, NodeEvent::BoundsChanged };
+		Notify(event1);
 	}
 	const Rect& GetBounds() const noexcept { return m_bounds; }
 
@@ -95,8 +97,8 @@ public:
 	{
 		assert(socket.GetId().m_nodeId == GetId());
 		m_sockets.push_back(std::move(socket));
-		NodeEventArg event{ *this, NodeEvent::SocketsChanged };
-		Notify(event);
+		NodeEventArg event1{ *this, NodeEvent::SocketsChanged };
+		Notify(event1);
 	}
 	void RemoveSocketById(id_int id);
 
@@ -109,6 +111,30 @@ public:
 	const id_int& GetId() const noexcept { return m_Id; }
 
 	void ReserveSockets(size_t size) { m_sockets.reserve(size); }
+
+	bool SetConnectedNetNode(id_int socket_id, id_int node_id) { 
+		auto socket = GetSocketById(socket_id);
+		if (socket)
+		{
+			(*socket).get().m_connectedNetNode = node_id;
+			NodeEventArg event1{ *this, NodeEvent::SocketConnected };
+			Notify(event1);
+			return true;
+		}
+		return false;
+		}
+
+	bool SetNodePosition(id_int socket_id, const Point& origin) { 
+		auto socket = GetSocketById(socket_id);
+		if (socket)
+		{
+			(*socket).get().m_position = origin;
+			NodeEventArg event1{ *this, NodeEvent::SocketsRepositioned};
+			Notify(event1);
+			return true;
+		}
+		return false;
+	}
 
 private:
 	Rect m_bounds;

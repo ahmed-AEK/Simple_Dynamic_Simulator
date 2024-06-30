@@ -47,6 +47,7 @@ node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
 		std::shared_ptr<NodeModel> node = 
 			std::make_shared<NodeModel>(node_id, bounds);
 		LoadSocketsForNode(*node);
+		node->Attach(this);
 		return node;
 	}
 	return {};
@@ -141,6 +142,7 @@ std::vector<std::shared_ptr<node::model::NodeModel>> node::loader::SQLNodeLoader
 		std::shared_ptr<NodeModel> node = 
 			std::make_shared<NodeModel>(node_id, bounds);
 		LoadSocketsForNode(*node);
+		node->Attach(this);
 		nodes.push_back(std::move(node));
 	}
 	return nodes;
@@ -161,5 +163,26 @@ node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::NodeModel& node)
 			static_cast<node::model::NodeSocketModel::SocketType>(
 				static_cast<int>(querySocket.getColumn(5)));
 		node.AddSocket(node::model::NodeSocketModel{ type,{socket_id,node.GetId()}, socketOrigin });
+	}
+}
+
+void node::loader::SQLNodeLoader::OnEvent(node::model::NodeEventArg& ev)
+{
+	switch (ev.event)
+	{
+	case node::model::NodeEvent::PositionChanged:
+		UpdateNodePosition(ev.object.GetId(), ev.object.GetPosition());
+		break;
+	case node::model::NodeEvent::BoundsChanged:
+		UpdateNodeBounds(ev.object.GetId(), ev.object.GetBounds());
+		break;
+	case node::model::NodeEvent::SocketsRepositioned:
+	{
+		for (auto&& socket : ev.object.GetSockets())
+		{
+			UpdateSocketPosition(socket.GetId(), socket.GetPosition());
+		}
+		break;
+	}
 	}
 }

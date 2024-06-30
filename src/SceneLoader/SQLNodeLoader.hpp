@@ -9,7 +9,7 @@
 namespace node::loader
 {
 
-class SQLNodeLoader : public NodeLoader
+class SQLNodeLoader : public NodeLoader, public node::model::Observer<node::model::NodeEventArg>
 {
 public:
 	SQLNodeLoader(std::string dbname, SQLite::Database& db)
@@ -30,6 +30,8 @@ public:
 	node::model::id_int GetNextNodeIdx() override;
 	std::vector<std::shared_ptr<node::model::NodeModel>> GetNodes() override;
 	void LoadSocketsForNode(node::model::NodeModel& node);
+
+	void OnEvent(node::model::NodeEventArg& ev) override;
 private:
 	std::string m_dbname;
 	SQLite::Database& m_db;

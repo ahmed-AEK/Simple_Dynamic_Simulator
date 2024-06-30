@@ -10,8 +10,8 @@ void node::model::NodeModel::RemoveSocketById(id_int id)
 
 	m_sockets.erase(it);
 
-	NodeEventArg event{ *this, NodeEvent::SocketsChanged };
-	Notify(event);
+	NodeEventArg event1{ *this, NodeEvent::SocketsChanged };
+	Notify(event1);
 }
 
 std::optional<std::reference_wrapper<node::model::NodeSocketModel>> 
