@@ -56,6 +56,51 @@ void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
     m_sidePanel = std::move(panel); 
 }
 
+void node::Scene::DoUpdateTasks()
+{
+    for (auto&& [key, value] : m_new_updateTasks)
+    {
+        m_updateTasks.emplace(key, std::move(value));
+    }
+    m_new_updateTasks.clear();
+
+    for (auto&& id : m_deleted_updateTasks)
+    {
+        auto it = m_updateTasks.find(id);
+        assert(it != m_updateTasks.end());
+        if (it != m_updateTasks.end())
+        {
+            m_updateTasks.erase(it);
+        }
+    }
+    m_deleted_updateTasks.clear();
+    
+    for (auto&& task : m_updateTasks)
+    {
+        if (task.second.widget.isAlive())
+        {
+            task.second.task();
+        }
+        else
+        {
+            m_deleted_updateTasks.push_back(task.first);
+        }
+    }
+}
+
+int64_t node::Scene::AddUpdateTask(UpdateTask task)
+{
+    auto current_task = m_current_task_id;
+    m_new_updateTasks.emplace(current_task, std::move(task));
+    m_current_task_id++;
+    return current_task;
+}
+
+void node::Scene::RemoveUpdateTask(int64_t task_id)
+{
+    m_deleted_updateTasks.push_back(task_id);
+}
+
 void node::Scene::OnMouseMove(const SDL_Point& p)
 {
     if (!b_mouseCaptured)

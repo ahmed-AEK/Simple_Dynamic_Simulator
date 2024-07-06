@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include "toolgui/NodeMacros.h"
+#include <functional>
 
 namespace node
 {
@@ -20,6 +21,12 @@ namespace node
     {
         std::unique_ptr<node::Widget> m_ptr;
         int z_order;
+    };
+
+    struct TOOLGUI_API UpdateTask
+    {
+        node::HandlePtr<node::Widget> widget;
+        std::function<void()> task;
     };
 
     class TOOLGUI_API Scene
@@ -45,6 +52,11 @@ namespace node
         SceneWidgetIterator begin();
         SceneWidgetIterator end();
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
+        bool UpdateTasksEmpty() { return m_updateTasks.empty() && m_new_updateTasks.empty(); }
+        void DoUpdateTasks();
+        int64_t AddUpdateTask(UpdateTask task);
+        void RemoveUpdateTask(int64_t task_id);
+
     protected:
         virtual void OnStart() {};
         virtual void OnSetRect(const SDL_Rect& rect);
@@ -63,9 +75,15 @@ namespace node
         std::vector<WidgetSlot> m_widgets;
 
     private:
+
         node::HandlePtr<node::Widget> m_current_mouse_hover;
                 
         std::unique_ptr<SidePanel> m_sidePanel;
+
+        std::unordered_map<int64_t,UpdateTask> m_updateTasks;
+        std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
+        std::vector<int64_t> m_deleted_updateTasks;
+        int64_t m_current_task_id = 0;
 
         bool b_mouseCaptured = false;
     };

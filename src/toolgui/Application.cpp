@@ -152,11 +152,18 @@ namespace node
     void Application::HandleInputs()
     {
         SDL_Event e;
-        //SDL_WaitEvent(&e);
-        //HandleEvent(e);
+        if (m_scene == nullptr || m_scene->UpdateTasksEmpty())
+        {
+            SDL_WaitEvent(&e);
+            HandleEvent(e);
+        }
         while (SDL_PollEvent(&e))
         {
             HandleEvent(e);
+        }
+        if (m_scene && !m_scene->UpdateTasksEmpty())
+        {
+            m_scene->DoUpdateTasks();
         }
     }
 

@@ -31,6 +31,7 @@ namespace node
 			}
 			m_last_action_time = SDL_GetTicks64();
 			m_state = PanelState::openning;
+			m_updateTaskId = GetScene()->AddUpdateTask({ GetMIHandlePtr(), [this]() { this->UpdatePanelMotion(); } });
 		}
 
 		void Retract() noexcept
@@ -41,7 +42,9 @@ namespace node
 			}
 			m_last_action_time = SDL_GetTicks64();
 			m_state = PanelState::closing;
+			m_updateTaskId = GetScene()->AddUpdateTask({ GetMIHandlePtr(), [this]() { this->UpdatePanelMotion(); } });
 		}
+
 		void SetWidget(std::unique_ptr<Widget> widget)
 		{
 			m_contained_widget = std::move(widget);
@@ -52,31 +55,6 @@ namespace node
 		}
 		void Draw(SDL_Renderer* renderer) override
 		{
-			if (PanelState::openning == m_state)
-			{
-				auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
-				auto passed_time = passed_ticks / TICKS_PER_SECOND;
-				m_expand_percent = passed_time / TRANSITION_TIME;
-				if (m_expand_percent >= 1)
-				{
-					m_expand_percent = 1;
-					m_state = PanelState::open;
-				}
-				RepositionWidget();
-			}
-			if (PanelState::closing == m_state)
-			{
-				auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
-				auto passed_time = passed_ticks / TICKS_PER_SECOND;
-				m_expand_percent = 1 - passed_time / TRANSITION_TIME;
-				if (m_expand_percent <= 0)
-				{
-					m_expand_percent = 0;
-					m_state = PanelState::closed;
-				}
-				RepositionWidget();
-			}
-
 			SDL_Rect draw_area = GetRect();
 			draw_area.x += knob_width;
 			draw_area.w -= knob_width;
@@ -175,6 +153,39 @@ namespace node
 		}
 
 	private:
+
+		void UpdatePanelMotion()
+		{
+			if (PanelState::openning == m_state)
+			{
+				auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
+				auto passed_time = passed_ticks / TICKS_PER_SECOND;
+				m_expand_percent = passed_time / TRANSITION_TIME;
+				if (m_expand_percent >= 1)
+				{
+					m_expand_percent = 1;
+					m_state = PanelState::open;
+					GetScene()->RemoveUpdateTask(m_updateTaskId);
+					m_updateTaskId = -1;
+				}
+				RepositionWidget();
+			}
+			if (PanelState::closing == m_state)
+			{
+				auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
+				auto passed_time = passed_ticks / TICKS_PER_SECOND;
+				m_expand_percent = 1 - passed_time / TRANSITION_TIME;
+				if (m_expand_percent <= 0)
+				{
+					m_expand_percent = 0;
+					m_state = PanelState::closed;
+					GetScene()->RemoveUpdateTask(m_updateTaskId);
+					m_updateTaskId = -1;
+				}
+				RepositionWidget();
+			}
+		}
+
 		SDL_Rect CalculateChildWidgetRect()
 		{
 			switch (m_side)
@@ -306,6 +317,7 @@ namespace node
 		double m_expand_percent = 0;
 		uint64_t m_last_action_time = 0;
 		int64_t m_corner_position = 0;
+		int64_t m_updateTaskId = -1;
 
 		static constexpr double TICKS_PER_SECOND = 1000;
 		static constexpr double TRANSITION_TIME = 0.15;
