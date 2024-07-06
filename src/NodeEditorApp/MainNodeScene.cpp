@@ -7,12 +7,20 @@
 #include "GraphicsScene/Node.hpp"
 #include "GraphicsScene/NodeSocket.hpp"
 #include "GraphicsScene/GraphicsSceneController.hpp"
+#include "toolgui/SidePanel.hpp"
 
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
 
+    using namespace node;
     std::unique_ptr<GraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
+
+    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{0,0,300,rect.h}, this);
+    sidePanel->UpdateWindowSize(rect);
+    sidePanel->SetWidget(std::make_unique<TestWidget>(SDL_Rect{ 0,0,200,200 }, this));
+    SetSidePanel(std::move(sidePanel));
+
     gScene->SetController(std::make_unique<GraphicsSceneController>(gScene.get()));
 
     std::unique_ptr<node::Node> obj = std::make_unique<node::Node>(SDL_Rect{10,10,100,100}, gScene.get());
@@ -72,6 +80,8 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 
 
 }
+
+node::MainNodeScene::~MainNodeScene() = default;
 
 bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)
 {

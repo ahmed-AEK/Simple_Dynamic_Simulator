@@ -42,9 +42,9 @@ TEST(testNode, testAddSocket)
 
 	node1.AddSocket(socket1);
 
-	ASSERT_EQ(node1.GetSockets().size(), 1);
-	EXPECT_TRUE(node1.GetSocketById(socket1.GetId().m_Id).has_value());
-	EXPECT_FALSE(node1.GetSocketById(1).has_value());
+	ASSERT_EQ(node1.GetSockets(NodeSocketModel::SocketType::input).size(), 1);
+	EXPECT_TRUE(node1.GetSocketById(socket1.GetId().m_Id, NodeSocketModel::SocketType::input).has_value());
+	EXPECT_FALSE(node1.GetSocketById(1, NodeSocketModel::SocketType::input).has_value());
 
 }
 

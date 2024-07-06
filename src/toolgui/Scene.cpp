@@ -6,6 +6,7 @@
 #include "toolgui/ContextMenu.hpp"
 #include "toolgui/Application.hpp"
 #include "toolgui/Widget.hpp"
+#include "toolgui/SidePanel.hpp"
 
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
@@ -18,6 +19,10 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     {
         auto&& widget = *it;
         widget.m_ptr->Draw(renderer);
+    }
+    if (m_sidePanel)
+    {
+        m_sidePanel->Draw(renderer);
     }
     if (m_pContextMenu != nullptr)
     {
@@ -44,6 +49,11 @@ node::SceneWidgetIterator node::Scene::begin()
 node::SceneWidgetIterator node::Scene::end()
 {
     return SceneWidgetIterator(this, this->m_widgets.size());
+}
+
+void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
+{
+    m_sidePanel = std::move(panel); 
 }
 
 void node::Scene::OnMouseMove(const SDL_Point& p)
@@ -95,6 +105,13 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
             return interactable;
         }
     }
+    if (m_sidePanel)
+    {
+        if (auto result = m_sidePanel->GetInteractableAtPoint(p))
+        {
+            return result;
+        }
+    }
     for (auto& widget: m_widgets)
     {
         node::Widget* current_hover = widget.m_ptr->GetInteractableAtPoint(p);
@@ -125,6 +142,8 @@ void node::Scene::Start()
 
 void node::Scene::OnSetRect(const SDL_Rect& rect)
 {
+    m_sidePanel->UpdateWindowSize(rect);
+
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
     m_rect = rect;

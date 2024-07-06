@@ -12,9 +12,25 @@ bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModelPtr& node)
 		query.bind(5, node->GetBounds().height);
 		query.exec();
 	}
-	auto&& sockets = node->GetSockets();
-	if (!std::all_of(sockets.begin(), sockets.end(),
-	[&](const auto& socket) { return AddSocket(socket); }))
+	auto add_sockets = [&](const node::model::NodeSocketModel::SocketType type)
+		{
+			auto&& sockets = node->GetSockets(type);
+			if (!std::all_of(sockets.begin(), sockets.end(),
+				[&](const auto& socket) { return AddSocket(socket); }))
+			{
+				return false;
+			}
+			return true;
+		};
+	if (!add_sockets(node::model::NodeSocketModel::SocketType::input))
+	{
+		return false;
+	}
+	if (!add_sockets(node::model::NodeSocketModel::SocketType::output))
+	{
+		return false;
+	}	
+	if (!add_sockets(node::model::NodeSocketModel::SocketType::inout))
 	{
 		return false;
 	}
@@ -178,10 +194,16 @@ void node::loader::SQLNodeLoader::OnEvent(node::model::NodeEventArg& ev)
 		break;
 	case node::model::NodeEvent::SocketsRepositioned:
 	{
-		for (auto&& socket : ev.object.GetSockets())
-		{
-			UpdateSocketPosition(socket.GetId(), socket.GetPosition());
-		}
+		auto update_sockets_position = [&](const node::model::NodeSocketModel::SocketType type)
+			{
+				for (auto&& socket : ev.object.GetSockets(type))
+				{
+					UpdateSocketPosition(socket.GetId(), socket.GetPosition());
+				}
+			};
+		update_sockets_position(node::model::NodeSocketModel::SocketType::input);
+		update_sockets_position(node::model::NodeSocketModel::SocketType::output);
+		update_sockets_position(node::model::NodeSocketModel::SocketType::inout);
 		break;
 	}
 	}

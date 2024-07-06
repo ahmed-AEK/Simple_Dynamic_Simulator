@@ -152,8 +152,8 @@ namespace node
     void Application::HandleInputs()
     {
         SDL_Event e;
-        SDL_WaitEvent(&e);
-        HandleEvent(e);
+        //SDL_WaitEvent(&e);
+        //HandleEvent(e);
         while (SDL_PollEvent(&e))
         {
             HandleEvent(e);

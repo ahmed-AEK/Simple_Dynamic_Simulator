@@ -14,6 +14,7 @@ namespace node
     class Widget;
     struct SceneWidgetIterator;
     class ContextMenu;
+    class SidePanel;
 
     struct TOOLGUI_API WidgetSlot
     {
@@ -43,6 +44,7 @@ namespace node
         void DestroyContextMenu();
         SceneWidgetIterator begin();
         SceneWidgetIterator end();
+        void SetSidePanel(std::unique_ptr<SidePanel> panel);
     protected:
         virtual void OnStart() {};
         virtual void OnSetRect(const SDL_Rect& rect);
@@ -60,8 +62,11 @@ namespace node
         SDL_Rect m_rect;
         std::vector<WidgetSlot> m_widgets;
 
+    private:
         node::HandlePtr<node::Widget> m_current_mouse_hover;
-        
+                
+        std::unique_ptr<SidePanel> m_sidePanel;
+
         bool b_mouseCaptured = false;
     };
 

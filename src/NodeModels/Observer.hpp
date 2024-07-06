@@ -14,7 +14,13 @@ class Observer
 	friend class Publisher<EventArg>;
 public:
 	virtual void OnEvent(EventArg& arg) = 0;
-	virtual ~Observer();
+	virtual ~Observer()
+	{
+		for (auto&& publisher : m_publishers)
+		{
+			publisher->RemoveObserver(this);
+		}
+	}
 	Observer() = default;
 	Observer(const Observer&) = delete;
 	Observer& operator=(const Observer&) = delete;
@@ -30,24 +36,22 @@ private:
 		}
 	}
 	std::vector<Publisher<EventArg>*> m_publishers;
-	bool m_being_destroyed = false;
 };
 
 template <typename EventArg>
 class Publisher
 {
+	friend class Observer<EventArg>;
 public:
 	void Attach(Observer<EventArg>* observer) { 
 		observer->AddPublisher(this);
-		m_observers.push_back(observer); }
+		m_observers.push_back(observer); 
+	}
 	void Detach(Observer<EventArg>* observer) {
 		auto it = std::find(m_observers.begin(), m_observers.end(), observer);
 		if (it != m_observers.end())
 		{
-			if (!observer->m_being_destroyed)
-			{
-				observer->RemovePublisher(this);
-			}
+			observer->RemovePublisher(this);
 			m_observers.erase(it);
 		}
 	}
@@ -71,18 +75,16 @@ public:
 	Publisher(const Publisher&) = delete;
 	Publisher& operator=(const Publisher&) = delete;
 private:
+	void RemoveObserver(const Observer<EventArg>* observer)
+	{
+		auto it = std::find(m_observers.begin(), m_observers.end(), observer);
+		if (it != m_observers.end())
+		{
+			m_observers.erase(it);
+		}
+	}
 	std::vector<Observer<EventArg>*> m_observers;
 
 };
-
-template <typename EventArg>
-Observer<EventArg>::~Observer()
-{
-	m_being_destroyed = true;
-	for (auto&& publisher : m_publishers)
-	{
-		publisher->Detach(this);
-	}
-}
 
 }

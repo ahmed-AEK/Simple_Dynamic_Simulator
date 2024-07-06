@@ -10,6 +10,7 @@ ContextMenu.cpp ContextMenu.hpp
 Handle.hpp
 ButtonWidget.cpp ButtonWidget.hpp
 NodeMacros.h
+SidePanel.hpp SidePanel.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

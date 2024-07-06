@@ -18,6 +18,6 @@ TEST(testScene, testCreate)
 	ASSERT_EQ(scene.GetNodes().size(), 1);
 	EXPECT_TRUE(scene.GetNodeById(node_id));
 	EXPECT_FALSE(scene.GetNodeById(node_id + 1));
-	EXPECT_TRUE(scene.GetNodeById(node_id)->GetSocketById(sock_id).has_value());
-	EXPECT_FALSE(scene.GetNodeById(node_id)->GetSocketById(sock_id + 1).has_value());
+	EXPECT_TRUE(scene.GetNodeById(node_id)->GetSocketById(sock_id, NodeSocketModel::SocketType::input).has_value());
+	EXPECT_FALSE(scene.GetNodeById(node_id)->GetSocketById(sock_id + 1, NodeSocketModel::SocketType::input).has_value());
 }

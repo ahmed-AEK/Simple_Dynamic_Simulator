@@ -81,64 +81,88 @@ public:
 
 	void SetPosition(const Point& origin) { 
 		m_bounds.origin = origin; 
-		NodeEventArg event1{ *this, NodeEvent::PositionChanged };
-		Notify(event1);
 	}
 	const Point& GetPosition() const noexcept { return m_bounds.origin; }
 
 	void SetBounds(const Rect& bounds) { 
 		m_bounds = bounds;
-		NodeEventArg event1{ *this, NodeEvent::BoundsChanged };
-		Notify(event1);
 	}
 	const Rect& GetBounds() const noexcept { return m_bounds; }
 
 	void AddSocket(NodeSocketModel socket) 
 	{
 		assert(socket.GetId().m_nodeId == GetId());
-		m_sockets.push_back(std::move(socket));
-		NodeEventArg event1{ *this, NodeEvent::SocketsChanged };
-		Notify(event1);
+		switch (socket.GetType())
+		{
+		case NodeSocketModel::SocketType::input:
+		{
+			m_input_sockets.push_back(std::move(socket));
+			break;
+		}
+		case NodeSocketModel::SocketType::output:
+		{
+			m_output_sockets.push_back(std::move(socket));
+			break;
+		}
+		case NodeSocketModel::SocketType::inout:
+		{
+			m_inout_sockets.push_back(std::move(socket));
+			break;
+		}
+		}
 	}
-	void RemoveSocketById(id_int id);
 
 	std::optional<std::reference_wrapper<NodeSocketModel>>
-		GetSocketById(id_int id);
+		GetSocketById(id_int id, const NodeSocketModel::SocketType type);
 
-	auto GetSockets() const { return std::span{ m_sockets }; }
-	auto GetSockets() { return std::span{ m_sockets }; }
+
+	auto GetSockets(const NodeSocketModel::SocketType type) const { 
+		switch (type)
+		{
+		case NodeSocketModel::SocketType::input:
+			return std::span{ m_input_sockets };
+		case NodeSocketModel::SocketType::output:
+			return std::span{ m_output_sockets };
+		case NodeSocketModel::SocketType::inout:
+			return std::span{ m_inout_sockets };
+		}
+		return std::span<const NodeSocketModel>{};
+	}
+	auto GetSockets(const NodeSocketModel::SocketType type) {
+		switch (type)
+		{
+		case NodeSocketModel::SocketType::input:
+			return std::span{ m_input_sockets };
+		case NodeSocketModel::SocketType::output:
+			return std::span{ m_output_sockets };
+		case NodeSocketModel::SocketType::inout:
+			return std::span{ m_inout_sockets };
+		}
+		return std::span<NodeSocketModel>{};
+	}
 
 	const id_int& GetId() const noexcept { return m_Id; }
 
-	void ReserveSockets(size_t size) { m_sockets.reserve(size); }
-
-	bool SetConnectedNetNode(id_int socket_id, id_int node_id) { 
-		auto socket = GetSocketById(socket_id);
-		if (socket)
+	void ReserveSockets(size_t size, const NodeSocketModel::SocketType type) { 
+		switch (type)
 		{
-			(*socket).get().m_connectedNetNode = node_id;
-			NodeEventArg event1{ *this, NodeEvent::SocketConnected };
-			Notify(event1);
-			return true;
+		case NodeSocketModel::SocketType::input:
+			m_input_sockets.reserve(size);
+			break;
+		case NodeSocketModel::SocketType::output:
+			m_output_sockets.reserve(size);
+			break;
+		case NodeSocketModel::SocketType::inout:
+			m_inout_sockets.reserve(size);
+			break;
 		}
-		return false;
-		}
-
-	bool SetNodePosition(id_int socket_id, const Point& origin) { 
-		auto socket = GetSocketById(socket_id);
-		if (socket)
-		{
-			(*socket).get().m_position = origin;
-			NodeEventArg event1{ *this, NodeEvent::SocketsRepositioned};
-			Notify(event1);
-			return true;
-		}
-		return false;
 	}
 
 private:
 	Rect m_bounds;
-	std::vector<NodeSocketModel> m_sockets;
+	std::vector<NodeSocketModel> m_input_sockets;
+	std::vector<NodeSocketModel> m_output_sockets;
+	std::vector<NodeSocketModel> m_inout_sockets;
 	id_int m_Id;
 };
 
