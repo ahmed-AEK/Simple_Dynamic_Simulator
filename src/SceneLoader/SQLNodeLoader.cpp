@@ -1,7 +1,7 @@
 #include "SQLNodeLoader.hpp"
 #include "toolgui/NodeMacros.h"
 
-bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModelPtr& node)
+bool node::loader::SQLNodeLoader::AddNode(const node::model::BlockModelPtr& node)
 {
 	{
 		SQLite::Statement query{ m_db, "INSERT INTO nodes VALUES (?,?,?,?,?)" };
@@ -12,7 +12,7 @@ bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModelPtr& node)
 		query.bind(5, node->GetBounds().height);
 		query.exec();
 	}
-	auto add_sockets = [&](const node::model::NodeSocketModel::SocketType type)
+	auto add_sockets = [&](const node::model::BlockSocketModel::SocketType type)
 		{
 			auto&& sockets = node->GetSockets(type);
 			if (!std::all_of(sockets.begin(), sockets.end(),
@@ -22,15 +22,15 @@ bool node::loader::SQLNodeLoader::AddNode(const node::model::NodeModelPtr& node)
 			}
 			return true;
 		};
-	if (!add_sockets(node::model::NodeSocketModel::SocketType::input))
+	if (!add_sockets(node::model::BlockSocketModel::SocketType::input))
 	{
 		return false;
 	}
-	if (!add_sockets(node::model::NodeSocketModel::SocketType::output))
+	if (!add_sockets(node::model::BlockSocketModel::SocketType::output))
 	{
 		return false;
 	}	
-	if (!add_sockets(node::model::NodeSocketModel::SocketType::inout))
+	if (!add_sockets(node::model::BlockSocketModel::SocketType::inout))
 	{
 		return false;
 	}
@@ -50,7 +50,7 @@ bool node::loader::SQLNodeLoader::DeleteNodeAndSockets(const node::model::id_int
 	return true;
 }
 
-std::shared_ptr<node::model::NodeModel>
+node::model::BlockModelPtr 
 node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
 {
 	using namespace node::model;
@@ -60,10 +60,9 @@ node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
 	{
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		std::shared_ptr<NodeModel> node = 
-			std::make_shared<NodeModel>(node_id, bounds);
+		std::shared_ptr<BlockModel> node = 
+			std::make_shared<BlockModel>(node_id, bounds);
 		LoadSocketsForNode(*node);
-		node->Attach(this);
 		return node;
 	}
 	return {};
@@ -94,7 +93,7 @@ bool node::loader::SQLNodeLoader::UpdateNodeBounds(node::model::id_int node_id,
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::AddSocket(const node::model::NodeSocketModel& socket)
+bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel& socket)
 {
 	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?)" };
 	querySocket.bind(1, socket.GetId().m_Id);
@@ -114,7 +113,7 @@ bool node::loader::SQLNodeLoader::AddSocket(const node::model::NodeSocketModel& 
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::NodeSocketId& socket_id)
+bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::BlockSocketId& socket_id)
 {
 	SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE id = ? AND parentid = ?" };
 	query.bind(1, socket_id.m_Id);
@@ -123,7 +122,7 @@ bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::NodeSocketId& 
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::NodeSocketId& socket_id,
+bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::BlockSocketId& socket_id,
 	const node::model::Point& position)
 {
 	SQLite::Statement query{ m_db, "UPDATE sockets SET x = ?, y = ? WHERE id = ? AND parentid = ?" };
@@ -144,28 +143,27 @@ node::model::id_int node::loader::SQLNodeLoader::GetNextNodeIdx()
 	return static_cast<node::model::id_int>(query.getColumn(0)) + 1;
 }
 
-std::vector<std::shared_ptr<node::model::NodeModel>> node::loader::SQLNodeLoader::GetNodes()
+std::vector<std::shared_ptr<node::model::BlockModel>> node::loader::SQLNodeLoader::GetNodes()
 {
 	using namespace node::model;
 
-	std::vector<std::shared_ptr<NodeModel>> nodes;
+	std::vector<std::shared_ptr<BlockModel>> nodes;
 	SQLite::Statement query{ m_db, "SELECT * FROM nodes" };
 	while (query.executeStep())
 	{
 		id_int node_id = query.getColumn(0);
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		std::shared_ptr<NodeModel> node = 
-			std::make_shared<NodeModel>(node_id, bounds);
+		std::shared_ptr<BlockModel> node =
+			std::make_shared<BlockModel>(node_id, bounds);
 		LoadSocketsForNode(*node);
-		node->Attach(this);
 		nodes.push_back(std::move(node));
 	}
 	return nodes;
 }
 
 void
-node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::NodeModel& node)
+node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::BlockModel& node)
 {
 	using namespace node::model;
 	SQLite::Statement querySocket{ m_db, "SELECT * FROM sockets WHERE parentid = ?" };
@@ -175,36 +173,9 @@ node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::NodeModel& node)
 		id_int socket_id = querySocket.getColumn(0);
 
 		Point socketOrigin{ querySocket.getColumn(2), querySocket.getColumn(3) };
-		NodeSocketModel::SocketType type =
-			static_cast<node::model::NodeSocketModel::SocketType>(
+		BlockSocketModel::SocketType type =
+			static_cast<node::model::BlockSocketModel::SocketType>(
 				static_cast<int>(querySocket.getColumn(5)));
-		node.AddSocket(node::model::NodeSocketModel{ type,{socket_id,node.GetId()}, socketOrigin });
-	}
-}
-
-void node::loader::SQLNodeLoader::OnEvent(node::model::NodeEventArg& ev)
-{
-	switch (ev.event)
-	{
-	case node::model::NodeEvent::PositionChanged:
-		UpdateNodePosition(ev.object.GetId(), ev.object.GetPosition());
-		break;
-	case node::model::NodeEvent::BoundsChanged:
-		UpdateNodeBounds(ev.object.GetId(), ev.object.GetBounds());
-		break;
-	case node::model::NodeEvent::SocketsRepositioned:
-	{
-		auto update_sockets_position = [&](const node::model::NodeSocketModel::SocketType type)
-			{
-				for (auto&& socket : ev.object.GetSockets(type))
-				{
-					UpdateSocketPosition(socket.GetId(), socket.GetPosition());
-				}
-			};
-		update_sockets_position(node::model::NodeSocketModel::SocketType::input);
-		update_sockets_position(node::model::NodeSocketModel::SocketType::output);
-		update_sockets_position(node::model::NodeSocketModel::SocketType::inout);
-		break;
-	}
+		node.AddSocket(node::model::BlockSocketModel{ type,{socket_id,node.GetId()}, socketOrigin });
 	}
 }

@@ -21,22 +21,22 @@ void node::model::NodeSceneModel::RemoveNetById(id_int id)
 	m_nets.erase(it);
 }
 
-std::shared_ptr<node::model::NodeModel>
-node::model::NodeSceneModel::GetNodeById(const id_int id)
+std::shared_ptr<node::model::BlockModel>
+node::model::NodeSceneModel::GetBlockById(const id_int id)
 {
-	auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
-		[id](const NodeModelPtr& node) {return id == node->GetId(); });
-	if (iter != m_nodes.end())
+	auto iter = std::find_if(m_blocks.begin(), m_blocks.end(),
+		[id](const BlockModelPtr& node) {return id == node->GetId(); });
+	if (iter != m_blocks.end())
 	{
 		return *iter;
 	}
 	return {};
 }
 
-void node::model::NodeSceneModel::RemoveNodeById(id_int id) {
-	auto it = std::find_if(m_nodes.begin(), m_nodes.end(),
-		[&](const NodeModelPtr& node) { return node->GetId() == id; });
+void node::model::NodeSceneModel::RemoveBlockById(id_int id) {
+	auto it = std::find_if(m_blocks.begin(), m_blocks.end(),
+		[&](const BlockModelPtr& node) { return node->GetId() == id; });
 
-	assert(it != m_nodes.end());
-	m_nodes.erase(it);
+	assert(it != m_blocks.end());
+	m_blocks.erase(it);
 }

@@ -8,7 +8,7 @@
 #include "GraphicsScene/NodeSocket.hpp"
 #include "GraphicsScene/GraphicsSceneController.hpp"
 #include "toolgui/SidePanel.hpp"
-
+#include "BlockPallete/BlockPallete.hpp"
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
@@ -18,7 +18,14 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{0,0,300,rect.h}, this);
     sidePanel->UpdateWindowSize(rect);
-    sidePanel->SetWidget(std::make_unique<TestWidget>(SDL_Rect{ 0,0,200,200 }, this));
+    auto&& pallete_provider = std::make_shared<PalleteProvider>();
+    pallete_provider->AddElement(std::make_shared<PalleteElement>());
+    pallete_provider->AddElement(std::make_shared<PalleteElement>());
+    pallete_provider->AddElement(std::make_shared<PalleteElement>());
+    pallete_provider->AddElement(std::make_shared<PalleteElement>());
+
+    sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{0,0,200,200},
+        std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
 
     gScene->SetController(std::make_unique<GraphicsSceneController>(gScene.get()));

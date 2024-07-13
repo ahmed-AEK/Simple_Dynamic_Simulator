@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NodeModels/Utils.hpp"
+#include "NodeModels/BlockModel.hpp"
 #include <vector>
 #include <string>
 #include <optional>
@@ -37,8 +38,6 @@ private:
 	std::optional<id_int> m_eastSegmentId = 0;
 };
 
-
-
 struct NetSegmentModel
 {
 	enum class NetSegmentOrientation
@@ -57,6 +56,12 @@ public:
 	id_int m_secondNodeId;
 	NetSegmentOrientation m_orientation;
 
+};
+
+struct SocketNodeConnection
+{
+	BlockSocketId socketId;
+	id_int NodeId;
 };
 
 class NetModel
@@ -95,6 +100,7 @@ private:
 	id_int m_Id;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
+	std::vector<SocketNodeConnection> m_SocketConnections;
 };
 
 }

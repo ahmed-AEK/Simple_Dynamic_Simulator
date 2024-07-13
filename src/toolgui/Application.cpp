@@ -3,12 +3,13 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/Scene.hpp"
 #include <cassert>
+#include <fstream>
 
 namespace node
 {
     Application::Application(int width, int height, std::string title)
     :m_title(title), m_framework(), m_width(width), m_height(height), m_rect_base{0,0, width, height},
-        m_rect{ 0,0,width,height }, m_appFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) }
+        m_rect{ 0,0,width,height }
     {
         this->OnInit();
     }
@@ -56,6 +57,12 @@ namespace node
             return -1;
         }
 
+        // load Font
+        m_appFont = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) };
+        if (!m_appFont)
+        {
+            SDL_Log("Failed to load Font \"./assets/FreeSans.ttf\"");
+        }
         b_running = true;
 
         this->OnRun();

@@ -9,10 +9,10 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
     std::optional<node::model::NodeSceneModel> scene{ std::in_place };
     SQLNodeLoader nodeLoader{ m_dbname, m_db };
     auto nodes = nodeLoader.GetNodes();
-    (*scene).ReserveNodes(nodes.size());
+    (*scene).ReserveBlocks(nodes.size());
     for (auto&& node : nodes)
     {
-        (*scene).AddNode(std::move(node));
+        (*scene).AddBlock(std::move(node));
     }
     return scene;
 }
@@ -46,7 +46,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     FOREIGN KEY (parentid) REFERENCES nodes(id) );)");
 
         SQLNodeLoader nodeLoader{ m_dbname, m_db };
-        for (const auto& node : scene.GetNodes())
+        for (const auto& node : scene.GetBlocks())
         {
             nodeLoader.AddNode(node);
         }

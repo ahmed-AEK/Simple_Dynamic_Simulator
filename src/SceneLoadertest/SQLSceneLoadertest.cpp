@@ -10,11 +10,11 @@ TEST(testScene, testSaveLoadNode)
 {
 	NodeSceneModel scene;
 	id_int node_id = 1;
-	std::shared_ptr<NodeModel> node1 = std::make_shared<NodeModel>(node_id, Rect{1,1,10,10});
+	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
-	scene.AddNode(std::move(node1));
+	scene.AddBlock(std::move(node1));
 
 	auto result = loader.Save(scene);
 
@@ -22,7 +22,7 @@ TEST(testScene, testSaveLoadNode)
 
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
-	EXPECT_EQ(loaded_scene.value().GetNodes().size(), 1);
+	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
 
 }
 
@@ -30,11 +30,11 @@ TEST(testScene, testSaveModifyLoadNode)
 {
 	NodeSceneModel scene;
 	id_int node_id = 1;
-	NodeModelPtr node1 = std::make_shared<NodeModel>(node_id, Rect{1,1,10,10});
+	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
-	scene.AddNode(std::move(node1));
+	scene.AddBlock(std::move(node1));
 
 	auto result = loader.Save(scene);
 
@@ -46,8 +46,8 @@ TEST(testScene, testSaveModifyLoadNode)
 
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
-	EXPECT_EQ(loaded_scene.value().GetNodes().size(), 1);
-	auto rect = loaded_scene->GetNodes()[0]->GetBounds();
+	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
+	auto rect = loaded_scene->GetBlocks()[0]->GetBounds();
 	EXPECT_EQ(rect, second_rect);
 
 }
@@ -56,11 +56,11 @@ TEST(testScene, testSaveDeleteLoadNode)
 {
 	NodeSceneModel scene;
 	id_int node_id = 1;
-	NodeModelPtr node1 = std::make_shared<NodeModel>(node_id, Rect{1,1,10,10});
+	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
-	scene.AddNode(std::move(node1));
+	scene.AddBlock(std::move(node1));
 
 	auto result = loader.Save(scene);
 
@@ -72,18 +72,18 @@ TEST(testScene, testSaveDeleteLoadNode)
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_TRUE(result2);
-	EXPECT_EQ(loaded_scene.value().GetNodes().size(), 0);
+	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 0);
 }
 
 TEST(testScene, testNextIndex)
 {
 	NodeSceneModel scene;
 	id_int node_id = 1;
-	NodeModelPtr node1 = std::make_shared<NodeModel>(node_id, Rect{1,1,10,10});
+	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
-	scene.AddNode(std::move(node1));
+	scene.AddBlock(std::move(node1));
 
 	auto result = loader.Save(scene);
 

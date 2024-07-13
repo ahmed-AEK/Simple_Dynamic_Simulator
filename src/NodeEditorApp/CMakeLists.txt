@@ -11,6 +11,6 @@ NodeGraphicsScene.cpp NodeGraphicsScene.hpp
 target_include_directories(NodeEditor PRIVATE ".")
 target_include_directories(NodeEditor INTERFACE "..")
 
-target_link_libraries(NodeEditor PRIVATE toolgui GraphicsScene NodePallete)
+target_link_libraries(NodeEditor PRIVATE toolgui GraphicsScene BlockPallete)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11)
 add_executable(NodeModelstest 
 NetSegmenttest.cpp
 nettest.cpp
-Nodetest.cpp
+Blocktest.cpp
 Scenetest.cpp
 )
 target_link_libraries(NodeModelstest PRIVATE GTest::gtest_main GTest::gmock_main NodeModels)
