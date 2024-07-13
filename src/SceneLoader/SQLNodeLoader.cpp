@@ -30,10 +30,6 @@ bool node::loader::SQLNodeLoader::AddNode(const node::model::BlockModelPtr& node
 	{
 		return false;
 	}	
-	if (!add_sockets(node::model::BlockSocketModel::SocketType::inout))
-	{
-		return false;
-	}
 	return true;
 }
 

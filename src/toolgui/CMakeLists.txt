@@ -11,6 +11,7 @@ Handle.hpp
 ButtonWidget.cpp ButtonWidget.hpp
 NodeMacros.h
 SidePanel.hpp SidePanel.cpp
+DragDropObject.hpp DragDropObject.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")
@@ -19,5 +20,5 @@ target_include_directories(toolgui INTERFACE "..")
 target_compile_definitions(toolgui PRIVATE TOOLGUI_EXPORTS)
 
 target_link_libraries(toolgui PUBLIC 
-                        SDL_Framework
+                        SDL_Framework NodeModels 
                         )

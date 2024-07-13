@@ -11,6 +11,12 @@
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
     OnDraw(renderer);
+    if (m_current_mouse_hover.isAlive() && m_dragObject)
+    {
+        SDL_Point p;
+        SDL_GetMouseState(&p.x, &p.y);
+        m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
+    }
 }
 
 void node::Scene::OnDraw(SDL_Renderer* renderer)
@@ -101,6 +107,19 @@ void node::Scene::RemoveUpdateTask(int64_t task_id)
     m_deleted_updateTasks.push_back(task_id);
 }
 
+void node::Scene::StartDragObject(DragDropObject object)
+{
+    m_dragObject = std::move(object);
+    if (m_current_mouse_hover.isAlive() && m_current_mouse_hover.GetObjectPtr()->IsDropTarget())
+    {
+        m_current_mouse_hover.GetObjectPtr()->DropEnter(*m_dragObject);
+        SDL_Point p;
+        SDL_GetMouseState(&p.x, &p.y);
+        m_current_mouse_hover.GetObjectPtr()->DropHover(*m_dragObject, p);
+    }
+    
+}
+
 void node::Scene::OnMouseMove(const SDL_Point& p)
 {
     if (!b_mouseCaptured)
@@ -116,11 +135,12 @@ void node::Scene::OnMouseMove(const SDL_Point& p)
             if (old_hover)
             {
                 old_hover->MouseOut();
+                if (m_dragObject && old_hover->IsDropTarget())
+                {
+                    current_hover->DropExit(*m_dragObject);
+                }
             }
-            if (current_hover)
-            {
-                current_hover->MouseIn();
-            }
+
             if (current_hover)
             {
                 m_current_mouse_hover = current_hover->GetMIHandlePtr();
@@ -129,6 +149,15 @@ void node::Scene::OnMouseMove(const SDL_Point& p)
             {
                 m_current_mouse_hover = node::HandlePtr<node::Widget>{};
             }
+
+            if (current_hover)
+            {
+                current_hover->MouseIn();
+                if (m_dragObject && current_hover->IsDropTarget())
+                {
+                    current_hover->DropEnter(*m_dragObject);
+                }
+            }
         }
         
     }
@@ -136,7 +165,14 @@ void node::Scene::OnMouseMove(const SDL_Point& p)
     {
         if (auto object = m_current_mouse_hover.GetObjectPtr())
         {
-            object->MouseMove({p.x, p.y});
+            if (object->IsDropTarget() && m_dragObject)
+            {
+                object->DropHover(*m_dragObject, p);
+            }
+            else
+            {
+                object->MouseMove({ p.x, p.y });
+            }
         }
     }
 }
@@ -206,6 +242,7 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
         widget.m_ptr->SetRect(modified_rect);
     }
 }
+
 bool node::Scene::OnLMBDown(const SDL_Point& p)
 {
     node::Widget* current_hover;
@@ -365,6 +402,18 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
     {
         DestroyContextMenu();
     }
+
+    if (m_dragObject)
+    {
+        if (current_hover && current_hover->IsDropTarget())
+        {
+            auto&& widget = m_current_mouse_hover.GetObjectPtr();
+            widget->DropObject(*m_dragObject, p);
+        }
+        m_dragObject = std::nullopt;
+        return true;
+    }
+
     if (current_hover)
     {
         auto result = current_hover->LMBUp(p);

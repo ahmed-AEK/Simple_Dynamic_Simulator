@@ -2,6 +2,7 @@
 
 #include "toolgui/Widget.hpp"
 #include "BlockPallete/PalleteProvider.hpp"
+#include <string_view>
 
 namespace node
 {
@@ -18,14 +19,20 @@ namespace node
 		{
 			m_palleteProvider = provider;
 		}
+
+		static constexpr int ElementHeight = 100;
+		static constexpr int ElementWidth = 100;
 	protected:
 		bool OnScroll(const double amount, const SDL_Point& p) override;
+		virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
 
 	private:
 		SDL_Rect DrawPanelBorder(SDL_Renderer* renderer);
 		void DrawScrollBar(SDL_Renderer* renderer, const SDL_Rect& area);
 		void DrawElements(SDL_Renderer* renderer, const SDL_Rect& area);
 		void DrawElement(SDL_Renderer* renderer, const PalleteElement& element, const SDL_Rect& area);
+		void DrawElementText(SDL_Renderer* renderer, const std::string& name, const SDL_Rect& area);
+
 
 		std::shared_ptr<PalleteProvider> m_palleteProvider;
 		int m_scrollPos = 0;

@@ -9,6 +9,7 @@
 #include "NodeModels/Observer.hpp"
 #include <variant>
 #include <memory>
+#include <string>
 
 namespace node::model
 {
@@ -30,7 +31,6 @@ public:
 	{
 		input = 0,
 		output= 1,
-		inout = 2,
 	};
 
 	explicit BlockSocketModel(
@@ -41,7 +41,7 @@ public:
 		m_connectedNetNode{ connectedNetNode } {}
 
 	const Point& GetPosition() const noexcept { return m_position; }
-
+	void SetPosition(const Point& p) { m_position = p; }
 	const SocketId& GetId() const noexcept { return m_Id; }
 
 	const SocketType& GetType() const noexcept { return m_type; }
@@ -88,11 +88,6 @@ public:
 			m_output_sockets.push_back(std::move(socket));
 			break;
 		}
-		case BlockSocketModel::SocketType::inout:
-		{
-			m_inout_sockets.push_back(std::move(socket));
-			break;
-		}
 		}
 	}
 
@@ -107,8 +102,6 @@ public:
 			return std::span{ m_input_sockets };
 		case BlockSocketModel::SocketType::output:
 			return std::span{ m_output_sockets };
-		case BlockSocketModel::SocketType::inout:
-			return std::span{ m_inout_sockets };
 		}
 		return std::span<const BlockSocketModel>{};
 	}
@@ -119,8 +112,6 @@ public:
 			return std::span{ m_input_sockets };
 		case BlockSocketModel::SocketType::output:
 			return std::span{ m_output_sockets };
-		case BlockSocketModel::SocketType::inout:
-			return std::span{ m_inout_sockets };
 		}
 		return std::span<BlockSocketModel>{};
 	}
@@ -136,9 +127,6 @@ public:
 		case BlockSocketModel::SocketType::output:
 			m_output_sockets.reserve(size);
 			break;
-		case BlockSocketModel::SocketType::inout:
-			m_inout_sockets.reserve(size);
-			break;
 		}
 	}
 
@@ -146,7 +134,8 @@ private:
 	Rect m_bounds;
 	std::vector<BlockSocketModel> m_input_sockets;
 	std::vector<BlockSocketModel> m_output_sockets;
-	std::vector<BlockSocketModel> m_inout_sockets;
+	std::string block_styler;
+	std::string block_class;
 	id_int m_Id;
 };
 

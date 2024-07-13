@@ -16,7 +16,7 @@ m_spaceRect{0, 0, 200, 200 * rect.h/rect.w},
 m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w),
 m_spaceScreenTransformer(GetRect(), m_spaceRect)
 {
-    
+    SetDropTarget(true);
 }
 
 node::GraphicsScene::~GraphicsScene()

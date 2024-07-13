@@ -8,6 +8,8 @@
 #include <memory>
 #include "toolgui/NodeMacros.h"
 #include <functional>
+#include <optional>
+#include "toolgui/DragDropObject.hpp"
 
 namespace node
 {
@@ -56,7 +58,7 @@ namespace node
         void DoUpdateTasks();
         int64_t AddUpdateTask(UpdateTask task);
         void RemoveUpdateTask(int64_t task_id);
-
+        void StartDragObject(DragDropObject object);
     protected:
         virtual void OnStart() {};
         virtual void OnSetRect(const SDL_Rect& rect);
@@ -84,7 +86,7 @@ namespace node
         std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
         std::vector<int64_t> m_deleted_updateTasks;
         int64_t m_current_task_id = 0;
-
+        std::optional<DragDropObject> m_dragObject;
         bool b_mouseCaptured = false;
     };
 

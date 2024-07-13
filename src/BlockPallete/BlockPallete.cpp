@@ -1,13 +1,15 @@
 #include "BlockPallete.hpp"
 #include <cassert>
+#include "SDL_Framework/SDLCPP.hpp"
+#include "toolgui/Scene.hpp"
+#include "toolgui/Application.hpp"
 
 namespace PalleteData {
-	static constexpr int ElementHeight = 200;
-	static constexpr int ElementHPadding = 10;
-	static constexpr int ElementTotalHeight = ElementHeight + ElementHPadding;
-	static constexpr int ElementWidth = 150;
+	static constexpr int TopPadding = 20;
+	static constexpr int ElementHPadding = 50;
+	static constexpr int ElementTotalHeight = node::BlockPallete::ElementHeight + ElementHPadding;
 	static constexpr int ElementWPadding = 10;
-	static constexpr int ElementTotalWidth = ElementWidth + ElementWPadding;
+	static constexpr int ElementTotalWidth = node::BlockPallete::ElementWidth + ElementWPadding;
 	static constexpr int scrollbarWidth = 10;
 }
 
@@ -41,7 +43,7 @@ bool node::BlockPallete::OnScroll(const double amount, const SDL_Point& p)
 	if (SDL_PointInRect(&p, &inner_rect))
 	{
 		int elements_height = static_cast<int>(
-			m_palleteProvider->GetElements().size() * PalleteData::ElementTotalHeight);
+			m_palleteProvider->GetElements().size() * PalleteData::ElementTotalHeight + PalleteData::TopPadding);
 		m_scrollPos -= static_cast<int>(amount * 10);
 		if (m_scrollPos > (elements_height - inner_rect.h))
 		{
@@ -54,6 +56,33 @@ bool node::BlockPallete::OnScroll(const double amount, const SDL_Point& p)
 	}
 
 	return true;
+}
+
+MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_point)
+{
+	SDL_Rect inner_area = GetRect();
+	inner_area.x += 7;
+	inner_area.y += 7;
+	inner_area.w -= 14;
+	inner_area.h -= 14;
+	int Hpad_size = inner_area.w - PalleteData::ElementTotalWidth;
+	inner_area.x += Hpad_size / 2;
+	inner_area.w -= Hpad_size / 2;
+
+	if (!SDL_PointInRect(&current_mouse_point, &inner_area))
+	{
+		return MI::ClickEvent::NONE;
+	}
+	int selected_y = current_mouse_point.y - inner_area.y + m_scrollPos -
+		PalleteData::TopPadding;
+	int selected_item_index = selected_y / PalleteData::ElementTotalHeight;
+
+	auto&& pallete_elements = m_palleteProvider->GetElements();
+	assert(selected_item_index >= 0);
+	assert(selected_item_index < pallete_elements.size());
+
+	GetScene()->StartDragObject(DragDropObject{ pallete_elements[selected_item_index]->block_template });
+	return MI::ClickEvent::NONE;
 }
 
 SDL_Rect node::BlockPallete::DrawPanelBorder(SDL_Renderer* renderer)
@@ -89,7 +118,7 @@ void node::BlockPallete::DrawScrollBar(SDL_Renderer* renderer, const SDL_Rect& a
 	SDL_RenderFillRect(renderer, &area);
 	int total_height = 
 		static_cast<int>(m_palleteProvider->GetElements().size() * 
-			PalleteData::ElementTotalHeight);
+			PalleteData::ElementTotalHeight) + PalleteData::TopPadding;
 	int view_area_height = area.h;
 	if (total_height < view_area_height)
 	{
@@ -117,19 +146,13 @@ void node::BlockPallete::DrawElements(SDL_Renderer* renderer, const SDL_Rect& ar
 	for (int i = start_element; i < max_element; i++)
 	{
 		int padding_left = (area.w - PalleteData::ElementTotalWidth) / 2;
-		SDL_Rect element_rect = { area.x + padding_left, area.y + i * PalleteData::ElementTotalHeight - m_scrollPos,
+		SDL_Rect element_rect = { area.x + padding_left, 
+			area.y + i * PalleteData::ElementTotalHeight - m_scrollPos + 
+			PalleteData::TopPadding,
 			PalleteData::ElementTotalWidth, PalleteData::ElementTotalHeight };
-		if (element_rect.w > area.w)
+		if (element_rect.y > area.y + area.h)
 		{
-			element_rect.w = area.w;
-		}
-		if (element_rect.y + element_rect.h > area.y + area.h)
-		{
-			element_rect.h = area.y + area.h - element_rect.y;
-			if (element_rect.h <= 0)
-			{
-				continue;
-			}
+			continue;
 		}
 		DrawElement(renderer, *elements[i], element_rect);
 	}
@@ -137,14 +160,26 @@ void node::BlockPallete::DrawElements(SDL_Renderer* renderer, const SDL_Rect& ar
 
 void node::BlockPallete::DrawElement(SDL_Renderer* renderer, const PalleteElement& element, const SDL_Rect& area)
 {
-	UNUSED_PARAM(element);
 	SDL_Rect contained_rect = { area.x + PalleteData::ElementWPadding/2, 
-		area.y + PalleteData::ElementHPadding/2,
-		PalleteData::ElementWidth, PalleteData::ElementHeight };
-	SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-	SDL_RenderFillRect(renderer, &area);
+		area.y,
+		ElementWidth, ElementHeight };
+	element.styler->DrawBlock(renderer, element.block, contained_rect);
+	SDL_Rect TextArea = { contained_rect.x, contained_rect.y + contained_rect.h,
+		area.w, area.h - contained_rect.h };
+	DrawElementText(renderer, element.block_template, TextArea);
+}
 
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &contained_rect);
+void node::BlockPallete::DrawElementText(SDL_Renderer* renderer, 
+	const std::string& name, const SDL_Rect& area)
+{
 
+	SDL_Color Black = { 50, 50, 50, 255 };
+	auto textSurface = SDLSurface{ TTF_RenderText_Solid(p_parent->GetApp()->getFont().get(), name.c_str(), Black) };
+	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
+	
+	SDL_Rect text_rect{};
+	SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+	text_rect.x = area.x + area.w / 2 - text_rect.w / 2;
+	text_rect.y = area.y + area.h / 2 - text_rect.h / 2 - 10;
+	SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
 }

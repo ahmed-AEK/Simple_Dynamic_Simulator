@@ -9,6 +9,7 @@
 #include "GraphicsScene/GraphicsSceneController.hpp"
 #include "toolgui/SidePanel.hpp"
 #include "BlockPallete/BlockPallete.hpp"
+
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
@@ -19,10 +20,22 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{0,0,300,rect.h}, this);
     sidePanel->UpdateWindowSize(rect);
     auto&& pallete_provider = std::make_shared<PalleteProvider>();
-    pallete_provider->AddElement(std::make_shared<PalleteElement>());
-    pallete_provider->AddElement(std::make_shared<PalleteElement>());
-    pallete_provider->AddElement(std::make_shared<PalleteElement>());
-    pallete_provider->AddElement(std::make_shared<PalleteElement>());
+    for (int i = 0; i < 5; i++)
+    {
+        auto&& element = std::make_shared<PalleteElement>();
+        element->block.SetBounds({ 0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight });
+        element->block.AddSocket(node::model::BlockSocketModel{
+            node::model::BlockSocketModel::SocketType::input, {0,0}, {0,0}
+            });
+        element->block.AddSocket(node::model::BlockSocketModel{
+            node::model::BlockSocketModel::SocketType::output, {0,0}, {0,0}
+            });
+        element->styler = std::make_shared<BlockStyler>();
+        element->styler->PositionNodes(element->block);
+        element->block_template = "Add";
+        pallete_provider->AddElement(element);
+
+    }
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{0,0,200,200},
         std::move(pallete_provider), this));
