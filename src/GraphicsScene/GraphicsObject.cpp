@@ -32,7 +32,7 @@ void node::GraphicsObject::SetSpaceRect(const model::Rect& rect)
 }
 
 void node::GraphicsObject::OnSetSpaceRect(const model::Rect& rect)
-{
+ {
     UNUSED_PARAM(rect);
 }
 

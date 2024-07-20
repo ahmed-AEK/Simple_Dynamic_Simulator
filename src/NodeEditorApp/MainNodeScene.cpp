@@ -10,6 +10,63 @@
 #include "toolgui/SidePanel.hpp"
 #include "BlockPallete/BlockPallete.hpp"
 
+
+static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
+{
+    assert(gScene);
+    using namespace node;
+    {
+        auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 10,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+        auto styler = std::make_shared<node::BlockStyler>();
+        styler->PositionNodes(*model);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(gScene, model, styler);
+        gScene->AddObject(std::move(obj), 0);
+    }
+
+    {
+        auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 200,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+        auto styler = std::make_shared<node::BlockStyler>();
+        styler->PositionNodes(*model);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(gScene, model, styler);
+        gScene->AddObject(std::move(obj), 0);
+    }
+
+    {
+        auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 400,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+        auto styler = std::make_shared<node::BlockStyler>();
+        styler->PositionNodes(*model);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(gScene, model, styler);
+        gScene->AddObject(std::move(obj), 0);
+    }
+
+    {
+        auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 200,210,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+        auto styler = std::make_shared<node::BlockStyler>();
+        styler->PositionNodes(*model);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(gScene, model, styler);
+        gScene->AddObject(std::move(obj), 0);
+    }
+
+
+    {
+        auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 400,210,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+        auto styler = std::make_shared<node::BlockStyler>();
+        styler->PositionNodes(*model);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(gScene, model, styler);
+        gScene->AddObject(std::move(obj), 0);
+    }
+}
+
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
@@ -43,18 +100,19 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 
     gScene->SetController(std::make_unique<GraphicsSceneController>(gScene.get()));
 
-    std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(model::Rect{10,10,100,100}, gScene.get());
-    obj->AddInputSocket(0);
-    obj->AddOutputSocket(1);
-    gScene->AddObject(std::move(obj), 0);
+
+
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
     
     std::unique_ptr<Widget> add_BTN = std::make_unique<ButtonWidget>(50, 50, 200, 50, "Add Node",
-        [&, scene = gScene.get()]() {
-            std::unique_ptr<node::BlockObject> objx = std::make_unique<node::BlockObject>(model::Rect{ 10,10,100,100 }, scene);
-            objx->AddInputSocket(0);
-            objx->AddOutputSocket(1);
-            scene->AddObject(std::move(objx), 5);
+        [scene = gScene.get()]() {
+            auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 10,10,100,100 });
+            model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
+            model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+            auto styler = std::make_shared<node::BlockStyler>();
+            styler->PositionNodes(*model);
+            std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(scene, model, styler);
+            scene->AddObject(std::move(obj), 0);
         }, this);
     AddWidget(std::move(add_BTN), 0);
 
@@ -67,35 +125,16 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
                 {
                     if (ObjectType::node == object->GetObjectType())
                     {
-                        static_cast<BlockObject*>(object)->DisconnectSockets();
+                        //static_cast<BlockObject*>(object)->DisconnectSockets();
                         scene->PopObject(object);
                     }
                 }
             }
         }, this);
+
+    AddInitialNodes_forScene(gScene.get());
+
     AddWidget(std::move(remove_BTN), 0);
-
-    std::unique_ptr<node::BlockObject> obj2 = std::make_unique<node::BlockObject>(model::Rect{ 200,10,100,100 }, gScene.get());
-    obj2->AddInputSocket(2);
-    obj2->AddOutputSocket(3);
-    gScene->AddObject(std::move(obj2), 1);
-
-    std::unique_ptr<node::BlockObject> obj3 = std::make_unique<node::BlockObject>(model::Rect{ 400,10,100,100 }, gScene.get());
-    obj3->AddInputSocket(4);
-    obj3->AddOutputSocket(5);
-    gScene->AddObject(std::move(obj3), 2);
-
-    std::unique_ptr<node::BlockObject> obj4 = std::make_unique<node::BlockObject>(model::Rect{ 200,210,100,100 }, gScene.get());
-    obj4->AddInputSocket(6);
-    obj4->AddOutputSocket(7);
-    gScene->AddObject(std::move(obj4), 3);
-
-
-    std::unique_ptr<node::BlockObject> obj5 = std::make_unique<node::BlockObject>(model::Rect{ 400,210,100,100 }, gScene.get());
-    obj5->AddInputSocket(8);
-    obj5->AddOutputSocket(9);
-    gScene->AddObject(std::move(obj5), 4);
-
     AddWidget(std::move(gScene), -1000);
 
 

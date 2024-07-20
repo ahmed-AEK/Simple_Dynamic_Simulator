@@ -7,13 +7,14 @@
 
 namespace node
 {
-	struct BlockStyler
+	class BlockStyler
 	{
+	public:
 		static constexpr int SocketLength = 15;
 		void PositionNodes(model::BlockModel& block);
 
 		void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& block,
-			const SpaceScreenTransformer& transformer);
+			const SpaceScreenTransformer& transformer, bool selected);
 
 	};
 }

@@ -38,7 +38,7 @@ MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const SDL_Point& current_mouse_poi
 	{
 		auto node_ptr = static_cast<BlockObject*>(m_object.GetObjectPtr());
 		GetScene()->SetCurrentHover(nullptr);
-		node_ptr->DisconnectSockets();
+		//node_ptr->DisconnectSockets();
 		auto ptr = GetScene()->PopObject(node_ptr);
 		SetDone();
 		return MI::ClickEvent::CLICKED;

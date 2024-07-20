@@ -6,35 +6,38 @@
 
 #include <memory>
 #include <vector>
-
+#include "NodeModels/BlockModel.hpp"
 namespace node
 {
 class BlockSocketObject;
 
-struct GRAPHICSSCENE_API SocketData
+namespace model
 {
-    int id;
-    std::unique_ptr<BlockSocketObject> socket;
-};
+    class BlockModel;
+}
+class BlockStyler;
 
 class GRAPHICSSCENE_API BlockObject: public DraggableObject
 {
 public:
-    BlockObject(model::Rect rect, IGraphicsScene* scene);
+    BlockObject(IGraphicsScene* scene, std::shared_ptr<model::BlockModel> model = nullptr, std::shared_ptr<BlockStyler> styler = nullptr);
+    ~BlockObject();
     void Draw(SDL_Renderer* renderer) override;
-    void AddInputSocket(int id);
-    void AddOutputSocket(int id);
+
     std::vector<BlockSocketObject*> GetSockets();
-    void DisconnectSockets();
 protected:
+    void AddInputSocket(model::BlockSocketModel::SocketId id);
+    void AddOutputSocket(model::BlockSocketModel::SocketId id);
     void OnSetSpaceRect(const model::Rect& rect) override;
-    virtual void PositionSockets();
+    virtual void RePositionSockets();
     GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
     void OnUpdateRect() override;
     MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 private:
-    std::vector<SocketData> m_input_sockets;
-    std::vector<SocketData> m_output_sockets;
+    std::vector<std::unique_ptr<BlockSocketObject>> m_input_sockets;
+    std::vector<std::unique_ptr<BlockSocketObject>> m_output_sockets;
+    std::shared_ptr<model::BlockModel> m_model;
+    std::shared_ptr<BlockStyler> m_styler;
     bool b_being_deleted = false;
 
 };

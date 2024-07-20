@@ -29,15 +29,22 @@ void node::BlockStyler::PositionNodes(model::BlockModel& block)
 	}
 }
 
-void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockModel& block, const SpaceScreenTransformer& transformer)
+void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockModel& block, const SpaceScreenTransformer& transformer, bool selected)
 {
 	SDL_Rect screenRect = transformer.SpaceToScreenRect(block.GetBounds());
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	if (!selected)
+	{
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
+	}
 	SDL_RenderFillRect(renderer, &screenRect);
 	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	SDL_Rect inner_rect{ screenRect.x + 2, screenRect.y + 2, screenRect.w - 4, screenRect.h - 4 };
 	SDL_RenderFillRect(renderer, &inner_rect);
-
+	SDL_Point socket_lengths = transformer.SpaceToScreenVector({ SocketLength, SocketLength });
 	for (auto&& sock :
 		block.GetSockets(node::model::BlockSocketModel::SocketType::input))
 	{
@@ -45,7 +52,7 @@ void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockMode
 		SDL_Point socket_pos = transformer.SpaceToScreenVector(sock.GetPosition());
 		SDL_Rect draw_area = { screenRect.x + socket_pos.x,
 			screenRect.y + socket_pos.y,
-		SocketLength, SocketLength };
+		socket_lengths.x, socket_lengths.y};
 		SDL_RenderFillRect(renderer, &draw_area);
 	}
 	for (auto&& sock :
@@ -55,7 +62,7 @@ void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockMode
 		SDL_Point socket_pos = transformer.SpaceToScreenVector(sock.GetPosition());
 		SDL_Rect draw_area = { screenRect.x + socket_pos.x,
 			screenRect.y + socket_pos.y,
-		SocketLength, SocketLength };
+		socket_lengths.x, socket_lengths.y };
 		SDL_RenderFillRect(renderer, &draw_area);
 	}
 }
