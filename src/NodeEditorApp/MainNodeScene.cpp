@@ -6,7 +6,7 @@
 #include "NodeGraphicsScene.hpp"
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
-#include "GraphicsScene/GraphicsSceneController.hpp"
+#include "GraphicsScene/tools/ArrowTool.hpp"
 #include "toolgui/SidePanel.hpp"
 #include "BlockPallete/BlockPallete.hpp"
 
@@ -98,8 +98,7 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
         std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
 
-    gScene->SetController(std::make_unique<GraphicsSceneController>(gScene.get()));
-
+    gScene->SetTool(std::make_unique<ArrowTool>(gScene.get()));
 
 
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());

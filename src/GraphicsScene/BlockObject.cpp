@@ -3,7 +3,6 @@
 #include "BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include "IGraphicsScene.hpp"
-#include "IGraphicsSceneController.hpp"
 #include <algorithm>
 #include <iterator>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
@@ -49,20 +48,7 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
 {
-    auto&& scene = GetScene();
-    if (!scene)
-    {
-        return MI::ClickEvent::NONE;
-    }
-    auto&& controller = scene->GetController();
-    if (!controller)
-    {
-        return MI::ClickEvent::NONE;
-    }
-    assert(GetScene());
-    auto&& transformer = GetScene()->GetSpaceScreenTransformer();
-    SDL_Point space_point = transformer.SpaceToScreenPoint(current_mouse_point);
-    return controller->OnBlockLMBDown(space_point, *this);
+    return DraggableObject::OnLMBDown(current_mouse_point);
 }
 
 void node::BlockObject::AddInputSocket(model::BlockSocketModel::SocketId id)

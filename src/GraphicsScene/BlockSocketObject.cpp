@@ -3,7 +3,6 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "NetObject.hpp"
 #include "IGraphicsScene.hpp"
-#include "IGraphicsSceneController.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
 
@@ -110,17 +109,5 @@ MI::ClickEvent node::BlockSocketObject::OnLMBDown(const model::Point& current_mo
 		return MI::ClickEvent::CLICKED;
 	}
 	*/
-	auto&& scene = GetScene();
-	if (!scene)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	auto&& controller = scene->GetController();
-	if (!controller)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	assert(GetScene());
-	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
-	return controller->OnSocketLMBDown(screenPoint, *this);
+	return GraphicsObject::LMBDown(current_mouse_point);
 }

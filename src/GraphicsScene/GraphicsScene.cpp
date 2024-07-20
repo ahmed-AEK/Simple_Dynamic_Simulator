@@ -7,7 +7,6 @@
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
-#include "IGraphicsSceneController.hpp"
 
 node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -140,17 +139,22 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
         return;
     }
 
+    if (!m_tool || !m_tool->IsCapturingMouse())
+    {
+        node::GraphicsObject* current_hover = GetObjectAt(point);
+        SetCurrentHover(current_hover);
+    }
+    
+    if (m_tool)
+    {
+        m_tool->OnMouseMove(point);
+    }
+    /*
     switch (m_mouse_capture_mode)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
         {
-            node::GraphicsObject* current_hover = GetObjectAt(point);
-            SetCurrentHover(current_hover);
-            if (current_hover)
-            {
-                current_hover->MouseMove(point);
-            }
-            break;
+            
         }
     case node::GraphicsScene::CAPTURE_MODE::OBJECT:
     {
@@ -197,76 +201,22 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
         break;
     }
     }
+    */
 }
 
 MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 {
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
+
     if (m_graphicsLogic)
     {
         auto&& transformer = GetSpaceScreenTransformer();
         model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
         return m_graphicsLogic->LMBDown(SDL_Point{ SpacePoint.x, SpacePoint.y });
     }
-
-    node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
-    if (current_hover)
+    if (m_tool)
     {
-        // selection code
-        InternalSelectObject(current_hover);
-        
-        // do Click
-        MI::ClickEvent result = current_hover->LMBDown(point);
-        switch (result)
-        {
-            using enum MI::ClickEvent;
-            case CAPTURE_START:
-            {
-                m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::OBJECT;
-                return CAPTURE_START;
-                break;
-            }
-            case CAPTURE_END:
-            {
-                m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
-                return CAPTURE_END;
-                break;
-            }
-            case CLICKED:
-            {
-                return CLICKED;
-                break;
-            }
-            case NONE:
-            {
-                break;
-            }
-        }
-
-        // do drag
-        m_drag_objects.clear();
-        for (auto&& object_ptr : m_current_selection)
-        {
-            node::GraphicsObject* object = object_ptr.GetObjectPtr();
-            if (object != nullptr && object->isDraggable())
-            {
-                m_drag_objects.emplace_back(object->GetMIHandlePtr(), SDL_Point{ object->GetSpaceRect().x, object->GetSpaceRect().y});
-            }
-        }
-        if (m_drag_objects.size() != 0)
-        {
-            m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG;
-            m_StartPointScreen = p;
-            return MI::ClickEvent::CAPTURE_START;
-        }
-    }
-    else
-    {
-        ClearCurrentSelection();
-        m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::SCREEN_DRAG;
-        m_StartPointScreen = p;
-        m_startEdgeSpace = { m_spaceRect.x, m_spaceRect.y };
-        return MI::ClickEvent::CAPTURE_START;
+        return m_tool->OnLMBDown(point);
     }
     return MI::ClickEvent::NONE;
 
@@ -274,13 +224,18 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 
 MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
 {
+    auto&& transformer = GetSpaceScreenTransformer();
+    model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
-        auto&& transformer = GetSpaceScreenTransformer();
-        model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
         return m_graphicsLogic->LMBUp(SDL_Point{ SpacePoint.x, SpacePoint.y });
     }
 
+    if (m_tool)
+    {
+        return m_tool->OnLMBUp(SpacePoint);
+    }
+    /*
     switch (m_mouse_capture_mode)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
@@ -293,8 +248,6 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
         node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
         if (current_hover)
         {
-            auto&& transformer = GetSpaceScreenTransformer();
-            model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
             current_hover->LMBUp({ SpacePoint.x, SpacePoint.y});
             m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
             return MI::ClickEvent::CAPTURE_END;
@@ -315,6 +268,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
         break;
     }
     }
+    */
     return MI::ClickEvent::NONE;
 }
 
@@ -451,14 +405,18 @@ void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
     m_graphicsLogic = std::move(logic);
 }
 
-node::IGraphicsSceneController* node::GraphicsScene::GetController() const
+void node::GraphicsScene::SetTool(std::unique_ptr<GraphicsTool> ptr)
 {
-    return m_controller.get();
-}
-
-void node::GraphicsScene::SetController(std::unique_ptr<IGraphicsSceneController> ptr)
-{
-    m_controller = std::move(ptr);
+    if (m_tool)
+    {
+        m_tool->OnExit();
+    }
+    m_tool = std::move(ptr);
+    m_tool->OnStart();
+    if (m_current_mouse_position)
+    {
+        m_tool->OnMouseEnter(m_spaceScreenTransformer.ScreenToSpacePoint(*m_current_mouse_position));
+    }
 }
 
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)

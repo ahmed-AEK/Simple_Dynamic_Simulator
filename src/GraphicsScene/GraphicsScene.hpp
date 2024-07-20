@@ -6,6 +6,8 @@
 #include "GraphicsScene/IGraphicsScene.hpp"
 #include <vector>
 #include <span>
+#include "GraphicsScene/tools/GraphicsTool.hpp"
+#include <optional>
 
 namespace node
 {
@@ -77,6 +79,7 @@ public:
 
     virtual void Draw(SDL_Renderer* renderer) override;
 
+    GraphicsObject* GetCurrentHover() noexcept { return m_current_mouse_hover.GetObjectPtr(); }
     void SetCurrentHover(GraphicsObject* current_hover);
     bool IsMouseCaptured() const { return m_mouse_capture_mode != CAPTURE_MODE::NONE; }
     BlockSocketObject* GetSocketAt(const model::Point space_point);
@@ -86,8 +89,9 @@ public:
 
     void SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic);
     GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
-    IGraphicsSceneController* GetController() const override;
-    void SetController(std::unique_ptr<IGraphicsSceneController> ptr);
+    void SetTool(std::unique_ptr<GraphicsTool> ptr);
+    GraphicsTool* GetTool() const { return m_tool.get(); }
+    virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 
 protected:
     virtual void OnSetRect(const SDL_Rect& rect) override;
@@ -95,7 +99,6 @@ protected:
     virtual MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
     virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
     virtual bool OnScroll(const double amount, const SDL_Point& p) override;
-    virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 private:
     bool InternalSelectObject(GraphicsObject* object);
     model::Rect m_spaceRect_base;
@@ -103,6 +106,7 @@ private:
     double m_scroll_ratio = 1.25;
     double m_zoomScale;
     int m_spaceQuantization = 20;
+    std::optional<SDL_Point> m_current_mouse_position;
     SDL_Point m_StartPointScreen{ 0,0 };
     SDL_Point m_startEdgeSpace{ 0,0 };
     std::vector<ObjectSlot> m_objects;
@@ -110,8 +114,8 @@ private:
     std::vector<HandlePtr<GraphicsObject>> m_current_selection;
     std::vector<DragObject> m_drag_objects;
     std::unique_ptr<GraphicsLogic> m_graphicsLogic;
+    std::unique_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
-    std::unique_ptr<IGraphicsSceneController> m_controller;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
     GraphicsSceneMode m_SceneMode = GraphicsSceneMode::Normal;
 };

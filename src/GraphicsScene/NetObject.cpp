@@ -4,7 +4,6 @@
 #include "GraphicsLogic/NewNet.hpp"
 #include "GraphicsLogic/NewNetJunction.hpp"
 #include "IGraphicsScene.hpp"
-#include "IGraphicsSceneController.hpp"
 #include <cmath>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
@@ -56,20 +55,7 @@ MI::ClickEvent node::NetSegment::OnLMBDown(const model::Point& current_mouse_poi
 	}
 	return MI::ClickEvent::NONE;
 	*/
-	auto&& scene = GetScene();
-	if (!scene)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	auto&& controller = scene->GetController();
-	if (!controller)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	assert(GetScene());
-	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
-
-	return controller->OnSegmentLMBDown(screenPoint, *this);
+	return GraphicsObject::OnLMBDown(current_mouse_point);
 }
 void node::NetSegment::OnMouseMove(const model::Point& current_mouse_point)
 {
@@ -321,19 +307,7 @@ MI::ClickEvent node::NetNode::OnLMBDown(const model::Point& current_mouse_point)
 	}
 	return MI::ClickEvent::CLICKED;
 	*/
-	auto&& scene = GetScene();
-	if (!scene)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	auto&& controller = scene->GetController();
-	if (!controller)
-	{
-		return MI::ClickEvent::NONE;
-	}
-	assert(GetScene());
-	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
-	return controller->OnNetNodeLMBDown(screenPoint, *this);
+	return GraphicsObject::OnLMBDown(current_mouse_point);
 }
 
 MI::ClickEvent node::NetNode::OnLMBUp(const model::Point& current_mouse_point)

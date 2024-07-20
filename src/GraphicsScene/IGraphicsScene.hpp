@@ -11,7 +11,6 @@ class IGraphicsScene
 public:
 	virtual const SpaceScreenTransformer& GetSpaceScreenTransformer() const = 0;
 	virtual void InvalidateRect() = 0;
-	virtual IGraphicsSceneController* GetController() const = 0;
 	virtual bool IsObjectSelected(const GraphicsObject& object) const = 0;
 };
 

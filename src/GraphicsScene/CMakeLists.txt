@@ -10,8 +10,9 @@ NetObject.cpp NetObject.hpp
 
 GraphicsScene_exports.h
 IGraphicsScene.hpp
-IGraphicsSceneController.hpp
-GraphicsSceneController.cpp GraphicsSceneController.hpp
+
+tools/GraphicsTool.hpp
+tools/ArrowTool.hpp tools/ArrowTool.cpp
 
 GraphicsLogic/GraphicsLogic.cpp 	GraphicsLogic/GraphicsLogic.hpp
 GraphicsLogic/NewNet.cpp 		GraphicsLogic/NewNet.hpp

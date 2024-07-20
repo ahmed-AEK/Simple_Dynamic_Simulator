@@ -3,7 +3,6 @@
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/IGraphicsScene.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include "GraphicsScene/IGraphicsSceneController.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
@@ -14,18 +13,6 @@ public:
 	MOCK_METHOD(node::SpaceScreenTransformer&, GetSpaceScreenTransformer, (), (const,override));
 	MOCK_METHOD(void, InvalidateRect, (), (override));
 	MOCK_METHOD(bool, IsObjectSelected, (const node::GraphicsObject&), (const, override));
-	MOCK_METHOD(node::IGraphicsSceneController*, GetController, (), (const, override));
-
-};
-
-class GraphicsSceneControllerMock : public node::IGraphicsSceneController
-{
-public:
-	MOCK_METHOD(MI::ClickEvent, OnBlockLMBDown, (const SDL_Point&, node::BlockObject&), (override));
-	MOCK_METHOD(MI::ClickEvent, OnSocketLMBDown, (const SDL_Point&, node::BlockSocketObject&), (override));
-	MOCK_METHOD(MI::ClickEvent, OnSegmentLMBDown, (const SDL_Point&, node::NetSegment&), (override));
-	MOCK_METHOD(MI::ClickEvent, OnNetNodeLMBDown, (const SDL_Point&, node::NetNode&), (override));
-
 };
 
 using ::testing::ReturnRef;
