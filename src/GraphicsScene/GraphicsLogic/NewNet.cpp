@@ -99,7 +99,7 @@ node::NewNetObject::NewNetObject(std::array<NetNode*, 4> nodes, std::array<NetSe
 
 void node::NewNetObject::OnMouseMove(const SDL_Point& current_mouse_point)
 {
-	auto* socket_ptr = GetScene()->GetSocketAt(current_mouse_point);
+	auto* socket_ptr = GetScene()->GetSocketAt({ current_mouse_point.x, current_mouse_point.y });
 	if (socket_ptr && (socket_ptr->GetConnectedNode() == p_endNode || 
 		nullptr == socket_ptr->GetConnectedNode()))
 	{

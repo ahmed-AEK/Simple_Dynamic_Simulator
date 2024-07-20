@@ -19,7 +19,7 @@ namespace node
     private:
         void DrawCoords(SDL_Renderer* renderer) const;
         int m_dotspace = 20;
-        SDL_Point m_current_hover_point{};
+        model::Point m_current_hover_point{};
         SDL_Point m_screen_hover_point{};
 
     };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DraggableObject.hpp"
-#include "NodeSocket.hpp"
+#include "BlockSocketObject.hpp"
 #include <vector>
 #include <variant>
 #include <list>
@@ -52,22 +52,22 @@ public:
 	}
 	void setCenter(const SDL_Point& point) noexcept { SetSpaceOrigin({ point.x - m_width / 2, point.y - m_height / 2 }); }
 	void UpdateConnectedSegments();
-	void SetConnectedSocket(NodeSocket* socket);
-	NodeSocket* GetConnectedSocket() noexcept;
+	void SetConnectedSocket(BlockSocketObject* socket);
+	BlockSocketObject* GetConnectedSocket() noexcept;
 	uint8_t GetConnectedSegmentsCount();
 	void ClearSegment(const NetSegment* segment);
 protected:
-	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
-	virtual void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	void OnSetSpaceRect(const SDL_Rect& rect) override;
+	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
+	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
+	void OnSetSpaceRect(const model::Rect& rect) override;
 private:
 	SDL_Point m_centerPoint;
 	NetSegment* m_northSegment = nullptr;
 	NetSegment* m_southSegment = nullptr;
 	NetSegment* m_eastSegment = nullptr;
 	NetSegment* m_westSegment = nullptr;
-	NodeSocket* m_socket = nullptr;
+	BlockSocketObject* m_socket = nullptr;
 	static constexpr int m_width = 10;
 	static constexpr int m_height = 10;
 	bool b_being_deleted = false;
@@ -90,9 +90,9 @@ public:
 	const NetOrientation& GetOrientation() noexcept { return m_orientation; }
 	int GetWidth() const { return c_width; }
 protected:
-	virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
+	void OnMouseMove(const model::Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
 	NetNode* m_startNode;
 	NetNode* m_endNode;

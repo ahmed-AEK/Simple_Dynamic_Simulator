@@ -163,7 +163,8 @@ void node::BlockPallete::DrawElement(SDL_Renderer* renderer, const PalleteElemen
 	SDL_Rect contained_rect = { area.x + PalleteData::ElementWPadding/2, 
 		area.y,
 		ElementWidth, ElementHeight };
-	element.styler->DrawBlock(renderer, element.block, contained_rect);
+	node::SpaceScreenTransformer transformer{ contained_rect, element.block.GetBounds() };
+	element.styler->DrawBlock(renderer, element.block, transformer);
 	SDL_Rect TextArea = { contained_rect.x, contained_rect.y + contained_rect.h,
 		area.w, area.h - contained_rect.h };
 	DrawElementText(renderer, element.block_template, TextArea);

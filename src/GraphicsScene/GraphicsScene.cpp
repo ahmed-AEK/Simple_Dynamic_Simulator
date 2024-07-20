@@ -1,7 +1,7 @@
 #include "GraphicsScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include "GraphicsScene/Node.hpp"
-#include "GraphicsScene/NodeSocket.hpp"
+#include "GraphicsScene/BlockObject.hpp"
+#include "GraphicsScene/BlockSocketObject.hpp"
 #include <algorithm>
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
@@ -28,7 +28,7 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
 {
     obj->SetSpaceOrigin(
         obj->isAligned() ? QuantizePoint({obj->GetSpaceRect().x, obj->GetSpaceRect().y}):
-    SDL_Point{obj->GetSpaceRect().x, obj->GetSpaceRect().y}
+    model::Point{obj->GetSpaceRect().x, obj->GetSpaceRect().y}
     );
     ObjectSlot slot = {std::move(obj), z_order};
     auto iter = std::lower_bound(m_objects.begin(), m_objects.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
@@ -85,15 +85,23 @@ void node::GraphicsScene::SetCurrentHover(node::GraphicsObject* current_hover)
     }
 }
 
-node::NodeSocket* node::GraphicsScene::GetSocketAt(const SDL_Point space_point)
+node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point space_point)
 {
     for (auto& object : m_objects)
     {
-        if (ObjectType::node == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point, &(object.m_ptr->GetSpaceRect())))
+        SDL_Rect object_space_rect = { object.m_ptr->GetSpaceRect().x, object.m_ptr->GetSpaceRect().y,
+            object.m_ptr->GetSpaceRect().w, object.m_ptr->GetSpaceRect().h };
+        SDL_Point space_point_sdl = ToSDLPoint(space_point);
+        if (ObjectType::node == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point_sdl, &object_space_rect))
         {
-            node::Node* node_pointer = static_cast<node::Node*>(object.m_ptr.get());
+            
+            node::BlockObject* node_pointer = static_cast<node::BlockObject*>(object.m_ptr.get());
             auto&& range = node_pointer->GetSockets();
-            auto it = std::find_if(range.begin(), range.end(), [=](const auto& socket_ptr) { return SDL_PointInRect(&space_point, &(socket_ptr->GetSpaceRect())); });
+            auto it = std::find_if(range.begin(), range.end(), 
+                [=](const auto& socket_ptr) { 
+                SDL_Rect socket_rect_sdl = ToSDLRect(socket_ptr->GetSpaceRect());
+                return SDL_PointInRect(&space_point_sdl, &socket_rect_sdl); 
+                });
             if (it != range.end())
             {
                 return *it;
@@ -123,10 +131,11 @@ bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
 
 void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 {
+    model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
         auto&& transformer = GetSpaceScreenTransformer();
-        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
+        SDL_Point SpacePoint = ToSDLPoint(transformer.ScreenToSpacePoint(p));
         m_graphicsLogic->MouseMove(SpacePoint);
         return;
     }
@@ -135,12 +144,11 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     {
     case node::GraphicsScene::CAPTURE_MODE::NONE:
         {
-            node::GraphicsObject* current_hover = GetInteractableAt(p);
+            node::GraphicsObject* current_hover = GetObjectAt(point);
             SetCurrentHover(current_hover);
             if (current_hover)
             {
-                auto&& transformer = GetSpaceScreenTransformer();
-                current_hover->MouseMove(transformer.ScreenToSpacePoint(p));
+                current_hover->MouseMove(point);
             }
             break;
         }
@@ -148,15 +156,14 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     {
         node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
         SDL_assert(current_hover);
-        auto&& transformer = GetSpaceScreenTransformer();
-        current_hover->MouseMove(transformer.ScreenToSpacePoint(p));
+        current_hover->MouseMove(point);
         break;
     }
     case node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG:
     {
         SDL_assert(m_drag_objects.size());
         auto&& transformer = GetSpaceScreenTransformer();
-        const SDL_Point drag_vector = transformer.ScreenToSpaceVector({p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y});
+        const auto drag_vector = transformer.ScreenToSpaceVector({p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y});
         for (auto&& drag_object : m_drag_objects)
         {
             node::GraphicsObject* object =  drag_object.m_object.GetObjectPtr();
@@ -175,7 +182,7 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     case node::GraphicsScene::CAPTURE_MODE::SCREEN_DRAG:
     {
         auto&& transformer = GetSpaceScreenTransformer();
-        const SDL_Point current_position_difference_space_vector = transformer.ScreenToSpaceVector({
+        const auto current_position_difference_space_vector = transformer.ScreenToSpaceVector({
         p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y
             });
 
@@ -194,11 +201,12 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 
 MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 {
+    model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
         auto&& transformer = GetSpaceScreenTransformer();
-        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
-       return m_graphicsLogic->LMBDown(SpacePoint);
+        model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
+        return m_graphicsLogic->LMBDown(SDL_Point{ SpacePoint.x, SpacePoint.y });
     }
 
     node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
@@ -208,9 +216,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
         InternalSelectObject(current_hover);
         
         // do Click
-        auto&& transformer = GetSpaceScreenTransformer();
-        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
-        MI::ClickEvent result = current_hover->LMBDown(SpacePoint);
+        MI::ClickEvent result = current_hover->LMBDown(point);
         switch (result)
         {
             using enum MI::ClickEvent;
@@ -271,8 +277,8 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
     if (m_graphicsLogic)
     {
         auto&& transformer = GetSpaceScreenTransformer();
-        SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
-        return m_graphicsLogic->LMBUp(SpacePoint);
+        model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
+        return m_graphicsLogic->LMBUp(SDL_Point{ SpacePoint.x, SpacePoint.y });
     }
 
     switch (m_mouse_capture_mode)
@@ -288,8 +294,8 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
         if (current_hover)
         {
             auto&& transformer = GetSpaceScreenTransformer();
-            SDL_Point SpacePoint = transformer.ScreenToSpacePoint(p);
-            current_hover->LMBUp(SpacePoint);
+            model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
+            current_hover->LMBUp({ SpacePoint.x, SpacePoint.y});
             m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
             return MI::ClickEvent::CAPTURE_END;
         }
@@ -312,17 +318,17 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
     return MI::ClickEvent::NONE;
 }
 
-void node::GraphicsScene::SetSpaceRect(const SDL_Rect& rect)
+void node::GraphicsScene::SetSpaceRect(const model::Rect& rect)
 {
     m_spaceRect = rect;
     m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
 }
-const SDL_Rect& node::GraphicsScene::GetSpaceRect() const noexcept
+const node::model::Rect& node::GraphicsScene::GetSpaceRect() const noexcept
 {
     return m_spaceRect;
 }
 
-const SDL_Rect& node::GraphicsScene::GetSpaceRectBase() const noexcept
+const node::model::Rect& node::GraphicsScene::GetSpaceRectBase() const noexcept
 {
     return m_spaceRect_base;
 }
@@ -375,7 +381,7 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
 // 2. grow width and height
 // 3. get new screen point position
 // 4. change origin by the difference between them
-    SDL_Point old_position;
+    model::Point old_position;
     if (amount > 0)
     {
         if (m_zoomScale <= 0.3)
@@ -408,12 +414,12 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
     else {
         return false;
     }
-    SDL_Rect new_rect = GetSpaceRect();
+    model::Rect new_rect = GetSpaceRect();
     new_rect.w = static_cast<int>(GetBaseRect().w * m_zoomScale);
     new_rect.h = static_cast<int>(GetBaseRect().h * m_zoomScale);
     SetSpaceRect(new_rect);
     auto&& transformer = GetSpaceScreenTransformer();
-    SDL_Point new_position = transformer.ScreenToSpacePoint(p);
+    model::Point new_position = transformer.ScreenToSpacePoint(p);
     new_rect = GetSpaceRect();
     new_rect.x = new_rect.x + old_position.x - new_position.x;
     new_rect.y = new_rect.y + old_position.y - new_position.y;
@@ -465,7 +471,7 @@ void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)
     Widget::OnSetRect(rect);
 }
 
-node::GraphicsObject* node::GraphicsScene::GetInteractableAt(const SDL_Point& p) const
+node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) const
 {
     for (auto& object: m_objects)
     {
@@ -483,7 +489,7 @@ const node::SpaceScreenTransformer& node::GraphicsScene::GetSpaceScreenTransform
     return m_spaceScreenTransformer;
 }
 
-SDL_Point node::GraphicsScene::QuantizePoint(const SDL_Point& p)
+node::model::Point node::GraphicsScene::QuantizePoint(const model::Point& p)
 {
     return { 
         static_cast<int>(p.x/m_spaceQuantization)*m_spaceQuantization,
@@ -491,14 +497,14 @@ SDL_Point node::GraphicsScene::QuantizePoint(const SDL_Point& p)
         };
 }
 
-std::vector<node::Node*> node::GraphicsScene::GetNodes()
+std::vector<node::BlockObject*> node::GraphicsScene::GetNodes()
 {
-    std::vector<node::Node*> out;
+    std::vector<node::BlockObject*> out;
     for (auto& pointer : m_objects)
     {
         if (ObjectType::node == pointer.m_ptr->GetObjectType())
         {
-            auto ptr = static_cast<node::Node*>(pointer.m_ptr.get());
+            auto ptr = static_cast<node::BlockObject*>(pointer.m_ptr.get());
             out.push_back(ptr);
         }
     }

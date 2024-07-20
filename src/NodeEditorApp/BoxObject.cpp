@@ -2,8 +2,10 @@
 #include "ExampleContextMenu.hpp"
 #include "GraphicsScene/IGraphicsScene.hpp"
 #include "toolgui/Scene.hpp"
+#include <cassert>
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 
-node::BoxObject::BoxObject(SDL_Rect sceneRect, IGraphicsScene* scene)
+node::BoxObject::BoxObject(model::Rect sceneRect, IGraphicsScene* scene)
 : node::DraggableObject(sceneRect, ObjectType::interactive, scene)
 {
 
@@ -19,18 +21,20 @@ void node::BoxObject::Draw(SDL_Renderer* renderer)
     {
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     }
-    SDL_RenderFillRect(renderer, &GetRectImpl());
+    assert(GetScene());
+    SDL_Rect screenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+    SDL_RenderFillRect(renderer, &screenRect);
 }
 
 
-MI::ClickEvent node::BoxObject::OnLMBDown(const SDL_Point& p)
+MI::ClickEvent node::BoxObject::OnLMBDown(const model::Point& p)
 {
     SDL_Log("Box Pressed!");
     auto&& ret = DraggableObject::OnLMBDown(p);
     return ret;
 }
 
-MI::ClickEvent node::BoxObject::OnRMBUp(const SDL_Point& p)
+MI::ClickEvent node::BoxObject::OnRMBUp(const model::Point& p)
 {
     UNUSED_PARAM(p);
     /*

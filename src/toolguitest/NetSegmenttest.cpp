@@ -3,10 +3,7 @@
 //#pragma warning( pop ) 
 #include "GraphicsScene/NetObject.hpp"
 
-bool operator==(const SDL_Rect& in1, const SDL_Rect& in2)
-{
-    return in1.x == in2.x && in1.y == in2.y && in1.w == in2.w && in1.h == in2.h;
-}
+using namespace node;
 
 TEST(testNetSegment, testCreate)
 {
@@ -26,8 +23,8 @@ TEST(testNetSegment, testCreate)
     EXPECT_EQ(segment1.getEndNode(), &node2);
     EXPECT_EQ(segment3.getStartNode(), nullptr);
     
-    SDL_Rect rect1 = SDL_Rect{ -5, 0, 10, 1 };
-    SDL_Rect rect2 = SDL_Rect{ 0, -5, 1, 10 };
+    model::Rect rect1{ -5, 0, 10, 1 };
+    model::Rect rect2{ 0, -5, 1, 10 };
     EXPECT_EQ(segment1.GetSpaceRect(), rect1);
     EXPECT_EQ(segment2.GetSpaceRect(), rect2);
 
@@ -47,21 +44,21 @@ TEST(testNetSegment, testMoveNodeInLine)
     node::NetNode node2{ {0,1},  nullptr };
     node::NetSegment segment1 = node::NetSegment(node::NetOrientation::Vertical, &node1, &node2);
 
-    SDL_Rect rect1 = segment1.GetSpaceRect();
+    model::Rect rect1 = segment1.GetSpaceRect();
     node1.setCenter({ 2,2 });
     node2.setCenter({ 2,3 });
     node2.UpdateConnectedSegments();
 
-    SDL_Rect rect2 = segment1.GetSpaceRect();
+    model::Rect rect2 = segment1.GetSpaceRect();
 
     node1.setCenter({ 2,0 });
     node2.setCenter({ 2,4 });
     node1.UpdateConnectedSegments();
-    SDL_Rect rect3 = segment1.GetSpaceRect();
+    model::Rect rect3 = segment1.GetSpaceRect();
 
-    SDL_Rect expected_rect1{ -5,0,10,1 };
-    SDL_Rect expected_rect2{ -3,2,10,1 };
-    SDL_Rect expected_rect3{ -3,0,10,4 };
+    model::Rect expected_rect1{ -5,0,10,1 };
+    model::Rect expected_rect2{ -3,2,10,1 };
+    model::Rect expected_rect3{ -3,0,10,4 };
 
     EXPECT_EQ(rect1, expected_rect1);
     EXPECT_EQ(rect2, expected_rect2);

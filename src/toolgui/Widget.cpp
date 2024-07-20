@@ -22,7 +22,7 @@ namespace node
     }
     void Widget::OnSetRect(const SDL_Rect &rect)
     {
-        MI::MouseInteractable<Widget>::SetRectImpl(rect);
+        WidgetMouseInteractable::SetRectImpl(rect);
     }
 
     Widget::~Widget()
@@ -33,7 +33,7 @@ namespace node
     Widget::Widget(SDL_Rect rect, Scene* parent)
     :p_parent(parent), m_rect_base(rect)
     {
-        MI::MouseInteractable<Widget>::SetRectImpl(rect);
+        WidgetMouseInteractable::SetRectImpl(rect);
     }
     void Widget::InvalidateRect()
     {

@@ -5,14 +5,14 @@
 
 namespace node
 {
-class Node;
+class BlockObject;
 class GraphicsScene;
 class GraphicsObject;
 
 class NodeDeleteLogic: public GraphicsLogic
 {
 public:
-	explicit NodeDeleteLogic(Node& node, GraphicsScene* scene);
+	explicit NodeDeleteLogic(BlockObject& node, GraphicsScene* scene);
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;

@@ -16,9 +16,10 @@ struct Point
 
 struct Rect
 {
-	Point origin;
-	node_int width;
-	node_int height;
+	node_int x;
+	node_int y;
+	node_int w;
+	node_int h;
 };
 
 [[nodiscard]] inline constexpr bool operator==(const Point& p1, const Point& p2) noexcept
@@ -28,8 +29,8 @@ struct Rect
 
 [[nodiscard]] inline constexpr bool operator==(const Rect& r1, const Rect& r2) noexcept
 {
-	return (r1.origin.x == r2.origin.x) && (r1.origin.y == r2.origin.y) &&
-		(r1.width == r2.width) && (r1.height == r2.height);
+	return (r1.x == r2.x) && (r1.y == r2.y) &&
+		(r1.w == r2.w) && (r1.h == r2.h);
 }
 
 }

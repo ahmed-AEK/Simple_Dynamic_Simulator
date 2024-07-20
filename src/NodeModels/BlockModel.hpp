@@ -64,9 +64,10 @@ public:
 		:m_bounds{ bounds }, m_Id{ id } {}
 
 	void SetPosition(const Point& origin) { 
-		m_bounds.origin = origin; 
+		m_bounds.x = origin.x;
+		m_bounds.y = origin.y;
 	}
-	const Point& GetPosition() const noexcept { return m_bounds.origin; }
+	const Point GetPosition() const noexcept { return { m_bounds.x , m_bounds.y }; }
 
 	void SetBounds(const Rect& bounds) { 
 		m_bounds = bounds;

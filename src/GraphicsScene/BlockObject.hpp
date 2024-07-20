@@ -9,33 +9,32 @@
 
 namespace node
 {
-class NodeSocket;
+class BlockSocketObject;
 
 struct GRAPHICSSCENE_API SocketData
 {
     int id;
-    std::unique_ptr<NodeSocket> socket;
+    std::unique_ptr<BlockSocketObject> socket;
 };
 
-class GRAPHICSSCENE_API Node: public DraggableObject
+class GRAPHICSSCENE_API BlockObject: public DraggableObject
 {
 public:
-    Node(SDL_Rect rect, IGraphicsScene* scene);
+    BlockObject(model::Rect rect, IGraphicsScene* scene);
     void Draw(SDL_Renderer* renderer) override;
     void AddInputSocket(int id);
     void AddOutputSocket(int id);
-    std::vector<NodeSocket*> GetSockets();
+    std::vector<BlockSocketObject*> GetSockets();
     void DisconnectSockets();
 protected:
-    void OnSetSpaceRect(const SDL_Rect& rect) override;
+    void OnSetSpaceRect(const model::Rect& rect) override;
     virtual void PositionSockets();
-    virtual GraphicsObject* OnGetInteractableAtPoint(const SDL_Point& point) override;
+    GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
     void OnUpdateRect() override;
-    virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+    MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 private:
     std::vector<SocketData> m_input_sockets;
     std::vector<SocketData> m_output_sockets;
-    std::vector<SocketData> m_inout_sockets;
     bool b_being_deleted = false;
 
 };

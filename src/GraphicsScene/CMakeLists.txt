@@ -4,12 +4,11 @@ add_library(GraphicsScene
 GraphicsScene.cpp GraphicsScene.hpp
 GraphicsObject.cpp GraphicsObject.hpp
 DraggableObject.cpp DraggableObject.hpp
-Node.cpp Node.hpp
-NodeSocket.cpp NodeSocket.hpp
+BlockObject.cpp BlockObject.hpp
+BlockSocketObject.cpp BlockSocketObject.hpp
 NetObject.cpp NetObject.hpp
 
 GraphicsScene_exports.h
-SpaceScreenTransformer.cpp SpaceScreenTransformer.hpp
 IGraphicsScene.hpp
 IGraphicsSceneController.hpp
 GraphicsSceneController.cpp GraphicsSceneController.hpp
@@ -26,4 +25,4 @@ target_include_directories(GraphicsScene INTERFACE "..")
 
 target_compile_definitions(GraphicsScene PRIVATE GRAPHICSSCENE_EXPORTS)
 
-target_link_libraries(GraphicsScene PUBLIC toolgui)
+target_link_libraries(GraphicsScene PUBLIC toolgui NodeSDLStylers)

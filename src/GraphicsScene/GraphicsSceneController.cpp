@@ -7,7 +7,7 @@ node::GraphicsSceneController::GraphicsSceneController(GraphicsScene* scene)
 {
 }
 
-MI::ClickEvent node::GraphicsSceneController::OnNodeLMBDown(const SDL_Point& current_mouse_point, Node& node)
+MI::ClickEvent node::GraphicsSceneController::OnBlockLMBDown(const SDL_Point& current_mouse_point, BlockObject& node)
 {
     UNUSED_PARAM(current_mouse_point);
     if (m_scene->GetMode() == GraphicsSceneMode::Delete)
@@ -19,7 +19,7 @@ MI::ClickEvent node::GraphicsSceneController::OnNodeLMBDown(const SDL_Point& cur
     return MI::ClickEvent::NONE;
 }
 
-MI::ClickEvent node::GraphicsSceneController::OnSocketLMBDown(const SDL_Point& current_mouse_point, NodeSocket& node)
+MI::ClickEvent node::GraphicsSceneController::OnSocketLMBDown(const SDL_Point& current_mouse_point, BlockSocketObject& node)
 {
     UNUSED_PARAM(current_mouse_point);
     UNUSED_PARAM(node);

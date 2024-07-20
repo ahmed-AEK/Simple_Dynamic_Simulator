@@ -1,19 +1,22 @@
-#include "Node.hpp"
+#include "BlockObject.hpp"
 #include "SDL_Framework/SDL_headers.h"
-#include "NodeSocket.hpp"
+#include "BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include "IGraphicsScene.hpp"
 #include "IGraphicsSceneController.hpp"
 #include <algorithm>
 #include <iterator>
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
+#include <cassert>
 
-node::Node::Node(SDL_Rect rect, IGraphicsScene* scene)
+node::BlockObject::BlockObject(model::Rect rect, IGraphicsScene* scene)
 	: DraggableObject(rect, ObjectType::node, scene)
 {
 }
 
-void node::Node::Draw(SDL_Renderer* renderer)
+void node::BlockObject::Draw(SDL_Renderer* renderer)
 {
+    assert(GetScene());
 
     if (!GetScene()->IsObjectSelected(*this))
     {
@@ -23,9 +26,11 @@ void node::Node::Draw(SDL_Renderer* renderer)
     {
         SDL_SetRenderDrawColor(renderer, 235, 128, 52, 255);
     }
-	SDL_RenderFillRect(renderer, &GetRectImpl());
+
+    SDL_Rect screenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+	SDL_RenderFillRect(renderer, &screenRect);
     SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ GetRectImpl().x + 2, GetRectImpl().y + 2, GetRectImpl().w - 4, GetRectImpl().h - 4 };
+	SDL_Rect inner_rect{ screenRect.x + 2, screenRect.y + 2, screenRect.w - 4, screenRect.h - 4 };
 	SDL_RenderFillRect(renderer, &inner_rect);
 
     for (auto&& sock : m_input_sockets)
@@ -36,14 +41,10 @@ void node::Node::Draw(SDL_Renderer* renderer)
     {
         sock.socket->Draw(renderer);
     }
-    for (auto&& sock : m_inout_sockets)
-    {
-        sock.socket->Draw(renderer);
-    }
 
 }
 
-MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
 {
     auto&& scene = GetScene();
     if (!scene)
@@ -55,41 +56,42 @@ MI::ClickEvent node::Node::OnLMBDown(const SDL_Point& current_mouse_point)
     {
         return MI::ClickEvent::NONE;
     }
-
-    return controller->OnNodeLMBDown(current_mouse_point, *this);
+    assert(GetScene());
+    auto&& transformer = GetScene()->GetSpaceScreenTransformer();
+    SDL_Point space_point = transformer.SpaceToScreenPoint(current_mouse_point);
+    return controller->OnBlockLMBDown(space_point, *this);
 }
 
-void node::Node::AddInputSocket(int id)
+void node::BlockObject::AddInputSocket(int id)
 {
-    std::unique_ptr<node::NodeSocket> sock = std::make_unique<node::NodeSocket>(
+    std::unique_ptr<node::BlockSocketObject> sock = std::make_unique<node::BlockSocketObject>(
         node::SocketType::input, GetScene(), this);
     m_input_sockets.push_back({ id,std::move(sock) });
     PositionSockets();
 
 }
 
-void node::Node::AddOutputSocket(int id)
+void node::BlockObject::AddOutputSocket(int id)
 {
-    std::unique_ptr<node::NodeSocket> sock = std::make_unique<node::NodeSocket>(
+    std::unique_ptr<node::BlockSocketObject> sock = std::make_unique<node::BlockSocketObject>(
         node::SocketType::output, GetScene(), this);
     m_output_sockets.push_back({ id,std::move(sock) });
     PositionSockets();
 
 }
 
-std::vector<node::NodeSocket*> node::Node::GetSockets()
+std::vector<node::BlockSocketObject*> node::BlockObject::GetSockets()
 {
-    std::vector<node::NodeSocket*> out;
-    out.reserve(m_input_sockets.size() + m_output_sockets.size() + m_inout_sockets.size());
+    std::vector<node::BlockSocketObject*> out;
+    out.reserve(m_input_sockets.size() + m_output_sockets.size());
 
     std::transform(m_input_sockets.begin(), m_input_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
     std::transform(m_output_sockets.begin(), m_output_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
-    std::transform(m_inout_sockets.begin(), m_inout_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.socket.get(); });
     
     return out;
 }
 
-void node::Node::DisconnectSockets()
+void node::BlockObject::DisconnectSockets()
 {
     for (auto& socketData : m_input_sockets)
     {
@@ -106,41 +108,33 @@ void node::Node::DisconnectSockets()
             socketData.socket->SetConnectedNode(nullptr);
         }
     }
-
-    for (auto& socketData : m_inout_sockets)
-    {
-        if (socketData.socket->GetConnectedNode())
-        {
-            socketData.socket->SetConnectedNode(nullptr);
-        }
-    }
 }
 
-void node::Node::OnSetSpaceRect(const SDL_Rect& rect)
+void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
 {
     DraggableObject::OnSetSpaceRect(rect);
     PositionSockets();
 }
 
-void node::Node::PositionSockets()
+void node::BlockObject::PositionSockets()
 {
     int in_spacing = static_cast<int>(GetSpaceRect().h / (m_input_sockets.size() + 1));
     int in_counter = 1;
     for (auto&& sock : m_input_sockets)
     {
-        sock.socket->SetPosition({ GetSpaceRect().x + 2, GetSpaceRect().y + in_spacing * in_counter - node::NodeSocket::nodeLength/2});
+        sock.socket->SetPosition({ GetSpaceRect().x + 2, GetSpaceRect().y + in_spacing * in_counter - node::BlockSocketObject::nodeLength/2});
         in_counter++;
     }
     int out_spacing = static_cast<int>(GetSpaceRect().h / (m_output_sockets.size() + 1));
     int out_counter = 1;
     for (auto&& sock : m_output_sockets)
     {
-        sock.socket->SetPosition({ GetSpaceRect().x + GetSpaceRect().w - 2 - sock.socket->nodeLength, GetSpaceRect().y + out_spacing * out_counter - node::NodeSocket::nodeLength / 2 });
+        sock.socket->SetPosition({ GetSpaceRect().x + GetSpaceRect().w - 2 - sock.socket->nodeLength, GetSpaceRect().y + out_spacing * out_counter - node::BlockSocketObject::nodeLength / 2 });
         out_counter++;
     }
 }
 
-node::GraphicsObject* node::Node::OnGetInteractableAtPoint(const SDL_Point& point)
+node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::Point& point)
 {
     node::GraphicsObject* hover = nullptr;
     for (auto&& sock : m_input_sockets)
@@ -159,18 +153,10 @@ node::GraphicsObject* node::Node::OnGetInteractableAtPoint(const SDL_Point& poin
             return hover;
         }
     }
-    for (auto&& sock : m_inout_sockets)
-    {
-        hover = sock.socket->GetInteractableAtPoint(point);
-        if (hover)
-        {
-            return hover;
-        }
-    }
     return this;
 }
 
-void node::Node::OnUpdateRect()
+void node::BlockObject::OnUpdateRect()
 {
     DraggableObject::OnUpdateRect();
     for (auto&& sock : m_input_sockets)
@@ -178,10 +164,6 @@ void node::Node::OnUpdateRect()
         sock.socket->UpdateRect();
     }
     for (auto&& sock : m_output_sockets)
-    {
-        sock.socket->UpdateRect();
-    }
-    for (auto&& sock : m_inout_sockets)
     {
         sock.socket->UpdateRect();
     }

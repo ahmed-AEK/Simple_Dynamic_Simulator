@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "GraphicsScene/Node.hpp"
+#include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/IGraphicsScene.hpp"
-#include "GraphicsScene/SpaceScreenTransformer.hpp"
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "GraphicsScene/IGraphicsSceneController.hpp"
-#include "GraphicsScene/NodeSocket.hpp"
+#include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include <utility>
 
@@ -20,8 +20,8 @@ public:
 class GraphicsSceneControllerMock : public node::IGraphicsSceneController
 {
 public:
-	MOCK_METHOD(MI::ClickEvent, OnNodeLMBDown, (const SDL_Point&, node::Node&), (override));
-	MOCK_METHOD(MI::ClickEvent, OnSocketLMBDown, (const SDL_Point&, node::NodeSocket&), (override));
+	MOCK_METHOD(MI::ClickEvent, OnBlockLMBDown, (const SDL_Point&, node::BlockObject&), (override));
+	MOCK_METHOD(MI::ClickEvent, OnSocketLMBDown, (const SDL_Point&, node::BlockSocketObject&), (override));
 	MOCK_METHOD(MI::ClickEvent, OnSegmentLMBDown, (const SDL_Point&, node::NetSegment&), (override));
 	MOCK_METHOD(MI::ClickEvent, OnNetNodeLMBDown, (const SDL_Point&, node::NetNode&), (override));
 
@@ -30,38 +30,33 @@ public:
 using ::testing::ReturnRef;
 using ::testing::Return;
 
-TEST(testNode, testCreate)
+TEST(testBlockObject, testCreate)
 {
-	auto transformer = node::SpaceScreenTransformer{ { 1000,500,800,600 }, { 100,100,100,100 } };
 	GraphicsSceneMock mockScene;
 
-	EXPECT_CALL(mockScene, GetSpaceScreenTransformer())
-		.Times(1)
-		.WillOnce(ReturnRef(transformer));
+	node::BlockObject block({ 100,100,100,100 }, &mockScene);
 
-	node::Node node({ 100,100,100,100 }, &mockScene);
-
-	auto ScreenRect = node.GetRectImpl();
-	EXPECT_EQ(ScreenRect.x, 1000);
-	EXPECT_EQ(ScreenRect.y, 500);
-	EXPECT_EQ(ScreenRect.w, 800);
-	EXPECT_EQ(ScreenRect.h, 600);
+	auto ScreenRect = block.GetSpaceRect();
+	EXPECT_EQ(ScreenRect.x, 100);
+	EXPECT_EQ(ScreenRect.y, 100);
+	EXPECT_EQ(ScreenRect.w, 100);
+	EXPECT_EQ(ScreenRect.h, 100);
 
 }
 
-TEST(testNode, testAddSocket)
+TEST(testBlockObject, testAddSocket)
 {
-	node::Node node({ 100,100,100,100 }, nullptr);
+	node::BlockObject block({ 100,100,100,100 }, nullptr);
 
-	auto initial_sockets = node.GetSockets();
+	auto initial_sockets = block.GetSockets();
 
-	node.AddInputSocket(1);
+	block.AddInputSocket(1);
 
-	auto sockets_after_1_input = node.GetSockets();
+	auto sockets_after_1_input = block.GetSockets();
 
-	node.AddOutputSocket(2);
+	block.AddOutputSocket(2);
 
-	auto sockets_after_1_output = node.GetSockets();
+	auto sockets_after_1_output = block.GetSockets();
 
 	EXPECT_EQ(initial_sockets.size(), 0);
 	ASSERT_EQ(sockets_after_1_input.size(), 1);
@@ -73,7 +68,7 @@ TEST(testNode, testAddSocket)
 
 TEST(testNode, testConnectDisconnectSockets)
 {
-	node::Node node({ 100,100,100,100 }, nullptr);
+	node::BlockObject node({ 100,100,100,100 }, nullptr);
 
 	node.AddInputSocket(1);
 	node.AddOutputSocket(2);
@@ -114,13 +109,13 @@ TEST(testNode, testLMBClick)
 		.WillRepeatedly(ReturnRef(transformer));
 
 
-	node::Node node({ 100,100,100,100 }, &mockScene);
+	node::BlockObject node({ 100,100,100,100 }, &mockScene);
 
 	EXPECT_CALL(mockScene, GetController())
 		.Times(1)
 		.WillOnce(Return(&mockController));
 
-	EXPECT_CALL(mockController, OnNodeLMBDown)
+	EXPECT_CALL(mockController, OnBlockLMBDown)
 		.Times(1)
 		.WillOnce(Return(MI::ClickEvent::CLICKED));
 	

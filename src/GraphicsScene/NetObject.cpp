@@ -1,11 +1,13 @@
 #include "NetObject.hpp"
-#include "NodeSocket.hpp"
-#include "Node.hpp"
+#include "BlockSocketObject.hpp"
+#include "BlockObject.hpp"
 #include "GraphicsLogic/NewNet.hpp"
 #include "GraphicsLogic/NewNetJunction.hpp"
 #include "IGraphicsScene.hpp"
 #include "IGraphicsSceneController.hpp"
 #include <cmath>
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
+#include <cassert>
 
 node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
 	: GraphicsObject({0,0,0,0}, ObjectType::net, scene),
@@ -23,10 +25,12 @@ node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNo
 void node::NetSegment::Draw(SDL_Renderer* renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-	SDL_RenderFillRect(renderer, &(this->GetRectImpl()));
+	assert(GetScene());
+	SDL_Rect ScreenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+	SDL_RenderFillRect(renderer, &ScreenRect);
 }
 
-MI::ClickEvent node::NetSegment::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NetSegment::OnLMBDown(const model::Point& current_mouse_point)
 {
 	/*
 	UNUSED_PARAM(current_mouse_point);
@@ -62,10 +66,12 @@ MI::ClickEvent node::NetSegment::OnLMBDown(const SDL_Point& current_mouse_point)
 	{
 		return MI::ClickEvent::NONE;
 	}
+	assert(GetScene());
+	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
 
-	return controller->OnSegmentLMBDown(current_mouse_point, *this);
+	return controller->OnSegmentLMBDown(screenPoint, *this);
 }
-void node::NetSegment::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::NetSegment::OnMouseMove(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	/*
@@ -91,7 +97,7 @@ void node::NetSegment::OnMouseMove(const SDL_Point& current_mouse_point)
 	}
 	*/
 }
-MI::ClickEvent node::NetSegment::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NetSegment::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	/*
@@ -216,10 +222,10 @@ void node::NetSegment::CalcRect()
 	if (m_startNode && m_endNode)
 	{
 		SetSpaceRect(NetOrientation::Horizontal == m_orientation ?
-			SDL_Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x),
+			model::Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x),
 			std::min(m_startNode->getCenter().y, m_endNode->getCenter().y) - c_width/2,
 			std::abs(m_endNode->getCenter().x - m_startNode->getCenter().x),c_width} :
-			SDL_Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x) - c_width/2, 
+			model::Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x) - c_width/2, 
 			std::min(m_startNode->getCenter().y, m_endNode->getCenter().y),
 			c_width, std::abs(m_endNode->getCenter().y - m_startNode->getCenter().y) });
 	}
@@ -235,7 +241,9 @@ node::NetNode::NetNode(const SDL_Point& center, IGraphicsScene* scene)
 void node::NetNode::Draw(SDL_Renderer* renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &(this->GetRectImpl()));
+	assert(GetScene());
+	SDL_Rect screenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+	SDL_RenderFillRect(renderer, &screenRect);
 }
 
 void node::NetNode::UpdateConnectedSegments()
@@ -245,13 +253,13 @@ void node::NetNode::UpdateConnectedSegments()
 	if (m_eastSegment) { m_eastSegment->CalcRect(); }
 	if (m_westSegment) { m_westSegment->CalcRect(); }
 }
-void node::NetNode::SetConnectedSocket(NodeSocket* socket)
+void node::NetNode::SetConnectedSocket(BlockSocketObject* socket)
 {
 	if (socket == m_socket)
 	{
 		return;
 	}
-	NodeSocket* old_socket = m_socket;
+	BlockSocketObject* old_socket = m_socket;
 	this->m_socket = socket;
 	if (old_socket)
 	{
@@ -263,7 +271,7 @@ void node::NetNode::SetConnectedSocket(NodeSocket* socket)
 	}
 }
 
-node::NodeSocket* node::NetNode::GetConnectedSocket() noexcept
+node::BlockSocketObject* node::NetNode::GetConnectedSocket() noexcept
 {
 	return m_socket;
 }
@@ -294,7 +302,7 @@ void node::NetNode::ClearSegment(const NetSegment* segment)
 	clearSegment(m_eastSegment);
 }
 
-MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NetNode::OnLMBDown(const model::Point& current_mouse_point)
 {
 	/*
 	UNUSED_PARAM(current_mouse_point);
@@ -323,11 +331,12 @@ MI::ClickEvent node::NetNode::OnLMBDown(const SDL_Point& current_mouse_point)
 	{
 		return MI::ClickEvent::NONE;
 	}
-
-	return controller->OnNetNodeLMBDown(current_mouse_point, *this);
+	assert(GetScene());
+	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
+	return controller->OnNetNodeLMBDown(screenPoint, *this);
 }
 
-MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NetNode::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	/*
@@ -363,15 +372,17 @@ MI::ClickEvent node::NetNode::OnLMBUp(const SDL_Point& current_mouse_point)
 	return MI::ClickEvent::NONE;
 }
 
-void node::NetNode::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::NetNode::OnMouseMove(const model::Point& current_mouse_point)
 {
-	if (!SDL_PointInRect(&current_mouse_point, &GetSpaceRect()))
+	SDL_Rect SDLSpaceRect = ToSDLRect(GetSpaceRect());
+	SDL_Point SDLPoint = ToSDLPoint(current_mouse_point);
+	if (!SDL_PointInRect(&SDLPoint, &SDLSpaceRect))
 	{
 		b_being_deleted = false;
 	}
 }
 
-void node::NetNode::OnSetSpaceRect(const SDL_Rect& rect)
+void node::NetNode::OnSetSpaceRect(const model::Rect& rect)
 {
 	m_centerPoint = { rect.x + rect.w/2, rect.y + rect.h/2 };
 }

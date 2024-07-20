@@ -2,7 +2,7 @@
 
 #include "GraphicsScene/GraphicsScene_exports.h"
 #include "toolgui/Widget.hpp"
-#include "GraphicsScene/SpaceScreenTransformer.hpp"
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "GraphicsScene/IGraphicsScene.hpp"
 #include <vector>
 #include <span>
@@ -10,8 +10,8 @@
 namespace node
 {
 
-class Node;
-class NodeSocket;
+class BlockObject;
+class BlockSocketObject;
 class GraphicsObject;
 class GraphicsLogic;
 class IGraphicsSceneController;
@@ -59,9 +59,9 @@ public:
 
     void UpdateObjectsRect();
 
-    void SetSpaceRect(const SDL_Rect& rect);
-    const SDL_Rect& GetSpaceRect() const noexcept;
-    const SDL_Rect& GetSpaceRectBase() const noexcept;
+    void SetSpaceRect(const model::Rect& rect);
+    const model::Rect& GetSpaceRect() const noexcept;
+    const model::Rect& GetSpaceRectBase() const noexcept;
     void InvalidateRect() override;
 
     std::span<const HandlePtr<GraphicsObject>> GetCurrentSelection() const;
@@ -71,15 +71,15 @@ public:
     void ClearCurrentSelection();
 
     const SpaceScreenTransformer& GetSpaceScreenTransformer() const override;
-    SDL_Point QuantizePoint(const SDL_Point& p);
+    model::Point QuantizePoint(const model::Point& p);
 
-    std::vector<Node*> GetNodes();
+    std::vector<BlockObject*> GetNodes();
 
     virtual void Draw(SDL_Renderer* renderer) override;
 
     void SetCurrentHover(GraphicsObject* current_hover);
     bool IsMouseCaptured() const { return m_mouse_capture_mode != CAPTURE_MODE::NONE; }
-    NodeSocket* GetSocketAt(const SDL_Point space_point);
+    BlockSocketObject* GetSocketAt(const model::Point space_point);
 
     void SetMode(GraphicsSceneMode value) { m_SceneMode = value; }
     GraphicsSceneMode GetMode() const { return m_SceneMode; }
@@ -95,11 +95,11 @@ protected:
     virtual MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
     virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
     virtual bool OnScroll(const double amount, const SDL_Point& p) override;
-    virtual node::GraphicsObject* GetInteractableAt(const SDL_Point& p) const;
+    virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 private:
     bool InternalSelectObject(GraphicsObject* object);
-    SDL_Rect m_spaceRect_base;
-    SDL_Rect m_spaceRect;
+    model::Rect m_spaceRect_base;
+    model::Rect m_spaceRect;
     double m_scroll_ratio = 1.25;
     double m_zoomScale;
     int m_spaceQuantization = 20;

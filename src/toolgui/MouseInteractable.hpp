@@ -21,47 +21,49 @@ enum class ClickEvent: int
     CLICKED
 };
 
-template <typename T>
+template <typename T, typename Rect, typename Point>
 class TOOLGUI_API MouseInteractable
 {
 public:
-    T* GetInteractableAtPoint(const SDL_Point& point);
+    T* GetInteractableAtPoint(const Point& point);
     void MouseOut(); 
     void MouseIn();
-    void MouseMove(const SDL_Point& current_mouse_point);
-    ClickEvent LMBDown(const SDL_Point& current_mouse_point);
-    ClickEvent LMBUp(const SDL_Point& current_mouse_point);
-    ClickEvent RMBDown(const SDL_Point& current_mouse_point);
-    ClickEvent RMBUp(const SDL_Point& current_mouse_point);
+    void MouseMove(const Point& current_mouse_point);
+    ClickEvent LMBDown(const Point& current_mouse_point);
+    ClickEvent LMBUp(const Point& current_mouse_point);
+    ClickEvent RMBDown(const Point& current_mouse_point);
+    ClickEvent RMBUp(const Point& current_mouse_point);
     node::HandlePtr<T> GetMIHandlePtr();
     MouseInteractable() = default;
+    MouseInteractable(const Rect& rect) : m_rect{ rect } {}
+
     MouseInteractable(MouseInteractable&& other) noexcept;
-    MouseInteractable& operator=(MouseInteractable<T>&& other) noexcept;
-    const SDL_Rect& GetRectImpl() const noexcept { return m_rect; }
-    void SetRectImpl(const SDL_Rect& rect) noexcept { m_rect = rect; }
+    MouseInteractable& operator=(MouseInteractable<T, Rect, Point>&& other) noexcept;
+    const Rect& GetRectImpl() const noexcept { return m_rect; }
+    void SetRectImpl(const Rect& rect) noexcept { m_rect = rect; }
 protected:
-    virtual T* OnGetInteractableAtPoint(const SDL_Point& point) = 0;
+    virtual T* OnGetInteractableAtPoint(const Point& point) = 0;
     virtual void OnMouseOut();
     virtual void OnMouseIn();
-    virtual void OnMouseMove(const SDL_Point& current_mouse_point);
-    virtual ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
-    virtual ClickEvent OnRMBDown(const SDL_Point& current_mouse_point);
-    virtual ClickEvent OnLMBUp(const SDL_Point& current_mouse_point);
-    virtual ClickEvent OnRMBUp(const SDL_Point& current_mouse_point);
+    virtual void OnMouseMove(const Point& current_mouse_point);
+    virtual ClickEvent OnLMBDown(const Point& current_mouse_point);
+    virtual ClickEvent OnRMBDown(const Point& current_mouse_point);
+    virtual ClickEvent OnLMBUp(const Point& current_mouse_point);
+    virtual ClickEvent OnRMBUp(const Point& current_mouse_point);
 private:
-    SDL_Rect m_rect{0,0,0,0};
+    Rect m_rect{0,0,0,0};
     node::HandleOwnigPtr<T> MI_handle_ptr = node::HandleAllocator<T>::CreateHandle(static_cast<T*>(this));
 };
 
-template<typename T>
-MouseInteractable<T>::MouseInteractable(MouseInteractable<T>&& other) noexcept
+template <typename T, typename Rect, typename Point>
+MouseInteractable<T, Rect, Point>::MouseInteractable(MouseInteractable<T, Rect, Point>&& other) noexcept
     : m_rect(other.m_rect), MI_handle_ptr(std::move(other.MI_handle_ptr.m_ptr))
 {
     this->MI_handle_ptr.m_ptr.ptr->object = this;
 }
     
-template<typename T>
-MouseInteractable<T>& MouseInteractable<T>::operator=(MouseInteractable<T>&& other) noexcept
+template <typename T, typename Rect, typename Point>
+MouseInteractable<T, Rect, Point>& MouseInteractable<T, Rect, Point>::operator=(MouseInteractable<T, Rect, Point>&& other) noexcept
 {
     this->m_rect = other.m_rect;
     this->MI_handle_ptr.m_ptr = std::move(other.MI_handle_ptr.m_ptr);
@@ -69,10 +71,12 @@ MouseInteractable<T>& MouseInteractable<T>::operator=(MouseInteractable<T>&& oth
 	return *this;
 }
 
-template <typename T>
-T* MouseInteractable<T>::GetInteractableAtPoint(const SDL_Point& point)
+template <typename T, typename Rect, typename Point>
+T* MouseInteractable<T, Rect, Point>::GetInteractableAtPoint(const Point& point)
 {
-    if (SDL_PointInRect(&point, &m_rect))
+    SDL_Point SDLpoint{ point.x, point.y };
+    SDL_Rect SDLrect{ m_rect.x, m_rect.y, m_rect.w, m_rect.h };
+    if (SDL_PointInRect(&SDLpoint, &SDLrect))
     {
         return this->OnGetInteractableAtPoint(point);
     }
@@ -82,93 +86,93 @@ T* MouseInteractable<T>::GetInteractableAtPoint(const SDL_Point& point)
     }
 }
 
-template <typename T>
-void MouseInteractable<T>::MouseOut()
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::MouseOut()
 {
     this->OnMouseOut();
 }
 
-template <typename T>
-void MouseInteractable<T>::MouseIn()
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::MouseIn()
 {
     this->OnMouseIn();
 }
 
-template <typename T>
-void MouseInteractable<T>::MouseMove(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::MouseMove(const Point& current_mouse_point)
 {
     this->OnMouseMove(current_mouse_point);
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::LMBDown(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(const Point& current_mouse_point)
 {
     return this->OnLMBDown(current_mouse_point);
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::RMBDown(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(const Point& current_mouse_point)
 {
     return this->OnRMBDown(current_mouse_point);
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::RMBUp(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(const Point& current_mouse_point)
 {
     return this->OnRMBUp(current_mouse_point);
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::LMBUp(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(const Point& current_mouse_point)
 {
     return this->OnLMBUp(current_mouse_point);
 }
 
-template <typename T>
-node::HandlePtr<T> MouseInteractable<T>::GetMIHandlePtr()
+template <typename T, typename Rect, typename Point>
+node::HandlePtr<T> MouseInteractable<T, Rect, Point>::GetMIHandlePtr()
 {
     return this->MI_handle_ptr.GetHandlePtr();
 }
 
-template <typename T>
-void MouseInteractable<T>::OnMouseOut()
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::OnMouseOut()
 {
 }
 
-template <typename T>
-void MouseInteractable<T>::OnMouseIn()
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::OnMouseIn()
 {
 }
 
-template <typename T>
-void MouseInteractable<T>::OnMouseMove(const SDL_Point& current_mouse_point)
-{
-    UNUSED_PARAM(current_mouse_point);
-}
-
-template <typename T>
-ClickEvent MouseInteractable<T>::OnLMBDown(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+void MouseInteractable<T, Rect, Point>::OnMouseMove(const Point& current_mouse_point)
 {
     UNUSED_PARAM(current_mouse_point);
-    return ClickEvent::NONE;
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::OnRMBDown(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::OnLMBDown(const Point& current_mouse_point)
 {
     UNUSED_PARAM(current_mouse_point);
     return ClickEvent::NONE;
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::OnLMBUp(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::OnRMBDown(const Point& current_mouse_point)
 {
     UNUSED_PARAM(current_mouse_point);
     return ClickEvent::NONE;
 }
 
-template <typename T>
-ClickEvent MouseInteractable<T>::OnRMBUp(const SDL_Point& current_mouse_point)
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::OnLMBUp(const Point& current_mouse_point)
+{
+    UNUSED_PARAM(current_mouse_point);
+    return ClickEvent::NONE;
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::OnRMBUp(const Point& current_mouse_point)
 {
     UNUSED_PARAM(current_mouse_point);
     return ClickEvent::NONE;

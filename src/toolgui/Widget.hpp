@@ -15,12 +15,14 @@ namespace node
         FixedPixels
     };
 
-    class TOOLGUI_API Widget : public MI::MouseInteractable<Widget>
+    class Widget;
+    using WidgetMouseInteractable = MI::MouseInteractable<Widget, SDL_Rect, SDL_Point>;
+    class TOOLGUI_API Widget : public WidgetMouseInteractable
     {
     public:
         Widget(SDL_Rect rect, Scene* parent);
         void SetRect(const SDL_Rect& rect);
-        const SDL_Rect& GetRect() const noexcept { return MI::MouseInteractable<Widget>::GetRectImpl(); }
+        const SDL_Rect& GetRect() const noexcept { return WidgetMouseInteractable::GetRectImpl(); }
         virtual void Draw(SDL_Renderer* renderer) = 0;
         virtual ~Widget();
         const SDL_Rect& GetBaseRect() noexcept;

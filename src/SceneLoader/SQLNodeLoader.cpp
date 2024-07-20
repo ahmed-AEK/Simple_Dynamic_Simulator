@@ -6,10 +6,10 @@ bool node::loader::SQLNodeLoader::AddNode(const node::model::BlockModelPtr& node
 	{
 		SQLite::Statement query{ m_db, "INSERT INTO nodes VALUES (?,?,?,?,?)" };
 		query.bind(1, node->GetId());
-		query.bind(2, node->GetBounds().origin.x);
-		query.bind(3, node->GetBounds().origin.y);
-		query.bind(4, node->GetBounds().width);
-		query.bind(5, node->GetBounds().height);
+		query.bind(2, node->GetBounds().x);
+		query.bind(3, node->GetBounds().y);
+		query.bind(4, node->GetBounds().w);
+		query.bind(5, node->GetBounds().h);
 		query.exec();
 	}
 	auto add_sockets = [&](const node::model::BlockSocketModel::SocketType type)
@@ -80,10 +80,10 @@ bool node::loader::SQLNodeLoader::UpdateNodeBounds(node::model::id_int node_id,
 	const node::model::Rect& bounds)
 {
 	SQLite::Statement query{ m_db, "UPDATE nodes SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
-	query.bind(1, bounds.origin.x);
-	query.bind(2, bounds.origin.y);
-	query.bind(3, bounds.width);
-	query.bind(4, bounds.height);
+	query.bind(1, bounds.x);
+	query.bind(2, bounds.y);
+	query.bind(3, bounds.w);
+	query.bind(4, bounds.h);
 	query.bind(5, node_id);
 	query.exec();
 	return true;

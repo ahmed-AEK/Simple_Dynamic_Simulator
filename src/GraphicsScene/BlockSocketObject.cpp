@@ -1,11 +1,13 @@
-#include "NodeSocket.hpp"
-#include "Node.hpp"
+#include "BlockSocketObject.hpp"
+#include "BlockObject.hpp"
 #include "SDL_Framework/SDL_headers.h"
 #include "NetObject.hpp"
 #include "IGraphicsScene.hpp"
 #include "IGraphicsSceneController.hpp"
+#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
+#include <cassert>
 
-void node::NodeSocket::SetConnectedNode(NetNode* node)
+void node::BlockSocketObject::SetConnectedNode(NetNode* node)
 {
 	if (node == m_connected_node)
 	{
@@ -23,20 +25,20 @@ void node::NodeSocket::SetConnectedNode(NetNode* node)
 	}
 }
 
-node::NetNode* node::NodeSocket::GetConnectedNode() noexcept
+node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 {
 	return m_connected_node;
 }
 
-node::NodeSocket::NodeSocket(SocketType type, IGraphicsScene* parentScene, Node* parentNode)
-	: GraphicsObject(SDL_Rect{0,0,nodeLength,nodeLength}, ObjectType::socket, parentScene),
+node::BlockSocketObject::BlockSocketObject(SocketType type, IGraphicsScene* parentScene, BlockObject* parentNode)
+	: GraphicsObject(model::Rect{0,0,nodeLength,nodeLength}, ObjectType::socket, parentScene),
 	m_parentNode(parentNode), m_socktType(type)
 {
 	b_selectable = false;
 	b_draggable = false;
 }
 
-void node::NodeSocket::OnSetSpaceRect(const SDL_Rect& rect)
+void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
 {
 	GraphicsObject::OnSetSpaceRect(rect);
 	if (m_connected_node)
@@ -46,7 +48,7 @@ void node::NodeSocket::OnSetSpaceRect(const SDL_Rect& rect)
 	}
 }
 
-void node::NodeSocket::SetPosition(SDL_Point p)
+void node::BlockSocketObject::SetPosition(SDL_Point p)
 {
 	// set socket position
 	SetSpaceRect({ p.x, p.y, nodeLength, nodeLength });
@@ -74,12 +76,12 @@ void node::NodeSocket::SetPosition(SDL_Point p)
 	next_node->UpdateConnectedSegments();
 }
 
-SDL_Point node::NodeSocket::GetCenter()
+SDL_Point node::BlockSocketObject::GetCenter()
 {
 	return { GetSpaceRect().x + nodeLength/2, GetSpaceRect().y + nodeLength / 2};
 }
 
-void node::NodeSocket::Draw(SDL_Renderer* renderer)
+void node::BlockSocketObject::Draw(SDL_Renderer* renderer)
 {
 	switch (m_socktType)
 	{
@@ -93,11 +95,14 @@ void node::NodeSocket::Draw(SDL_Renderer* renderer)
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 		break;
 	}
-	SDL_RenderFillRect(renderer, &GetRectImpl());
+
+	assert(GetScene());
+	SDL_Rect screenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetRectImpl());
+	SDL_RenderFillRect(renderer, &screenRect);
 
 }
 
-MI::ClickEvent node::NodeSocket::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::BlockSocketObject::OnLMBDown(const model::Point& current_mouse_point)
 {
 	/*
 	if (!m_connected_node)
@@ -130,6 +135,7 @@ MI::ClickEvent node::NodeSocket::OnLMBDown(const SDL_Point& current_mouse_point)
 	{
 		return MI::ClickEvent::NONE;
 	}
-
-	return controller->OnSocketLMBDown(current_mouse_point, *this);
+	assert(GetScene());
+	SDL_Point screenPoint = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(current_mouse_point);
+	return controller->OnSocketLMBDown(screenPoint, *this);
 }
