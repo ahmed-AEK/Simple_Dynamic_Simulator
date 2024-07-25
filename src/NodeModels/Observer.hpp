@@ -1,90 +1,213 @@
 #pragma once
-
+#include <cassert>
 #include <vector>
 
 namespace node::model
 {
 
-template <typename EventArg>
+template <typename EventType>
 class Publisher;
 
-template <typename EventArg>
+template <typename EventType>
+class SinglePublisher;
+
+template <typename EventType>
+class MultiPublisher;
+
+template <typename EventType>
+class SingleObserver;
+
+template <typename EventType>
+class MultiObserver;
+
+template <typename EventType>
 class Observer
 {
-	friend class Publisher<EventArg>;
+    friend SinglePublisher<EventType>;
+    friend MultiPublisher<EventType>;
 public:
-	virtual void OnEvent(EventArg& arg) = 0;
-	virtual ~Observer()
-	{
-		for (auto&& publisher : m_publishers)
-		{
-			publisher->RemoveObserver(this);
-		}
-	}
-	Observer() = default;
-	Observer(const Observer&) = delete;
-	Observer& operator=(const Observer&) = delete;
+    virtual void OnNotify(EventType&) = 0;
+    Observer() noexcept {}
+    // virtual destructor
+    virtual ~Observer() = default;
+    Observer(const Observer&) = delete;
+    Observer& operator=(const Observer&) = delete;
 private:
-	void AddPublisher(Publisher<EventArg>* publisher) 
-	{ m_publishers.push_back(publisher); }
-	void RemovePublisher(Publisher<EventArg>* publisher)
-	{
-		auto it = std::find(m_publishers.begin(), m_publishers.end(), publisher);
-		if (it != m_publishers.end())
-		{
-			m_publishers.erase(it);
-		}
-	}
-	std::vector<Publisher<EventArg>*> m_publishers;
+    virtual void RemovePublisher(Publisher<EventType>&) = 0;
+    virtual void AddPublisher(Publisher<EventType>&) = 0;
 };
 
-template <typename EventArg>
+template <typename EventType>
 class Publisher
 {
-	friend class Observer<EventArg>;
+    friend SingleObserver<EventType>;
+    friend MultiObserver<EventType>;
 public:
-	void Attach(Observer<EventArg>* observer) { 
-		observer->AddPublisher(this);
-		m_observers.push_back(observer); 
-	}
-	void Detach(Observer<EventArg>* observer) {
-		auto it = std::find(m_observers.begin(), m_observers.end(), observer);
-		if (it != m_observers.end())
-		{
-			observer->RemovePublisher(this);
-			m_observers.erase(it);
-		}
-	}
+    Publisher() noexcept {}
+    virtual void Notify(EventType&) = 0;
+    virtual void Attach(Observer<EventType>&) = 0;
+    virtual void Detach(Observer<EventType>&) = 0;
 
-	void Notify(EventArg& arg)
-	{
-		for (auto&& observer : m_observers)
-		{
-			observer->OnEvent(arg);
-		}
-	}
-
-	Publisher() = default;
-	virtual ~Publisher()
-	{
-		for (auto&& observer : m_observers)
-		{
-			observer->RemovePublisher(this);
-		}
-	}
-	Publisher(const Publisher&) = delete;
-	Publisher& operator=(const Publisher&) = delete;
+    // virtual destructor
+    virtual ~Publisher() = default;
+    Publisher(const Publisher&) = delete;
+    Publisher& operator=(const Publisher&) = delete;
 private:
-	void RemoveObserver(const Observer<EventArg>* observer)
-	{
-		auto it = std::find(m_observers.begin(), m_observers.end(), observer);
-		if (it != m_observers.end())
-		{
-			m_observers.erase(it);
-		}
-	}
-	std::vector<Observer<EventArg>*> m_observers;
+    virtual void DetachDestruct(Observer<EventType>& observer) = 0;
 
+};
+
+template <typename EventType>
+class SinglePublisher : public Publisher<EventType>
+{
+public:
+    SinglePublisher() noexcept {}
+    void Notify(EventType& e) override
+    {
+        if (m_observer)
+        {
+            m_observer->OnNotify(e);
+        }
+    }
+    void Attach(Observer<EventType>& observer) override
+    {
+        assert(m_observer == nullptr);
+        if (!m_observer)
+        {
+            m_observer = &observer;
+            m_observer->AddPublisher(*this);
+        }
+    }
+    void Detach(Observer<EventType>& observer) override
+    {
+        if (m_observer == &observer)
+        {
+            m_observer = nullptr;
+            observer.RemovePublisher(*this);
+        }
+    }
+    ~SinglePublisher() {
+        if (m_observer)
+        {
+            m_observer->RemovePublisher(*this);
+        }
+    }
+private:
+    void DetachDestruct(Observer<EventType>& observer) override
+    {
+        if (m_observer == &observer)
+        {
+            m_observer = nullptr;
+        }
+    }
+    Observer<EventType>* m_observer = nullptr;
+};
+
+template <typename EventType>
+class MultiPublisher : public Publisher<EventType>
+{
+public:
+    MultiPublisher() noexcept {}
+    void Notify(EventType& e) override
+    {
+        for (auto&& observer : m_observers)
+        {
+            observer->OnNotify(e);
+        }
+    }
+
+    void Attach(Observer<EventType>& observer) override
+    {
+        m_observers.push_back(&observer);
+        observer.AddPublisher(*this);
+    }
+    void Detach(Observer<EventType>& observer) override
+    {
+        auto it = std::find(m_observers.begin(), m_observers.end(), &observer);
+        assert(it != m_observers.end());
+        if (it != m_observers.end())
+        {
+            (*it)->RemovePublisher(*this);
+            m_observers.erase(it);
+        }
+    }
+    ~MultiPublisher() {
+        for (auto&& observer : m_observers)
+        {
+            observer->RemovePublisher(*this);
+        }
+    }
+private:
+    void DetachDestruct(Observer<EventType>& observer) override
+    {
+        auto it = std::find(m_observers.begin(), m_observers.end(), &observer);
+        assert(it != m_observers.end());
+        if (it != m_observers.end())
+        {
+            m_observers.erase(it);
+        }
+    }
+    std::vector<Observer<EventType>*> m_observers;
+};
+
+template <typename EventType>
+class SingleObserver : public Observer<EventType>
+{
+public:
+    SingleObserver() noexcept {}
+
+    ~SingleObserver() {
+        if (m_publisher)
+        {
+            m_publisher->DetachDestruct(*this);
+        }
+    }
+private:
+    void RemovePublisher(Publisher<EventType>& publisher) override
+    {
+        assert(m_publisher == &publisher);
+        if (&publisher == m_publisher)
+        {
+            m_publisher = nullptr;
+        }
+    }
+    virtual void AddPublisher(Publisher<EventType>& publisher)
+    {
+        assert(m_publisher == nullptr);
+        m_publisher = &publisher;
+    }
+
+    Publisher<EventType>* m_publisher = nullptr;
+};
+
+template <typename EventType>
+class MultiObserver : public Observer<EventType>
+{
+public:
+    MultiObserver() noexcept {}
+
+    ~MultiObserver() {
+        for (auto&& publisher : m_publishers)
+        {
+            publisher->DetachDestruct(*this);
+        }
+    }
+private:
+    void RemovePublisher(Publisher<EventType>& publisher) override
+    {
+        auto it = std::find(m_publishers.begin(), m_publishers.end(), &publisher);
+        assert(it != m_publishers.end());
+        if (it != m_publishers.end())
+        {
+            m_publishers.erase(it);
+        }
+    }
+    virtual void AddPublisher(Publisher<EventType>& publisher)
+    {
+        m_publishers.push_back(&publisher);
+    }
+
+    std::vector<Publisher<EventType>*> m_publishers;
 };
 
 }
