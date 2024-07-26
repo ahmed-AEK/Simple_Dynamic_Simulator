@@ -17,7 +17,7 @@ namespace node
 			right,
 		};
 
-		SidePanel(PanelSide side, SDL_Rect rect, Scene* parent)
+		SidePanel(PanelSide side, const SDL_Rect& rect, Scene* parent)
 			: m_side(side), Widget(rect, parent)
 		{
 			RepositionWidget();

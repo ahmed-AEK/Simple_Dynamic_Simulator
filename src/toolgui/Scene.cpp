@@ -3,10 +3,11 @@
 #include "Scene.hpp"
 #include "algorithm"
 #include "SDL_Framework/SDL_headers.h"
-#include "toolgui/ContextMenu.hpp"
-#include "toolgui/Application.hpp"
-#include "toolgui/Widget.hpp"
-#include "toolgui/SidePanel.hpp"
+#include "ContextMenu.hpp"
+#include "Application.hpp"
+#include "Widget.hpp"
+#include "SidePanel.hpp"
+#include "ToolBar.hpp"
 
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
@@ -21,6 +22,14 @@ void node::Scene::Draw(SDL_Renderer* renderer)
 
 void node::Scene::OnDraw(SDL_Renderer* renderer)
 {
+    if (m_gScene)
+    {
+        m_gScene->Draw(renderer);
+    }
+    if (m_toolbar)
+    {
+        m_toolbar->Draw(renderer);
+    }
     for (auto&& it = m_widgets.rbegin(); it != m_widgets.rend(); it++)
     {
         auto&& widget = *it;
@@ -60,6 +69,16 @@ node::SceneWidgetIterator node::Scene::end()
 void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
 {
     m_sidePanel = std::move(panel); 
+}
+
+void node::Scene::SetToolBar(std::unique_ptr<ToolBar> toolbar)
+{
+    m_toolbar = std::move(toolbar);
+}
+
+void node::Scene::SetgScene(std::unique_ptr<Widget> scene)
+{
+    m_gScene = std::move(scene);
 }
 
 void node::Scene::DoUpdateTasks()
@@ -193,12 +212,26 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
             return result;
         }
     }
-    for (auto& widget: m_widgets)
+    for (auto& widget : m_widgets)
     {
         node::Widget* current_hover = widget.m_ptr->GetInteractableAtPoint(p);
         if (current_hover)
         {
             return current_hover;
+        }
+    }
+    if (m_toolbar)
+    {
+        if (auto result = m_toolbar->GetInteractableAtPoint(p))
+        {
+            return result;
+        }
+    }
+    if (m_gScene)
+    {
+        if (auto result = m_gScene->GetInteractableAtPoint(p))
+        {
+            return result;
         }
     }
     return nullptr;
@@ -223,11 +256,24 @@ void node::Scene::Start()
 
 void node::Scene::OnSetRect(const SDL_Rect& rect)
 {
-    m_sidePanel->UpdateWindowSize(rect);
+    m_rect = rect;
+    if (m_sidePanel)
+    {
+        m_sidePanel->UpdateWindowSize(rect);
+    }
+    if (m_toolbar)
+    {
+        m_toolbar->SetRect({ 0,0, rect.w, 50 });
+    }
+
+    if (m_gScene)
+    {
+        SDL_Rect scene_rect{ rect.x, rect.y + (m_toolbar ? ToolBar::height : 0), rect.w, rect.h - (m_toolbar ? ToolBar::height : 0) };
+        m_gScene->SetRect(scene_rect);
+    }
 
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
-    m_rect = rect;
     for (auto& widget : m_widgets)
     {
         if (WidgetScaling::FixedPixels == widget.m_ptr->GetScalingType())

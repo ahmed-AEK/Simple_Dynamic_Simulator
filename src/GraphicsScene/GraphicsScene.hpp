@@ -51,7 +51,7 @@ public:
     };
 
 
-    GraphicsScene(SDL_Rect rect, node::Scene* parent);
+    GraphicsScene(const SDL_Rect& rect, node::Scene* parent);
     ~GraphicsScene() override;
 
     void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
@@ -122,7 +122,7 @@ private:
     model::Rect m_spaceRect_base;
     model::Rect m_spaceRect;
     double m_scroll_ratio = 1.25;
-    double m_zoomScale;
+    double m_zoomScale = 1;
     int m_spaceQuantization = 20;
     std::optional<SDL_Point> m_current_mouse_position;
     SDL_Point m_StartPointScreen{ 0,0 };

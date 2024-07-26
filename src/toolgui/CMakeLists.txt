@@ -12,6 +12,7 @@ ButtonWidget.cpp ButtonWidget.hpp
 NodeMacros.h
 SidePanel.hpp SidePanel.cpp
 DragDropObject.hpp DragDropObject.cpp
+ToolBar.cpp ToolBar.hpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

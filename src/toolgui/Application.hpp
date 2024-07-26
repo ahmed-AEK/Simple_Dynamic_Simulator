@@ -29,7 +29,7 @@ public:
     const TTFFont& getFont() { return m_appFont; }
 protected:
     virtual void OnInit() {};
-    virtual void OnRun() {};
+    virtual void OnRun();
     virtual void HandleLMBDown(SDL_Event& e);
     virtual void HandleRMBDown(SDL_Event& e);
     virtual void HandleLMBUp(SDL_Event& e);

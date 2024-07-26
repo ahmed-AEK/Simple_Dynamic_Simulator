@@ -10,7 +10,7 @@ namespace node
 	class BlockPallete : public Widget
 	{
 	public:
-		BlockPallete(SDL_Rect rect, 
+		BlockPallete(const SDL_Rect& rect,
 			std::shared_ptr<PalleteProvider> provider, Scene* parent);
 		
 		void Draw(SDL_Renderer* renderer) override;

@@ -36,9 +36,9 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
     {
         dot_width = 3;
     }
-    for (int i = start_point_screen.x; i < GetRect().w; i += step_screen.x)
+    for (int i = start_point_screen.x; i < GetRect().x + GetRect().w; i += step_screen.x)
     {
-        for (int j = start_point_screen.y + 5; j < GetRect().h; j += step_screen.y)
+        for (int j = start_point_screen.y + 5; j < GetRect().y + GetRect().h; j += step_screen.y)
         {
             SDL_Rect rect{ i,j,dot_width,dot_width };
             SDL_RenderFillRect(renderer, &rect);

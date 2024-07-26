@@ -13,7 +13,7 @@ namespace PalleteData {
 	static constexpr int scrollbarWidth = 10;
 }
 
-node::BlockPallete::BlockPallete(SDL_Rect rect, 
+node::BlockPallete::BlockPallete(const SDL_Rect& rect,
 	std::shared_ptr<PalleteProvider> provider, Scene* parent)
 	: m_palleteProvider{provider}, Widget(rect, parent)
 {

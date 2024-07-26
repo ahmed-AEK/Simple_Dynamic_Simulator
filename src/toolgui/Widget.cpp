@@ -16,10 +16,17 @@ namespace node
         UNUSED_PARAM(p);
         return false;
     }
+
     const SDL_Rect& Widget::GetBaseRect() noexcept
     {
         return m_rect_base;
     }
+
+    void Widget::SetBaseRect(const SDL_Rect& rect) noexcept
+    {
+        m_rect_base = rect;
+    }
+
     void Widget::OnSetRect(const SDL_Rect &rect)
     {
         WidgetMouseInteractable::SetRectImpl(rect);
@@ -30,7 +37,7 @@ namespace node
 
     }
 
-    Widget::Widget(SDL_Rect rect, Scene* parent)
+    Widget::Widget(const SDL_Rect& rect, Scene* parent)
     :p_parent(parent), m_rect_base(rect)
     {
         WidgetMouseInteractable::SetRectImpl(rect);

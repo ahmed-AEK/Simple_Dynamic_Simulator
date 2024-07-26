@@ -9,7 +9,7 @@
 #include "GraphicsScene/tools/ArrowTool.hpp"
 #include "toolgui/SidePanel.hpp"
 #include "BlockPallete/BlockPallete.hpp"
-
+#include "toolgui/ToolBar.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
 {
@@ -62,7 +62,7 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
     std::unique_ptr<GraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
 
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{0,0,300,rect.h}, this);
-    sidePanel->UpdateWindowSize(rect);
+
     auto&& pallete_provider = std::make_shared<PalleteProvider>();
     for (int i = 0; i < 5; i++)
     {
@@ -85,13 +85,20 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
         std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
 
+    auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
+    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
+    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
+    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
+
+    SetToolBar(std::move(toolbar));
+
     gScene->SetTool(std::make_unique<ArrowTool>(gScene.get()));
 
 
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
 
 
-    std::unique_ptr<Widget> remove_BTN = std::make_unique<ButtonWidget>(50, 50, 200, 50, "Remove Node",
+    std::unique_ptr<Widget> remove_BTN = std::make_unique<ButtonWidget>(SDL_Rect{ 50, 100, 200, 50 }, "Remove Node",
         [&, scene = gScene.get()]() {
             auto selections = scene->GetCurrentSelection();
             for (auto& item : selections)
@@ -110,9 +117,7 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
     AddInitialNodes_forScene(gScene.get());
 
     AddWidget(std::move(remove_BTN), 0);
-    AddWidget(std::move(gScene), -1000);
-
-
+    SetgScene(std::move(gScene));
 }
 
 node::MainNodeScene::~MainNodeScene() = default;

@@ -20,12 +20,13 @@ namespace node
     class TOOLGUI_API Widget : public WidgetMouseInteractable
     {
     public:
-        Widget(SDL_Rect rect, Scene* parent);
+        Widget(const SDL_Rect& rect, Scene* parent);
         void SetRect(const SDL_Rect& rect);
         const SDL_Rect& GetRect() const noexcept { return WidgetMouseInteractable::GetRectImpl(); }
         virtual void Draw(SDL_Renderer* renderer) = 0;
         virtual ~Widget();
         const SDL_Rect& GetBaseRect() noexcept;
+        void SetBaseRect(const SDL_Rect& rect) noexcept;
         void InvalidateRect();
         WidgetScaling GetScalingType() const;
         node::Scene* GetScene() const noexcept;

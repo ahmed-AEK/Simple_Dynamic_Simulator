@@ -9,11 +9,10 @@
 #include "toolgui/ContextMenu.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 
-node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
+node::GraphicsScene::GraphicsScene(const SDL_Rect& rect, node::Scene* parent)
 :Widget(rect, parent), 
 m_spaceRect_base{0, 0, 1000, 1000 * rect.h/rect.w}, 
 m_spaceRect{0, 0, 200, 200 * rect.h/rect.w},
-m_zoomScale(static_cast<double>(m_spaceRect.w)/m_spaceRect_base.w),
 m_spaceScreenTransformer(GetRect(), m_spaceRect)
 {
     SetDropTarget(true);
@@ -425,8 +424,10 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
         return false;
     }
     model::Rect new_rect = GetSpaceRect();
-    new_rect.w = static_cast<int>(GetBaseRect().w * m_zoomScale);
-    new_rect.h = static_cast<int>(GetBaseRect().h * m_zoomScale);
+    double x_ratio = static_cast<double>(GetRect().w) / m_rect_base.w;
+    double y_ratio = static_cast<double>(GetRect().h) / m_rect_base.h;
+    new_rect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
+    new_rect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
     SetSpaceRect(new_rect);
     auto&& transformer = GetSpaceScreenTransformer();
     model::Point new_position = transformer.ScreenToSpacePoint(p);
@@ -477,12 +478,12 @@ void node::GraphicsScene::SetTool(std::unique_ptr<GraphicsTool> ptr)
 
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)
 {
+    Widget::OnSetRect(rect);
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
-    m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio);
-    m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio);
+    m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
+    m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
     m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
-    Widget::OnSetRect(rect);
 }
 
 node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) const

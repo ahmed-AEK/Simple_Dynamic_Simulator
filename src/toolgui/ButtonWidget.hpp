@@ -10,7 +10,7 @@ namespace node
     class ButtonWidget: public Widget
     {
     public:
-        ButtonWidget(int x, int y, int width, int height, std::string label, std::function<void(void)> action, node::Scene* parent);
+        ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Scene* parent);
         void Draw(SDL_Renderer* renderer) override;
     protected:
         virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;

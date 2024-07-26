@@ -148,6 +148,7 @@ namespace node
                     if (SDL_WINDOWEVENT_RESIZED == e.window.event) {
                         SDL_Rect rect(0,0, e.window.data1, e.window.data2);
                         this->m_rect = rect;
+                        assert(m_scene);
                         this->m_scene->SetRect(rect);
                         b_redrawScene = true;
                         return true;
@@ -182,7 +183,20 @@ namespace node
     void Application::OnSetScene(std::unique_ptr<Scene>& scene)
     { 
         m_scene = std::move(scene);
+        if (b_running)
+        {
+            m_scene->SetRect(m_rect);
+        }
         m_scene->Start();
+    }
+    void Application::OnRun()
+    {
+        assert(m_scene);
+        if (m_scene)
+        {
+            m_scene->SetRect(m_rect);
+        }
+        
     }
     void Application::HandleLMBDown(SDL_Event& e)
     {

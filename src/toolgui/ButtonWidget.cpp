@@ -4,8 +4,8 @@
 #include "toolgui/ContextMenu.hpp"
 #include "toolgui/Application.hpp"
 
-node::ButtonWidget::ButtonWidget(int x, int y, int width, int height, std::string label, std::function<void(void)> action, node::Scene* parent)
-: Widget({x,y, width, height}, parent), m_label(std::move(label)), m_action(std::move(action))
+node::ButtonWidget::ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Scene* parent)
+: Widget(rect, parent), m_label(std::move(label)), m_action(std::move(action))
 {
     m_scalingType = WidgetScaling::ScaleWithWindow;
 }
