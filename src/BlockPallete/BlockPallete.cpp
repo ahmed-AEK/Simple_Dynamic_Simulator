@@ -81,7 +81,7 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_poin
 	assert(selected_item_index >= 0);
 	assert(selected_item_index < pallete_elements.size());
 
-	GetScene()->StartDragObject(DragDropObject{ pallete_elements[selected_item_index]->block_template });
+	GetScene()->StartDragObject(DragDropObject{ pallete_elements[selected_item_index]->block_template, model::BlockModel{pallete_elements[selected_item_index]->block}});
 	return MI::ClickEvent::NONE;
 }
 

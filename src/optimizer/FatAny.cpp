@@ -18,7 +18,7 @@ opt::FatAny& opt::FatAny::operator=(opt::FatAny&& other) noexcept
 {
 	if (&other != this)
 	{
-		if (p_manager != nullptr)
+		if (p_manager)
 		{
 			try {
 				m_manager.destruct(m_data.buff.data());

@@ -11,7 +11,7 @@ template <typename T>
 struct Handle
 {
     std::atomic<T*> object;
-    bool isAlive() const {return object.load() != nullptr;}
+    bool isAlive() const {return object.load();}
     void Destroy() { object.store(nullptr);}
     T* getObject() { return object.load(); }
     const T* getObject() const { return object.load(); }

@@ -72,7 +72,7 @@ namespace node
             this->HandleInputs();
             SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
             SDL_RenderClear(m_renderer);
-            SDL_assert(m_scene != nullptr);
+            SDL_assert(m_scene);
             m_scene->Draw(m_renderer);
             // Update screen
             SDL_RenderPresent(m_renderer);

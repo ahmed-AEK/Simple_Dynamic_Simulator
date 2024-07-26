@@ -27,6 +27,11 @@ struct Rect
 	return p1.x == p2.x && p1.y == p2.y;
 }
 
+[[nodiscard]] inline constexpr Point operator+(const Point& p1, const Point& p2) noexcept
+{
+	return { p1.x + p2.x , p1.y + p2.y };
+}
+
 [[nodiscard]] inline constexpr bool operator==(const Rect& r1, const Rect& r2) noexcept
 {
 	return (r1.x == r2.x) && (r1.y == r2.y) &&

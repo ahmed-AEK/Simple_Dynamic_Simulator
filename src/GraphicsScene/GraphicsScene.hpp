@@ -8,6 +8,8 @@
 #include <span>
 #include "GraphicsScene/tools/GraphicsTool.hpp"
 #include <optional>
+#include "NodeModels/NodeScene.hpp"
+#include "NodeSDLStylers/BlockStyler.hpp"
 
 namespace node
 {
@@ -57,6 +59,8 @@ public:
     double GetZoomScale() const { return m_zoomScale; }
 
     void AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order);
+    void SetSceneModel(std::shared_ptr<model::NodeSceneModel> scene);
+    std::shared_ptr<model::NodeSceneModel> GetSceneModel() { return m_sceneModel; }
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
 
     void UpdateObjectsRect();
@@ -99,8 +103,22 @@ protected:
     virtual MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
     virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
     virtual bool OnScroll(const double amount, const SDL_Point& p) override;
+
+    virtual void OnDropObject(DragDropObject& object, const SDL_Point& p) override;
+    virtual void OnDrawDropObject(SDL_Renderer* renderer,
+        const DragDropObject& object, const SDL_Point& p) override;
+    virtual void OnDropEnter(const DragDropObject& object) override;
+    virtual void OnDropExit(const DragDropObject& object) override;
+
 private:
     bool InternalSelectObject(GraphicsObject* object);
+
+    struct DragDropDrawObject
+    {
+        node::model::BlockModel model;
+        node::BlockStyler styler;
+    };
+
     model::Rect m_spaceRect_base;
     model::Rect m_spaceRect;
     double m_scroll_ratio = 1.25;
@@ -116,6 +134,8 @@ private:
     std::unique_ptr<GraphicsLogic> m_graphicsLogic;
     std::unique_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
+    std::shared_ptr<model::NodeSceneModel> m_sceneModel;
+    std::optional<DragDropDrawObject> m_dragDropDrawObject;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
     GraphicsSceneMode m_SceneMode = GraphicsSceneMode::Normal;
 };

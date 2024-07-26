@@ -6,7 +6,7 @@
 node::ContextMenu::ContextMenu(node::Scene* parent)
 : Widget({0,0,0,0},parent), m_font(TTFFont(TTF_OpenFont("assets/FreeSans.ttf", 24)))
 {
-    SDL_assert(m_font.get() != nullptr);
+    SDL_assert(m_font.get());
     int other;
     TTF_SizeText(m_font.get(), "A", &other, &m_element_height);
     

@@ -7,6 +7,7 @@
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
+#include "NodeSDLStylers/BlockStyler.hpp"
 
 node::GraphicsScene::GraphicsScene(SDL_Rect rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -32,6 +33,21 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
     ObjectSlot slot = {std::move(obj), z_order};
     auto iter = std::lower_bound(m_objects.begin(), m_objects.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
     m_objects.insert(iter, std::move(slot));
+}
+
+void node::GraphicsScene::SetSceneModel(std::shared_ptr<model::NodeSceneModel> scene)
+{
+    m_objects.clear();
+    m_drag_objects.clear();
+    m_graphicsLogic = nullptr;
+    m_sceneModel = std::move(scene);
+    auto styler = std::make_shared<node::BlockStyler>();
+    for (auto&& block : m_sceneModel->GetBlocks())
+    {
+        styler->PositionNodes(*block);
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, block, styler);
+        AddObject(std::move(obj), 0);
+    }
 }
 
 std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node::GraphicsObject* obj)
@@ -108,6 +124,46 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
         }
     }
     return nullptr;
+}
+
+void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_Point& p)
+{
+    auto block = std::make_shared<model::BlockModel>(model::BlockModel{ object.block });
+
+    model::Rect bounds = m_dragDropDrawObject->model.GetBounds();
+    model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
+    block->SetPosition(QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset));
+
+    auto styler = std::make_shared<node::BlockStyler>();
+    styler->PositionNodes(*block);
+    m_sceneModel->AddBlock(block);
+    std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, block, styler);
+    auto* ptr = obj.get();
+    AddObject(std::move(obj), 0);
+    ClearCurrentSelection();
+    AddSelection(ptr->GetFocusHandlePtr());
+    m_dragDropDrawObject = std::nullopt;
+}
+
+void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDropObject& object, const SDL_Point& p)
+{
+    UNUSED_PARAM(object);
+    model::Rect bounds = m_dragDropDrawObject->model.GetBounds();
+    model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
+    auto point = QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset);
+    m_dragDropDrawObject->model.SetPosition(point);
+    m_dragDropDrawObject->styler.DrawBlock(renderer, m_dragDropDrawObject->model, m_spaceScreenTransformer, false);
+}
+
+void node::GraphicsScene::OnDropEnter(const DragDropObject& object)
+{
+    m_dragDropDrawObject = DragDropDrawObject{ object.block, BlockStyler{} };
+}
+
+void node::GraphicsScene::OnDropExit(const DragDropObject& object)
+{
+    UNUSED_PARAM(object);
+    m_dragDropDrawObject = std::nullopt;
 }
 
 bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
@@ -434,7 +490,7 @@ node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) co
     for (auto& object: m_objects)
     {
         node::GraphicsObject* current_hover = object.m_ptr->GetInteractableAtPoint(p);
-        if (current_hover != nullptr)
+        if (current_hover)
         {
             return current_hover;
         }

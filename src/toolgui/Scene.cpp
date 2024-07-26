@@ -30,7 +30,7 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     {
         m_sidePanel->Draw(renderer);
     }
-    if (m_pContextMenu != nullptr)
+    if (m_pContextMenu)
     {
         m_pContextMenu->Draw(renderer);
     }
@@ -179,7 +179,7 @@ void node::Scene::OnMouseMove(const SDL_Point& p)
 
 node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
 {
-    if (m_pContextMenu != nullptr)
+    if (m_pContextMenu)
     {
         if (auto interactable = m_pContextMenu->GetInteractableAtPoint(p))
         {
@@ -196,7 +196,7 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
     for (auto& widget: m_widgets)
     {
         node::Widget* current_hover = widget.m_ptr->GetInteractableAtPoint(p);
-        if (current_hover != nullptr)
+        if (current_hover)
         {
             return current_hover;
         }
@@ -254,7 +254,7 @@ bool node::Scene::OnLMBDown(const SDL_Point& p)
     {
         current_hover = this->GetInteractableAt(p);
     }
-    if ( m_pContextMenu!= nullptr && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
+    if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
     }
@@ -302,7 +302,7 @@ bool node::Scene::OnRMBDown(const SDL_Point& p)
     {
         current_hover = this->GetInteractableAt(p);
     }
-    if ( m_pContextMenu!= nullptr && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
+    if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
     }
@@ -350,7 +350,7 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
     {
         current_hover = this->GetInteractableAt(p);
     }
-    if ( m_pContextMenu!= nullptr && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
+    if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
     }
@@ -398,7 +398,7 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
     {
         current_hover = this->GetInteractableAt(p);
     }
-    if ( m_pContextMenu!= nullptr && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
+    if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
     }

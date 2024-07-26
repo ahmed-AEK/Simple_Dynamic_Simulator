@@ -11,8 +11,13 @@
 #include "NodeSDLStylers/BlockStyler.hpp"
 
 node::BlockObject::BlockObject(IGraphicsScene* scene, std::shared_ptr<model::BlockModel> model, std::shared_ptr<BlockStyler> styler)
-    : DraggableObject((model ? model->GetBounds() : model::Rect{0,0,0,0}), ObjectType::node, scene), m_model{std::move(model)}, m_styler{std::move(styler)}
+    : DraggableObject((model ? model->GetBounds() : model::Rect{100,100,100,100}), ObjectType::node, scene), m_model{std::move(model)}, m_styler{std::move(styler)}
 {
+    if (!m_model)
+    {
+        return;
+    }
+
     for (const auto& in_socket : m_model->GetSockets(model::BlockSocketModel::SocketType::input))
     {
         AddInputSocket(in_socket.GetId());
