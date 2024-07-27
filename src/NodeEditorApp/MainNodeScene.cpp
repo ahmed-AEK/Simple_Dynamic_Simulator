@@ -10,6 +10,7 @@
 #include "toolgui/SidePanel.hpp"
 #include "BlockPallete/BlockPallete.hpp"
 #include "toolgui/ToolBar.hpp"
+#include "GraphicsScene/ToolButton.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
 {
@@ -54,14 +55,24 @@ static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
     gScene->SetSceneModel(std::move(sceneModel));
 }
 
-node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
-:Scene(rect, parent)
+
+void node::MainNodeScene::InitializeTools(node::GraphicsScene* gScene)
 {
+    assert(gScene);
+    m_toolsManager = std::make_shared<ToolsManager>(gScene);
+    m_toolsManager->AddTool("A", std::make_unique<ArrowTool>(gScene));
+    auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
+    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager));
+    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "S", m_toolsManager));
+    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
+    SetToolBar(std::move(toolbar));
+    m_toolsManager->OnChangeTool("A");
+}
 
-    using namespace node;
-    std::unique_ptr<GraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
-
-    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{0,0,300,rect.h}, this);
+void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
+{
+    assert(gScene);
+    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{ 0,0,300,m_rect.h}, this);
 
     auto&& pallete_provider = std::make_shared<PalleteProvider>();
     for (int i = 0; i < 5; i++)
@@ -81,21 +92,22 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 
     }
 
-    sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{0,0,200,200},
+    sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
         std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
+}
 
-    auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
-    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
-    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
-    toolbar->AddButton(std::make_unique<ToolBarButton>(SDL_Rect{ 0,0,40,40 }, this));
+node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
+:Scene(rect, parent)
+{
 
-    SetToolBar(std::move(toolbar));
-
-    gScene->SetTool(std::make_unique<ArrowTool>(gScene.get()));
-
-
+    using namespace node;
+    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
+
+    InitializeSidePanel(gScene.get());
+
+    InitializeTools(gScene.get());
 
 
     std::unique_ptr<Widget> remove_BTN = std::make_unique<ButtonWidget>(SDL_Rect{ 50, 100, 200, 50 }, "Remove Node",

@@ -19,6 +19,8 @@ GraphicsLogic/NewNet.cpp 		GraphicsLogic/NewNet.hpp
 GraphicsLogic/NewNetJunction.cpp 	GraphicsLogic/NewNetJunction.hpp
 GraphicsLogic/NodeDeleteLogic.cpp 	GraphicsLogic/NodeDeleteLogic.hpp
 
+ToolsManager.hpp ToolsManager.cpp
+ToolButton.hpp ToolButton.cpp
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")

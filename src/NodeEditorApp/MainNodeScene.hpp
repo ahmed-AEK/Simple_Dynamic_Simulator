@@ -1,6 +1,7 @@
 #pragma once
 
 #include "toolgui/Scene.hpp"
+#include "GraphicsScene/ToolsManager.hpp"
 
 namespace node
 {
@@ -19,6 +20,9 @@ protected:
     virtual bool OnRMBUp(const SDL_Point& p) override;
     NodeGraphicsScene* m_graphicsScene = nullptr;
 private:
+    void InitializeTools(node::GraphicsScene* gScene);
+    void InitializeSidePanel(node::GraphicsScene* gScene);
+    std::shared_ptr<ToolsManager> m_toolsManager;
 
 };
 

@@ -47,8 +47,8 @@ protected:
     virtual void OnMouseIn();
     virtual void OnMouseMove(const Point& current_mouse_point);
     virtual ClickEvent OnLMBDown(const Point& current_mouse_point);
-    virtual ClickEvent OnRMBDown(const Point& current_mouse_point);
     virtual ClickEvent OnLMBUp(const Point& current_mouse_point);
+    virtual ClickEvent OnRMBDown(const Point& current_mouse_point);
     virtual ClickEvent OnRMBUp(const Point& current_mouse_point);
 private:
     Rect m_rect{0,0,0,0};

@@ -93,7 +93,7 @@ public:
 
     void SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic);
     GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
-    void SetTool(std::unique_ptr<GraphicsTool> ptr);
+    void SetTool(std::shared_ptr<GraphicsTool> ptr);
     GraphicsTool* GetTool() const { return m_tool.get(); }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 
@@ -132,7 +132,7 @@ private:
     std::vector<HandlePtr<GraphicsObject>> m_current_selection;
     std::vector<DragObject> m_drag_objects;
     std::unique_ptr<GraphicsLogic> m_graphicsLogic;
-    std::unique_ptr<GraphicsTool> m_tool;
+    std::shared_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
     std::shared_ptr<model::NodeSceneModel> m_sceneModel;
     std::optional<DragDropDrawObject> m_dragDropDrawObject;

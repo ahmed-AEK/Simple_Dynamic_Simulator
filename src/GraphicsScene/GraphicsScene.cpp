@@ -462,7 +462,7 @@ void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
     m_graphicsLogic = std::move(logic);
 }
 
-void node::GraphicsScene::SetTool(std::unique_ptr<GraphicsTool> ptr)
+void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
 {
     if (m_tool)
     {
