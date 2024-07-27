@@ -14,8 +14,8 @@ public:
 	auto GetBlocks() const { return std::span{ m_blocks }; }
 	auto GetBlocks() { return std::span{ m_blocks }; }
 
-	void AddBlock(BlockModelPtr node)
-	{ m_blocks.push_back(std::move(node)); }
+	void AddBlock(BlockModelPtr block)
+	{ m_blocks.push_back(std::move(block)); }
 
 	BlockModelPtr GetBlockById(const id_int id);
 	void RemoveBlockById(id_int id);

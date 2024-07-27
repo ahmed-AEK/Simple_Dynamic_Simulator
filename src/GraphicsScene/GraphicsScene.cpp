@@ -8,6 +8,7 @@
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
+#include "NodeModels/SceneModelManager.hpp"
 
 node::GraphicsScene::GraphicsScene(const SDL_Rect& rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -34,12 +35,17 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
     m_objects.insert(iter, std::move(slot));
 }
 
-void node::GraphicsScene::SetSceneModel(std::shared_ptr<model::NodeSceneModel> scene)
+void node::GraphicsScene::SetSceneModel(std::shared_ptr<SceneModelManager> scene)
 {
     m_objects.clear();
     m_drag_objects.clear();
     m_graphicsLogic = nullptr;
+    if (m_sceneModel)
+    {
+        m_sceneModel->Detach(*this);
+    }
     m_sceneModel = std::move(scene);
+    m_sceneModel->Attach(*this);
     auto styler = std::make_shared<node::BlockStyler>();
     for (auto&& block : m_sceneModel->GetBlocks())
     {
@@ -106,7 +112,7 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
         SDL_Rect object_space_rect = { object.m_ptr->GetSpaceRect().x, object.m_ptr->GetSpaceRect().y,
             object.m_ptr->GetSpaceRect().w, object.m_ptr->GetSpaceRect().h };
         SDL_Point space_point_sdl = ToSDLPoint(space_point);
-        if (ObjectType::node == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point_sdl, &object_space_rect))
+        if (ObjectType::block == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point_sdl, &object_space_rect))
         {
             
             node::BlockObject* node_pointer = static_cast<node::BlockObject*>(object.m_ptr.get());
@@ -136,11 +142,6 @@ void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_Point& 
     auto styler = std::make_shared<node::BlockStyler>();
     styler->PositionNodes(*block);
     m_sceneModel->AddBlock(block);
-    std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, block, styler);
-    auto* ptr = obj.get();
-    AddObject(std::move(obj), 0);
-    ClearCurrentSelection();
-    AddSelection(ptr->GetFocusHandlePtr());
     m_dragDropDrawObject = std::nullopt;
 }
 
@@ -163,6 +164,44 @@ void node::GraphicsScene::OnDropExit(const DragDropObject& object)
 {
     UNUSED_PARAM(object);
     m_dragDropDrawObject = std::nullopt;
+}
+
+void node::GraphicsScene::OnNotify(SceneModification& e)
+{
+    switch (e.type)
+    {
+    case SceneModification::type_t::BlockAdded:
+    {
+        auto styler = std::make_shared<node::BlockStyler>();
+        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, std::get<model::BlockModelPtr>(e.data), styler);
+        auto* ptr = obj.get();
+        AddObject(std::move(obj), 0);
+        ClearCurrentSelection();
+        AddSelection(ptr->GetFocusHandlePtr());
+        break;
+    }
+    case SceneModificationType::BlockRemoved:
+    {
+        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
+        auto it = std::find_if(m_objects.begin(), m_objects.end(), [&](auto&& object)
+            {
+                if (object.m_ptr->GetObjectType() == ObjectType::block)
+                {
+                    if (static_cast<BlockObject*>(object.m_ptr.get())->GetModelId() == model_id)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        if (it != m_objects.end())
+        {
+            m_objects.erase(it);
+        }
+        break;
+    }
+    
+    }
 }
 
 bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
@@ -517,7 +556,7 @@ std::vector<node::BlockObject*> node::GraphicsScene::GetNodes()
     std::vector<node::BlockObject*> out;
     for (auto& pointer : m_objects)
     {
-        if (ObjectType::node == pointer.m_ptr->GetObjectType())
+        if (ObjectType::block == pointer.m_ptr->GetObjectType())
         {
             auto ptr = static_cast<node::BlockObject*>(pointer.m_ptr.get());
             out.push_back(ptr);

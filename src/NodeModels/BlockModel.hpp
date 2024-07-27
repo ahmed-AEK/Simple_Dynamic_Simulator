@@ -43,6 +43,7 @@ public:
 	const Point& GetPosition() const noexcept { return m_position; }
 	void SetPosition(const Point& p) { m_position = p; }
 	const SocketId& GetId() const noexcept { return m_Id; }
+	void SetId(SocketId id) { m_Id = id; };
 
 	const SocketType& GetType() const noexcept { return m_type; }
 	const std::optional<id_int> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
@@ -118,7 +119,7 @@ public:
 	}
 
 	const id_int& GetId() const noexcept { return m_Id; }
-
+	void SetId(const id_int& id);
 	void ReserveSockets(size_t size, const BlockSocketModel::SocketType type) { 
 		switch (type)
 		{

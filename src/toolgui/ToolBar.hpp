@@ -40,7 +40,7 @@ public:
 	ToolBar(const SDL_Rect& rect, Scene* parent);
 	~ToolBar();
 	void AddButton(std::unique_ptr<ToolBarButton> button, int position = -1);
-	
+	node::ToolBarButton* GetButton(const std::string& name);
 	void Draw(SDL_Renderer* renderer) override;
 protected:
 	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;

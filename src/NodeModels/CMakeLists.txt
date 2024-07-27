@@ -6,6 +6,7 @@ Utils.hpp
 NodeScene.cpp NodeScene.hpp
 NetModel.cpp NetModel.hpp
 Observer.hpp
+SceneModelManager.hpp SceneModelManager.cpp
 )
 
 target_include_directories(NodeModels PRIVATE ".")

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <vector>
 
-namespace node::model
+namespace node
 {
 
 template <typename EventType>
@@ -44,6 +44,7 @@ class Publisher
     friend MultiObserver<EventType>;
 public:
     Publisher() noexcept {}
+    void Notify(EventType&& e) { Notify(e); }
     virtual void Notify(EventType&) = 0;
     virtual void Attach(Observer<EventType>&) = 0;
     virtual void Detach(Observer<EventType>&) = 0;
@@ -62,6 +63,8 @@ class SinglePublisher : public Publisher<EventType>
 {
 public:
     SinglePublisher() noexcept {}
+
+    using Publisher<EventType>::Notify;
     void Notify(EventType& e) override
     {
         if (m_observer)
@@ -108,6 +111,8 @@ class MultiPublisher : public Publisher<EventType>
 {
 public:
     MultiPublisher() noexcept {}
+
+    using Publisher<EventType>::Notify;
     void Notify(EventType& e) override
     {
         for (auto&& observer : m_observers)

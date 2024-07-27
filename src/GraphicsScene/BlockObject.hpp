@@ -24,6 +24,7 @@ public:
     ~BlockObject();
     void Draw(SDL_Renderer* renderer) override;
 
+    model::id_int GetModelId();
     std::vector<BlockSocketObject*> GetSockets();
 protected:
     void AddInputSocket(model::BlockSocketModel::SocketId id);

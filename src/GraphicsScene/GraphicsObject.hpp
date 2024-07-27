@@ -11,7 +11,7 @@ namespace node
 
 enum class ObjectType
 {
-    node,
+    block,
     socket,
     netNode,
     net,

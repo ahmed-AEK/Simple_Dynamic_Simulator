@@ -33,6 +33,16 @@ void node::ToolBar::AddButton(std::unique_ptr<ToolBarButton> button, int positio
 	
 }
 
+node::ToolBarButton* node::ToolBar::GetButton(const std::string& name)
+{
+	auto it = std::find_if(m_buttons.begin(), m_buttons.end(), [&](auto&& button) { return button->GetName() == name; });
+	if (it != m_buttons.end())
+	{
+		return it->get();
+	}
+	return nullptr;
+}
+
 void node::ToolBar::Draw(SDL_Renderer * renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

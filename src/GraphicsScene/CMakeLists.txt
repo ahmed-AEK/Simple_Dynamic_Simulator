@@ -13,6 +13,7 @@ IGraphicsScene.hpp
 
 tools/GraphicsTool.hpp
 tools/ArrowTool.hpp tools/ArrowTool.cpp
+tools/DeleteTool.hpp tools/DeleteTool.cpp
 
 GraphicsLogic/GraphicsLogic.cpp 	GraphicsLogic/GraphicsLogic.hpp
 GraphicsLogic/NewNet.cpp 		GraphicsLogic/NewNet.hpp

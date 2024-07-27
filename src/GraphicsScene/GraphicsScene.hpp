@@ -8,8 +8,8 @@
 #include <span>
 #include "GraphicsScene/tools/GraphicsTool.hpp"
 #include <optional>
-#include "NodeModels/NodeScene.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
+#include "NodeModels/SceneModelManager.hpp"
 
 namespace node
 {
@@ -39,7 +39,7 @@ struct GRAPHICSSCENE_API DragObject
     SDL_Point m_start_position;
 };
 
-class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::IGraphicsScene
+class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::IGraphicsScene, public node::SingleObserver<SceneModification>
 {
 public:
     enum class CAPTURE_MODE
@@ -59,8 +59,8 @@ public:
     double GetZoomScale() const { return m_zoomScale; }
 
     void AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order);
-    void SetSceneModel(std::shared_ptr<model::NodeSceneModel> scene);
-    std::shared_ptr<model::NodeSceneModel> GetSceneModel() { return m_sceneModel; }
+    void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
+    std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
 
     void UpdateObjectsRect();
@@ -110,6 +110,8 @@ protected:
     virtual void OnDropEnter(const DragDropObject& object) override;
     virtual void OnDropExit(const DragDropObject& object) override;
 
+    virtual void OnNotify(SceneModification& e);
+
 private:
     bool InternalSelectObject(GraphicsObject* object);
 
@@ -134,7 +136,7 @@ private:
     std::unique_ptr<GraphicsLogic> m_graphicsLogic;
     std::shared_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
-    std::shared_ptr<model::NodeSceneModel> m_sceneModel;
+    std::shared_ptr<SceneModelManager> m_sceneModel;
     std::optional<DragDropDrawObject> m_dragDropDrawObject;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
     GraphicsSceneMode m_SceneMode = GraphicsSceneMode::Normal;

@@ -14,3 +14,16 @@ node::model::BlockModel::GetSocketById(id_int id, const BlockSocketModel::Socket
 	return std::nullopt;
 }
 
+void node::model::BlockModel::SetId(const id_int& id)
+{
+	m_Id = id;
+	for (auto&& socket : m_input_sockets)
+	{
+		socket.SetId({ socket.GetId().m_Id, id });
+	}
+	for (auto&& socket : m_output_sockets)
+	{
+		socket.SetId({ socket.GetId().m_Id, id });
+	}
+}
+
