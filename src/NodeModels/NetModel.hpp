@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <functional>
 #include <span>
 
 namespace node::model
@@ -75,7 +74,7 @@ public:
 			*m_name :
 			std::optional<std::reference_wrapper<const std::string>>{};
 	}
-	const std::string SetName(std::string name) { m_name = name; }
+	void SetName(std::string name) { m_name = name; }
 
 	void AddNetNode(NetNodeModel netNode) { m_nodes.push_back(std::move(netNode)); }
 	void RemoveNetNodeById(id_int id);

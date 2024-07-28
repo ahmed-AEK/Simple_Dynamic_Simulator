@@ -22,7 +22,7 @@ void node::ToolBar::AddButton(std::unique_ptr<ToolBarButton> button, int positio
 		return;
 	}
 
-	if (position < m_buttons.size())
+	if (static_cast<size_t>(position) < m_buttons.size())
 	{
 		m_buttons.insert(m_buttons.begin() + position, std::move(button));
 	}

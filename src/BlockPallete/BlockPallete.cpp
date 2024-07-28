@@ -15,7 +15,7 @@ namespace PalleteData {
 
 node::BlockPallete::BlockPallete(const SDL_Rect& rect,
 	std::shared_ptr<PalleteProvider> provider, Scene* parent)
-	: m_palleteProvider{provider}, Widget(rect, parent)
+	: Widget(rect, parent), m_palleteProvider{provider}
 {
 }
 
@@ -79,7 +79,7 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_poin
 
 	auto&& pallete_elements = m_palleteProvider->GetElements();
 	assert(selected_item_index >= 0);
-	assert(selected_item_index < pallete_elements.size());
+	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
 
 	GetScene()->StartDragObject(DragDropObject{ pallete_elements[selected_item_index]->block_template, model::BlockModel{pallete_elements[selected_item_index]->block}});
 	return MI::ClickEvent::NONE;

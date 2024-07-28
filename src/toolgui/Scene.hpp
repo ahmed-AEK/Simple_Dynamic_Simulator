@@ -62,6 +62,7 @@ namespace node
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
         void SetgScene(std::unique_ptr<Widget> scene);
+        
         bool UpdateTasksEmpty() { return m_updateTasks.empty() && m_new_updateTasks.empty(); }
         void DoUpdateTasks();
         int64_t AddUpdateTask(UpdateTask task);
@@ -96,7 +97,7 @@ namespace node
         std::unique_ptr<ToolBar> m_toolbar;
         std::unique_ptr<Widget> m_gScene;
 
-        std::unordered_map<int64_t,UpdateTask> m_updateTasks;
+        std::unordered_map<int64_t, UpdateTask> m_updateTasks;
         std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
         std::vector<int64_t> m_deleted_updateTasks;
         int64_t m_current_task_id = 0;

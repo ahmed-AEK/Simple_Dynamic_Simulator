@@ -1,5 +1,5 @@
 #include "ToolsManager.hpp"
-#include "SDL_Framework/SDL_Headers.h"
+#include "SDL_Framework/SDL_headers.h"
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "tools/GraphicsTool.hpp"
 #include "toolgui/ToolBar.hpp"

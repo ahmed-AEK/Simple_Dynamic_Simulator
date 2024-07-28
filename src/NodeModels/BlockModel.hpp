@@ -3,11 +3,8 @@
 #include "NodeModels/Utils.hpp"
 #include <vector>
 #include <optional>
-#include <functional>
 #include <span>
 #include <cassert>
-#include "NodeModels/Observer.hpp"
-#include <variant>
 #include <memory>
 #include <string>
 

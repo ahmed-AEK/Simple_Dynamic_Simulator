@@ -18,7 +18,7 @@ namespace node
 		};
 
 		SidePanel(PanelSide side, const SDL_Rect& rect, Scene* parent)
-			: m_side(side), Widget(rect, parent)
+			: Widget(rect, parent), m_side(side)
 		{
 			RepositionWidget();
 		}
@@ -89,6 +89,8 @@ namespace node
 			case PanelState::open:
 				Retract();
 				return MI::ClickEvent::CLICKED;
+				break;
+			default:
 				break;
 			}
 			return MI::ClickEvent::NONE;
