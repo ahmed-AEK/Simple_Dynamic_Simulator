@@ -8,7 +8,7 @@ node::NodeDeleteLogic::NodeDeleteLogic(BlockObject& node, GraphicsScene* scene)
 {
 }
 
-void node::NodeDeleteLogic::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::NodeDeleteLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
 	if (!m_object.isAlive())
 	{
@@ -18,14 +18,15 @@ void node::NodeDeleteLogic::OnMouseMove(const SDL_Point& current_mouse_point)
 
 	auto object_ptr = m_object.GetObjectPtr();
 	SDL_Rect objectSpaceRect = ToSDLRect(object_ptr->GetSpaceRect());
-	if (!SDL_PointInRect(&current_mouse_point, &objectSpaceRect))
+	SDL_Point current_mouse_sdl = ToSDLPoint(current_mouse_point);
+	if (!SDL_PointInRect(&current_mouse_sdl, &objectSpaceRect))
 	{
 		GetScene()->SetGraphicsLogic(nullptr);
 		return;
 	}
 }
 
-MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
 	if (!m_object.isAlive())
 	{
@@ -33,7 +34,8 @@ MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const SDL_Point& current_mouse_poi
 	}
 
 	SDL_Rect ObjectSpaceRect = ToSDLRect(m_object.GetObjectPtr()->GetSpaceRect());
-	if(SDL_PointInRect(&current_mouse_point, &ObjectSpaceRect) &&
+	SDL_Point current_mouse_sdl = ToSDLPoint(current_mouse_point);
+	if(SDL_PointInRect(&current_mouse_sdl, &ObjectSpaceRect) &&
 		(GraphicsSceneMode::Delete == GetScene()->GetMode()))
 	{
 		auto node_ptr = static_cast<BlockObject*>(m_object.GetObjectPtr());

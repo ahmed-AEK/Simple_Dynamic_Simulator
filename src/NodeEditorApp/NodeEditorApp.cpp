@@ -38,8 +38,17 @@ namespace node
                         GetScene()->GetNodeScene()->SetMode(GraphicsSceneMode::Delete);
                     }
                     return true;
+                case SDLK_ESCAPE:
+                    if (GetScene())
+                    {
+                        GetScene()->CancelCurrentLogic();
+                    }
+                    if (GetScene() && GetScene()->GetNodeScene())
+                    {
+                        GetScene()->GetNodeScene()->CancelCurrentLogic();
+                    }
+                    return true;
                 }
-                break;
             }
             case SDL_KEYUP:
             {

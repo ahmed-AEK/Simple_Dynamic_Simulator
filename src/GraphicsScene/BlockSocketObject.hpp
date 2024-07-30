@@ -20,7 +20,7 @@ public:
 	static constexpr int nodeLength = 15;
 	void OnSetSpaceRect(const model::Rect& rect) override;
 	void SetPosition(SDL_Point p);
-	SDL_Point GetCenter();
+	model::Point GetCenter();
 	void Draw(SDL_Renderer* renderer) override;
 	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 	model::BlockSocketModel::SocketType GetSocketType() const { return m_socktType; }

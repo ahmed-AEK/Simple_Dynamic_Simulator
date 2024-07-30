@@ -11,7 +11,7 @@
 #include "NodeSDLStylers/BlockStyler.hpp"
 
 node::BlockObject::BlockObject(IGraphicsScene* scene, std::shared_ptr<model::BlockModel> model, std::shared_ptr<BlockStyler> styler)
-    : DraggableObject((model ? model->GetBounds() : model::Rect{100,100,100,100}), ObjectType::block, scene), m_model{std::move(model)}, m_styler{std::move(styler)}
+    : GraphicsObject((model ? model->GetBounds() : model::Rect{100,100,100,100}), ObjectType::block, scene), m_model{std::move(model)}, m_styler{std::move(styler)}
 {
     if (!m_model)
     {
@@ -53,7 +53,7 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
 {
-    return DraggableObject::OnLMBDown(current_mouse_point);
+    return GraphicsObject::OnLMBDown(current_mouse_point);
 }
 
 void node::BlockObject::AddInputSocket(model::BlockSocketModel::SocketId id)
@@ -92,7 +92,7 @@ void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
     {
         m_model->SetBounds(rect);
     }
-    DraggableObject::OnSetSpaceRect(rect);
+    GraphicsObject::OnSetSpaceRect(rect);
     RePositionSockets();
 }
 
@@ -145,7 +145,7 @@ node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::P
 
 void node::BlockObject::OnUpdateRect()
 {
-    DraggableObject::OnUpdateRect();
+    GraphicsObject::OnUpdateRect();
     RePositionSockets();
 }
 

@@ -14,10 +14,15 @@
 namespace node
 {
 
+namespace logic
+{
+    class GraphicsLogic;
+
+}
+
 class BlockObject;
 class BlockSocketObject;
 class GraphicsObject;
-class GraphicsLogic;
 class IGraphicsSceneController;
 class Scene;
 
@@ -91,12 +96,13 @@ public:
     void SetMode(GraphicsSceneMode value) { m_SceneMode = value; }
     GraphicsSceneMode GetMode() const { return m_SceneMode; }
 
-    void SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic);
-    GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
+    void SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic> logic);
+    logic::GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
+    void CancelCurrentLogic();
+
     void SetTool(std::shared_ptr<GraphicsTool> ptr);
     GraphicsTool* GetTool() const { return m_tool.get(); }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
-
 protected:
     virtual void OnSetRect(const SDL_Rect& rect) override;
     virtual void OnMouseMove(const SDL_Point& p) override;
@@ -133,7 +139,7 @@ private:
     HandlePtr<GraphicsObject> m_current_mouse_hover;
     std::vector<HandlePtr<GraphicsObject>> m_current_selection;
     std::vector<DragObject> m_drag_objects;
-    std::unique_ptr<GraphicsLogic> m_graphicsLogic;
+    std::unique_ptr<logic::GraphicsLogic> m_graphicsLogic;
     std::shared_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
     std::shared_ptr<SceneModelManager> m_sceneModel;

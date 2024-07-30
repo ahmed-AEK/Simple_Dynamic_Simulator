@@ -16,8 +16,6 @@ public:
 	void OnMouseMove(const model::Point& p) override;
 	bool InternalSelectObject(GraphicsObject* object);
 private:
-	bool m_isDragging = false;
-	SDL_Point m_startPointScreen;
-	model::Point m_startEdgeSpace;
+
 };
 }

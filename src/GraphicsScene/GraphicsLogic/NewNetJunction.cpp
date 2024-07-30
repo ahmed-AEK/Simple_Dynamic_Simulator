@@ -31,7 +31,7 @@ node::NewNetJunctionObject::NewNetJunctionObject(NetNode* startNode, NetNode* en
 }
 
 
-MI::ClickEvent node::NewNetJunctionObject::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NewNetJunctionObject::OnLMBUp(const model::Point& current_mouse_point)
 {
 	if (m_segmentToFuse)
 	{

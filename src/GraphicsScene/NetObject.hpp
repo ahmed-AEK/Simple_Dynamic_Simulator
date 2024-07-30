@@ -50,7 +50,7 @@ public:
 		}
 		return nullptr;
 	}
-	void setCenter(const SDL_Point& point) noexcept { SetSpaceOrigin({ point.x - m_width / 2, point.y - m_height / 2 }); }
+	void setCenter(const model::Point& point) noexcept { SetSpaceOrigin({ point.x - m_width / 2, point.y - m_height / 2 }); }
 	void UpdateConnectedSegments();
 	void SetConnectedSocket(BlockSocketObject* socket);
 	BlockSocketObject* GetConnectedSocket() noexcept;

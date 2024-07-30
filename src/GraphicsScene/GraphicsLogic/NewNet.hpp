@@ -19,7 +19,7 @@ enum class NewNetMode
 	Lmode
 };
 
-class GRAPHICSSCENE_API NewNetObject : public node::GraphicsLogic
+class GRAPHICSSCENE_API NewNetObject : public node::logic::GraphicsLogic
 {
 public:
 	static NewNetObject* TryCreate(NetNode* endNode, GraphicsScene* scene);
@@ -28,8 +28,8 @@ public:
 	NetNode* GetStartNode() const { return p_startNode; }
 	NetNode* GetEndNode() const { return p_endNode; }
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	virtual MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	void OnMouseMove(const model::Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
 	void UpdateConnectedSegments();
 	void UpdateToHorizontal();

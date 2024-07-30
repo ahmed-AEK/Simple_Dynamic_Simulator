@@ -97,7 +97,7 @@ node::NewNetObject::NewNetObject(std::array<NetNode*, 4> nodes, std::array<NetSe
 	UpdateConnectedSegments();
 }
 
-void node::NewNetObject::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::NewNetObject::OnMouseMove(const model::Point& current_mouse_point)
 {
 	auto* socket_ptr = GetScene()->GetSocketAt({ current_mouse_point.x, current_mouse_point.y });
 	if (socket_ptr && (socket_ptr->GetConnectedNode() == p_endNode || 
@@ -118,7 +118,7 @@ void node::NewNetObject::OnMouseMove(const SDL_Point& current_mouse_point)
 	UpdateConnectedSegments();
 }
 
-MI::ClickEvent node::NewNetObject::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::NewNetObject::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	GetScene()->SetGraphicsLogic(nullptr);
@@ -143,7 +143,7 @@ void node::NewNetObject::UpdateConnectedSegments()
 
 void node::NewNetObject::UpdateToHorizontal()
 {
-	SDL_Point center_point = { 
+	model::Point center_point = { 
 		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
 		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
 	};
@@ -159,7 +159,7 @@ void node::NewNetObject::UpdateToHorizontal()
 
 void node::NewNetObject::UpdateToVertical()
 {
-	SDL_Point center_point = {
+	model::Point center_point = {
 		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
 		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
 	};
@@ -175,7 +175,7 @@ void node::NewNetObject::UpdateToVertical()
 
 void node::NewNetObject::UpdateToZmode()
 {
-	SDL_Point center_point = {
+	model::Point center_point = {
 		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
 		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
 	};

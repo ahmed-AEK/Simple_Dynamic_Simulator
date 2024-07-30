@@ -69,6 +69,7 @@ namespace node
         void RemoveUpdateTask(int64_t task_id);
 
         void StartDragObject(DragDropObject object);
+        void CancelCurrentLogic();
     protected:
         virtual void OnStart() {};
 

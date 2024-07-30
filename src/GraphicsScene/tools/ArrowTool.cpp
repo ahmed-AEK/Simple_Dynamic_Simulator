@@ -2,6 +2,9 @@
 #include "GraphicsScene/GraphicsObject.hpp"
 #include <cassert>
 #include "GraphicsScene/GraphicsScene.hpp"
+#include "GraphicsLogic/ScreenDragLogic.hpp"
+#include "GraphicsLogic/BlockDragLogic.hpp"
+#include "BlockObject.hpp"
 
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 {
@@ -11,6 +14,14 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         // selection code
         InternalSelectObject(current_hover);
 
+        if (current_hover->GetObjectType() == ObjectType::block)
+        {
+            auto block_obj = static_cast<BlockObject*>(current_hover);
+            auto obj_rect = current_hover->GetSpaceRect();
+            auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, *block_obj, GetScene());
+            GetScene()->SetGraphicsLogic(std::move(drag_logic));
+            return MI::ClickEvent::CLICKED;
+        }
         /*
         // do Click
         MI::ClickEvent result = current_hover->LMBDown(p);
@@ -63,12 +74,12 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         GraphicsScene* scene = GetScene();
         assert(scene);
         scene->ClearCurrentSelection();
-        m_isDragging = true;
-        m_capturing_mouse = true;
-        m_startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(p);
+        auto startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(p);
         auto&& space_rect = scene->GetSpaceRect();
-        m_startEdgeSpace = { space_rect.x, space_rect.y};
-        return MI::ClickEvent::CAPTURE_START;
+        auto startEdgeSpace = model::Point{ space_rect.x, space_rect.y};
+        auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene());
+        GetScene()->SetGraphicsLogic(std::move(logic));
+        return MI::ClickEvent::CLICKED;
     }
     return MI::ClickEvent::NONE;
 }
@@ -76,38 +87,12 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 MI::ClickEvent node::ArrowTool::OnLMBUp(const model::Point& p)
 {
     UNUSED_PARAM(p);
-    if (m_isDragging)
-    {
-        m_capturing_mouse = false;
-        m_isDragging = false;
-        return MI::ClickEvent::CAPTURE_END;
-    }
 	return MI::ClickEvent();
 }
 
 void node::ArrowTool::OnMouseMove(const model::Point& p)
 {
-    
-    if (m_isDragging)
-    {
-        GraphicsScene* scene = GetScene();
-        assert(scene);
-        auto&& transformer = scene->GetSpaceScreenTransformer();
-        SDL_Point point = transformer.SpaceToScreenPoint(p);
-        const auto current_position_difference_space_vector = transformer.ScreenToSpaceVector({
-        point.x - m_startPointScreen.x, point.y - m_startPointScreen.y
-            });
-
-        auto&& space_rect = scene->GetSpaceRect();
-        scene->SetSpaceRect({
-            m_startEdgeSpace.x - current_position_difference_space_vector.x,
-            m_startEdgeSpace.y - current_position_difference_space_vector.y,
-            space_rect.w,
-            space_rect.h
-            });
-        scene->UpdateObjectsRect();
-        scene->InvalidateRect();
-    }
+    UNUSED_PARAM(p);
 }
 
 bool node::ArrowTool::InternalSelectObject(GraphicsObject* object)

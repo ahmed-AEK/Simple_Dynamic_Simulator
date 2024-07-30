@@ -19,7 +19,8 @@ GraphicsLogic/GraphicsLogic.cpp 	GraphicsLogic/GraphicsLogic.hpp
 GraphicsLogic/NewNet.cpp 		GraphicsLogic/NewNet.hpp
 GraphicsLogic/NewNetJunction.cpp 	GraphicsLogic/NewNetJunction.hpp
 GraphicsLogic/NodeDeleteLogic.cpp 	GraphicsLogic/NodeDeleteLogic.hpp
-
+GraphicsLogic/ScreenDragLogic.cpp   GraphicsLogic/ScreenDragLogic.hpp
+GraphicsLogic/BlockDragLogic.cpp    GraphicsLogic/BlockDragLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 )

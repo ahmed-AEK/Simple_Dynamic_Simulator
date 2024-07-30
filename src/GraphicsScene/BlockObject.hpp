@@ -17,7 +17,7 @@ namespace model
 }
 class BlockStyler;
 
-class GRAPHICSSCENE_API BlockObject: public DraggableObject
+class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
 public:
     BlockObject(IGraphicsScene* scene, std::shared_ptr<model::BlockModel> model = nullptr, std::shared_ptr<BlockStyler> styler = nullptr);

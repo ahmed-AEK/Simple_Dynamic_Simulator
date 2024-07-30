@@ -9,13 +9,13 @@ class BlockObject;
 class GraphicsScene;
 class GraphicsObject;
 
-class NodeDeleteLogic: public GraphicsLogic
+class NodeDeleteLogic: public logic::GraphicsLogic
 {
 public:
 	explicit NodeDeleteLogic(BlockObject& node, GraphicsScene* scene);
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	void OnMouseMove(const model::Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 
 private:
 	HandlePtr<GraphicsObject> m_object;

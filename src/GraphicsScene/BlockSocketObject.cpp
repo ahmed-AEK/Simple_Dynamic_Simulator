@@ -76,7 +76,7 @@ void node::BlockSocketObject::SetPosition(SDL_Point p)
 	next_node->UpdateConnectedSegments();
 }
 
-SDL_Point node::BlockSocketObject::GetCenter()
+node::model::Point node::BlockSocketObject::GetCenter()
 {
 	return { GetSpaceRect().x + nodeLength/2, GetSpaceRect().y + nodeLength / 2};
 }

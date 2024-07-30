@@ -139,6 +139,18 @@ void node::Scene::StartDragObject(DragDropObject object)
     
 }
 
+void node::Scene::CancelCurrentLogic()
+{
+    if (m_dragObject)
+    {
+        if (auto ptr = m_current_mouse_hover.GetObjectPtr())
+        {
+            ptr->DropExit(*m_dragObject);
+        }
+        m_dragObject = std::nullopt;
+    }
+}
+
 void node::Scene::OnMouseMove(const SDL_Point& p)
 {
     if (!b_mouseCaptured)

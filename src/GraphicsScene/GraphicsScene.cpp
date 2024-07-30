@@ -227,9 +227,7 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
-        auto&& transformer = GetSpaceScreenTransformer();
-        SDL_Point SpacePoint = ToSDLPoint(transformer.ScreenToSpacePoint(p));
-        m_graphicsLogic->MouseMove(SpacePoint);
+        m_graphicsLogic->MouseMove(point);
         return;
     }
 
@@ -302,12 +300,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
 {
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
 
-    if (m_graphicsLogic)
-    {
-        auto&& transformer = GetSpaceScreenTransformer();
-        model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
-        return m_graphicsLogic->LMBDown(SDL_Point{ SpacePoint.x, SpacePoint.y });
-    }
+    assert(m_graphicsLogic == nullptr);
     if (m_tool)
     {
         return m_tool->OnLMBDown(point);
@@ -322,7 +315,10 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
     model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
-        return m_graphicsLogic->LMBUp(SDL_Point{ SpacePoint.x, SpacePoint.y });
+        auto result = m_graphicsLogic->LMBUp(SpacePoint);
+        m_graphicsLogic->SetDone(true);
+        SetGraphicsLogic(nullptr);
+        return result;
     }
 
     if (m_tool)
@@ -492,7 +488,7 @@ void node::GraphicsScene::InvalidateRect()
     Widget::InvalidateRect();
 }
 
-void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
+void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic> logic)
 {
     if (m_graphicsLogic && !m_graphicsLogic->IsDone())
     {
@@ -500,6 +496,12 @@ void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<GraphicsLogic> logic)
     }
     m_graphicsLogic = std::move(logic);
 }
+
+void  node::GraphicsScene::CancelCurrentLogic()
+{
+    SetGraphicsLogic(nullptr);
+}
+
 
 void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
 {
