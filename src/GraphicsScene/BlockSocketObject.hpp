@@ -13,10 +13,12 @@ class BlockObject;
 class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
-	BlockSocketObject(model::BlockSocketModel::SocketId id, model::BlockSocketModel::SocketType type, IGraphicsScene* parentScene, BlockObject* parentNode);
+	BlockSocketObject(model::SocketId id, model::BlockSocketModel::SocketType type, IGraphicsScene* parentScene, BlockObject* parentNode);
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
+	BlockObject* GetParentBlock() { return m_parentNode; }
+	model::SocketId GetId() { return m_id; }
 	static constexpr int nodeLength = 15;
 	void OnSetSpaceRect(const model::Rect& rect) override;
 	void SetPosition(SDL_Point p);
@@ -27,7 +29,7 @@ public:
 private:
 	BlockObject* m_parentNode;
 	model::BlockSocketModel::SocketType m_socktType;
-	model::BlockSocketModel::SocketId m_id;
+	model::SocketId m_id;
 	NetNode* m_connected_node = nullptr;
 };
 

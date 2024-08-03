@@ -17,8 +17,8 @@ TEST(testNetSegment, testCreate)
 
     node::NetSegment segment3 = node::NetSegment(node::NetOrientation::Vertical, nullptr, nullptr);
 
-    EXPECT_EQ(segment1.getOrientation(), node::NetOrientation::Vertical);
-    EXPECT_EQ(segment2.getOrientation(), node::NetOrientation::Horizontal);
+    EXPECT_EQ(segment1.GetOrientation(), node::NetOrientation::Vertical);
+    EXPECT_EQ(segment2.GetOrientation(), node::NetOrientation::Horizontal);
     EXPECT_EQ(segment1.getStartNode(), &node1);
     EXPECT_EQ(segment1.getEndNode(), &node2);
     EXPECT_EQ(segment3.getStartNode(), nullptr);

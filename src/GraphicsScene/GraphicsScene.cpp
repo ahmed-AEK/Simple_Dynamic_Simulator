@@ -9,6 +9,7 @@
 #include "toolgui/ContextMenu.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "NodeModels/SceneModelManager.hpp"
+#include "GraphicsScene/NetObject.hpp"
 
 node::GraphicsScene::GraphicsScene(const SDL_Rect& rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -141,7 +142,7 @@ void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_Point& 
 
     auto styler = std::make_shared<node::BlockStyler>();
     styler->PositionNodes(*block);
-    m_sceneModel->AddBlock(block);
+    m_sceneModel->AddNewBlock(block);
     m_dragDropDrawObject = std::nullopt;
 }
 
@@ -200,25 +201,63 @@ void node::GraphicsScene::OnNotify(SceneModification& e)
         }
         break;
     }
-    
-    }
-}
-
-bool node::GraphicsScene::InternalSelectObject(GraphicsObject* object)
-{
-    if (object->isSelectable())
+    case SceneModificationType::NetAdded:
     {
-        if (!IsObjectSelected(*object))
+        auto net_ptr = std::get<model::NetModelPtr>(e.data);
+        std::vector<NetNode*> nodes;
+        for (auto&& node : net_ptr->GetNetNodes())
         {
-            ClearCurrentSelection();
-            AddSelection(object->GetFocusHandlePtr());
+            auto obj = std::make_unique<NetNode>(node.GetPosition(), this);
+            obj->SetId(node.GetId());
+            obj->SetNet(net_ptr);
+            nodes.push_back(obj.get());
+            AddObject(std::move(obj), 200);
         }
-        return true;
+        for (auto&& segment : net_ptr->GetNetSegments())
+        {
+            auto orientation = segment.m_orientation == model::NetSegmentModel::NetSegmentOrientation::horizontal ? 
+                NetOrientation::Horizontal : NetOrientation::Vertical;
+            
+            auto start_node = std::find_if(nodes.begin(), nodes.end(),
+                [&](NetNode* node) {
+                    return node->GetId() == segment.m_firstNodeId;
+                });
+            NetNode* start_node_ptr = start_node == nodes.end() ? nullptr : *start_node;
+            auto end_node = std::find_if(nodes.begin(), nodes.end(),
+                [&](NetNode* node) {
+                    return node->GetId() == segment.m_secondNodeId;
+                });
+            NetNode* end_node_ptr = end_node == nodes.end() ? nullptr : *end_node;
+
+            auto obj = std::make_unique<NetSegment>(orientation, start_node_ptr, end_node_ptr, this);
+            obj->SetId(segment.GetId());
+            obj->SetNet(net_ptr);
+            AddObject(std::move(obj), 100);
+        }
+        for (auto&& conn : net_ptr->GetSocketConnections())
+        {
+            for (auto&& obj : m_objects)
+            {
+                if (obj.m_ptr->GetObjectType() == ObjectType::block &&
+                    static_cast<BlockObject*>(obj.m_ptr.get())->GetModelId() == conn.socketId.block_id)
+                {
+                    for (auto&& sock : static_cast<BlockObject*>(obj.m_ptr.get())->GetSockets())
+                    {
+                        if (sock->GetId() == conn.socketId.socket_id)
+                        {
+                            auto connected_node = std::find_if(nodes.begin(), nodes.end(),
+                                [&](NetNode* node) {
+                                    return node->GetId() == conn.NodeId;
+                                });
+                            sock->SetConnectedNode(*connected_node);
+                        }
+                    }
+                }
+            }
+        }
+        break;
     }
-    else
-    {
-        ClearCurrentSelection();
-        return false;
+    
     }
 }
 
@@ -370,11 +409,6 @@ void node::GraphicsScene::SetSpaceRect(const model::Rect& rect)
 const node::model::Rect& node::GraphicsScene::GetSpaceRect() const noexcept
 {
     return m_spaceRect;
-}
-
-const node::model::Rect& node::GraphicsScene::GetSpaceRectBase() const noexcept
-{
-    return m_spaceRect_base;
 }
 
 std::span<const node::HandlePtr<node::GraphicsObject>> node::GraphicsScene::GetCurrentSelection() const
@@ -551,18 +585,4 @@ node::model::Point node::GraphicsScene::QuantizePoint(const model::Point& p)
         static_cast<int>(p.x/m_spaceQuantization)*m_spaceQuantization,
         static_cast<int>(p.y/m_spaceQuantization)*m_spaceQuantization
         };
-}
-
-std::vector<node::BlockObject*> node::GraphicsScene::GetNodes()
-{
-    std::vector<node::BlockObject*> out;
-    for (auto& pointer : m_objects)
-    {
-        if (ObjectType::block == pointer.m_ptr->GetObjectType())
-        {
-            auto ptr = static_cast<node::BlockObject*>(pointer.m_ptr.get());
-            out.push_back(ptr);
-        }
-    }
-    return out;
 }

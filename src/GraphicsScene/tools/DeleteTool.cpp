@@ -35,7 +35,7 @@ void node::DeleteTool::OnMouseMove(const model::Point& p)
 {
 	if (m_focused_object)
 	{
-		auto* obj = GetScene()->GetObjectAt(p);
+		const auto* obj = GetScene()->GetObjectAt(p);
 		if (m_focused_object != obj)
 		{
 			m_focused_object = nullptr;

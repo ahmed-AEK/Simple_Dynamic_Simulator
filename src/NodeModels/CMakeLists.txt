@@ -7,6 +7,7 @@ NodeScene.cpp NodeScene.hpp
 NetModel.cpp NetModel.hpp
 Observer.hpp
 SceneModelManager.hpp SceneModelManager.cpp
+IdTypes.hpp
 )
 
 target_include_directories(NodeModels PRIVATE ".")

@@ -2,6 +2,7 @@
 
 #include "DraggableObject.hpp"
 #include "BlockSocketObject.hpp"
+#include "NodeModels/NetModel.hpp"
 #include <vector>
 #include <variant>
 #include <list>
@@ -31,9 +32,9 @@ constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
-	explicit NetNode(const SDL_Point& center, IGraphicsScene* scene = nullptr);
+	explicit NetNode(const model::Point& center, IGraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
-	const SDL_Point& getCenter() noexcept { return m_centerPoint; }
+	const model::Point& getCenter() noexcept { return m_centerPoint; }
 	void setSegment(NetSegment* segment, NetSide side);
 	NetSegment* getSegment(NetSide side)
 	{
@@ -56,13 +57,20 @@ public:
 	BlockSocketObject* GetConnectedSocket() noexcept;
 	uint8_t GetConnectedSegmentsCount();
 	void ClearSegment(const NetSegment* segment);
+
+	void SetId(const model::NetNodeId& id) { m_id = id; }
+	model::NetNodeId GetId() const noexcept { return m_id; }
+	void SetNet(model::NetModelPtr ptr) { m_net_model = std::move(ptr); }
+
 protected:
 	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
 	void OnSetSpaceRect(const model::Rect& rect) override;
 private:
-	SDL_Point m_centerPoint;
+	model::NetModelPtr m_net_model;
+	model::NetNodeId m_id{0};
+	model::Point m_centerPoint;
 	NetSegment* m_northSegment = nullptr;
 	NetSegment* m_southSegment = nullptr;
 	NetSegment* m_eastSegment = nullptr;
@@ -81,19 +89,25 @@ public:
 	explicit NetSegment(const NetOrientation& orientation, 
 	NetNode* startNode = nullptr, NetNode* endNode = nullptr, IGraphicsScene* scene = nullptr);
 	virtual void Draw(SDL_Renderer* renderer) override;
-	const NetOrientation& getOrientation() noexcept { return m_orientation; }
 	NetNode* getStartNode() noexcept { return m_startNode; }
 	NetNode* getEndNode() noexcept { return m_endNode; }
 	void Connect(NetNode* start, NetNode* end, const NetOrientation& orientation);
 	void Disconnect();
 	void CalcRect();
-	const NetOrientation& GetOrientation() noexcept { return m_orientation; }
+	const NetOrientation& GetOrientation() const noexcept { return m_orientation; }
 	int GetWidth() const { return c_width; }
+
+	void SetId(const model::NetSegmentId& id) { m_id = id; }
+	model::NetSegmentId GetId() const noexcept { return m_id; }
+	void SetNet(model::NetModelPtr ptr) { m_net_model = std::move(ptr); }
+
 protected:
 	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 	void OnMouseMove(const model::Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
+	model::NetSegmentId m_id{0};
+	model::NetModelPtr m_net_model;
 	NetNode* m_startNode;
 	NetNode* m_endNode;
 	NetOrientation m_orientation{};

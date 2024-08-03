@@ -8,7 +8,7 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
 {
     std::optional<node::model::NodeSceneModel> scene{ std::in_place };
     SQLNodeLoader nodeLoader{ m_dbname, m_db };
-    auto nodes = nodeLoader.GetNodes();
+    auto nodes = nodeLoader.GetBlocks();
     (*scene).ReserveBlocks(nodes.size());
     for (auto&& node : nodes)
     {
@@ -21,14 +21,14 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
 {
     try {
 
-        m_db.exec("DROP TABLE IF EXISTS nodes");
+        m_db.exec("DROP TABLE IF EXISTS blocks");
         m_db.exec("DROP TABLE IF EXISTS sockets");
         m_db.exec("DROP TABLE IF EXISTS version");
 
         m_db.exec("CREATE TABLE version ( major INTEGER PRIMARY KEY, minor INTEGER )");
         m_db.exec("INSERT INTO version VALUES (0,1)");
 
-        m_db.exec(R"(CREATE TABLE nodes (
+        m_db.exec(R"(CREATE TABLE blocks (
                     id INTEGER PRIMARY KEY, 
                     x INTEGER NOT NULL, 
                     y INTEGER NOT NULL, 
@@ -43,12 +43,12 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     type INTEGER NOT NULL,
                     connected_node INTEGER,
                     PRIMARY KEY (id, parentid)
-                    FOREIGN KEY (parentid) REFERENCES nodes(id) );)");
+                    FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
 
         SQLNodeLoader nodeLoader{ m_dbname, m_db };
         for (const auto& node : scene.GetBlocks())
         {
-            nodeLoader.AddNode(node);
+            nodeLoader.AddBlock(node);
         }
         UNUSED_PARAM(scene);
         return true;

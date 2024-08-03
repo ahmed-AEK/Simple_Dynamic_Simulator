@@ -1,105 +1,96 @@
 #include "SQLNodeLoader.hpp"
 #include "toolgui/NodeMacros.h"
+#include <algorithm>
 
-bool node::loader::SQLNodeLoader::AddNode(const node::model::BlockModelPtr& node)
+bool node::loader::SQLNodeLoader::AddBlock(const node::model::BlockModelPtr& node)
 {
 	{
-		SQLite::Statement query{ m_db, "INSERT INTO nodes VALUES (?,?,?,?,?)" };
-		query.bind(1, node->GetId());
+		SQLite::Statement query{ m_db, "INSERT INTO blocks VALUES (?,?,?,?,?)" };
+		query.bind(1, node->GetId().value);
 		query.bind(2, node->GetBounds().x);
 		query.bind(3, node->GetBounds().y);
 		query.bind(4, node->GetBounds().w);
 		query.bind(5, node->GetBounds().h);
 		query.exec();
 	}
-	auto add_sockets = [&](const node::model::BlockSocketModel::SocketType type)
-		{
-			auto&& sockets = node->GetSockets(type);
-			if (!std::all_of(sockets.begin(), sockets.end(),
-				[&](const auto& socket) { return AddSocket(socket); }))
-			{
-				return false;
-			}
-			return true;
-		};
-	if (!add_sockets(node::model::BlockSocketModel::SocketType::input))
+
+	auto&& sockets = node->GetSockets();
+	if (!std::all_of(sockets.begin(), sockets.end(),
+		[&](const auto& socket) { return AddSocket(socket, node->GetId()); }))
 	{
 		return false;
 	}
-	if (!add_sockets(node::model::BlockSocketModel::SocketType::output))
-	{
-		return false;
-	}	
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::DeleteNodeAndSockets(const node::model::id_int node_id)
+bool node::loader::SQLNodeLoader::DeleteBlockAndSockets(const node::model::BlockId& node_id)
 {
 	{
 		SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE parentid = ?" };
-		query.bind(1, node_id);
+		query.bind(1, node_id.value);
 		query.exec();
 	}
-	SQLite::Statement query{ m_db, "DELETE FROM nodes WHERE id = ?" };
-	query.bind(1, node_id);
+	SQLite::Statement query{ m_db, "DELETE FROM blocks WHERE id = ?" };
+	query.bind(1, node_id.value);
 	query.exec();
 	return true;
 }
 
 node::model::BlockModelPtr 
-node::loader::SQLNodeLoader::GetNode(node::model::id_int node_id)
+node::loader::SQLNodeLoader::GetBlock(const node::model::BlockId& block_id)
 {
 	using namespace node::model;
 
-	SQLite::Statement query{ m_db, "SELECT * FROM nodes" };
+	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
 	if (query.executeStep())
 	{
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
 		std::shared_ptr<BlockModel> node = 
-			std::make_shared<BlockModel>(node_id, bounds);
-		LoadSocketsForNode(*node);
+			std::make_shared<BlockModel>(block_id, bounds);
+		LoadSocketsForBlock(*node);
 		return node;
 	}
 	return {};
 }
 
 
-bool node::loader::SQLNodeLoader::UpdateNodePosition(node::model::id_int node_id,
+bool node::loader::SQLNodeLoader::UpdateBlockPosition(const node::model::BlockId& node_id,
 	const node::model::Point& position)
 {
-	SQLite::Statement query{ m_db, "UPDATE nodes SET x = ?, y = ? WHERE id = ?" };
+	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ? WHERE id = ?" };
 	query.bind(1, position.x);
 	query.bind(2, position.y);
-	query.bind(3, node_id);
+	query.bind(3, node_id.value);
 	query.exec();
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::UpdateNodeBounds(node::model::id_int node_id,
+bool node::loader::SQLNodeLoader::UpdateBlockBounds(const node::model::BlockId& node_id,
 	const node::model::Rect& bounds)
 {
-	SQLite::Statement query{ m_db, "UPDATE nodes SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
+	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
 	query.bind(1, bounds.x);
 	query.bind(2, bounds.y);
 	query.bind(3, bounds.w);
 	query.bind(4, bounds.h);
-	query.bind(5, node_id);
+	query.bind(5, node_id.value);
 	query.exec();
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel& socket)
+bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel& socket, 
+	const node::model::BlockId& block_id)
 {
 	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?)" };
-	querySocket.bind(1, socket.GetId().m_Id);
-	querySocket.bind(2, socket.GetId().m_nodeId);
+	querySocket.bind(1, socket.GetId().value);
+	querySocket.bind(2, block_id.value);
 	querySocket.bind(3, socket.GetPosition().x);
 	querySocket.bind(4, socket.GetPosition().y);
 	querySocket.bind(5, static_cast<int>(socket.GetType()));
 	if (auto val = socket.GetConnectedNetNode(); val)
 	{
-		querySocket.bind(6, *val);
+		querySocket.bind(6, (*val).value);
 	}
 	else
 	{
@@ -109,61 +100,61 @@ bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel&
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::BlockSocketId& socket_id)
+bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::SocketUniqueId& socket_id)
 {
 	SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE id = ? AND parentid = ?" };
-	query.bind(1, socket_id.m_Id);
-	query.bind(2, socket_id.m_nodeId);
+	query.bind(1, socket_id.socket_id.value);
+	query.bind(2, socket_id.block_id.value);
 	query.exec();
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::BlockSocketId& socket_id,
+bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 	const node::model::Point& position)
 {
 	SQLite::Statement query{ m_db, "UPDATE sockets SET x = ?, y = ? WHERE id = ? AND parentid = ?" };
 	query.bind(1, position.x);
 	query.bind(2, position.y);
-	query.bind(3, socket_id.m_Id);
-	query.bind(4, socket_id.m_nodeId);
+	query.bind(3, socket_id.socket_id.value);
+	query.bind(4, socket_id.block_id.value);
 	query.exec();
 	return true;
 }
 
-node::model::id_int node::loader::SQLNodeLoader::GetNextNodeIdx()
+node::model::BlockId node::loader::SQLNodeLoader::GetNextBlockId()
 {
-	SQLite::Statement query{ m_db, "SELECT MAX(id) FROM nodes" };
+	SQLite::Statement query{ m_db, "SELECT MAX(id) FROM blocks" };
 	auto result = query.executeStep();
 	UNUSED_PARAM(result);
 	assert(result);
-	return static_cast<node::model::id_int>(query.getColumn(0)) + 1;
+	return model::BlockId{ static_cast<node::model::id_int>(query.getColumn(0)) + 1 };
 }
 
-std::vector<std::shared_ptr<node::model::BlockModel>> node::loader::SQLNodeLoader::GetNodes()
+std::vector<std::shared_ptr<node::model::BlockModel>> node::loader::SQLNodeLoader::GetBlocks()
 {
 	using namespace node::model;
 
 	std::vector<std::shared_ptr<BlockModel>> nodes;
-	SQLite::Statement query{ m_db, "SELECT * FROM nodes" };
+	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
 	while (query.executeStep())
 	{
-		id_int node_id = query.getColumn(0);
+		BlockId block_id{ query.getColumn(0) };
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
 		std::shared_ptr<BlockModel> node =
-			std::make_shared<BlockModel>(node_id, bounds);
-		LoadSocketsForNode(*node);
+			std::make_shared<BlockModel>(block_id, bounds);
+		LoadSocketsForBlock(*node);
 		nodes.push_back(std::move(node));
 	}
 	return nodes;
 }
 
 void
-node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::BlockModel& node)
+node::loader::SQLNodeLoader::LoadSocketsForBlock(node::model::BlockModel& node)
 {
 	using namespace node::model;
 	SQLite::Statement querySocket{ m_db, "SELECT * FROM sockets WHERE parentid = ?" };
-	querySocket.bind(1, node.GetId());
+	querySocket.bind(1, node.GetId().value);
 	while (querySocket.executeStep())
 	{
 		id_int socket_id = querySocket.getColumn(0);
@@ -172,6 +163,6 @@ node::loader::SQLNodeLoader::LoadSocketsForNode(node::model::BlockModel& node)
 		BlockSocketModel::SocketType type =
 			static_cast<node::model::BlockSocketModel::SocketType>(
 				static_cast<int>(querySocket.getColumn(5)));
-		node.AddSocket(node::model::BlockSocketModel{ type,{socket_id,node.GetId()}, socketOrigin });
+		node.AddSocket(node::model::BlockSocketModel{ type, model::SocketId{socket_id}, socketOrigin });
 	}
 }

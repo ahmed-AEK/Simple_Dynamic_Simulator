@@ -9,7 +9,7 @@ class GraphicsScene;
 class GraphicsTool
 {
 public:
-	GraphicsTool(GraphicsScene* scene) : m_scene{ scene } {}
+	explicit GraphicsTool(GraphicsScene* scene) : m_scene{ scene } {}
 	~GraphicsTool() = default;
 	GraphicsScene* GetScene() const { return m_scene; }
 	bool IsCapturingMouse() const noexcept { return m_capturing_mouse; }

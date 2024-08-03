@@ -35,9 +35,9 @@ TEST(testBlockObject, testCreate)
 TEST(testBlockObject, testAddSocket)
 {
 	using namespace node;
-	auto model = std::make_shared<node::model::BlockModel>(0, model::Rect{ 100,100,100,100 });
-	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { model->GetId(),0} });
-	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { model->GetId(),0 } });
+	auto model = std::make_shared<node::model::BlockModel>(model::BlockId{0}, model::Rect{ 100,100,100,100 });
+	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0} });
+	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
 	auto styler = std::make_shared<node::BlockStyler>();
 	node::BlockObject block{ nullptr, model, styler };
 }

@@ -49,6 +49,7 @@ namespace node
                     }
                     return true;
                 }
+                break;
             }
             case SDL_KEYUP:
             {

@@ -9,8 +9,8 @@ using namespace node::model;
 TEST(testScene, testSaveLoadNode)
 {
 	NodeSceneModel scene;
-	id_int node_id = 1;
-	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
+	BlockId block_id{ 1 };
+	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
@@ -29,7 +29,7 @@ TEST(testScene, testSaveLoadNode)
 TEST(testScene, testSaveModifyLoadNode)
 {
 	NodeSceneModel scene;
-	id_int node_id = 1;
+	BlockId node_id{ 1 };
 	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
@@ -42,7 +42,7 @@ TEST(testScene, testSaveModifyLoadNode)
 
 	auto nodeLoader = loader.GetNodeLoader();
 	auto second_rect = node::model::Rect{ 2,2,5,5 };
-	nodeLoader->UpdateNodeBounds(node_id, second_rect);
+	nodeLoader->UpdateBlockBounds(node_id, second_rect);
 
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
@@ -55,8 +55,8 @@ TEST(testScene, testSaveModifyLoadNode)
 TEST(testScene, testSaveDeleteLoadNode)
 {
 	NodeSceneModel scene;
-	id_int node_id = 1;
-	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
+	BlockId block_id{ 1 };
+	BlockModelPtr node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
@@ -67,7 +67,7 @@ TEST(testScene, testSaveDeleteLoadNode)
 	ASSERT_TRUE(result);
 	auto nodeLoader = loader.GetNodeLoader();
 	
-	auto result2 = nodeLoader->DeleteNodeAndSockets(node_id);
+	auto result2 = nodeLoader->DeleteBlockAndSockets(block_id);
 
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
@@ -78,8 +78,8 @@ TEST(testScene, testSaveDeleteLoadNode)
 TEST(testScene, testNextIndex)
 {
 	NodeSceneModel scene;
-	id_int node_id = 1;
-	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
+	BlockId block_id{ 1 };
+	BlockModelPtr node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
 
 	SQLSceneLoader loader(":memory:");
 
@@ -90,7 +90,7 @@ TEST(testScene, testNextIndex)
 	ASSERT_TRUE(result);
 
 	auto nodeLoader = loader.GetNodeLoader();
-	EXPECT_EQ(nodeLoader->GetNextNodeIdx(), 2);
+	EXPECT_EQ(nodeLoader->GetNextBlockId(), BlockId{ 2 });
 
 }
 
@@ -105,6 +105,6 @@ TEST(testScene, testNextIndexEmpty)
 	ASSERT_TRUE(result);
 
 	auto nodeLoader = loader.GetNodeLoader();
-	EXPECT_EQ(nodeLoader->GetNextNodeIdx(), 1);
+	EXPECT_EQ(nodeLoader->GetNextBlockId(), BlockId{1});
 
 }

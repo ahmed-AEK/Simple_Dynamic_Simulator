@@ -12,12 +12,13 @@ enum class SceneModificationType
 {
 	BlockAdded,
 	BlockRemoved,
+	NetAdded,
 };
 
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelPtr>;
+	using data_t = std::variant<model::BlockModelPtr, model::NetModelPtr>;
 	SceneModificationType type;
 	data_t data;
 };
@@ -25,12 +26,13 @@ struct SceneModification
 class SceneModelManager : public MultiPublisher<SceneModification>
 {
 public:
-	SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene);
-	~SceneModelManager();
+	explicit SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene);
+	~SceneModelManager() override;
 
 	std::span<model::BlockModelPtr> GetBlocks();
-	void AddBlock(model::BlockModelPtr block);
-	void RemoveBlockById(model::id_int id);
+	void AddNewBlock(model::BlockModelPtr block);
+	void AddNewNet(model::NetModelPtr net);
+	void RemoveBlockById(const model::BlockId& id);
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 };

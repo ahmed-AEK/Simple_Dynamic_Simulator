@@ -38,7 +38,7 @@ MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const model::Point& current_mouse_
 	if(SDL_PointInRect(&current_mouse_sdl, &ObjectSpaceRect) &&
 		(GraphicsSceneMode::Delete == GetScene()->GetMode()))
 	{
-		auto node_ptr = static_cast<BlockObject*>(m_object.GetObjectPtr());
+		const auto* node_ptr = static_cast<BlockObject*>(m_object.GetObjectPtr());
 		GetScene()->SetCurrentHover(nullptr);
 		//node_ptr->DisconnectSockets();
 		auto ptr = GetScene()->PopObject(node_ptr);

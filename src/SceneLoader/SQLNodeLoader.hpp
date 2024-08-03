@@ -14,22 +14,22 @@ class SQLNodeLoader : public NodeLoader
 public:
 	SQLNodeLoader(std::string dbname, SQLite::Database& db)
 		: m_dbname{ dbname }, m_db{ db } {}
-	bool AddNode(const node::model::BlockModelPtr& node) override;
-	bool DeleteNodeAndSockets(const node::model::id_int node_id) override;
-	bool UpdateNodePosition(node::model::id_int node_id,
+	bool AddBlock(const node::model::BlockModelPtr& node) override;
+	bool DeleteBlockAndSockets(const node::model::BlockId& node_id) override;
+	bool UpdateBlockPosition(const node::model::BlockId& node_id,
 		const node::model::Point& position) override;
 	node::model::BlockModelPtr
-		GetNode(node::model::id_int node_id) override;
-	bool UpdateNodeBounds(node::model::id_int node_id,
+		GetBlock(const node::model::BlockId& block_id) override;
+	bool UpdateBlockBounds(const node::model::BlockId& node_id,
 		const node::model::Rect& bounds) override;
 
-	bool AddSocket(const node::model::BlockSocketModel& socket) override;
-	bool DeleteSocket(const node::model::BlockSocketId& socket_id) override;
-	bool UpdateSocketPosition(const node::model::BlockSocketId& socket_id,
+	bool AddSocket(const node::model::BlockSocketModel& socket, const model::BlockId& block_id) override;
+	bool DeleteSocket(const node::model::SocketUniqueId& socket_id) override;
+	bool UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 		const node::model::Point& position) override;
-	node::model::id_int GetNextNodeIdx() override;
-	std::vector<std::shared_ptr<node::model::BlockModel>> GetNodes() override;
-	void LoadSocketsForNode(node::model::BlockModel& node);
+	node::model::BlockId GetNextBlockId() override;
+	std::vector<std::shared_ptr<node::model::BlockModel>> GetBlocks() override;
+	void LoadSocketsForBlock(node::model::BlockModel& node);
 
 private:
 	std::string m_dbname;

@@ -10,6 +10,8 @@
 namespace node::model
 {
 
+
+
 class NetNodeModel
 {
 public:
@@ -21,20 +23,20 @@ public:
 		east=3,
 	};
 
-	NetNodeModel(const id_int& id, const Point& position = {})
+	explicit NetNodeModel(const NetNodeId& id, const Point& position = {})
 		:m_Id{ id }, m_position{ position } {}
-	const id_int& GetId() const noexcept { return m_Id; }
+	const NetNodeId& GetId() const noexcept { return m_Id; }
 	const Point& GetPosition() const noexcept { return m_position; };
 	void SetPosition(const Point& position) { m_position = position; }
-	std::optional<id_int> GetSegmentAt(const ConnectedSegmentSide side);
-	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<id_int> segment);
+	std::optional<NetSegmentId> GetSegmentAt(const ConnectedSegmentSide side);
+	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<NetSegmentId> segment);
 private:
-	id_int m_Id;
+	NetNodeId m_Id;
 	Point m_position;
-	std::optional<id_int> m_northSegmentId = 0;
-	std::optional<id_int> m_southSegmentId = 0;
-	std::optional<id_int> m_westSegmentId = 0;
-	std::optional<id_int> m_eastSegmentId = 0;
+	std::optional<NetSegmentId> m_northSegmentId = std::nullopt;
+	std::optional<NetSegmentId> m_southSegmentId = std::nullopt;
+	std::optional<NetSegmentId> m_westSegmentId = std::nullopt;
+	std::optional<NetSegmentId> m_eastSegmentId = std::nullopt;
 };
 
 struct NetSegmentModel
@@ -45,61 +47,70 @@ struct NetSegmentModel
 		vertical = 1,
 	};
 
-	const id_int& GetId() const noexcept { return m_Id; }
-	NetSegmentModel(id_int id, id_int first_node, id_int second_node, NetSegmentOrientation orientation)
+	const NetSegmentId& GetId() const noexcept { return m_Id; }
+	NetSegmentModel(NetSegmentId id, NetNodeId first_node, NetNodeId second_node, NetSegmentOrientation orientation)
 		:m_Id{ id }, m_firstNodeId{ first_node }, m_secondNodeId{ second_node }, m_orientation{ orientation } {}
 private:
-	id_int m_Id;
+	NetSegmentId m_Id;
 public:
-	id_int m_firstNodeId;
-	id_int m_secondNodeId;
+	NetNodeId m_firstNodeId;
+	NetNodeId m_secondNodeId;
 	NetSegmentOrientation m_orientation;
 
 };
 
 struct SocketNodeConnection
 {
-	BlockSocketId socketId;
-	id_int NodeId;
+	SocketUniqueId socketId;
+	NetNodeId      NodeId;
 };
 
 class NetModel
 {
 public:
-	NetModel(id_int id, std::optional<std::string> name = std::nullopt)
+	explicit NetModel(id_int id = 0, std::optional<std::string> name = std::nullopt)
 		: m_name{ name }, m_Id{ id } {}
-	const id_int& GetId() const noexcept { return m_Id; }
+
+	const NetId& GetId() const noexcept { return m_Id; }
+	void SetId(NetId id) { m_Id = id; }
+
 	const std::optional<std::reference_wrapper<const std::string>> GetName() const noexcept { 
 		return m_name.has_value() ? 
 			*m_name :
 			std::optional<std::reference_wrapper<const std::string>>{};
 	}
-	void SetName(std::string name) { m_name = name; }
+	void SetName(std::string name) { m_name = std::move(name); }
+
 
 	void AddNetNode(NetNodeModel netNode) { m_nodes.push_back(std::move(netNode)); }
-	void RemoveNetNodeById(id_int id);
+	void RemoveNetNodeById(const NetNodeId& id);
 
 	std::optional<std::reference_wrapper<NetNodeModel>>
-		GetNetNodeById(id_int id);
+		GetNetNodeById(const NetNodeId& id);
 	std::span<NetNodeModel>
 		GetNetNodes() { return m_nodes; }
 
 	void AddNetSegment(NetSegmentModel netSegment) { m_segments.push_back(std::move(netSegment)); }
-	void RemoveNetSegmentById(id_int id);
+	void RemoveNetSegmentById(const NetSegmentId& id);
 
 	std::optional<std::reference_wrapper<NetSegmentModel>>
-		GetNetSegmentById(id_int id);
+		GetNetSegmentById(const NetSegmentId& id);
 	std::span<NetSegmentModel>
 		GetNetSegments() { return m_segments; }
+
+	std::span<model::SocketNodeConnection> GetSocketConnections() { return m_SocketConnections; }
+	void AddSocketNodeConnection(const model::SocketNodeConnection& connection);
+	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
 
 	void ReserveNodes(size_t size) { m_nodes.reserve(size); }
 	void ReserveSegments(size_t size) { m_segments.reserve(size); }
 private:
 	std::optional<std::string> m_name;
-	id_int m_Id;
+	NetId m_Id;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
 	std::vector<SocketNodeConnection> m_SocketConnections;
 };
 
+using NetModelPtr = typename std::shared_ptr<NetModel>;
 }

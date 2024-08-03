@@ -22,38 +22,38 @@ static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
     using namespace node;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
     {
-        auto model = std::make_shared<node::model::BlockModel>(1, model::Rect{ 10,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { 0, model->GetId() } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { 0, model->GetId() } });
+        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{1}, model::Rect{ 10,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{0} });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{1} });
         sceneModel->AddBlock(model);
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(2, model::Rect{ 200,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { 0, model->GetId() } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { 0, model->GetId() } });
+        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{2}, model::Rect{ 200,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         sceneModel->AddBlock(model);
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(3, model::Rect{ 400,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { 0, model->GetId() } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { 0, model->GetId() } });
+        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{3}, model::Rect{ 400,10,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         sceneModel->AddBlock(model);
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(4, model::Rect{ 200,210,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { 0, model->GetId() } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { 0, model->GetId() } });
+        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{4}, model::Rect{ 200,210,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         sceneModel->AddBlock(model);
     }
 
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(5, model::Rect{ 400,210,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, { 0, model->GetId() } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, { 0, model->GetId() } });
+        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{5}, model::Rect{ 400,210,100,100 });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         sceneModel->AddBlock(model);
     }
     gScene->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
@@ -86,10 +86,10 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         auto&& element = std::make_shared<PalleteElement>();
         element->block.SetBounds({ 0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight });
         element->block.AddSocket(node::model::BlockSocketModel{
-            node::model::BlockSocketModel::SocketType::input, {0,0}, {0,0}
+            node::model::BlockSocketModel::SocketType::input, model::SocketId{0}, {0,0}
             });
         element->block.AddSocket(node::model::BlockSocketModel{
-            node::model::BlockSocketModel::SocketType::output, {0,0}, {0,0}
+            node::model::BlockSocketModel::SocketType::output, model::SocketId{1}, {0,0}
             });
         element->styler = std::make_shared<BlockStyler>();
         element->styler->PositionNodes(element->block);

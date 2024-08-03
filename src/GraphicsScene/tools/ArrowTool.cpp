@@ -4,7 +4,10 @@
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsLogic/ScreenDragLogic.hpp"
 #include "GraphicsLogic/BlockDragLogic.hpp"
+#include "GraphicsLogic/NewNet.hpp"
 #include "BlockObject.hpp"
+#include "BlockSocketObject.hpp"
+
 
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 {
@@ -14,14 +17,34 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         // selection code
         InternalSelectObject(current_hover);
 
-        if (current_hover->GetObjectType() == ObjectType::block)
+        switch (current_hover->GetObjectType())
         {
+        case ObjectType::block:
+        {
+
             auto block_obj = static_cast<BlockObject*>(current_hover);
             auto obj_rect = current_hover->GetSpaceRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, *block_obj, GetScene());
             GetScene()->SetGraphicsLogic(std::move(drag_logic));
             return MI::ClickEvent::CLICKED;
         }
+        case ObjectType::socket:
+        {
+            auto socket = static_cast<BlockSocketObject*>(current_hover);
+            if (!socket->GetConnectedNode())
+            {
+                auto new_logic = logic::NewNetObject::Create(socket, GetScene());
+                if (new_logic)
+                {
+                    GetScene()->SetGraphicsLogic(std::move(new_logic));
+                    return MI::ClickEvent::CLICKED;
+                }
+            }
+            break;
+        }
+        default: break;
+        }
+        
         /*
         // do Click
         MI::ClickEvent result = current_hover->LMBDown(p);

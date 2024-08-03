@@ -1,193 +1,212 @@
 #include "GraphicsLogic/NewNet.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsScene/NetObject.hpp"
+#include "GraphicsScene/BlockObject.hpp"
+#include "GraphicsScene/BlockSocketObject.hpp"
+#include <array>
+#include <algorithm>
 
-
-node::NewNetObject* node::NewNetObject::TryCreate(NetNode* endNode, GraphicsScene* scene)
+std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(BlockSocketObject* socket, GraphicsScene* scene)
 {
-	constexpr auto find_next_node = [](const NetSegment* segment, NetNode* node)
-		{
-			NetSegment* other_segment;
-			for (int i = 0; i < 4; i++)
-			{
-				other_segment = node->getSegment(static_cast<NetSide>(i));
-				if (other_segment && other_segment != segment)
-				{
-					break;
-				}
-			}
-			NetNode* other_node = other_segment->getStartNode();
-			if (other_node == node)
-			{
-				other_node = other_segment->getEndNode();
-			}
-			return std::pair{ other_segment, other_node };
-		};
+	assert(socket);
+	assert(scene);
 	std::array<NetNode*, 4> nodes{};
 	std::array<NetSegment*, 3> segments{};
-	if (!endNode || endNode->GetConnectedSegmentsCount() != 1)
+	try
 	{
-		return nullptr;
-	}
-	nodes[3] = endNode;
-	auto&& [segment2, node2] = find_next_node(nullptr, endNode);
-	nodes[2] = node2;
-	segments[2] = segment2;
-	if (node2->GetConnectedSegmentsCount() != 2)
-	{
-		return nullptr;
-	}
-	auto&& [segment1, node1] = find_next_node(segment2, node2);
-	nodes[1] = node1;
-	segments[1] = segment1;
-	if (node1->GetConnectedSegmentsCount() != 2)
-	{
-		return nullptr;
-	}
-	auto&& [segment0, node0] = find_next_node(segment1, node1);
-	nodes[0] = node0;
-	segments[0] = segment0;
-	std::unique_ptr<NewNetObject> net_ptr = std::make_unique<NewNetObject>(nodes, segments, scene);
-	NewNetObject* ptr = net_ptr.get();
-	scene->SetGraphicsLogic(std::move(net_ptr));
-	return ptr;
-}
-
-node::NewNetObject::NewNetObject(NetNode* startNode, NetNode* endNode, GraphicsScene* scene)
-	:GraphicsLogic(scene), p_startNode(startNode), p_endNode(endNode)
-{
-	for (int i = 0; i < 2; i++)
-	{
-		std::unique_ptr<NetNode> node = std::make_unique<NetNode>(SDL_Point{0,0},scene);
-		m_intermediateNodes.push_back(node.get());
-		scene->AddObject(std::move(node), NET_NODE_OBJECT_Z);
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		NetNode* node1 = nullptr;
-		NetNode* node2 = nullptr;
-		switch (i)
+		int layer = 1000;
+		for (auto&& segment : segments)
 		{
-		case 0:
-			node1 = p_startNode;
-			node2 = m_intermediateNodes[0];
-			break;
-		case 1:
-			node1 = m_intermediateNodes[0];
-			node2 = m_intermediateNodes[1];
-			break;
-		case 2:
-			node1 = m_intermediateNodes[1];
-			node2 = p_endNode;
-			break;
+			auto new_segmet = std::make_unique<NetSegment>(NetOrientation::Vertical,nullptr, nullptr,scene);
+			segment = new_segmet.get();
+			scene->AddObject(std::move(new_segmet), layer);
+			layer++;
 		}
-
-		std::unique_ptr<NetSegment> segment = std::make_unique<NetSegment>(static_cast<NetOrientation>(i%2),
-			node1, node2, scene);
-		m_segments.push_back(segment.get());
-		scene->AddObject(std::move(segment), NET_SEGMENT_OBJECT_Z);
-	}
-	UpdateConnectedSegments();
-}
-
-node::NewNetObject::NewNetObject(std::array<NetNode*, 4> nodes, std::array<NetSegment*, 3> segments, GraphicsScene* scene)
-	: GraphicsLogic(scene), p_startNode(nodes[0]), p_endNode(nodes[3]),
-	m_intermediateNodes{nodes[1], nodes[2]}, m_segments{segments.begin(), segments.end()}
-{
-	UpdateConnectedSegments();
-}
-
-void node::NewNetObject::OnMouseMove(const model::Point& current_mouse_point)
-{
-	auto* socket_ptr = GetScene()->GetSocketAt({ current_mouse_point.x, current_mouse_point.y });
-	if (socket_ptr && (socket_ptr->GetConnectedNode() == p_endNode || 
-		nullptr == socket_ptr->GetConnectedNode()))
-	{
-		if (!socket_ptr->GetConnectedNode())
+		for (auto&& node : nodes)
 		{
-			p_endNode->SetConnectedSocket(socket_ptr);
-			p_endNode->setCenter(socket_ptr->GetCenter());
+			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 }, scene);
+			node = new_node.get();
+			scene->AddObject(std::move(new_node), layer);
+			layer++;
+		}
+		return std::make_unique<NewNetObject>(socket, nodes, segments,scene);
+	}
+	catch (...)
+	{
+		// if we failed to create the object, delete everything
+		for (const auto& node : nodes)
+		{
+			if (node)
+			{
+				scene->PopObject(node);
+			}
+		}
+		for (const auto& segment : segments)
+		{
+			if (segment)
+			{
+				scene->PopObject(segment);
+			}
 		}
 	}
-	else
-	{
-		p_endNode->SetConnectedSocket(nullptr);
-		p_endNode->setCenter(current_mouse_point);
-	}
-	p_endNode->UpdateConnectedSegments();
-	UpdateConnectedSegments();
+	return nullptr;
 }
 
-MI::ClickEvent node::NewNetObject::OnLMBUp(const model::Point& current_mouse_point)
+node::logic::NewNetObject::NewNetObject(BlockSocketObject* socket, std::array<NetNode*, 4> nodes, 
+	std::array<NetSegment*, 3> segments, GraphicsScene* scene)
+	:GraphicsLogic{scene}, m_socket{socket->GetFocusHandlePtr()}
+{
+	
+	std::transform(nodes.begin(), nodes.end(), m_nodes.begin(), 
+		[](const auto& node)
+		{
+			assert(node);
+			return node->GetFocusHandlePtr();
+		});
+	std::transform(segments.begin(), segments.end(), m_segments.begin(),
+		[](const auto& segment)
+		{
+			assert(segment);
+			return segment->GetFocusHandlePtr();
+		});
+	for (auto&& node : nodes)
+	{
+		node->setCenter(socket->GetCenter());
+	}
+	segments[0]->Connect(nodes[0], nodes[1], NetOrientation::Horizontal);
+	segments[1]->Connect(nodes[1], nodes[2], NetOrientation::Vertical);
+	segments[2]->Connect(nodes[2], nodes[3], NetOrientation::Horizontal);
+}
+
+static node::NetNode* AsNode(node::HandlePtr<node::GraphicsObject>& obj)
+{
+	assert(obj.isAlive());
+	return static_cast<node::NetNode*>(obj.GetObjectPtr());
+}
+
+static node::NetSegment* AsSegment(node::HandlePtr<node::GraphicsObject>& obj)
+{
+	assert(obj.isAlive());
+	return static_cast<node::NetSegment*>(obj.GetObjectPtr());
+}
+
+void node::logic::NewNetObject::OnMouseMove(const model::Point& current_mouse_point)
+{
+	if (!m_socket.isAlive())
+	{
+		GetScene()->SetGraphicsLogic(nullptr);
+		return;
+	}
+	model::Point start = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr())->GetCenter();
+	model::node_int midpoint_x = (current_mouse_point.x + start.x) / 2;
+	AsNode(m_nodes[1])->setCenter({ midpoint_x, start.y });
+	AsNode(m_nodes[2])->setCenter({ midpoint_x, current_mouse_point.y });
+	AsNode(m_nodes[3])->setCenter({ current_mouse_point.x, current_mouse_point.y });
+	AsSegment(m_segments[0])->CalcRect();
+	AsSegment(m_segments[1])->CalcRect();
+	AsSegment(m_segments[2])->CalcRect();
+}
+
+MI::ClickEvent node::logic::NewNetObject::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
-	GetScene()->SetGraphicsLogic(nullptr);
-	return MI::ClickEvent::CAPTURE_END;
-}
-
-void node::NewNetObject::UpdateConnectedSegments()
-{
-	if (p_startNode->getCenter().y == p_endNode->getCenter().y)
+	if (!m_socket.isAlive())
 	{
-		UpdateToZmode();
+		DeleteAllOwnedObjects();
+		return MI::ClickEvent::NONE;
 	}
-	else if (p_startNode->getCenter().x == p_endNode->getCenter().x)
+
+	GetScene()->GetSceneModel()->AddNewNet(PopulateResultNet());
+
+	DeleteAllOwnedObjects();
+	return MI::ClickEvent::CLICKED;
+}
+
+void node::logic::NewNetObject::OnCancel()
+{
+	DeleteAllOwnedObjects();
+}
+
+node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet()
+{
+	using model::NetNodeId;
+	using model::NetSegmentId;
+	using enum model::NetNodeModel::ConnectedSegmentSide;
+	auto net = std::make_shared<node::model::NetModel>();
+	std::array<NetNodeId, 4> node_ids{ NetNodeId{1},NetNodeId{2},NetNodeId{3},NetNodeId{4} };
+	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{1},NetSegmentId{2},NetSegmentId{3} };
+
 	{
-		UpdateToZmode();
+		model::id_int node_id = 0;
+		auto obj = model::NetNodeModel{ node_ids[node_id],
+	AsNode(m_nodes[node_id])->getCenter() };
+		obj.SetSegmentAt(east, segment_ids[0]);
+		net->AddNetNode(obj);
 	}
-	else
+
 	{
-		UpdateToZmode();
+		model::id_int node_id = 1;
+		auto obj = model::NetNodeModel{ node_ids[node_id],
+			AsNode(m_nodes[node_id])->getCenter() };
+		obj.SetSegmentAt(west, segment_ids[0]);
+		obj.SetSegmentAt(south, segment_ids[1]);
+		net->AddNetNode(obj);
+	}
+
+	{
+		model::id_int node_id = 2;
+		auto obj = model::NetNodeModel{ model::NetNodeId{node_ids[node_id]},
+	AsNode(m_nodes[node_id])->getCenter() };
+		obj.SetSegmentAt(north, segment_ids[1]);
+		obj.SetSegmentAt(east, segment_ids[2]);
+		net->AddNetNode(obj);
+	}
+
+	{
+		model::id_int node_id = 3;
+		auto obj = model::NetNodeModel{ model::NetNodeId{ node_ids[node_id]},
+	AsNode(m_nodes[node_id])->getCenter() };
+		obj.SetSegmentAt(west, segment_ids[2]);
+		net->AddNetNode(obj);
+	}
+
+	{
+		model::id_int start_segment_id = 1;
+		model::id_int start_node_id = 1;
+		for (auto&& segment : m_segments)
+		{
+			auto orientation = AsSegment(segment)->GetOrientation() == NetOrientation::Horizontal ?
+				model::NetSegmentModel::NetSegmentOrientation::horizontal :
+				model::NetSegmentModel::NetSegmentOrientation::vertical;
+			net->AddNetSegment(model::NetSegmentModel{ model::NetSegmentId{start_segment_id},
+				NetNodeId{start_node_id}, NetNodeId{start_node_id + 1}, orientation });
+			start_node_id++;
+			start_segment_id++;
+		}
+	}
+
+	auto* socket = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr());
+	net->AddSocketNodeConnection(model::SocketNodeConnection{
+		model::SocketUniqueId{socket->GetId(), socket->GetParentBlock()->GetModelId()}, node_ids[0]});
+	return net;
+}
+
+void node::logic::NewNetObject::DeleteAllOwnedObjects()
+{
+	GraphicsScene* scene = GetScene();
+	for (auto&& node : m_nodes)
+	{
+		if (auto ptr = node.GetObjectPtr())
+		{
+			scene->PopObject(ptr);
+		}
+	}
+	for (auto&& segment : m_segments)
+	{
+		if (auto ptr = segment.GetObjectPtr())
+		{
+			scene->PopObject(ptr);
+		}
 	}
 }
-
-void node::NewNetObject::UpdateToHorizontal()
-{
-	model::Point center_point = { 
-		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
-		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
-	};
-	m_intermediateNodes[0]->setCenter(center_point);
-	m_intermediateNodes[1]->setCenter(center_point);
-	m_segments[0]->Disconnect();
-	m_segments[0]->Connect(p_startNode, m_intermediateNodes[0], NetOrientation::Horizontal);
-	m_segments[1]->Disconnect();
-	m_segments[1]->Connect(m_intermediateNodes[0], m_intermediateNodes[1], NetOrientation::Vertical);
-	m_segments[2]->Disconnect();
-	m_segments[2]->Connect(m_intermediateNodes[1], p_endNode, NetOrientation::Horizontal);
-}
-
-void node::NewNetObject::UpdateToVertical()
-{
-	model::Point center_point = {
-		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
-		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
-	};
-	m_intermediateNodes[0]->setCenter(center_point);
-	m_intermediateNodes[1]->setCenter(center_point);
-	m_segments[0]->Disconnect();
-	m_segments[0]->Connect(p_startNode, m_intermediateNodes[0], NetOrientation::Vertical);
-	m_segments[1]->Disconnect();
-	m_segments[1]->Connect(m_intermediateNodes[0], m_intermediateNodes[1], NetOrientation::Horizontal);
-	m_segments[2]->Disconnect();
-	m_segments[2]->Connect(m_intermediateNodes[1], p_endNode, NetOrientation::Vertical);
-}
-
-void node::NewNetObject::UpdateToZmode()
-{
-	model::Point center_point = {
-		(p_startNode->getCenter().x + p_endNode->getCenter().x) / 2,
-		(p_startNode->getCenter().y + p_endNode->getCenter().y) / 2
-	};
-	m_intermediateNodes[0]->setCenter({ center_point.x, p_startNode->getCenter().y });
-	m_intermediateNodes[1]->setCenter({ center_point.x, p_endNode->getCenter().y });
-	m_segments[0]->Disconnect();
-	m_segments[0]->Connect(p_startNode, m_intermediateNodes[0], NetOrientation::Horizontal);
-	m_segments[1]->Disconnect();
-	m_segments[1]->Connect(m_intermediateNodes[0], m_intermediateNodes[1], NetOrientation::Vertical);
-	m_segments[2]->Disconnect();
-	m_segments[2]->Connect(m_intermediateNodes[1], p_endNode, NetOrientation::Horizontal);
-
-}
-
 

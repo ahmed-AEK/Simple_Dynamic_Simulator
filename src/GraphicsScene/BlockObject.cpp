@@ -18,13 +18,21 @@ node::BlockObject::BlockObject(IGraphicsScene* scene, std::shared_ptr<model::Blo
         return;
     }
 
-    for (const auto& in_socket : m_model->GetSockets(model::BlockSocketModel::SocketType::input))
+    for (const auto& socket : m_model->GetSockets())
     {
-        AddInputSocket(in_socket.GetId());
-    }
-    for (const auto& out_socket : m_model->GetSockets(model::BlockSocketModel::SocketType::output))
-    {
-        AddOutputSocket(out_socket.GetId());
+        switch (socket.GetType())
+        {
+        case model::BlockSocketModel::SocketType::input:
+        {
+            AddInputSocket(socket.GetId());
+            break;
+        }
+        case model::BlockSocketModel::SocketType::output:
+        {
+            AddOutputSocket(socket.GetId());
+            break;
+        }
+        }
     }
 }
 
@@ -56,21 +64,21 @@ MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_po
     return GraphicsObject::OnLMBDown(current_mouse_point);
 }
 
-void node::BlockObject::AddInputSocket(model::BlockSocketModel::SocketId id)
+void node::BlockObject::AddInputSocket(model::SocketId id)
 {
     auto sock = std::make_unique<node::BlockSocketObject>( id,
         model::BlockSocketModel::SocketType::input, GetScene(), this );
-    m_input_sockets.push_back({ std::move(sock) });
+    m_sockets.push_back({ std::move(sock) });
 }
 
-void node::BlockObject::AddOutputSocket(model::BlockSocketModel::SocketId id)
+void node::BlockObject::AddOutputSocket(model::SocketId id)
 {
     auto sock = std::make_unique<node::BlockSocketObject>(id,
         model::BlockSocketModel::SocketType::output, GetScene(), this);
-    m_output_sockets.push_back({ std::move(sock) });
+    m_sockets.push_back({ std::move(sock) });
 }
 
-node::model::id_int node::BlockObject::GetModelId()
+node::model::BlockId node::BlockObject::GetModelId()
 {
     return m_model->GetId();
 }
@@ -78,11 +86,9 @@ node::model::id_int node::BlockObject::GetModelId()
 std::vector<node::BlockSocketObject*> node::BlockObject::GetSockets()
 {
     std::vector<node::BlockSocketObject*> out;
-    out.reserve(m_input_sockets.size() + m_output_sockets.size());
+    out.reserve(m_sockets.size());
 
-    std::transform(m_input_sockets.begin(), m_input_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.get(); });
-    std::transform(m_output_sockets.begin(), m_output_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.get(); });
-    
+    std::transform(m_sockets.begin(), m_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.get(); });
     return out;
 }
 
@@ -104,35 +110,20 @@ void node::BlockObject::RePositionSockets()
     }
 
     auto&& origin = GetSpaceRect();
-    auto&& input_sockets = m_model->GetSockets(model::BlockSocketModel::SocketType::input);
-    assert(m_input_sockets.size() == m_model->GetSockets(model::BlockSocketModel::SocketType::input).size());
-    for (size_t i = 0; i < m_input_sockets.size(); ++i)
+    assert(m_sockets.size() == m_model->GetSockets().size());
+    for (auto&& sock: m_sockets)
     {
-        auto&& position = input_sockets[i].GetPosition();
-        m_input_sockets[i]->SetPosition({ origin.x + position.x, origin.y + position.y });
-    }
-
-    auto&& output_sockets = m_model->GetSockets(model::BlockSocketModel::SocketType::output);
-    assert(m_output_sockets.size() == m_model->GetSockets(model::BlockSocketModel::SocketType::input).size());
-    for (size_t i = 0; i < m_input_sockets.size(); ++i)
-    {
-        auto&& position = output_sockets[i].GetPosition();
-        m_output_sockets[i]->SetPosition({ origin.x + position.x, origin.y + position.y });
+        auto sock_model = m_model->GetSocketById(sock->GetId());
+        assert(sock_model);
+        auto&& position = (*sock_model).get().GetPosition();
+        sock->SetPosition({ origin.x + position.x, origin.y + position.y });
     }
 }
 
 node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::Point& point)
 {
     node::GraphicsObject* hover = nullptr;
-    for (auto&& sock : m_input_sockets)
-    {
-        hover = sock->GetInteractableAtPoint(point);
-        if (hover)
-        {
-            return hover;
-        }
-    }
-    for (auto&& sock : m_output_sockets)
+    for (auto&& sock : m_sockets)
     {
         hover = sock->GetInteractableAtPoint(point);
         if (hover)

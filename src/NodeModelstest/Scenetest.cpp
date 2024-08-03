@@ -7,17 +7,17 @@ using namespace node::model;
 TEST(testScene, testCreate)
 {
 	NodeSceneModel scene;
-	id_int node_id = 1;
-	id_int sock_id = 2;
-	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
-	BlockSocketModel sock1{ BlockSocketModel::SocketType::input, {sock_id,node1->GetId()} };
+	BlockId block_id = BlockId{ 1 };
+	SocketId sock_id = SocketId{ 2 };
+	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
+	BlockSocketModel sock1{ BlockSocketModel::SocketType::input, sock_id };
 
 	node1->AddSocket(std::move(sock1));
 	scene.AddBlock(std::move(node1));
 
 	ASSERT_EQ(scene.GetBlocks().size(), 1);
-	EXPECT_TRUE(scene.GetBlockById(node_id));
-	EXPECT_FALSE(scene.GetBlockById(node_id + 1));
-	EXPECT_TRUE(scene.GetBlockById(node_id)->GetSocketById(sock_id, BlockSocketModel::SocketType::input).has_value());
-	EXPECT_FALSE(scene.GetBlockById(node_id)->GetSocketById(sock_id + 1, BlockSocketModel::SocketType::input).has_value());
+	EXPECT_TRUE(scene.GetBlockById(block_id) != nullptr);
+	EXPECT_TRUE(scene.GetBlockById(BlockId{ block_id.value + 1 }) == nullptr);
+	EXPECT_TRUE(scene.GetBlockById(block_id)->GetSocketById(sock_id).has_value());
+	EXPECT_FALSE(scene.GetBlockById(block_id)->GetSocketById(SocketId{ sock_id.value + 1 }).has_value());
 }

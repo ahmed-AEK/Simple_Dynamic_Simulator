@@ -103,7 +103,7 @@ namespace node
         std::vector<int64_t> m_deleted_updateTasks;
         int64_t m_current_task_id = 0;
 
-        std::optional<DragDropObject> m_dragObject;
+        std::optional<DragDropObject> m_dragObject = std::nullopt;
         bool b_mouseCaptured = false;
     };
 

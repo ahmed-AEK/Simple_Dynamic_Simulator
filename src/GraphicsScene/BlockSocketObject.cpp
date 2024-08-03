@@ -29,7 +29,7 @@ node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
-node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketId id,
+node::BlockSocketObject::BlockSocketObject(model::SocketId id,
 	model::BlockSocketModel::SocketType type, IGraphicsScene* parentScene, BlockObject* parentNode)
 	: GraphicsObject(model::Rect{0,0,nodeLength,nodeLength}, ObjectType::socket, parentScene),
 	m_parentNode(parentNode), m_socktType(type), m_id{id}

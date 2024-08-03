@@ -217,7 +217,7 @@ void node::NetSegment::CalcRect()
 	}
 }
 
-node::NetNode::NetNode(const SDL_Point& center, IGraphicsScene* scene)
+node::NetNode::NetNode(const model::Point& center, IGraphicsScene* scene)
 	: GraphicsObject({center.x - m_width/2, center.y - m_height/2, m_width, m_height}, ObjectType::netNode, scene), m_centerPoint(center)
 {
 	b_draggable = false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NodeModels/Utils.hpp"
+#include "NodeModels/IdTypes.hpp"
 #include <vector>
 #include <optional>
 #include <span>
@@ -18,12 +19,6 @@ class BlockSocketModel
 public:
 	friend class BlockModel;
 
-	struct SocketId
-	{
-		id_int m_Id = 0;
-		id_int m_nodeId = 0;
-	};
-
 	enum class SocketType
 	{
 		input = 0,
@@ -32,7 +27,7 @@ public:
 
 	explicit BlockSocketModel(
 		SocketType type, SocketId id, const Point& position = {},
-		std::optional<id_int> connectedNetNode = {}
+		std::optional<NetNodeId> connectedNetNode = {}
 	)
 		: m_Id{ id }, m_position{ position }, m_type{ type },
 		m_connectedNetNode{ connectedNetNode } {}
@@ -43,22 +38,22 @@ public:
 	void SetId(SocketId id) { m_Id = id; };
 
 	const SocketType& GetType() const noexcept { return m_type; }
-	const std::optional<id_int> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
+	const std::optional<NetNodeId> GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
+	void SetConnectedNetNode(std::optional<NetNodeId> node_id) { m_connectedNetNode = node_id; }
 	// SetConnectedNode in in Node to emit signals
 
 private:
 	SocketId m_Id;
 	Point m_position;
 	SocketType m_type;
-	std::optional<id_int> m_connectedNetNode;
+	std::optional<NetNodeId> m_connectedNetNode;
 };
 
-using BlockSocketId = BlockSocketModel::SocketId;
 
 class BlockModel
 {
 public:
-	explicit BlockModel(id_int id, const Rect& bounds = {})
+	explicit BlockModel(const BlockId& id, const Rect& bounds = {})
 		:m_bounds{ bounds }, m_Id{ id } {}
 
 	void SetPosition(const Point& origin) { 
@@ -74,68 +69,32 @@ public:
 
 	void AddSocket(BlockSocketModel socket) 
 	{
-		assert(socket.GetId().m_nodeId == GetId());
-		switch (socket.GetType())
-		{
-		case BlockSocketModel::SocketType::input:
-		{
-			m_input_sockets.push_back(std::move(socket));
-			break;
-		}
-		case BlockSocketModel::SocketType::output:
-		{
-			m_output_sockets.push_back(std::move(socket));
-			break;
-		}
-		}
+		m_sockets.push_back(std::move(socket));
 	}
 
 	std::optional<std::reference_wrapper<BlockSocketModel>>
-		GetSocketById(id_int id, const BlockSocketModel::SocketType type);
+		GetSocketById(SocketId id);
 
 
-	auto GetSockets(const BlockSocketModel::SocketType type) const { 
-		switch (type)
-		{
-		case BlockSocketModel::SocketType::input:
-			return std::span{ m_input_sockets };
-		case BlockSocketModel::SocketType::output:
-			return std::span{ m_output_sockets };
-		}
-		return std::span<const BlockSocketModel>{};
+	auto GetSockets() const { 
+		return std::span{ m_sockets };
 	}
-	auto GetSockets(const BlockSocketModel::SocketType type) {
-		switch (type)
-		{
-		case BlockSocketModel::SocketType::input:
-			return std::span{ m_input_sockets };
-		case BlockSocketModel::SocketType::output:
-			return std::span{ m_output_sockets };
-		}
-		return std::span<BlockSocketModel>{};
+	auto GetSockets() {
+		return std::span{ m_sockets };
 	}
 
-	const id_int& GetId() const noexcept { return m_Id; }
-	void SetId(const id_int& id);
-	void ReserveSockets(size_t size, const BlockSocketModel::SocketType type) { 
-		switch (type)
-		{
-		case BlockSocketModel::SocketType::input:
-			m_input_sockets.reserve(size);
-			break;
-		case BlockSocketModel::SocketType::output:
-			m_output_sockets.reserve(size);
-			break;
-		}
+	const BlockId& GetId() const noexcept { return m_Id; }
+	void SetId(const BlockId& id);
+	void ReserveSockets(size_t size) { 
+		m_sockets.reserve(size);
 	}
 
 private:
 	Rect m_bounds;
-	std::vector<BlockSocketModel> m_input_sockets;
-	std::vector<BlockSocketModel> m_output_sockets;
+	std::vector<BlockSocketModel> m_sockets;
 	std::string block_styler;
 	std::string block_class;
-	id_int m_Id;
+	BlockId m_Id;
 };
 
 using BlockModelPtr = std::shared_ptr<BlockModel>;

@@ -1,12 +1,14 @@
 #include "BlockModel.hpp"
 #include <cassert>
+#include <algorithm>
 
 std::optional<std::reference_wrapper<node::model::BlockSocketModel>> 
-node::model::BlockModel::GetSocketById(id_int id, const BlockSocketModel::SocketType type)
+node::model::BlockModel::GetSocketById(SocketId id)
 {
-	auto vec = GetSockets(type);
+	
+	auto vec = GetSockets();
 	auto iter = std::find_if(vec.begin(), vec.end(),
-		[id](const BlockSocketModel& socket) {return id == socket.GetId().m_Id; });
+		[id](const BlockSocketModel& socket) {return id == socket.GetId(); });
 	if (iter != vec.end())
 	{
 		return { *iter };
@@ -14,16 +16,8 @@ node::model::BlockModel::GetSocketById(id_int id, const BlockSocketModel::Socket
 	return std::nullopt;
 }
 
-void node::model::BlockModel::SetId(const id_int& id)
+void node::model::BlockModel::SetId(const BlockId& id)
 {
 	m_Id = id;
-	for (auto&& socket : m_input_sockets)
-	{
-		socket.SetId({ socket.GetId().m_Id, id });
-	}
-	for (auto&& socket : m_output_sockets)
-	{
-		socket.SetId({ socket.GetId().m_Id, id });
-	}
 }
 

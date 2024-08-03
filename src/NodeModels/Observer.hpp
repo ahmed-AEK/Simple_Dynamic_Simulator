@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <vector>
+#include <algorithm>
 
 namespace node
 {
@@ -89,7 +90,7 @@ public:
             observer.RemovePublisher(*this);
         }
     }
-    ~SinglePublisher() {
+    ~SinglePublisher() override {
         if (m_observer)
         {
             m_observer->RemovePublisher(*this);
@@ -136,7 +137,7 @@ public:
             m_observers.erase(it);
         }
     }
-    ~MultiPublisher() {
+    ~MultiPublisher() override {
         for (auto&& observer : m_observers)
         {
             observer->RemovePublisher(*this);
@@ -161,7 +162,7 @@ class SingleObserver : public Observer<EventType>
 public:
     SingleObserver() noexcept {}
 
-    ~SingleObserver() {
+    ~SingleObserver() override {
         if (m_publisher)
         {
             m_publisher->DetachDestruct(*this);
@@ -176,7 +177,7 @@ private:
             m_publisher = nullptr;
         }
     }
-    virtual void AddPublisher(Publisher<EventType>& publisher)
+    void AddPublisher(Publisher<EventType>& publisher) override
     {
         assert(m_publisher == nullptr);
         m_publisher = &publisher;
@@ -191,7 +192,7 @@ class MultiObserver : public Observer<EventType>
 public:
     MultiObserver() noexcept {}
 
-    ~MultiObserver() {
+    ~MultiObserver() override {
         for (auto&& publisher : m_publishers)
         {
             publisher->DetachDestruct(*this);
@@ -207,7 +208,7 @@ private:
             m_publishers.erase(it);
         }
     }
-    virtual void AddPublisher(Publisher<EventType>& publisher)
+    void AddPublisher(Publisher<EventType>& publisher) override
     {
         m_publishers.push_back(&publisher);
     }

@@ -72,7 +72,6 @@ public:
 
     void SetSpaceRect(const model::Rect& rect);
     const model::Rect& GetSpaceRect() const noexcept;
-    const model::Rect& GetSpaceRectBase() const noexcept;
     void InvalidateRect() override;
 
     std::span<const HandlePtr<GraphicsObject>> GetCurrentSelection() const;
@@ -84,9 +83,7 @@ public:
     const SpaceScreenTransformer& GetSpaceScreenTransformer() const override;
     model::Point QuantizePoint(const model::Point& p);
 
-    std::vector<BlockObject*> GetNodes();
-
-    virtual void Draw(SDL_Renderer* renderer) override;
+    void Draw(SDL_Renderer* renderer) override;
 
     GraphicsObject* GetCurrentHover() noexcept { return m_current_mouse_hover.GetObjectPtr(); }
     void SetCurrentHover(GraphicsObject* current_hover);
@@ -104,22 +101,21 @@ public:
     GraphicsTool* GetTool() const { return m_tool.get(); }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 protected:
-    virtual void OnSetRect(const SDL_Rect& rect) override;
-    virtual void OnMouseMove(const SDL_Point& p) override;
-    virtual MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
-    virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
-    virtual bool OnScroll(const double amount, const SDL_Point& p) override;
+    void OnSetRect(const SDL_Rect& rect) override;
+    void OnMouseMove(const SDL_Point& p) override;
+    MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
+    MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
+    bool OnScroll(const double amount, const SDL_Point& p) override;
 
-    virtual void OnDropObject(DragDropObject& object, const SDL_Point& p) override;
-    virtual void OnDrawDropObject(SDL_Renderer* renderer,
+    void OnDropObject(DragDropObject& object, const SDL_Point& p) override;
+    void OnDrawDropObject(SDL_Renderer* renderer,
         const DragDropObject& object, const SDL_Point& p) override;
-    virtual void OnDropEnter(const DragDropObject& object) override;
-    virtual void OnDropExit(const DragDropObject& object) override;
+    void OnDropEnter(const DragDropObject& object) override;
+    void OnDropExit(const DragDropObject& object) override;
 
-    virtual void OnNotify(SceneModification& e);
+    void OnNotify(SceneModification& e) override;
 
 private:
-    bool InternalSelectObject(GraphicsObject* object);
 
     struct DragDropDrawObject
     {

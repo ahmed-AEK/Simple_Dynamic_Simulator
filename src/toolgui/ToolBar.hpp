@@ -14,7 +14,7 @@ public:
 	static constexpr int Hmargin = 10;
 
 	ToolBarButton(const SDL_Rect& rect, Scene* parent, std::string name = {});
-	~ToolBarButton();
+	~ToolBarButton() override;
 	std::string_view GetName() noexcept;
 	void Draw(SDL_Renderer* renderer) override;
 	void SetActive(bool value = true);
@@ -38,7 +38,7 @@ public:
 	static constexpr int height = 50;
 
 	ToolBar(const SDL_Rect& rect, Scene* parent);
-	~ToolBar();
+	~ToolBar() override;
 	void AddButton(std::unique_ptr<ToolBarButton> button, int position = -1);
 	node::ToolBarButton* GetButton(const std::string& name);
 	void Draw(SDL_Renderer* renderer) override;
