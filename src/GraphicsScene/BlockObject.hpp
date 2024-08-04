@@ -2,7 +2,7 @@
 
 #include "GraphicsScene/GraphicsScene_exports.h"
 
-#include "GraphicsScene/DraggableObject.hpp"
+#include "GraphicsScene/GraphicsObject.hpp"
 
 #include <memory>
 #include <vector>

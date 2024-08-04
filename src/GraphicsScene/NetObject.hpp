@@ -1,11 +1,9 @@
 #pragma once
 
-#include "DraggableObject.hpp"
-#include "BlockSocketObject.hpp"
+#include "GraphicsScene/GraphicsObject.hpp"
 #include "NodeModels/NetModel.hpp"
 #include <vector>
 #include <variant>
-#include <list>
 
 namespace node {
 
@@ -13,6 +11,7 @@ struct NetObject;
 class NetSegment;
 class NetNode;
 class IGraphicsScene;
+class BlockSocketObject;
 
 enum class NetOrientation
 {
