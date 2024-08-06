@@ -153,7 +153,11 @@ void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDro
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     auto point = QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset);
     m_dragDropDrawObject->model.SetPosition(point);
-    m_dragDropDrawObject->styler.DrawBlock(renderer, m_dragDropDrawObject->model, m_spaceScreenTransformer, false);
+    m_dragDropDrawObject->styler.DrawBlockOutline(renderer, m_dragDropDrawObject->model.GetBounds(), m_spaceScreenTransformer, false);
+    for (const auto& socket : m_dragDropDrawObject->model.GetSockets())
+    {
+        m_dragDropDrawObject->styler.DrawBlockSocket(renderer, socket.GetPosition(), m_spaceScreenTransformer, socket.GetType());
+    }
 }
 
 void node::GraphicsScene::OnDropEnter(const DragDropObject& object)
@@ -198,6 +202,27 @@ void node::GraphicsScene::OnNotify(SceneModification& e)
         if (it != m_objects.end())
         {
             m_objects.erase(it);
+        }
+        break;
+    }
+    case SceneModificationType::BlockMoved:
+    {
+        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
+        auto new_position = std::get<model::BlockModelPtr>(e.data)->GetPosition();
+        auto it = std::find_if(m_objects.begin(), m_objects.end(), [&](auto&& object)
+            {
+                if (object.m_ptr->GetObjectType() == ObjectType::block)
+                {
+                    if (static_cast<BlockObject*>(object.m_ptr.get())->GetModelId() == model_id)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        if (it != m_objects.end())
+        {
+            (*it).m_ptr->SetSpaceOrigin(new_position);
         }
         break;
     }

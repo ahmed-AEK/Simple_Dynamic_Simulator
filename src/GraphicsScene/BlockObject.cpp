@@ -56,7 +56,11 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
 
     auto&& transformer = GetScene()->GetSpaceScreenTransformer();
     assert(m_styler);
-    m_styler->DrawBlock(renderer, *m_model, transformer, GetScene()->IsObjectSelected(*this));
+    m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, GetScene()->IsObjectSelected(*this));
+    for (const auto& socket : m_sockets)
+    {
+        m_styler->DrawBlockSocket(renderer, socket->GetCenter(), transformer, socket->GetSocketType());
+    }
 }
 
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
@@ -94,10 +98,6 @@ std::vector<node::BlockSocketObject*> node::BlockObject::GetSockets()
 
 void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
 {
-    if (m_model)
-    {
-        m_model->SetBounds(rect);
-    }
     GraphicsObject::OnSetSpaceRect(rect);
     RePositionSockets();
 }
@@ -116,7 +116,7 @@ void node::BlockObject::RePositionSockets()
         auto sock_model = m_model->GetSocketById(sock->GetId());
         assert(sock_model);
         auto&& position = (*sock_model).get().GetPosition();
-        sock->SetPosition({ origin.x + position.x, origin.y + position.y });
+        sock->SetPosition({ origin.x + position.x - m_styler->SocketLength / 2, origin.y + position.y - m_styler->SocketLength / 2 });
     }
 }
 

@@ -45,4 +45,26 @@ void node::logic::BlockDragLogic::OnCancel()
 
 }
 
+MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_mouse_point)
+{
+    auto* scene = GetScene();
+    auto* block = static_cast<BlockObject*>(m_block.GetObjectPtr());
+    if (!scene && !block)
+    {
+        return MI::ClickEvent::NONE;
+    }
+
+    const auto drag_vector = model::Point{
+    current_mouse_point.x - m_startPointMouseSpace.x,
+    current_mouse_point.y - m_startPointMouseSpace.y };
+
+    auto block_id = block->GetModelId();
+    scene->GetSceneModel()->MoveBlockById(block_id, scene->QuantizePoint({
+        m_startObjectEdge.x + drag_vector.x,
+        m_startObjectEdge.y + drag_vector.y
+        }));
+
+    return MI::ClickEvent::CLICKED;
+}
+
 

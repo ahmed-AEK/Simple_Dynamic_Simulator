@@ -17,8 +17,8 @@ public:
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
-	BlockObject* GetParentBlock() { return m_parentNode; }
-	model::SocketId GetId() { return m_id; }
+	BlockObject* GetParentBlock() const { return m_parentNode; }
+	model::SocketId GetId() const { return m_id; }
 	static constexpr int nodeLength = 15;
 	void OnSetSpaceRect(const model::Rect& rect) override;
 	void SetPosition(SDL_Point p);

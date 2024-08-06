@@ -13,8 +13,14 @@ namespace node
 		static constexpr int SocketLength = 15;
 		void PositionNodes(model::BlockModel& block);
 
-		void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& block,
+		void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model,
 			const SpaceScreenTransformer& transformer, bool selected);
+
+		void DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds,
+			const SpaceScreenTransformer& transformer, bool selected);
+
+		void DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center,
+			const SpaceScreenTransformer& transformer, const model::BlockSocketModel::SocketType& type);
 
 	};
 }

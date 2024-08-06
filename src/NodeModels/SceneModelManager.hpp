@@ -12,6 +12,7 @@ enum class SceneModificationType
 {
 	BlockAdded,
 	BlockRemoved,
+	BlockMoved,
 	NetAdded,
 };
 
@@ -31,8 +32,11 @@ public:
 
 	std::span<model::BlockModelPtr> GetBlocks();
 	void AddNewBlock(model::BlockModelPtr block);
-	void AddNewNet(model::NetModelPtr net);
 	void RemoveBlockById(const model::BlockId& id);
+	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
+
+	void AddNewNet(model::NetModelPtr net);
+
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 };

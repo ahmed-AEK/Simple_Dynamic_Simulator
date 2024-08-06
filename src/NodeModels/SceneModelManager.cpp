@@ -58,3 +58,14 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 		Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{std::move(block)} });
 	}
 }
+
+void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const model::Point& new_origin)
+{
+	auto block = m_scene->GetBlockById(id);
+	assert(block);
+	if (block)
+	{
+		block->SetPosition(new_origin);
+		Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{std::move(block)} });
+	}
+}
