@@ -24,7 +24,8 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 
             auto block_obj = static_cast<BlockObject*>(current_hover);
             auto obj_rect = current_hover->GetSpaceRect();
-            auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, *block_obj, GetScene());
+            auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, 
+                *block_obj, GetScene(), GetObjectsManager());
             GetScene()->SetGraphicsLogic(std::move(drag_logic));
             return MI::ClickEvent::CLICKED;
         }
@@ -33,7 +34,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
             auto socket = static_cast<BlockSocketObject*>(current_hover);
             if (!socket->GetConnectedNode())
             {
-                auto new_logic = logic::NewNetObject::Create(socket, GetScene());
+                auto new_logic = logic::NewNetObject::Create(socket, GetScene(), GetObjectsManager());
                 if (new_logic)
                 {
                     GetScene()->SetGraphicsLogic(std::move(new_logic));
@@ -100,7 +101,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         auto startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(p);
         auto&& space_rect = scene->GetSpaceRect();
         auto startEdgeSpace = model::Point{ space_rect.x, space_rect.y};
-        auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene());
+        auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene(), GetObjectsManager());
         GetScene()->SetGraphicsLogic(std::move(logic));
         return MI::ClickEvent::CLICKED;
     }

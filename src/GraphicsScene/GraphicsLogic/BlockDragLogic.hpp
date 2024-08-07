@@ -14,7 +14,8 @@ namespace logic
 class BlockDragLogic: public GraphicsLogic
 {
 public:
-	BlockDragLogic(model::Point startPointMouseSpace, model::Point startObjectEdge, BlockObject& block, GraphicsScene* scene);
+	BlockDragLogic(model::Point startPointMouseSpace, model::Point startObjectEdge, 
+		BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;
 	void OnCancel() override;

@@ -11,7 +11,8 @@ namespace logic
 class ScreenDragLogic: public GraphicsLogic
 {
 public:
-	ScreenDragLogic(SDL_Point startPointScreen, model::Point startEdgeSpace, GraphicsScene* scene);
+	ScreenDragLogic(SDL_Point startPointScreen, model::Point startEdgeSpace, 
+		GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;
 	void OnCancel() override;

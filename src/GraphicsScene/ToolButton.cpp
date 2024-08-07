@@ -11,6 +11,6 @@ void node::ToolButton::OnButonClicked()
 {
 	if (auto ptr = m_manager.lock())
 	{
-		ptr->OnChangeTool(m_name);
+		ptr->ChangeTool(m_name);
 	}
 }

@@ -47,20 +47,9 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
 }
 void node::NodeGraphicsScene::DrawCurrentInsertMode(SDL_Renderer* renderer) const
 {
-    TTFFont font = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) };
-    SDL_Color Black = { 122, 122, 122, 255 };
-    const char* value = GraphicsSceneMode::Insert == GetMode() ? "True" : "False";
-    SDLSurface message_surface = SDLSurface{ TTF_RenderText_Solid(font.get(), value, Black) };
-    SDLTexture Message = SDLTexture{ SDL_CreateTextureFromSurface(renderer, message_surface.get()) };
-
-    SDL_Rect Message_rect; //create a rect
-    Message_rect.x = GetRect().x;  //controls the rect's x coordinate 
-    Message_rect.y = GetRect().y + GetRect().h * 4 / 5;; // controls the rect's y coordinte
-    Message_rect.w = 200; // controls the width of the rect
-    Message_rect.h = 100; // controls the height of the rect
-
-    SDL_RenderCopy(renderer, Message.get(), NULL, &Message_rect);
+    UNUSED_PARAM(renderer);
 }
+
 void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const
 {
     TTFFont font = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) };

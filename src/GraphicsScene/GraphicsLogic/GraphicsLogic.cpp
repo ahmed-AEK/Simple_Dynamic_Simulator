@@ -1,7 +1,7 @@
 #include "GraphicsLogic.hpp"
 
-node::logic::GraphicsLogic::GraphicsLogic(GraphicsScene* scene)
-	:m_pScene(scene)
+node::logic::GraphicsLogic::GraphicsLogic(GraphicsScene* scene, GraphicsObjectsManager* manager)
+    :m_pScene(scene), m_objects_manager{manager}
 {
 }
 

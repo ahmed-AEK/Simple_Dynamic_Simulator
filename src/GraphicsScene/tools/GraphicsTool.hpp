@@ -5,13 +5,16 @@
 namespace node
 {
 class GraphicsScene;
+class GraphicsObjectsManager;
 
 class GraphicsTool
 {
 public:
-	explicit GraphicsTool(GraphicsScene* scene) : m_scene{ scene } {}
+	explicit GraphicsTool(GraphicsScene* scene, GraphicsObjectsManager* manager) 
+		: m_scene{ scene }, m_objects_manager{ manager } {}
 	~GraphicsTool() = default;
 	GraphicsScene* GetScene() const { return m_scene; }
+	GraphicsObjectsManager* GetObjectsManager() const { return m_objects_manager; }
 	bool IsCapturingMouse() const noexcept { return m_capturing_mouse; }
 	virtual MI::ClickEvent OnLMBDown(const model::Point& p) { UNUSED_PARAM(p); return MI::ClickEvent::NONE; }
 	virtual MI::ClickEvent OnLMBUp(const model::Point& p) { UNUSED_PARAM(p); return MI::ClickEvent::NONE; }
@@ -26,5 +29,6 @@ protected:
 	bool m_capturing_mouse = false;
 private:
 	GraphicsScene* m_scene;
+	GraphicsObjectsManager* m_objects_manager;
 };
 }

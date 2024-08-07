@@ -24,18 +24,11 @@ namespace node
             {
                 switch (e.key.keysym.sym)
                 {
-                case SDLK_RCTRL:
-                case SDLK_LCTRL:
-                    if (GetScene() && GetScene()->GetNodeScene())
-                    {
-                        GetScene()->GetNodeScene()->SetMode(GraphicsSceneMode::Insert);
-                    }
-                    return true;
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
-                    if (GetScene() && GetScene()->GetNodeScene())
+                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetNodeScene())
                     {
-                        GetScene()->GetNodeScene()->SetMode(GraphicsSceneMode::Delete);
+                        GetScene()->GetToolsManager()->SetTemporaryTool("D");
                     }
                     return true;
                 case SDLK_ESCAPE:
@@ -55,13 +48,11 @@ namespace node
             {
                 switch (e.key.keysym.sym)
                 {
-                case SDLK_RCTRL:
-                case SDLK_LCTRL:
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
                     if (GetScene() && GetScene()->GetNodeScene())
                     {
-                        GetScene()->GetNodeScene()->SetMode(GraphicsSceneMode::Normal);
+                        GetScene()->GetToolsManager()->RemoveTemporaryTool("D");
                     }
                     return true;
                 }

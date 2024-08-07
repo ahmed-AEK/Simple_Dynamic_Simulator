@@ -13,12 +13,13 @@
 #include "GraphicsScene/tools/ArrowTool.hpp"
 #include "GraphicsScene/tools/DeleteTool.hpp"
 #include "GraphicsScene/ToolButton.hpp"
+#include "GraphicsScene/GraphicsObjectsManager.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
 
-static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
+static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
-    assert(gScene);
+    assert(manager);
     using namespace node;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
     {
@@ -56,22 +57,21 @@ static void AddInitialNodes_forScene(node::GraphicsScene* gScene)
         model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         sceneModel->AddBlock(model);
     }
-    gScene->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
+    manager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
 }
 
 
-void node::MainNodeScene::InitializeTools(node::GraphicsScene* gScene)
+void node::MainNodeScene::InitializeTools()
 {
-    assert(gScene);
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
-    m_toolsManager = std::make_shared<ToolsManager>(gScene, toolbar.get());
-    m_toolsManager->AddTool("A", std::make_shared<ArrowTool>(gScene));
-    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(gScene));
+    m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
+    m_toolsManager->AddTool("A", std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
+    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "S", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     SetToolBar(std::move(toolbar));
-    m_toolsManager->OnChangeTool("A");
+    m_toolsManager->ChangeTool("A");
 }
 
 void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
@@ -106,16 +106,17 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
-
     using namespace node;
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
+    m_graphicsObjectsManager = std::make_unique<GraphicsObjectsManager>(*gScene);
+    m_graphicsScene->Attach(*m_graphicsObjectsManager);
 
     InitializeSidePanel(gScene.get());
 
-    InitializeTools(gScene.get());
+    InitializeTools();
 
-    AddInitialNodes_forScene(gScene.get());
+    AddInitialNodes_forScene(m_graphicsObjectsManager.get());
 
     SetgScene(std::move(gScene));
 }

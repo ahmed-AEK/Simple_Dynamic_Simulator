@@ -8,8 +8,8 @@
 #include <span>
 #include "GraphicsScene/tools/GraphicsTool.hpp"
 #include <optional>
-#include "NodeSDLStylers/BlockStyler.hpp"
 #include "NodeModels/SceneModelManager.hpp"
+#include "NodeSDLStylers/BlockStyler.hpp"
 
 namespace node
 {
@@ -31,20 +31,19 @@ struct GRAPHICSSCENE_API ObjectSlot
     std::unique_ptr<node::GraphicsObject> m_ptr;
     int z_order;
 };
-enum class GraphicsSceneMode
-{
-    Normal,
-    Insert,
-    Delete,
-};
 
 struct GRAPHICSSCENE_API DragObject
 {
     HandlePtr<GraphicsObject> m_object;
     SDL_Point m_start_position;
 };
+struct BlockObjectDropped
+{
+    DragDropObject& object;
+    const SDL_Point& p;
+};
 
-class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::IGraphicsScene, public node::SingleObserver<SceneModification>
+class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::IGraphicsScene, public node::SinglePublisher<BlockObjectDropped>
 {
 public:
     enum class CAPTURE_MODE
@@ -64,9 +63,8 @@ public:
     double GetZoomScale() const { return m_zoomScale; }
 
     void AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order);
-    void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
-    std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
+    void ClearAllObjects();
 
     void UpdateObjectsRect();
 
@@ -90,9 +88,6 @@ public:
     bool IsMouseCaptured() const { return m_mouse_capture_mode != CAPTURE_MODE::NONE; }
     BlockSocketObject* GetSocketAt(const model::Point space_point);
 
-    void SetMode(GraphicsSceneMode value) { m_SceneMode = value; }
-    GraphicsSceneMode GetMode() const { return m_SceneMode; }
-
     void SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic> logic);
     logic::GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
     void CancelCurrentLogic();
@@ -113,7 +108,6 @@ protected:
     void OnDropEnter(const DragDropObject& object) override;
     void OnDropExit(const DragDropObject& object) override;
 
-    void OnNotify(SceneModification& e) override;
 
 private:
 
@@ -138,10 +132,8 @@ private:
     std::unique_ptr<logic::GraphicsLogic> m_graphicsLogic;
     std::shared_ptr<GraphicsTool> m_tool;
     SpaceScreenTransformer m_spaceScreenTransformer;
-    std::shared_ptr<SceneModelManager> m_sceneModel;
     std::optional<DragDropDrawObject> m_dragDropDrawObject;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
-    GraphicsSceneMode m_SceneMode = GraphicsSceneMode::Normal;
 };
 
 }

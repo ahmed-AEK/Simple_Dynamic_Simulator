@@ -3,10 +3,12 @@
 #include "GraphicsScene/NetObject.hpp"
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
+#include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include <array>
 #include <algorithm>
 
-std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(BlockSocketObject* socket, GraphicsScene* scene)
+std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(BlockSocketObject* socket, 
+	GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
 	assert(socket);
 	assert(scene);
@@ -29,7 +31,8 @@ std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(Blo
 			scene->AddObject(std::move(new_node), layer);
 			layer++;
 		}
-		return std::make_unique<NewNetObject>(socket, nodes, segments,scene);
+		assert(manager);
+		return std::make_unique<NewNetObject>(socket, nodes, segments,scene, manager);
 	}
 	catch (...)
 	{
@@ -53,8 +56,8 @@ std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(Blo
 }
 
 node::logic::NewNetObject::NewNetObject(BlockSocketObject* socket, std::array<NetNode*, 4> nodes, 
-	std::array<NetSegment*, 3> segments, GraphicsScene* scene)
-	:GraphicsLogic{scene}, m_socket{socket->GetFocusHandlePtr()}
+	std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager)
+	:GraphicsLogic{scene, manager }, m_socket{socket->GetFocusHandlePtr()}
 {
 	
 	std::transform(nodes.begin(), nodes.end(), m_nodes.begin(), 
@@ -116,7 +119,8 @@ MI::ClickEvent node::logic::NewNetObject::OnLMBUp(const model::Point& current_mo
 		return MI::ClickEvent::NONE;
 	}
 
-	GetScene()->GetSceneModel()->AddNewNet(PopulateResultNet());
+	assert(GetObjectsManager());
+	GetObjectsManager()->GetSceneModel()->AddNewNet(PopulateResultNet());
 
 	DeleteAllOwnedObjects();
 	return MI::ClickEvent::CLICKED;

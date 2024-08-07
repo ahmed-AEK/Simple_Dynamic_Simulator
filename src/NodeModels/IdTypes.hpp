@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace node::model
 {
@@ -64,3 +65,30 @@ struct NetNodeUniqueId
 };
 
 }
+
+template <>
+struct std::hash<node::model::BlockId>
+{
+	std::size_t operator()(const node::model::BlockId& k) const
+	{
+		return k.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::NetSegmentUniqueId>
+{
+	std::size_t operator()(const node::model::NetSegmentUniqueId& k) const
+	{
+		return k.net_id.value ^ k.segment_id.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::NetNodeUniqueId>
+{
+	std::size_t operator()(const node::model::NetNodeUniqueId& k) const
+	{
+		return k.net_id.value ^ k.node_id.value;
+	}
+};

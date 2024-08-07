@@ -23,6 +23,7 @@ GraphicsLogic/ScreenDragLogic.cpp   GraphicsLogic/ScreenDragLogic.hpp
 GraphicsLogic/BlockDragLogic.cpp    GraphicsLogic/BlockDragLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
+GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")

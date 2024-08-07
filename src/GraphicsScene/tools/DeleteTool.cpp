@@ -1,6 +1,7 @@
 #include "DeleteTool.hpp"
 #include "GraphicsScene.hpp"
 #include "BlockObject.hpp"
+#include "GraphicsObjectsManager.hpp"
 
 MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 {
@@ -26,7 +27,8 @@ MI::ClickEvent node::DeleteTool::OnLMBUp(const model::Point& p)
 
 	if (obj->GetObjectType() == ObjectType::block)
 	{
-		GetScene()->GetSceneModel()->RemoveBlockById(static_cast<BlockObject*>(obj)->GetModelId());
+		assert(GetObjectsManager());
+		GetObjectsManager()->GetSceneModel()->RemoveBlockById(static_cast<BlockObject*>(obj)->GetModelId());
 	}
 	return MI::ClickEvent::NONE;
 }

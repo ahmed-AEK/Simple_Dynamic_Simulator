@@ -1,7 +1,5 @@
 #include "GraphicsScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include "GraphicsScene/BlockObject.hpp"
-#include "GraphicsScene/BlockSocketObject.hpp"
 #include <algorithm>
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
@@ -9,7 +7,8 @@
 #include "toolgui/ContextMenu.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "NodeModels/SceneModelManager.hpp"
-#include "GraphicsScene/NetObject.hpp"
+#include "GraphicsScene/BlockObject.hpp"
+#include "GraphicsScene/BlockSocketObject.hpp"
 
 node::GraphicsScene::GraphicsScene(const SDL_Rect& rect, node::Scene* parent)
 :Widget(rect, parent), 
@@ -36,25 +35,7 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
     m_objects.insert(iter, std::move(slot));
 }
 
-void node::GraphicsScene::SetSceneModel(std::shared_ptr<SceneModelManager> scene)
-{
-    m_objects.clear();
-    m_drag_objects.clear();
-    m_graphicsLogic = nullptr;
-    if (m_sceneModel)
-    {
-        m_sceneModel->Detach(*this);
-    }
-    m_sceneModel = std::move(scene);
-    m_sceneModel->Attach(*this);
-    auto styler = std::make_shared<node::BlockStyler>();
-    for (auto&& block : m_sceneModel->GetBlocks())
-    {
-        styler->PositionNodes(*block);
-        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, block, styler);
-        AddObject(std::move(obj), 0);
-    }
-}
+
 
 std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node::GraphicsObject* obj)
 {
@@ -66,6 +47,12 @@ std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node:
         return ret_obj;
     }
     return nullptr;
+}
+
+void node::GraphicsScene::ClearAllObjects()
+{
+    m_objects.clear();
+    m_drag_objects.clear();
 }
 
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)
@@ -134,15 +121,7 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
 
 void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_Point& p)
 {
-    auto block = std::make_shared<model::BlockModel>(model::BlockModel{ object.block });
-
-    model::Rect bounds = m_dragDropDrawObject->model.GetBounds();
-    model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
-    block->SetPosition(QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset));
-
-    auto styler = std::make_shared<node::BlockStyler>();
-    styler->PositionNodes(*block);
-    m_sceneModel->AddNewBlock(block);
+    Notify(BlockObjectDropped{ object, p });
     m_dragDropDrawObject = std::nullopt;
 }
 
@@ -153,10 +132,12 @@ void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDro
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     auto point = QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset);
     m_dragDropDrawObject->model.SetPosition(point);
-    m_dragDropDrawObject->styler.DrawBlockOutline(renderer, m_dragDropDrawObject->model.GetBounds(), m_spaceScreenTransformer, false);
+    m_dragDropDrawObject->styler.DrawBlockOutline(renderer, m_dragDropDrawObject->model.GetBounds(), 
+        m_spaceScreenTransformer, true);
     for (const auto& socket : m_dragDropDrawObject->model.GetSockets())
     {
-        m_dragDropDrawObject->styler.DrawBlockSocket(renderer, socket.GetPosition(), m_spaceScreenTransformer, socket.GetType());
+        m_dragDropDrawObject->styler.DrawBlockSocket(renderer, socket.GetPosition() + model::Point{point}, 
+            m_spaceScreenTransformer, socket.GetType());
     }
 }
 
@@ -171,120 +152,6 @@ void node::GraphicsScene::OnDropExit(const DragDropObject& object)
     m_dragDropDrawObject = std::nullopt;
 }
 
-void node::GraphicsScene::OnNotify(SceneModification& e)
-{
-    switch (e.type)
-    {
-    case SceneModification::type_t::BlockAdded:
-    {
-        auto styler = std::make_shared<node::BlockStyler>();
-        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(this, std::get<model::BlockModelPtr>(e.data), styler);
-        auto* ptr = obj.get();
-        AddObject(std::move(obj), 0);
-        ClearCurrentSelection();
-        AddSelection(ptr->GetFocusHandlePtr());
-        break;
-    }
-    case SceneModificationType::BlockRemoved:
-    {
-        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
-        auto it = std::find_if(m_objects.begin(), m_objects.end(), [&](auto&& object)
-            {
-                if (object.m_ptr->GetObjectType() == ObjectType::block)
-                {
-                    if (static_cast<BlockObject*>(object.m_ptr.get())->GetModelId() == model_id)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        if (it != m_objects.end())
-        {
-            m_objects.erase(it);
-        }
-        break;
-    }
-    case SceneModificationType::BlockMoved:
-    {
-        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
-        auto new_position = std::get<model::BlockModelPtr>(e.data)->GetPosition();
-        auto it = std::find_if(m_objects.begin(), m_objects.end(), [&](auto&& object)
-            {
-                if (object.m_ptr->GetObjectType() == ObjectType::block)
-                {
-                    if (static_cast<BlockObject*>(object.m_ptr.get())->GetModelId() == model_id)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        if (it != m_objects.end())
-        {
-            (*it).m_ptr->SetSpaceOrigin(new_position);
-        }
-        break;
-    }
-    case SceneModificationType::NetAdded:
-    {
-        auto net_ptr = std::get<model::NetModelPtr>(e.data);
-        std::vector<NetNode*> nodes;
-        for (auto&& node : net_ptr->GetNetNodes())
-        {
-            auto obj = std::make_unique<NetNode>(node.GetPosition(), this);
-            obj->SetId(node.GetId());
-            obj->SetNet(net_ptr);
-            nodes.push_back(obj.get());
-            AddObject(std::move(obj), 200);
-        }
-        for (auto&& segment : net_ptr->GetNetSegments())
-        {
-            auto orientation = segment.m_orientation == model::NetSegmentModel::NetSegmentOrientation::horizontal ? 
-                NetOrientation::Horizontal : NetOrientation::Vertical;
-            
-            auto start_node = std::find_if(nodes.begin(), nodes.end(),
-                [&](NetNode* node) {
-                    return node->GetId() == segment.m_firstNodeId;
-                });
-            NetNode* start_node_ptr = start_node == nodes.end() ? nullptr : *start_node;
-            auto end_node = std::find_if(nodes.begin(), nodes.end(),
-                [&](NetNode* node) {
-                    return node->GetId() == segment.m_secondNodeId;
-                });
-            NetNode* end_node_ptr = end_node == nodes.end() ? nullptr : *end_node;
-
-            auto obj = std::make_unique<NetSegment>(orientation, start_node_ptr, end_node_ptr, this);
-            obj->SetId(segment.GetId());
-            obj->SetNet(net_ptr);
-            AddObject(std::move(obj), 100);
-        }
-        for (auto&& conn : net_ptr->GetSocketConnections())
-        {
-            for (auto&& obj : m_objects)
-            {
-                if (obj.m_ptr->GetObjectType() == ObjectType::block &&
-                    static_cast<BlockObject*>(obj.m_ptr.get())->GetModelId() == conn.socketId.block_id)
-                {
-                    for (auto&& sock : static_cast<BlockObject*>(obj.m_ptr.get())->GetSockets())
-                    {
-                        if (sock->GetId() == conn.socketId.socket_id)
-                        {
-                            auto connected_node = std::find_if(nodes.begin(), nodes.end(),
-                                [&](NetNode* node) {
-                                    return node->GetId() == conn.NodeId;
-                                });
-                            sock->SetConnectedNode(*connected_node);
-                        }
-                    }
-                }
-            }
-        }
-        break;
-    }
-    
-    }
-}
 
 void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 {
@@ -305,59 +172,6 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     {
         m_tool->OnMouseMove(point);
     }
-    /*
-    switch (m_mouse_capture_mode)
-    {
-    case node::GraphicsScene::CAPTURE_MODE::NONE:
-        {
-            
-        }
-    case node::GraphicsScene::CAPTURE_MODE::OBJECT:
-    {
-        node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
-        SDL_assert(current_hover);
-        current_hover->MouseMove(point);
-        break;
-    }
-    case node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG:
-    {
-        SDL_assert(m_drag_objects.size());
-        auto&& transformer = GetSpaceScreenTransformer();
-        const auto drag_vector = transformer.ScreenToSpaceVector({p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y});
-        for (auto&& drag_object : m_drag_objects)
-        {
-            node::GraphicsObject* object =  drag_object.m_object.GetObjectPtr();
-            if (object)
-            {
-                object->SetSpaceOrigin(QuantizePoint({
-                    drag_object.m_start_position.x + drag_vector.x,
-                    drag_object.m_start_position.y + drag_vector.y
-                    }));
-            }
-        }
-        UpdateObjectsRect();
-        InvalidateRect();
-        break;
-    }
-    case node::GraphicsScene::CAPTURE_MODE::SCREEN_DRAG:
-    {
-        auto&& transformer = GetSpaceScreenTransformer();
-        const auto current_position_difference_space_vector = transformer.ScreenToSpaceVector({
-        p.x - m_StartPointScreen.x, p.y - m_StartPointScreen.y
-            });
-
-        SetSpaceRect({
-            m_startEdgeSpace.x - current_position_difference_space_vector.x,
-            m_startEdgeSpace.y - current_position_difference_space_vector.y,
-            GetSpaceRect().w,
-            GetSpaceRect().h
-            });
-        UpdateObjectsRect();
-        InvalidateRect();
-        break;
-    }
-    }
-    */
 }
 
 MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
@@ -389,40 +203,6 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
     {
         return m_tool->OnLMBUp(SpacePoint);
     }
-    /*
-    switch (m_mouse_capture_mode)
-    {
-    case node::GraphicsScene::CAPTURE_MODE::NONE:
-    {
-        return MI::ClickEvent::NONE;
-        break;
-    }
-    case node::GraphicsScene::CAPTURE_MODE::OBJECT:
-    {
-        node::GraphicsObject* current_hover = m_current_mouse_hover.GetObjectPtr();
-        if (current_hover)
-        {
-            current_hover->LMBUp({ SpacePoint.x, SpacePoint.y});
-            m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
-            return MI::ClickEvent::CAPTURE_END;
-        }
-        break;
-    }
-    case node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG:
-    {
-        m_drag_objects.clear();
-        m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
-        return MI::ClickEvent::CAPTURE_END;
-        break;
-    }
-    case node::GraphicsScene::CAPTURE_MODE::SCREEN_DRAG:
-    {
-        m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
-        return MI::ClickEvent::CAPTURE_END;
-        break;
-    }
-    }
-    */
     return MI::ClickEvent::NONE;
 }
 
@@ -481,9 +261,9 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
 {
 
     // 1. save old pointer position
-// 2. grow width and height
-// 3. get new screen point position
-// 4. change origin by the difference between them
+    // 2. grow width and height
+    // 3. get new screen point position
+    // 4. change origin by the difference between them
     model::Point old_position;
     if (amount > 0)
     {

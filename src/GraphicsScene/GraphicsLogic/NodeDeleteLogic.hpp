@@ -12,7 +12,7 @@ class GraphicsObject;
 class NodeDeleteLogic: public logic::GraphicsLogic
 {
 public:
-	explicit NodeDeleteLogic(BlockObject& node, GraphicsScene* scene);
+	explicit NodeDeleteLogic(BlockObject& node, GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;
 	MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;

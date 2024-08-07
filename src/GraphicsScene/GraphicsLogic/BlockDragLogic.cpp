@@ -1,9 +1,12 @@
 #include "BlockDragLogic.hpp"
 #include "BlockObject.hpp"
 #include "GraphicsScene.hpp"
+#include "GraphicsObjectsManager.hpp"
 
-node::logic::BlockDragLogic::BlockDragLogic(model::Point startPointMouseSpace, model::Point startObjectEdge, BlockObject& block, GraphicsScene* scene)
-    :GraphicsLogic(scene), m_startPointMouseSpace{ startPointMouseSpace }, m_startObjectEdge{ startObjectEdge }, m_block{ block.GetMIHandlePtr()}
+node::logic::BlockDragLogic::BlockDragLogic(model::Point startPointMouseSpace, 
+    model::Point startObjectEdge, BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
+    :GraphicsLogic(scene, manager), m_startPointMouseSpace{ startPointMouseSpace }, 
+    m_startObjectEdge{ startObjectEdge }, m_block{ block.GetMIHandlePtr()}
 {
 }
 
@@ -58,8 +61,9 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
     current_mouse_point.x - m_startPointMouseSpace.x,
     current_mouse_point.y - m_startPointMouseSpace.y };
 
+    assert(GetObjectsManager());
     auto block_id = block->GetModelId();
-    scene->GetSceneModel()->MoveBlockById(block_id, scene->QuantizePoint({
+    GetObjectsManager()->GetSceneModel()->MoveBlockById(block_id, scene->QuantizePoint({
         m_startObjectEdge.x + drag_vector.x,
         m_startObjectEdge.y + drag_vector.y
         }));

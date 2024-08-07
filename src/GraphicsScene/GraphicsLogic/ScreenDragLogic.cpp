@@ -2,8 +2,9 @@
 #include <cassert>
 #include "GraphicsScene.hpp"
 
-node::logic::ScreenDragLogic::ScreenDragLogic(SDL_Point startPointScreen, node::model::Point startEdgeSpace, GraphicsScene* scene)
-	:GraphicsLogic(scene), m_startPointScreen{startPointScreen}, m_startEdgeSpace{startEdgeSpace}
+node::logic::ScreenDragLogic::ScreenDragLogic(SDL_Point startPointScreen, 
+    node::model::Point startEdgeSpace, GraphicsScene* scene, GraphicsObjectsManager* manager)
+	:GraphicsLogic{scene, manager}, m_startPointScreen{startPointScreen}, m_startEdgeSpace{startEdgeSpace}
 {
 }
 
