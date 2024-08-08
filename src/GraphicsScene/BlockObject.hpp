@@ -29,7 +29,7 @@ public:
     void Draw(SDL_Renderer* renderer) override;
 
     std::optional<model::BlockId> GetModelId();
-    std::vector<BlockSocketObject*> GetSockets();
+    const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
     void OnSetSpaceRect(const model::Rect& rect) override;

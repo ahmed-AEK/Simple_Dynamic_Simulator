@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GraphicsScene/GraphicsLogic/NewNet.hpp"
+#include "GraphicsScene/GraphicsLogic/NewNetLogic.hpp"
 
 #include <array>
 

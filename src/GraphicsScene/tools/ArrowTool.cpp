@@ -4,9 +4,11 @@
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsLogic/ScreenDragLogic.hpp"
 #include "GraphicsLogic/BlockDragLogic.hpp"
-#include "GraphicsLogic/NewNet.hpp"
+#include "GraphicsLogic/NewNetLogic.hpp"
+#include "GraphicsLogic/LeafNetNodeDragLogic.hpp"
 #include "BlockObject.hpp"
 #include "BlockSocketObject.hpp"
+#include "NetObject.hpp"
 
 
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
@@ -22,7 +24,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         case ObjectType::block:
         {
 
-            auto block_obj = static_cast<BlockObject*>(current_hover);
+            auto* block_obj = static_cast<BlockObject*>(current_hover);
             auto obj_rect = current_hover->GetSpaceRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, 
                 *block_obj, GetScene(), GetObjectsManager());
@@ -31,10 +33,10 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         }
         case ObjectType::socket:
         {
-            auto socket = static_cast<BlockSocketObject*>(current_hover);
+            auto* socket = static_cast<BlockSocketObject*>(current_hover);
             if (!socket->GetConnectedNode())
             {
-                auto new_logic = logic::NewNetObject::Create(socket, GetScene(), GetObjectsManager());
+                auto new_logic = logic::NewNetLogic::Create(socket, GetScene(), GetObjectsManager());
                 if (new_logic)
                 {
                     GetScene()->SetGraphicsLogic(std::move(new_logic));
@@ -43,55 +45,24 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
             }
             break;
         }
+        case ObjectType::netNode:
+        {
+            auto* node = static_cast<NetNode*>(current_hover);
+            if (node->GetConnectedSegmentsCount() == 1)
+            {
+                assert(GetScene());
+                assert(GetObjectsManager());
+                if (auto ptr = logic::LeafNetNodeDragLogic::TryCreate(*node, *GetScene(), *GetObjectsManager()))
+                {
+                    GetScene()->SetGraphicsLogic(std::move(ptr));
+                    return MI::ClickEvent::CLICKED;
+                }
+            }
+            break;
+        }
         default: break;
         }
         
-        /*
-        // do Click
-        MI::ClickEvent result = current_hover->LMBDown(p);
-        switch (result)
-        {
-            using enum MI::ClickEvent;
-        case CAPTURE_START:
-        {
-            m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::OBJECT;
-            return CAPTURE_START;
-            break;
-        }
-        case CAPTURE_END:
-        {
-            m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::NONE;
-            return CAPTURE_END;
-            break;
-        }
-        case CLICKED:
-        {
-            return CLICKED;
-            break;
-        }
-        case NONE:
-        {
-            break;
-        }
-        }
-
-        // do drag
-        m_drag_objects.clear();
-        for (auto&& object_ptr : m_current_selection)
-        {
-            node::GraphicsObject* object = object_ptr.GetObjectPtr();
-            if (object != nullptr && object->isDraggable())
-            {
-                m_drag_objects.emplace_back(object->GetMIHandlePtr(), SDL_Point{ object->GetSpaceRect().x, object->GetSpaceRect().y });
-            }
-        }
-        if (m_drag_objects.size() != 0)
-        {
-            m_mouse_capture_mode = node::GraphicsScene::CAPTURE_MODE::OBJECTS_DRAG;
-            m_StartPointScreen = p;
-            return MI::ClickEvent::CAPTURE_START;
-        }
-        */
     }
     else
     {

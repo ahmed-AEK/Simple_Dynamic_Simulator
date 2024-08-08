@@ -99,6 +99,8 @@ public:
 	std::span<model::SocketNodeConnection> GetSocketConnections() { return m_SocketConnections; }
 	void AddSocketNodeConnection(const model::SocketNodeConnection& connection);
 	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
+	std::optional<std::reference_wrapper<node::model::SocketNodeConnection>> 
+		GetSocketConnectionForNode(const model::NetNodeId& node_id);
 
 	void ReserveNodes(size_t size) { m_nodes.reserve(size); }
 	void ReserveSegments(size_t size) { m_segments.reserve(size); }

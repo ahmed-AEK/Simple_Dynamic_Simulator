@@ -73,13 +73,9 @@ std::optional<node::model::BlockId> node::BlockObject::GetModelId()
     return m_id;
 }
 
-std::vector<node::BlockSocketObject*> node::BlockObject::GetSockets()
+const std::vector<std::unique_ptr<node::BlockSocketObject>>& node::BlockObject::GetSockets() const
 {
-    std::vector<node::BlockSocketObject*> out;
-    out.reserve(m_sockets.size());
-
-    std::transform(m_sockets.begin(), m_sockets.end(), std::back_inserter(out), [](const auto& item) { return item.get(); });
-    return out;
+    return m_sockets;
 }
 
 void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)

@@ -20,12 +20,12 @@ namespace model
 namespace logic
 {
 
-class GRAPHICSSCENE_API NewNetObject : public node::logic::GraphicsLogic
+class GRAPHICSSCENE_API NewNetLogic : public node::logic::GraphicsLogic
 {
 public:
-	static std::unique_ptr<NewNetObject> Create(BlockSocketObject* socket, 
+	static std::unique_ptr<NewNetLogic> Create(BlockSocketObject* socket, 
 		GraphicsScene* scene, GraphicsObjectsManager* manager);
-	NewNetObject(BlockSocketObject* socket, std::array<NetNode*, 4> nodes,	
+	NewNetLogic(BlockSocketObject* socket, std::array<NetNode*, 4> nodes,	
 		std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;

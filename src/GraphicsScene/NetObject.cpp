@@ -1,8 +1,6 @@
 #include "NetObject.hpp"
 #include "BlockSocketObject.hpp"
 #include "BlockObject.hpp"
-#include "GraphicsLogic/NewNet.hpp"
-#include "GraphicsLogic/NewNetJunction.hpp"
 #include "IGraphicsScene.hpp"
 #include <cmath>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"

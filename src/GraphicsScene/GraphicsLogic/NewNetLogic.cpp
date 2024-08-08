@@ -1,4 +1,4 @@
-#include "GraphicsLogic/NewNet.hpp"
+#include "GraphicsLogic/NewNetLogic.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include "GraphicsScene/BlockObject.hpp"
@@ -7,7 +7,7 @@
 #include <array>
 #include <algorithm>
 
-std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(BlockSocketObject* socket, 
+std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::Create(BlockSocketObject* socket, 
 	GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
 	assert(socket);
@@ -32,7 +32,7 @@ std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(Blo
 			layer++;
 		}
 		assert(manager);
-		return std::make_unique<NewNetObject>(socket, nodes, segments,scene, manager);
+		return std::make_unique<NewNetLogic>(socket, nodes, segments,scene, manager);
 	}
 	catch (...)
 	{
@@ -55,7 +55,7 @@ std::unique_ptr<node::logic::NewNetObject> node::logic::NewNetObject::Create(Blo
 	return nullptr;
 }
 
-node::logic::NewNetObject::NewNetObject(BlockSocketObject* socket, std::array<NetNode*, 4> nodes, 
+node::logic::NewNetLogic::NewNetLogic(BlockSocketObject* socket, std::array<NetNode*, 4> nodes, 
 	std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager }, m_socket{socket->GetFocusHandlePtr()}
 {
@@ -93,7 +93,7 @@ static node::NetSegment* AsSegment(node::HandlePtr<node::GraphicsObject>& obj)
 	return static_cast<node::NetSegment*>(obj.GetObjectPtr());
 }
 
-void node::logic::NewNetObject::OnMouseMove(const model::Point& current_mouse_point)
+void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
 	BlockSocketObject* end_socket = GetSocketAt(current_mouse_point);
 	
@@ -119,7 +119,7 @@ void node::logic::NewNetObject::OnMouseMove(const model::Point& current_mouse_po
 	AsSegment(m_segments[2])->CalcRect();
 }
 
-MI::ClickEvent node::logic::NewNetObject::OnLMBUp(const model::Point& current_mouse_point)
+MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	if (!m_socket.isAlive())
@@ -135,12 +135,12 @@ MI::ClickEvent node::logic::NewNetObject::OnLMBUp(const model::Point& current_mo
 	return MI::ClickEvent::CLICKED;
 }
 
-void node::logic::NewNetObject::OnCancel()
+void node::logic::NewNetLogic::OnCancel()
 {
 	DeleteAllOwnedObjects();
 }
 
-node::model::NetModel node::logic::NewNetObject::PopulateResultNet(const model::Point& current_mouse_point)
+node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::Point& current_mouse_point)
 {
 	using model::NetNodeId;
 	using model::NetSegmentId;
@@ -217,7 +217,7 @@ node::model::NetModel node::logic::NewNetObject::PopulateResultNet(const model::
 	return net;
 }
 
-node::BlockSocketObject* node::logic::NewNetObject::GetSocketAt(const model::Point& point) const
+node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Point& point) const
 {
 	const auto& blocks = GetObjectsManager()->getBlocksRegistry();
 
@@ -235,15 +235,16 @@ node::BlockSocketObject* node::logic::NewNetObject::GetSocketAt(const model::Poi
 				}
 				return false;
 			});
-		if (it != sockets.end() && m_socket.GetObjectPtr() != *it)
+		if (it != sockets.end() && m_socket.GetObjectPtr() != it->get())
 		{
-			end_socket = *it;
+			end_socket = it->get();
+			break;
 		}
 	}
 	return end_socket;
 }
 
-void node::logic::NewNetObject::DeleteAllOwnedObjects()
+void node::logic::NewNetLogic::DeleteAllOwnedObjects()
 {
 	GraphicsScene* scene = GetScene();
 	for (auto&& node : m_nodes)

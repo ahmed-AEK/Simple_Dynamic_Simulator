@@ -148,7 +148,50 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         }
         break;
     }
+    case SceneModificationType::LeafNodeMoved:
+    {
+        auto report = std::get<LeafNodeMovedReport>(e.data);
+        auto it = m_net_nodes.find(report.moved_node);
+        assert(it != m_net_nodes.end());
+        if (it == m_net_nodes.end())
+        {
+            return;
+        }
 
+        auto it2 = m_net_nodes.find(report.moved_node);
+        assert(it2 != m_net_nodes.end());
+        if (it2 == m_net_nodes.end())
+        {
+            return;
+        }
+
+        auto* node_obj = it->second;
+        auto* connectd_node_obj = it2->second;
+        auto conn = report.new_socket;
+        if (!conn)
+        {
+            node_obj->SetConnectedSocket(nullptr);
+        }
+        else
+        {
+            auto it_block = m_blocks.find(conn->block_id);
+            assert(it_block != m_blocks.end());
+            if (it_block != m_blocks.end())
+            {
+                for (auto&& socket : it_block->second->GetSockets())
+                {
+                    if (socket->GetId() == conn->socket_id)
+                    {
+                        node_obj->SetConnectedSocket(socket.get());
+                        break;
+                    }
+                }
+            }
+        }
+        node_obj->setCenter(report.new_position);
+        connectd_node_obj->setCenter({ connectd_node_obj->getCenter().x, report.new_position.y });
+        connectd_node_obj->UpdateConnectedSegments();
+    }
     }
 }
 

@@ -153,3 +153,72 @@ void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const mode
 		Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
 	}
 }
+
+
+void node::SceneModelManager::MoveLeafNetNode(model::NetNodeUniqueId main_node_id, model::NetNodeUniqueId second_node_id, 
+	model::Point new_position, std::optional<model::SocketUniqueId> connected_socket)
+{
+	auto net = m_scene->GetNetById(main_node_id.net_id);
+	assert(net);
+	if (!net)
+	{
+		return;
+	}
+
+	auto main_node = net->get().GetNetNodeById(main_node_id.node_id);
+	assert(main_node);
+	if (!main_node)
+	{
+		return;
+	}
+
+	auto second_node = net->get().GetNetNodeById(second_node_id.node_id);
+	assert(second_node);
+	if (!second_node)
+	{
+		return;
+	}
+
+	{
+		auto connection = net->get().GetSocketConnectionForNode(main_node_id.node_id);
+		if (connection)
+		{
+			auto block = m_scene->GetBlockById(connection->get().socketId.block_id);
+			assert(block);
+			if (block)
+			{
+				auto socket = block->get().GetSocketById(connection->get().socketId.socket_id);
+				assert(socket);
+				if (socket)
+				{
+					socket->get().SetConnectedNetNode(std::nullopt);
+				}
+			}
+			net->get().RemoveSocketConnectionForSocket(connection->get().socketId);
+		}
+	}
+
+
+	main_node->get().SetPosition(new_position);
+	if (connected_socket)
+	{
+		auto block = m_scene->GetBlockById(connected_socket->block_id);
+		assert(block);
+		if (block)
+		{
+			auto socket = block->get().GetSocketById(connected_socket->socket_id);
+			assert(socket);
+			if (socket)
+			{
+				assert(!socket->get().GetConnectedNetNode().has_value());
+				socket->get().SetConnectedNetNode(main_node_id);
+			}
+		}
+		net->get().AddSocketNodeConnection(model::SocketNodeConnection{ *connected_socket, main_node_id.node_id });
+	}
+
+	second_node->get().SetPosition({ second_node->get().GetPosition().x,new_position.y });
+
+	Notify(SceneModification{ SceneModificationType::LeafNodeMoved, 
+		SceneModification::data_t{LeafNodeMovedReport{connected_socket, main_node_id, second_node_id, new_position}} });
+}

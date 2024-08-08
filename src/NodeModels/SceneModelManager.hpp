@@ -8,18 +8,28 @@
 namespace node
 {
 
+
+struct LeafNodeMovedReport
+{
+	std::optional<model::SocketUniqueId> new_socket;
+	model::NetNodeUniqueId moved_node;
+	model::NetNodeUniqueId second_moved_node;
+	model::Point new_position;
+};
+
 enum class SceneModificationType
 {
 	BlockAdded,
 	BlockRemoved,
 	BlockMoved,
 	NetAdded,
+	LeafNodeMoved,
 };
 
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef>;
+	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport>;
 	SceneModificationType type;
 	data_t data;
 };
@@ -36,7 +46,8 @@ public:
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 
 	void AddNewNet(model::NetModel&& net);
-
+	void MoveLeafNetNode(model::NetNodeUniqueId main_node_id, model::NetNodeUniqueId second_node_id, model::Point new_position,
+		std::optional<model::SocketUniqueId> connected_socket);
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 };

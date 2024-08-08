@@ -117,7 +117,7 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
                 });
             if (it != range.end())
             {
-                return *it;
+                return it->get();
             }
         }
     }

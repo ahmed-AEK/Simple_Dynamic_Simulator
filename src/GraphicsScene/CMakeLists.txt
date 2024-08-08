@@ -14,12 +14,13 @@ tools/GraphicsTool.hpp
 tools/ArrowTool.hpp tools/ArrowTool.cpp
 tools/DeleteTool.hpp tools/DeleteTool.cpp
 
-GraphicsLogic/GraphicsLogic.cpp 	GraphicsLogic/GraphicsLogic.hpp
-GraphicsLogic/NewNet.cpp 		GraphicsLogic/NewNet.hpp
-GraphicsLogic/NewNetJunction.cpp 	GraphicsLogic/NewNetJunction.hpp
-GraphicsLogic/NodeDeleteLogic.cpp 	GraphicsLogic/NodeDeleteLogic.hpp
-GraphicsLogic/ScreenDragLogic.cpp   GraphicsLogic/ScreenDragLogic.hpp
-GraphicsLogic/BlockDragLogic.cpp    GraphicsLogic/BlockDragLogic.hpp
+GraphicsLogic/GraphicsLogic.cpp 	    GraphicsLogic/GraphicsLogic.hpp
+GraphicsLogic/NewNetLogic.cpp 	    GraphicsLogic/NewNetLogic.hpp
+GraphicsLogic/NewNetJunction.cpp 	    GraphicsLogic/NewNetJunction.hpp
+GraphicsLogic/NodeDeleteLogic.cpp 	    GraphicsLogic/NodeDeleteLogic.hpp
+GraphicsLogic/ScreenDragLogic.cpp       GraphicsLogic/ScreenDragLogic.hpp
+GraphicsLogic/BlockDragLogic.cpp        GraphicsLogic/BlockDragLogic.hpp
+GraphicsLogic/LeafNetNodeDragLogic.cpp  GraphicsLogic/LeafNetNodeDragLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp

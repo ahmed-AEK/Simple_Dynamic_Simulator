@@ -52,6 +52,20 @@ void node::model::NetModel::RemoveSocketConnectionForSocket(const model::SocketU
 	}
 }
 
+std::optional<std::reference_wrapper<node::model::SocketNodeConnection>> 
+node::model::NetModel::GetSocketConnectionForNode(const model::NetNodeId& node_id)
+{
+	auto iter = std::find_if(m_SocketConnections.begin(), m_SocketConnections.end(),
+		[&](const SocketNodeConnection& conn) {
+			return conn.NodeId == node_id;
+		});
+	if (iter != m_SocketConnections.end())
+	{
+		return *iter;
+	}
+	return std::nullopt;
+}
+
 void node::model::NetModel::RemoveNetSegmentById(const NetSegmentId& id)
 {
 	auto it = std::find_if(m_segments.begin(), m_segments.end(),
