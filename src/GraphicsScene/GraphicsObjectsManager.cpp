@@ -108,13 +108,13 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             auto start_node = std::find_if(nodes.begin(), nodes.end(),
                 [&](NetNode* node) {
                     assert(node->GetId());
-                    return (*node->GetId()).node_id == segment.m_firstNodeId;
+                    return node->GetId()->node_id == segment.m_firstNodeId;
                 });
             NetNode* start_node_ptr = start_node == nodes.end() ? nullptr : *start_node;
             auto end_node = std::find_if(nodes.begin(), nodes.end(),
                 [&](NetNode* node) {
                     assert(node->GetId());
-                    return (*node->GetId()).node_id == segment.m_secondNodeId;
+                    return node->GetId()->node_id == segment.m_secondNodeId;
                 });
             NetNode* end_node_ptr = end_node == nodes.end() ? nullptr : *end_node;
 
@@ -140,7 +140,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                     auto connected_node = std::find_if(nodes.begin(), nodes.end(),
                         [&](NetNode* node) {
                             assert(node->GetId());
-                            return (*node->GetId()).node_id == conn.NodeId;
+                            return node->GetId()->node_id == conn.NodeId;
                         });
                     sock->SetConnectedNode(*connected_node);
                     break;

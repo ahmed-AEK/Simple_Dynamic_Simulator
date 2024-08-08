@@ -42,7 +42,7 @@ std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node:
     auto iter = std::find_if(m_objects.begin(), m_objects.end(), [=](const auto& item) {return item.m_ptr.get() == obj;});
     if (iter != m_objects.end())
     {
-        std::unique_ptr<node::GraphicsObject> ret_obj = std::move((*iter).m_ptr);
+        std::unique_ptr<node::GraphicsObject> ret_obj = std::move(iter->m_ptr);
         m_objects.erase(iter);
         return ret_obj;
     }

@@ -9,10 +9,10 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
     std::optional<node::model::NodeSceneModel> scene{ std::in_place };
     SQLNodeLoader nodeLoader{ m_dbname, m_db };
     auto nodes = nodeLoader.GetBlocks();
-    (*scene).ReserveBlocks(nodes.size());
+    scene->ReserveBlocks(nodes.size());
     for (auto&& node : nodes)
     {
-        (*scene).AddBlock(std::move(node));
+        scene->AddBlock(std::move(node));
     }
     return scene;
 }

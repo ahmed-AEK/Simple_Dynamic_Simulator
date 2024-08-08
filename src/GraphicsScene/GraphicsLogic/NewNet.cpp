@@ -95,16 +95,25 @@ static node::NetSegment* AsSegment(node::HandlePtr<node::GraphicsObject>& obj)
 
 void node::logic::NewNetObject::OnMouseMove(const model::Point& current_mouse_point)
 {
+	BlockSocketObject* end_socket = GetSocketAt(current_mouse_point);
+	
+	auto end_point = current_mouse_point;
+	if (end_socket)
+	{
+		end_point = end_socket->GetCenterInSpace();
+	}
+
 	if (!m_socket.isAlive())
 	{
 		GetScene()->SetGraphicsLogic(nullptr);
 		return;
 	}
+
 	model::Point start = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr())->GetCenterInSpace();
-	model::node_int midpoint_x = (current_mouse_point.x + start.x) / 2;
+	model::node_int midpoint_x = (end_point.x + start.x) / 2;
 	AsNode(m_nodes[1])->setCenter({ midpoint_x, start.y });
-	AsNode(m_nodes[2])->setCenter({ midpoint_x, current_mouse_point.y });
-	AsNode(m_nodes[3])->setCenter({ current_mouse_point.x, current_mouse_point.y });
+	AsNode(m_nodes[2])->setCenter({ midpoint_x, end_point.y });
+	AsNode(m_nodes[3])->setCenter({ end_point.x, end_point.y });
 	AsSegment(m_segments[0])->CalcRect();
 	AsSegment(m_segments[1])->CalcRect();
 	AsSegment(m_segments[2])->CalcRect();
@@ -120,7 +129,7 @@ MI::ClickEvent node::logic::NewNetObject::OnLMBUp(const model::Point& current_mo
 	}
 
 	assert(GetObjectsManager());
-	GetObjectsManager()->GetSceneModel()->AddNewNet(PopulateResultNet());
+	GetObjectsManager()->GetSceneModel()->AddNewNet(PopulateResultNet(current_mouse_point));
 
 	DeleteAllOwnedObjects();
 	return MI::ClickEvent::CLICKED;
@@ -131,11 +140,14 @@ void node::logic::NewNetObject::OnCancel()
 	DeleteAllOwnedObjects();
 }
 
-node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet()
+node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const model::Point& current_mouse_point)
 {
 	using model::NetNodeId;
 	using model::NetSegmentId;
 	using enum model::NetNodeModel::ConnectedSegmentSide;
+
+	auto* end_socket = GetSocketAt(current_mouse_point);
+
 	auto net = std::make_shared<node::model::NetModel>();
 	std::array<NetNodeId, 4> node_ids{ NetNodeId{1},NetNodeId{2},NetNodeId{3},NetNodeId{4} };
 	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{1},NetSegmentId{2},NetSegmentId{3} };
@@ -197,7 +209,38 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet()
 
 	net->AddSocketNodeConnection(model::SocketNodeConnection{
 		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())}, node_ids[0]});
+	if (end_socket)
+	{
+		net->AddSocketNodeConnection(model::SocketNodeConnection{
+		model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())}, node_ids[3] });
+	}
 	return net;
+}
+
+node::BlockSocketObject* node::logic::NewNetObject::GetSocketAt(const model::Point& point) const
+{
+	const auto& blocks = GetObjectsManager()->getBlocksRegistry();
+
+	auto current_mouse_point_SDL = ToSDLPoint(point);
+	BlockSocketObject* end_socket = nullptr;
+	for (const auto& block_it : blocks)
+	{
+		const auto& sockets = block_it.second->GetSockets();
+		auto it = std::find_if(sockets.begin(), sockets.end(), [&](const auto& socket)
+			{
+				auto socket_rect = ToSDLRect(socket->GetSpaceRect());
+				if (SDL_PointInRect(&current_mouse_point_SDL, &socket_rect))
+				{
+					return true;
+				}
+				return false;
+			});
+		if (it != sockets.end() && m_socket.GetObjectPtr() != *it)
+		{
+			end_socket = *it;
+		}
+	}
+	return end_socket;
 }
 
 void node::logic::NewNetObject::DeleteAllOwnedObjects()

@@ -15,9 +15,13 @@ class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, pu
 {
 public:
 	GraphicsObjectsManager(GraphicsScene& scene);
+	
 	GraphicsScene* GetScene() { return m_scene; }
+
 	void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
 	std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
+	
+	const std::unordered_map<model::BlockId, BlockObject*>& getBlocksRegistry() const { return m_blocks; }
 protected:
 	void OnNotify(SceneModification& e) override;
 	void OnNotify(BlockObjectDropped& object) override;
