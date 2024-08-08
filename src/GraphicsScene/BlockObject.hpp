@@ -20,7 +20,7 @@ class BlockStyler;
 class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
 public:
-    static std::unique_ptr<BlockObject> Create(IGraphicsScene* scene, const model::BlockModelPtr& model, 
+    static std::unique_ptr<BlockObject> Create(IGraphicsScene* scene, const model::BlockModel& model,
         std::shared_ptr<BlockStyler> styler = nullptr);
 
     explicit BlockObject(IGraphicsScene* scene, const model::Rect& rect = {100,100,100,100}, 

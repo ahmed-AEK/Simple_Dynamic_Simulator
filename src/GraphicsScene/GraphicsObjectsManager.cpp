@@ -29,11 +29,11 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     auto styler = std::make_shared<node::BlockStyler>();
     for (auto&& block : m_sceneModel->GetBlocks())
     {
-        styler->PositionNodes(*block);
+        styler->PositionNodes(block);
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, styler);
         auto ptr = obj.get();
         GetScene()->AddObject(std::move(obj), 0);
-        m_blocks.emplace(block->GetId(), ptr);
+        m_blocks.emplace(block.GetId(), ptr);
     }
 }
 
@@ -44,18 +44,18 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     case SceneModification::type_t::BlockAdded:
     {
         auto styler = std::make_shared<node::BlockStyler>();
-        auto& model_ptr = std::get<model::BlockModelPtr>(e.data);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ptr, styler);
+        auto& model_ref = std::get<model::BlockModelRef>(e.data);
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, styler);
         auto* ptr = obj.get();
         GetScene()->AddObject(std::move(obj), 0);
-        m_blocks.emplace(model_ptr->GetId(), ptr);
+        m_blocks.emplace(model_ref.get().GetId(), ptr);
         GetScene()->ClearCurrentSelection();
         GetScene()->AddSelection(ptr->GetFocusHandlePtr());
         break;
     }
     case SceneModificationType::BlockRemoved:
     {
-        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
+        auto model_id = std::get<model::BlockId>(e.data);
 
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
@@ -75,8 +75,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     }
     case SceneModificationType::BlockMoved:
     {
-        auto model_id = std::get<model::BlockModelPtr>(e.data)->GetId();
-        auto new_position = std::get<model::BlockModelPtr>(e.data)->GetPosition();
+        auto model_id = std::get<model::BlockModelRef>(e.data).get().GetId();
+        auto new_position = std::get<model::BlockModelRef>(e.data).get().GetPosition();
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
         {
@@ -86,12 +86,11 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     }
     case SceneModificationType::NetAdded:
     {
-        auto net_ptr = std::get<model::NetModelPtr>(e.data);
-        assert(net_ptr);
+        auto net_ref = std::get<model::NetModelRef>(e.data);
+        auto net_id = net_ref.get().GetId();
 
-        auto net_id = net_ptr->GetId();
         std::vector<NetNode*> nodes;
-        for (auto&& node : net_ptr->GetNetNodes())
+        for (auto&& node : net_ref.get().GetNetNodes())
         {
             auto obj = std::make_unique<NetNode>(node.GetPosition(), GetScene());
             obj->SetId(model::NetNodeUniqueId{ node.GetId(), net_id });
@@ -100,7 +99,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             GetScene()->AddObject(std::move(obj), 200);
             m_net_nodes.emplace(model::NetNodeUniqueId{ node.GetId(), net_id}, ptr);
         }
-        for (auto&& segment : net_ptr->GetNetSegments())
+        for (auto&& segment : net_ref.get().GetNetSegments())
         {
             auto orientation = segment.m_orientation == model::NetSegmentModel::NetSegmentOrientation::horizontal ?
                 NetOrientation::Horizontal : NetOrientation::Vertical;
@@ -124,7 +123,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             GetScene()->AddObject(std::move(obj), 100);
             m_net_segments.emplace(model::NetSegmentUniqueId{ segment.GetId(), net_id }, ptr);
         }
-        for (auto&& conn : net_ptr->GetSocketConnections())
+        for (auto&& conn : net_ref.get().GetSocketConnections())
         {
             auto it = m_blocks.find(conn.socketId.block_id);
             assert(it != m_blocks.end()); // attaching node to socket that doesn't exist !
@@ -155,13 +154,13 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
 
 void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 {
-    auto block = std::make_shared<model::BlockModel>(model::BlockModel{ object.object.block });
+    model::BlockModel block{ model::BlockModel{ object.object.block } };
 
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
-    block->SetPosition(GetScene()->QuantizePoint(GetScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
+    block.SetPosition(GetScene()->QuantizePoint(GetScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
 
     auto styler = std::make_shared<node::BlockStyler>();
-    styler->PositionNodes(*block);
-    m_sceneModel->AddNewBlock(block);
+    styler->PositionNodes(block);
+    m_sceneModel->AddNewBlock(std::move(block));
 }

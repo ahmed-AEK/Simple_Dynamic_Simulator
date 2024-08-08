@@ -33,7 +33,7 @@ protected:
 	void OnCancel() override;
 
 private:
-	model::NetModelPtr PopulateResultNet(const model::Point& current_mouse_point);
+	model::NetModel PopulateResultNet(const model::Point& current_mouse_point);
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
 	void DeleteAllOwnedObjects();
 	std::array<HandlePtr<GraphicsObject>, 4> m_nodes;

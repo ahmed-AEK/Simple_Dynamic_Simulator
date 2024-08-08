@@ -19,7 +19,7 @@ enum class SceneModificationType
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelPtr, model::NetModelPtr>;
+	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef>;
 	SceneModificationType type;
 	data_t data;
 };
@@ -30,12 +30,12 @@ public:
 	explicit SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene);
 	~SceneModelManager() override;
 
-	std::span<model::BlockModelPtr> GetBlocks();
-	void AddNewBlock(model::BlockModelPtr block);
+	std::span<model::BlockModel> GetBlocks();
+	void AddNewBlock(model::BlockModel&& block);
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 
-	void AddNewNet(model::NetModelPtr net);
+	void AddNewNet(model::NetModel&& net);
 
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;

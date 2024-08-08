@@ -2,21 +2,21 @@
 #include "toolgui/NodeMacros.h"
 #include <algorithm>
 
-bool node::loader::SQLNodeLoader::AddBlock(const node::model::BlockModelPtr& node)
+bool node::loader::SQLNodeLoader::AddBlock(const node::model::BlockModel& node)
 {
 	{
 		SQLite::Statement query{ m_db, "INSERT INTO blocks VALUES (?,?,?,?,?)" };
-		query.bind(1, node->GetId().value);
-		query.bind(2, node->GetBounds().x);
-		query.bind(3, node->GetBounds().y);
-		query.bind(4, node->GetBounds().w);
-		query.bind(5, node->GetBounds().h);
+		query.bind(1, node.GetId().value);
+		query.bind(2, node.GetBounds().x);
+		query.bind(3, node.GetBounds().y);
+		query.bind(4, node.GetBounds().w);
+		query.bind(5, node.GetBounds().h);
 		query.exec();
 	}
 
-	auto&& sockets = node->GetSockets();
+	auto&& sockets = node.GetSockets();
 	if (!std::all_of(sockets.begin(), sockets.end(),
-		[&](const auto& socket) { return AddSocket(socket, node->GetId()); }))
+		[&](const auto& socket) { return AddSocket(socket, node.GetId()); }))
 	{
 		return false;
 	}
@@ -36,22 +36,21 @@ bool node::loader::SQLNodeLoader::DeleteBlockAndSockets(const node::model::Block
 	return true;
 }
 
-node::model::BlockModelPtr 
+std::optional<node::model::BlockModel>
 node::loader::SQLNodeLoader::GetBlock(const node::model::BlockId& block_id)
 {
 	using namespace node::model;
-
+	std::optional<node::model::BlockModel> ret;
 	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
 	if (query.executeStep())
 	{
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		std::shared_ptr<BlockModel> node = 
-			std::make_shared<BlockModel>(block_id, bounds);
-		LoadSocketsForBlock(*node);
-		return node;
+		ret.emplace(block_id, bounds);
+		LoadSocketsForBlock(*ret);
+		return ret;
 	}
-	return {};
+	return ret;
 }
 
 
@@ -132,20 +131,19 @@ node::model::BlockId node::loader::SQLNodeLoader::GetNextBlockId()
 	return model::BlockId{ static_cast<node::model::id_int>(query.getColumn(0)) + 1 };
 }
 
-std::vector<std::shared_ptr<node::model::BlockModel>> node::loader::SQLNodeLoader::GetBlocks()
+std::vector<node::model::BlockModel> node::loader::SQLNodeLoader::GetBlocks()
 {
 	using namespace node::model;
 
-	std::vector<std::shared_ptr<BlockModel>> nodes;
+	std::vector<BlockModel> nodes;
 	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
 	while (query.executeStep())
 	{
 		BlockId block_id{ query.getColumn(0) };
 		Rect bounds{ query.getColumn(1), query.getColumn(2),
 			query.getColumn(3), query.getColumn(4) };
-		std::shared_ptr<BlockModel> node =
-			std::make_shared<BlockModel>(block_id, bounds);
-		LoadSocketsForBlock(*node);
+		BlockModel node{ block_id, bounds };
+		LoadSocketsForBlock(node);
 		nodes.push_back(std::move(node));
 	}
 	return nodes;

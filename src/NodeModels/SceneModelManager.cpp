@@ -9,44 +9,53 @@ node::SceneModelManager::~SceneModelManager()
 {
 }
 
-std::span<node::model::BlockModelPtr> node::SceneModelManager::GetBlocks()
+std::span<node::model::BlockModel> node::SceneModelManager::GetBlocks()
 {
 	return m_scene->GetBlocks();
 }
 
-void node::SceneModelManager::AddNewBlock(model::BlockModelPtr block)
+void node::SceneModelManager::AddNewBlock(model::BlockModel&& block)
 {
 	model::id_int max_id = 0;
 	for (auto&& it_block : m_scene->GetBlocks())
 	{
-		max_id = std::max(max_id, it_block->GetId().value);
+		max_id = std::max(max_id, it_block.GetId().value);
 	}
-	block->SetId(model::BlockId{ max_id + 1 });
-	m_scene->AddBlock(block);
-	Notify(SceneModification{ SceneModificationType::BlockAdded, SceneModification::data_t{std::move(block)} });
+	model::BlockId block_id{ max_id + 1 };
+	block.SetId(block_id);
+	m_scene->AddBlock(std::move(block));
+
+	auto block_ref = m_scene->GetBlockById(block_id);
+	assert(block_ref);
+	Notify(SceneModification{ SceneModificationType::BlockAdded, SceneModification::data_t{*block_ref} });
 }
 
-void node::SceneModelManager::AddNewNet(model::NetModelPtr net)
+void node::SceneModelManager::AddNewNet(model::NetModel&& net)
 {
 	assert(m_scene);
 	model::id_int max_id = 0;
 	for (auto&& it_net : m_scene->GetNets())
 	{
-		max_id = std::max(max_id, it_net->GetId().value);
+		max_id = std::max(max_id, it_net.GetId().value);
 	}
 	auto net_id = model::NetId{ max_id + 1 };
-	net->SetId(net_id);
-	m_scene->AddNet(net);
-	for (auto&& conn : net->GetSocketConnections())
+	net.SetId(net_id);
+	m_scene->AddNet(std::move(net));
+
+	auto net_ref = m_scene->GetNetById(net_id);
+	assert(net_ref);
+	model::NetModel&  new_net = *net_ref;
+	for (auto&& conn : new_net.GetSocketConnections())
 	{
 		auto block = m_scene->GetBlockById(conn.socketId.block_id);
-		auto sock = block->GetSocketById(conn.socketId.socket_id);
+		assert(block);
+		auto sock = block->get().GetSocketById(conn.socketId.socket_id);
 		if (sock)
 		{
 			sock->get().SetConnectedNetNode(model::NetNodeUniqueId{ conn.NodeId, net_id });
 		}
 	}
-	Notify(SceneModification{ SceneModificationType::NetAdded, SceneModification::data_t{net} });
+	Notify(SceneModification{ SceneModificationType::NetAdded, SceneModification::data_t{new_net} });
 }
 
 void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
@@ -55,7 +64,7 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 	assert(block);
 	if (block)
 	{
-		for (const auto& socket : block->GetSockets())
+		for (const auto& socket : block->get().GetSockets())
 		{
 			auto connected_node = socket.GetConnectedNetNode();
 			if (connected_node)
@@ -64,12 +73,12 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 				assert(net);
 				if (net)
 				{
-					net->get()->RemoveSocketConnectionForSocket(model::SocketUniqueId{ socket.GetId(), id });
+					net->get().RemoveSocketConnectionForSocket(model::SocketUniqueId{ socket.GetId(), id });
 				}
 			}
 		}
 		m_scene->RemoveBlockById(id);
-		Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{std::move(block)} });
+		Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
 	}
 }
 
@@ -84,7 +93,7 @@ static void MoveNodeAndConnectedNodes(const node::model::NetNodeUniqueId& node_I
 		return;
 	}
 
-	NetModel& net = *net_wrap->get();
+	NetModel& net = net_wrap->get();
 	auto main_node_wrap = net.GetNetNodeById(node_Id.node_id);
 	assert(main_node_wrap);
 	if (!main_node_wrap)
@@ -132,8 +141,8 @@ void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const mode
 	assert(block);
 	if (block)
 	{
-		block->SetPosition(new_origin);
-		for (auto&& socket : block->GetSockets())
+		block->get().SetPosition(new_origin);
+		for (auto&& socket : block->get().GetSockets())
 		{
 			const auto& connected_node = socket.GetConnectedNetNode();
 			if (connected_node)
@@ -141,6 +150,6 @@ void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const mode
 				MoveNodeAndConnectedNodes(*connected_node, new_origin, *m_scene);
 			}
 		}
-		Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{std::move(block)} });
+		Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
 	}
 }

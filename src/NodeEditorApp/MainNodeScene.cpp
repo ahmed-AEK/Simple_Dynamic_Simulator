@@ -22,39 +22,39 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
     using namespace node;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
     {
-        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{1}, model::Rect{ 10,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{0} });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{1} });
-        sceneModel->AddBlock(model);
+        model::BlockModel model{ model::BlockId{ 1 }, model::Rect{ 10,10,100,100 }};
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        sceneModel->AddBlock(std::move(model));
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{2}, model::Rect{ 200,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        sceneModel->AddBlock(model);
+        model::BlockModel model{ model::BlockId{2}, model::Rect{ 200,10,100,100 } };
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        sceneModel->AddBlock(std::move(model));
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{3}, model::Rect{ 400,10,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        sceneModel->AddBlock(model);
+        model::BlockModel model{ model::BlockId{3}, model::Rect{ 400,10,100,100 }};
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        sceneModel->AddBlock(std::move(model));
     }
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{4}, model::Rect{ 200,210,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        sceneModel->AddBlock(model);
+        model::BlockModel model{ model::BlockId{4}, model::Rect{ 200,210,100,100 } };
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        sceneModel->AddBlock(std::move(model));
     }
 
 
     {
-        auto model = std::make_shared<node::model::BlockModel>(model::BlockId{5}, model::Rect{ 400,210,100,100 });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        sceneModel->AddBlock(model);
+        model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        sceneModel->AddBlock(std::move(model));
     }
     manager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
 }

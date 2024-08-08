@@ -140,7 +140,7 @@ void node::logic::NewNetObject::OnCancel()
 	DeleteAllOwnedObjects();
 }
 
-node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const model::Point& current_mouse_point)
+node::model::NetModel node::logic::NewNetObject::PopulateResultNet(const model::Point& current_mouse_point)
 {
 	using model::NetNodeId;
 	using model::NetSegmentId;
@@ -148,7 +148,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 
 	auto* end_socket = GetSocketAt(current_mouse_point);
 
-	auto net = std::make_shared<node::model::NetModel>();
+	node::model::NetModel net;
 	std::array<NetNodeId, 4> node_ids{ NetNodeId{1},NetNodeId{2},NetNodeId{3},NetNodeId{4} };
 	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{1},NetSegmentId{2},NetSegmentId{3} };
 
@@ -157,7 +157,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 		auto obj = model::NetNodeModel{ node_ids[node_id],
 	AsNode(m_nodes[node_id])->getCenter() };
 		obj.SetSegmentAt(east, segment_ids[0]);
-		net->AddNetNode(obj);
+		net.AddNetNode(std::move(obj));
 	}
 
 	{
@@ -166,7 +166,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 			AsNode(m_nodes[node_id])->getCenter() };
 		obj.SetSegmentAt(west, segment_ids[0]);
 		obj.SetSegmentAt(south, segment_ids[1]);
-		net->AddNetNode(obj);
+		net.AddNetNode(std::move(obj));
 	}
 
 	{
@@ -175,7 +175,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 	AsNode(m_nodes[node_id])->getCenter() };
 		obj.SetSegmentAt(north, segment_ids[1]);
 		obj.SetSegmentAt(east, segment_ids[2]);
-		net->AddNetNode(obj);
+		net.AddNetNode(std::move(obj));
 	}
 
 	{
@@ -183,7 +183,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 		auto obj = model::NetNodeModel{ model::NetNodeId{ node_ids[node_id]},
 	AsNode(m_nodes[node_id])->getCenter() };
 		obj.SetSegmentAt(west, segment_ids[2]);
-		net->AddNetNode(obj);
+		net.AddNetNode(std::move(obj));
 	}
 
 	{
@@ -194,7 +194,7 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 			auto orientation = AsSegment(segment)->GetOrientation() == NetOrientation::Horizontal ?
 				model::NetSegmentModel::NetSegmentOrientation::horizontal :
 				model::NetSegmentModel::NetSegmentOrientation::vertical;
-			net->AddNetSegment(model::NetSegmentModel{ model::NetSegmentId{start_segment_id},
+			net.AddNetSegment(model::NetSegmentModel{ model::NetSegmentId{start_segment_id},
 				NetNodeId{start_node_id}, NetNodeId{start_node_id + 1}, orientation });
 			start_node_id++;
 			start_segment_id++;
@@ -207,11 +207,11 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet(const mode
 	assert(socket->GetParentBlock());
 	assert(socket->GetParentBlock()->GetModelId());
 
-	net->AddSocketNodeConnection(model::SocketNodeConnection{
+	net.AddSocketNodeConnection(model::SocketNodeConnection{
 		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())}, node_ids[0]});
 	if (end_socket)
 	{
-		net->AddSocketNodeConnection(model::SocketNodeConnection{
+		net.AddSocketNodeConnection(model::SocketNodeConnection{
 		model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())}, node_ids[3] });
 	}
 	return net;

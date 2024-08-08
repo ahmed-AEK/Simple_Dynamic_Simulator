@@ -97,6 +97,6 @@ private:
 	BlockId m_Id;
 };
 
-using BlockModelPtr = std::shared_ptr<BlockModel>;
+using BlockModelRef = std::reference_wrapper<BlockModel>;
 
 }

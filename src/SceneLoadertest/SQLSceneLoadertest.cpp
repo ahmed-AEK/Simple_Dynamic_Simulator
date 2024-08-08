@@ -10,7 +10,7 @@ TEST(testScene, testSaveLoadNode)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
-	std::shared_ptr<BlockModel> node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
+	BlockModel node1{ block_id, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -30,7 +30,7 @@ TEST(testScene, testSaveModifyLoadNode)
 {
 	NodeSceneModel scene;
 	BlockId node_id{ 1 };
-	BlockModelPtr node1 = std::make_shared<BlockModel>(node_id, Rect{1,1,10,10});
+	BlockModel node1{ node_id, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -47,7 +47,7 @@ TEST(testScene, testSaveModifyLoadNode)
 	auto loaded_scene = loader.Load();
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
-	auto rect = loaded_scene->GetBlocks()[0]->GetBounds();
+	auto rect = loaded_scene->GetBlocks()[0].GetBounds();
 	EXPECT_EQ(rect, second_rect);
 
 }
@@ -56,7 +56,7 @@ TEST(testScene, testSaveDeleteLoadNode)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
-	BlockModelPtr node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
+	BlockModel node1{ block_id, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -79,7 +79,7 @@ TEST(testScene, testNextIndex)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
-	BlockModelPtr node1 = std::make_shared<BlockModel>(block_id, Rect{1,1,10,10});
+	BlockModel node1{ block_id, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 

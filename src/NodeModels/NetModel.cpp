@@ -63,36 +63,21 @@ void node::model::NetModel::RemoveNetSegmentById(const NetSegmentId& id)
 
 std::optional<node::model::NetSegmentId> node::model::NetNodeModel::GetSegmentAt(const ConnectedSegmentSide side)
 {
-	switch (side)
+	if (!m_valid_sides[static_cast<size_t>(side)])
 	{
-	case ConnectedSegmentSide::north:
-		return m_northSegmentId;
-	case ConnectedSegmentSide::south:
-		return m_southSegmentId;
-	case ConnectedSegmentSide::west:
-		return m_westSegmentId;
-	case ConnectedSegmentSide::east:
-		return m_eastSegmentId;
-	default:
 		return std::nullopt;
 	}
+	
+	return m_segmentIds[static_cast<size_t>(side)];
 }
 
 void node::model::NetNodeModel::SetSegmentAt(const ConnectedSegmentSide side, const std::optional<NetSegmentId> segment)
 {
-	switch (side)
+	if (!segment)
 	{
-	case ConnectedSegmentSide::north:
-		m_northSegmentId = segment;
-		break;
-	case ConnectedSegmentSide::south:
-		m_southSegmentId = segment;
-		break;
-	case ConnectedSegmentSide::west:
-		m_westSegmentId = segment;
-		break;
-	case ConnectedSegmentSide::east:
-		m_eastSegmentId = segment;
-		break;
+		m_valid_sides[static_cast<size_t>(side)] = false;
+		return;
 	}
+	m_valid_sides[static_cast<size_t>(side)] = true;
+	m_segmentIds[static_cast<size_t>(side)] = *segment;
 }

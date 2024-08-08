@@ -14,11 +14,11 @@ class SQLNodeLoader : public NodeLoader
 public:
 	SQLNodeLoader(std::string dbname, SQLite::Database& db)
 		: m_dbname{ dbname }, m_db{ db } {}
-	bool AddBlock(const node::model::BlockModelPtr& node) override;
+	bool AddBlock(const node::model::BlockModel& node) override;
 	bool DeleteBlockAndSockets(const node::model::BlockId& node_id) override;
 	bool UpdateBlockPosition(const node::model::BlockId& node_id,
 		const node::model::Point& position) override;
-	node::model::BlockModelPtr
+	std::optional<node::model::BlockModel>
 		GetBlock(const node::model::BlockId& block_id) override;
 	bool UpdateBlockBounds(const node::model::BlockId& node_id,
 		const node::model::Rect& bounds) override;
@@ -28,7 +28,7 @@ public:
 	bool UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 		const node::model::Point& position) override;
 	node::model::BlockId GetNextBlockId() override;
-	std::vector<std::shared_ptr<node::model::BlockModel>> GetBlocks() override;
+	std::vector<node::model::BlockModel> GetBlocks() override;
 	void LoadSocketsForBlock(node::model::BlockModel& node);
 
 private:

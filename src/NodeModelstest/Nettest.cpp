@@ -14,17 +14,22 @@ TEST(testNet, testCreate)
     node2.SetSegmentAt(NetNodeModel::ConnectedSegmentSide::west, segment_id);
     NetSegmentModel segment1{ NetSegmentId{1}, node1.GetId(), node2.GetId(),
         NetSegmentModel::NetSegmentOrientation::horizontal };
+    
+    auto node1_id = node1.GetId();
+    auto node2_id = node2.GetId();
+    auto segment1_id = segment1.GetId();
 
-    net1.AddNetNode(node1);
-    net1.AddNetNode(node2);
-    net1.AddNetSegment(segment1);
+    net1.AddNetNode(std::move(node1));
+    net1.AddNetNode(std::move(node2));
+    net1.AddNetSegment(std::move(segment1));
+
 
     ASSERT_EQ(net1.GetNetNodes().size(), 2);
-    EXPECT_TRUE(net1.GetNetNodeById(node1.GetId()).has_value());
-    EXPECT_TRUE(net1.GetNetNodeById(node2.GetId()).has_value());
+    EXPECT_TRUE(net1.GetNetNodeById(node1_id).has_value());
+    EXPECT_TRUE(net1.GetNetNodeById(node2_id).has_value());
     EXPECT_FALSE(net1.GetNetNodeById(NetNodeId{ 3 }).has_value());
 
     ASSERT_EQ(net1.GetNetSegments().size(), 1);
-    EXPECT_TRUE(net1.GetNetSegmentById(segment1.GetId()));
+    EXPECT_TRUE(net1.GetNetSegmentById(segment1_id));
     EXPECT_FALSE(net1.GetNetSegmentById(NetSegmentId{ 2 }).has_value());
 }

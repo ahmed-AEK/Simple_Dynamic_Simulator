@@ -8,11 +8,11 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
 {
     std::optional<node::model::NodeSceneModel> scene{ std::in_place };
     SQLNodeLoader nodeLoader{ m_dbname, m_db };
-    auto nodes = nodeLoader.GetBlocks();
-    scene->ReserveBlocks(nodes.size());
-    for (auto&& node : nodes)
+    auto blocks = nodeLoader.GetBlocks();
+    scene->ReserveBlocks(blocks.size());
+    for (auto&& block : blocks)
     {
-        scene->AddBlock(std::move(node));
+        scene->AddBlock(std::move(block));
     }
     return scene;
 }

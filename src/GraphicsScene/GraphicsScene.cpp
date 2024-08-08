@@ -57,10 +57,15 @@ void node::GraphicsScene::ClearAllObjects()
 
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)
 {
+    SDL_Rect screen_rect = ToSDLRect(GetSpaceRect());
     for (auto&& it = m_objects.rbegin(); it != m_objects.rend(); it++)
     {
         auto&& object = *it;
-        object.m_ptr->Draw(renderer);
+        SDL_Rect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
+        if (SDL_HasIntersection(&screen_rect, &obj_rect))
+        {
+            object.m_ptr->Draw(renderer);
+        }
     }
 }
 

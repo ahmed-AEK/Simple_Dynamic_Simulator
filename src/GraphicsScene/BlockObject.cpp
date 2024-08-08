@@ -10,10 +10,10 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 
-std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModelPtr& model, std::shared_ptr<BlockStyler> styler)
+std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::shared_ptr<BlockStyler> styler)
 {
-    auto ptr = std::make_unique<BlockObject>(scene, model->GetBounds(), std::move(styler), model->GetId());
-    for (const auto& socket : model->GetSockets())
+    auto ptr = std::make_unique<BlockObject>(scene, model.GetBounds(), std::move(styler), model.GetId());
+    for (const auto& socket : model.GetSockets())
     {
         auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(), 
             socket.GetPosition(), scene, ptr.get());

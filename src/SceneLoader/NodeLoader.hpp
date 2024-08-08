@@ -9,11 +9,11 @@ namespace node::loader
 class NodeLoader
 {
 public:
-	virtual bool AddBlock(const node::model::BlockModelPtr& node) = 0;
+	virtual bool AddBlock(const node::model::BlockModel& node) = 0;
 	virtual bool DeleteBlockAndSockets(const node::model::BlockId& node_id) = 0;
 	virtual bool UpdateBlockPosition(const node::model::BlockId& node_id,
 		const node::model::Point& position) = 0;
-	virtual	std::shared_ptr<node::model::BlockModel>
+	virtual	std::optional<node::model::BlockModel>
 		GetBlock(const node::model::BlockId& block_id) = 0;
 	virtual bool UpdateBlockBounds(const node::model::BlockId& node_id,
 		const node::model::Rect& bounds) = 0;
@@ -24,7 +24,7 @@ public:
 		const node::model::Point& position) = 0;
 
 	virtual node::model::BlockId GetNextBlockId() = 0;
-	virtual std::vector<std::shared_ptr<node::model::BlockModel>> GetBlocks() = 0;
+	virtual std::vector<node::model::BlockModel> GetBlocks() = 0;
 
 	virtual ~NodeLoader() = default;
 	NodeLoader() = default;
