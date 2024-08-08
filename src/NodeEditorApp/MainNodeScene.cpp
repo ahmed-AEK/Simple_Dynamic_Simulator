@@ -4,7 +4,6 @@
 #include "toolgui/SidePanel.hpp"
 #include "toolgui/ToolBar.hpp"
 
-#include "BoxObject.hpp"
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
 

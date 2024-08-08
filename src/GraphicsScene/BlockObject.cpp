@@ -10,30 +10,22 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 
-node::BlockObject::BlockObject(IGraphicsScene* scene, std::shared_ptr<model::BlockModel> model, std::shared_ptr<BlockStyler> styler)
-    : GraphicsObject((model ? model->GetBounds() : model::Rect{100,100,100,100}), ObjectType::block, scene), m_model{std::move(model)}, m_styler{std::move(styler)}
+std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModelPtr& model, std::shared_ptr<BlockStyler> styler)
 {
-    if (!m_model)
+    auto ptr = std::make_unique<BlockObject>(scene, model->GetBounds(), std::move(styler), model->GetId());
+    for (const auto& socket : model->GetSockets())
     {
-        return;
+        auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(), 
+            socket.GetPosition(), scene, ptr.get());
+        ptr->AddSocket(std::move(socket_ptr));
     }
+    return ptr;
+}
 
-    for (const auto& socket : m_model->GetSockets())
-    {
-        switch (socket.GetType())
-        {
-        case model::BlockSocketModel::SocketType::input:
-        {
-            AddInputSocket(socket.GetId());
-            break;
-        }
-        case model::BlockSocketModel::SocketType::output:
-        {
-            AddOutputSocket(socket.GetId());
-            break;
-        }
-        }
-    }
+node::BlockObject::BlockObject(IGraphicsScene* scene, const model::Rect& rect,
+    std::shared_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id)
+    :GraphicsObject{rect, ObjectType::block, scene}, m_id{model_id}, m_styler{std::move(styler)}
+{
 }
 
 node::BlockObject::~BlockObject()
@@ -59,7 +51,7 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
     m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, GetScene()->IsObjectSelected(*this));
     for (const auto& socket : m_sockets)
     {
-        m_styler->DrawBlockSocket(renderer, socket->GetCenter(), transformer, socket->GetSocketType());
+        m_styler->DrawBlockSocket(renderer, socket->GetCenterInSpace(), transformer, socket->GetSocketType());
     }
 }
 
@@ -68,23 +60,17 @@ MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_po
     return GraphicsObject::OnLMBDown(current_mouse_point);
 }
 
-void node::BlockObject::AddInputSocket(model::SocketId id)
+void node::BlockObject::AddSocket(std::unique_ptr<BlockSocketObject> socket)
 {
-    auto sock = std::make_unique<node::BlockSocketObject>( id,
-        model::BlockSocketModel::SocketType::input, GetScene(), this );
-    m_sockets.push_back({ std::move(sock) });
+    auto&& rect = GetSpaceRect();
+    auto&& origin = model::Util::get_rect_origin(rect);
+    socket->SetCenterInSpace(socket->GetCenterInBlock() + origin);
+    m_sockets.push_back(std::move(socket));
 }
 
-void node::BlockObject::AddOutputSocket(model::SocketId id)
+std::optional<node::model::BlockId> node::BlockObject::GetModelId()
 {
-    auto sock = std::make_unique<node::BlockSocketObject>(id,
-        model::BlockSocketModel::SocketType::output, GetScene(), this);
-    m_sockets.push_back({ std::move(sock) });
-}
-
-node::model::BlockId node::BlockObject::GetModelId()
-{
-    return m_model->GetId();
+    return m_id;
 }
 
 std::vector<node::BlockSocketObject*> node::BlockObject::GetSockets()
@@ -104,19 +90,12 @@ void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
 
 void node::BlockObject::RePositionSockets()
 {
-    if (!m_model)
+    auto&& block_rect = GetSpaceRect();
+    auto&& origin = model::Util::get_rect_origin(block_rect);
+    for (auto&& socket : m_sockets)
     {
-        return;
-    }
-
-    auto&& origin = GetSpaceRect();
-    assert(m_sockets.size() == m_model->GetSockets().size());
-    for (auto&& sock: m_sockets)
-    {
-        auto sock_model = m_model->GetSocketById(sock->GetId());
-        assert(sock_model);
-        auto&& position = (*sock_model).get().GetPosition();
-        sock->SetPosition({ origin.x + position.x - m_styler->SocketLength / 2, origin.y + position.y - m_styler->SocketLength / 2 });
+        auto& sock_pos = socket->GetCenterInBlock();
+        socket->SetCenterInSpace(sock_pos + origin);
     }
 }
 

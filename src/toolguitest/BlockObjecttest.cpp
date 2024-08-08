@@ -39,7 +39,7 @@ TEST(testBlockObject, testAddSocket)
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0} });
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
 	auto styler = std::make_shared<node::BlockStyler>();
-	node::BlockObject block{ nullptr, model, styler };
+	node::BlockObject block{ nullptr, model::Rect{0,0,0,0}, styler, model->GetId() };
 }
 
 

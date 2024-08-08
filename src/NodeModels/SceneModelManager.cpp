@@ -34,7 +34,8 @@ void node::SceneModelManager::AddNewNet(model::NetModelPtr net)
 	{
 		max_id = std::max(max_id, it_net->GetId().value);
 	}
-	net->SetId(model::NetId{ max_id + 1 });
+	auto net_id = model::NetId{ max_id + 1 };
+	net->SetId(net_id);
 	m_scene->AddNet(net);
 	for (auto&& conn : net->GetSocketConnections())
 	{
@@ -42,7 +43,7 @@ void node::SceneModelManager::AddNewNet(model::NetModelPtr net)
 		auto sock = block->GetSocketById(conn.socketId.socket_id);
 		if (sock)
 		{
-			(*sock).get().SetConnectedNetNode(conn.NodeId);
+			(*sock).get().SetConnectedNetNode(model::NetNodeUniqueId{ conn.NodeId, net_id });
 		}
 	}
 	Notify(SceneModification{ SceneModificationType::NetAdded, SceneModification::data_t{net} });

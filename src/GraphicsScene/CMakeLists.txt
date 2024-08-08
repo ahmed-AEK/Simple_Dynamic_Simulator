@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.11)
 add_library(GraphicsScene 
 GraphicsScene.cpp GraphicsScene.hpp
 GraphicsObject.cpp GraphicsObject.hpp
-DraggableObject.cpp DraggableObject.hpp
 BlockObject.cpp BlockObject.hpp
 BlockSocketObject.cpp BlockSocketObject.hpp
 NetObject.cpp NetObject.hpp

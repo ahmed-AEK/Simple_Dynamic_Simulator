@@ -82,7 +82,7 @@ bool node::loader::SQLNodeLoader::UpdateBlockBounds(const node::model::BlockId& 
 bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel& socket, 
 	const node::model::BlockId& block_id)
 {
-	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?)" };
+	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?,?)" };
 	querySocket.bind(1, socket.GetId().value);
 	querySocket.bind(2, block_id.value);
 	querySocket.bind(3, socket.GetPosition().x);
@@ -90,11 +90,13 @@ bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel&
 	querySocket.bind(5, static_cast<int>(socket.GetType()));
 	if (auto val = socket.GetConnectedNetNode(); val)
 	{
-		querySocket.bind(6, (*val).value);
+		querySocket.bind(6, (*val).node_id.value);
+		querySocket.bind(7, (*val).net_id.value);
 	}
 	else
 	{
 		querySocket.bind(6);
+		querySocket.bind(7);
 	}
 	querySocket.exec();
 	return true;

@@ -57,18 +57,13 @@ public:
 	uint8_t GetConnectedSegmentsCount();
 	void ClearSegment(const NetSegment* segment);
 
-	void SetId(const model::NetNodeId& id) { m_id = id; }
-	model::NetNodeId GetId() const noexcept { return m_id; }
-	void SetNet(model::NetModelPtr ptr) { m_net_model = std::move(ptr); }
+	void SetId(std::optional<model::NetNodeUniqueId> id) { m_id = std::move(id); }
+	std::optional<model::NetNodeUniqueId> GetId() const noexcept { return m_id; }
 
 protected:
-	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
-	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
-	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
 	void OnSetSpaceRect(const model::Rect& rect) override;
 private:
-	model::NetModelPtr m_net_model;
-	model::NetNodeId m_id{0};
+	std::optional<model::NetNodeUniqueId> m_id = std::nullopt;
 	model::Point m_centerPoint;
 	NetSegment* m_northSegment = nullptr;
 	NetSegment* m_southSegment = nullptr;
@@ -77,7 +72,6 @@ private:
 	BlockSocketObject* m_socket = nullptr;
 	static constexpr int m_width = 10;
 	static constexpr int m_height = 10;
-	bool b_being_deleted = false;
 };
 
 constexpr int NET_SEGMENT_OBJECT_Z = 50;
@@ -96,23 +90,17 @@ public:
 	const NetOrientation& GetOrientation() const noexcept { return m_orientation; }
 	int GetWidth() const { return c_width; }
 
-	void SetId(const model::NetSegmentId& id) { m_id = id; }
-	model::NetSegmentId GetId() const noexcept { return m_id; }
-	void SetNet(model::NetModelPtr ptr) { m_net_model = std::move(ptr); }
+	void SetId(std::optional<model::NetSegmentUniqueId> id) { m_id = std::move(id); }
+	std::optional<model::NetSegmentUniqueId> GetId() const noexcept { return m_id; }
 
 protected:
-	virtual MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
-	void OnMouseMove(const model::Point& current_mouse_point) override;
-	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
-	model::NetSegmentId m_id{0};
-	model::NetModelPtr m_net_model;
+	static constexpr int c_width = 10;
+
+	std::optional<model::NetSegmentUniqueId> m_id = std::nullopt;
 	NetNode* m_startNode;
 	NetNode* m_endNode;
 	NetOrientation m_orientation{};
-	static constexpr int c_width = 10;
-	bool b_being_dragged = false;
-	bool b_being_deleted = false;
 };
 
 struct GRAPHICSSCENE_API NetObject

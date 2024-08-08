@@ -74,7 +74,7 @@ node::logic::NewNetObject::NewNetObject(BlockSocketObject* socket, std::array<Ne
 		});
 	for (auto&& node : nodes)
 	{
-		node->setCenter(socket->GetCenter());
+		node->setCenter(socket->GetCenterInSpace());
 	}
 	segments[0]->Connect(nodes[0], nodes[1], NetOrientation::Horizontal);
 	segments[1]->Connect(nodes[1], nodes[2], NetOrientation::Vertical);
@@ -100,7 +100,7 @@ void node::logic::NewNetObject::OnMouseMove(const model::Point& current_mouse_po
 		GetScene()->SetGraphicsLogic(nullptr);
 		return;
 	}
-	model::Point start = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr())->GetCenter();
+	model::Point start = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr())->GetCenterInSpace();
 	model::node_int midpoint_x = (current_mouse_point.x + start.x) / 2;
 	AsNode(m_nodes[1])->setCenter({ midpoint_x, start.y });
 	AsNode(m_nodes[2])->setCenter({ midpoint_x, current_mouse_point.y });
@@ -190,8 +190,13 @@ node::model::NetModelPtr node::logic::NewNetObject::PopulateResultNet()
 	}
 
 	auto* socket = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr());
+
+	assert(socket->GetId());
+	assert(socket->GetParentBlock());
+	assert(socket->GetParentBlock()->GetModelId());
+
 	net->AddSocketNodeConnection(model::SocketNodeConnection{
-		model::SocketUniqueId{socket->GetId(), socket->GetParentBlock()->GetModelId()}, node_ids[0]});
+		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())}, node_ids[0]});
 	return net;
 }
 

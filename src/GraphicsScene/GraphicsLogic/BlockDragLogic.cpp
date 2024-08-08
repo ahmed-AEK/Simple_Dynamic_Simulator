@@ -63,7 +63,8 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
 
     assert(GetObjectsManager());
     auto block_id = block->GetModelId();
-    GetObjectsManager()->GetSceneModel()->MoveBlockById(block_id, scene->QuantizePoint({
+    assert(block_id);
+    GetObjectsManager()->GetSceneModel()->MoveBlockById(*block_id, scene->QuantizePoint({
         m_startObjectEdge.x + drag_vector.x,
         m_startObjectEdge.y + drag_vector.y
         }));

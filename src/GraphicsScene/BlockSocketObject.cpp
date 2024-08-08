@@ -29,56 +29,25 @@ node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
-node::BlockSocketObject::BlockSocketObject(model::SocketId id,
-	model::BlockSocketModel::SocketType type, IGraphicsScene* parentScene, BlockObject* parentNode)
-	: GraphicsObject(model::Rect{0,0,nodeLength,nodeLength}, ObjectType::socket, parentScene),
-	m_parentNode(parentNode), m_socktType(type), m_id{id}
+
+node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id, 
+	model::Point center_in_block, IGraphicsScene* parentScene, BlockObject* parentBlock)
+	:GraphicsObject{model::Rect{ 0,0,nodeLength,nodeLength },ObjectType::socket, parentScene}, 
+	m_center_in_block{ center_in_block }, m_parentBlock(parentBlock), m_socktType(type), m_id{ id }
 {
 	b_selectable = false;
 	b_draggable = false;
 }
 
-void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
+node::model::Point node::BlockSocketObject::GetCenterInSpace()
 {
-	GraphicsObject::OnSetSpaceRect(rect);
-	if (m_connected_node)
-	{
-		m_connected_node->setCenter(GetCenter());
-		m_connected_node->UpdateConnectedSegments();
-	}
+	return { GetSpaceRect().x + nodeLength / 2, GetSpaceRect().y + nodeLength / 2 };
+
 }
 
-void node::BlockSocketObject::SetPosition(SDL_Point p)
+void node::BlockSocketObject::SetCenterInSpace(const model::Point& point)
 {
-	// set socket position
-	SetSpaceRect({ p.x, p.y, nodeLength, nodeLength });
-	if (!m_connected_node)
-	{
-		return;
-	}
-
-	// set connected node position
-	m_connected_node->setCenter(GetCenter());
-	NetSegment* next_segment = m_connected_node->getSegment(NetSide::East);
-	if (!next_segment) 
-	{
-		next_segment = m_connected_node->getSegment(NetSide::West);
-	}
-
-	NetNode* next_node = next_segment->getStartNode();
-	if (next_node == m_connected_node)
-	{
-		next_node = next_segment->getEndNode();
-	}
-	
-	// set position of the first node after one segment
-	next_node->setCenter({next_node->getCenter().x, GetCenter().y});
-	next_node->UpdateConnectedSegments();
-}
-
-node::model::Point node::BlockSocketObject::GetCenter()
-{
-	return { GetSpaceRect().x + nodeLength/2, GetSpaceRect().y + nodeLength / 2};
+	SetSpaceRect({point.x - nodeLength/2, point.y - nodeLength/2, nodeLength, nodeLength});
 }
 
 void node::BlockSocketObject::Draw(SDL_Renderer* renderer)
@@ -86,28 +55,31 @@ void node::BlockSocketObject::Draw(SDL_Renderer* renderer)
 	UNUSED_PARAM(renderer);
 }
 
-MI::ClickEvent node::BlockSocketObject::OnLMBDown(const model::Point& current_mouse_point)
+void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
 {
-	/*
-	if (!m_connected_node)
+	GraphicsObject::OnSetSpaceRect(rect);
+	if (m_connected_node)
 	{
-		std::unique_ptr<NetNode> node1_ptr = std::make_unique<NetNode>(this->GetCenter(), this->GetScene());
-		std::unique_ptr<NetNode> node2_ptr = std::make_unique<NetNode>(current_mouse_point, this->GetScene());
+		const auto& new_center = GetCenterInSpace();
+		m_connected_node->setCenter(new_center);
+		assert(m_connected_node->GetConnectedSegmentsCount() == 1);
 
-		node1_ptr->SetConnectedSocket(this);
-		std::unique_ptr<NewNetObject> net_obj = std::make_unique<NewNetObject>(node1_ptr.get(), node2_ptr.get(), GetScene());
-		this->GetScene()->SetCurrentHover(net_obj.get());
+		// set connected node position
+		NetSegment* next_segment = m_connected_node->getSegment(NetSide::East);
+		if (!next_segment)
+		{
+			next_segment = m_connected_node->getSegment(NetSide::West);
+		}
 
-		this->GetScene()->AddObject(std::move(node1_ptr), NET_NODE_OBJECT_Z);
-		this->GetScene()->AddObject(std::move(node2_ptr), NET_NODE_OBJECT_Z);
-		this->GetScene()->AddObject(std::move(net_obj), 0);
+		NetNode* next_node = next_segment->getStartNode();
+		if (next_node == m_connected_node)
+		{
+			next_node = next_segment->getEndNode();
+		}
 
-		return MI::ClickEvent::CAPTURE_START;
+		// set position of the first node after one segment
+		next_node->setCenter({ next_node->getCenter().x, new_center.y });
+		next_node->UpdateConnectedSegments();
 	}
-	else
-	{
-		return MI::ClickEvent::CLICKED;
-	}
-	*/
-	return GraphicsObject::LMBDown(current_mouse_point);
 }
+

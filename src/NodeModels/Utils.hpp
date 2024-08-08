@@ -22,6 +22,14 @@ struct Rect
 	node_int h;
 };
 
+namespace Util
+{
+inline Point get_rect_origin(const Rect& rect)
+{
+	return Point{ rect.x, rect.y };
+}
+}
+
 [[nodiscard]] inline constexpr bool operator==(const Point& p1, const Point& p2) noexcept
 {
 	return p1.x == p2.x && p1.y == p2.y;

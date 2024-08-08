@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.11)
 add_executable(NodeEditor main.cpp 
 NodeEditorApp.cpp NodeEditorApp.hpp
 MainNodeScene.cpp MainNodeScene.hpp
-BoxObject.cpp BoxObject.hpp
 ExampleContextMenu.cpp ExampleContextMenu.hpp
 NodeGraphicsScene.cpp NodeGraphicsScene.hpp
 )

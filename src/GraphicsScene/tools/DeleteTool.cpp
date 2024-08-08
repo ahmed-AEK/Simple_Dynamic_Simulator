@@ -28,7 +28,8 @@ MI::ClickEvent node::DeleteTool::OnLMBUp(const model::Point& p)
 	if (obj->GetObjectType() == ObjectType::block)
 	{
 		assert(GetObjectsManager());
-		GetObjectsManager()->GetSceneModel()->RemoveBlockById(static_cast<BlockObject*>(obj)->GetModelId());
+		assert(static_cast<BlockObject*>(obj)->GetModelId());
+		GetObjectsManager()->GetSceneModel()->RemoveBlockById(*static_cast<BlockObject*>(obj)->GetModelId());
 	}
 	return MI::ClickEvent::NONE;
 }

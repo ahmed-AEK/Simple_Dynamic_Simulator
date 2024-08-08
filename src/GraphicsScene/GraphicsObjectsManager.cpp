@@ -30,7 +30,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     for (auto&& block : m_sceneModel->GetBlocks())
     {
         styler->PositionNodes(*block);
-        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(GetScene(), block, styler);
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, styler);
         auto ptr = obj.get();
         GetScene()->AddObject(std::move(obj), 0);
         m_blocks.emplace(block->GetId(), ptr);
@@ -45,7 +45,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
         auto styler = std::make_shared<node::BlockStyler>();
         auto& model_ptr = std::get<model::BlockModelPtr>(e.data);
-        std::unique_ptr<node::BlockObject> obj = std::make_unique<node::BlockObject>(GetScene(), model_ptr, styler);
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ptr, styler);
         auto* ptr = obj.get();
         GetScene()->AddObject(std::move(obj), 0);
         m_blocks.emplace(model_ptr->GetId(), ptr);
@@ -60,7 +60,16 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
         {
+            for (auto&& socket : it->second->GetSockets())
+            {
+                auto&& connected_node = socket->GetConnectedNode();
+                if (connected_node)
+                {
+                    connected_node->SetConnectedSocket(nullptr);
+                }
+            }
             GetScene()->PopObject(it->second);
+            m_blocks.erase(it);
         }
         break;
     }
@@ -85,8 +94,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         for (auto&& node : net_ptr->GetNetNodes())
         {
             auto obj = std::make_unique<NetNode>(node.GetPosition(), GetScene());
-            obj->SetId(node.GetId());
-            obj->SetNet(net_ptr);
+            obj->SetId(model::NetNodeUniqueId{ node.GetId(), net_id });
             auto ptr = obj.get();
             nodes.push_back(ptr);
             GetScene()->AddObject(std::move(obj), 200);
@@ -99,19 +107,20 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
 
             auto start_node = std::find_if(nodes.begin(), nodes.end(),
                 [&](NetNode* node) {
-                    return node->GetId() == segment.m_firstNodeId;
+                    assert(node->GetId());
+                    return (*node->GetId()).node_id == segment.m_firstNodeId;
                 });
             NetNode* start_node_ptr = start_node == nodes.end() ? nullptr : *start_node;
             auto end_node = std::find_if(nodes.begin(), nodes.end(),
                 [&](NetNode* node) {
-                    return node->GetId() == segment.m_secondNodeId;
+                    assert(node->GetId());
+                    return (*node->GetId()).node_id == segment.m_secondNodeId;
                 });
             NetNode* end_node_ptr = end_node == nodes.end() ? nullptr : *end_node;
 
             auto obj = std::make_unique<NetSegment>(orientation, start_node_ptr, end_node_ptr, GetScene());
             auto ptr = obj.get();
-            obj->SetId(segment.GetId());
-            obj->SetNet(net_ptr);
+            obj->SetId(model::NetSegmentUniqueId{ segment.GetId(), net_id });
             GetScene()->AddObject(std::move(obj), 100);
             m_net_segments.emplace(model::NetSegmentUniqueId{ segment.GetId(), net_id }, ptr);
         }
@@ -130,7 +139,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                 {
                     auto connected_node = std::find_if(nodes.begin(), nodes.end(),
                         [&](NetNode* node) {
-                            return node->GetId() == conn.NodeId;
+                            assert(node->GetId());
+                            return (*node->GetId()).node_id == conn.NodeId;
                         });
                     sock->SetConnectedNode(*connected_node);
                     break;
