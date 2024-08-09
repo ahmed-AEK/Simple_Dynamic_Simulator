@@ -8,10 +8,10 @@ std::unique_ptr<node::logic::LeafNetNodeDragLogic> node::logic::LeafNetNodeDragL
 	GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
 	assert(node.GetConnectedSegmentsCount() == 1);
-	NetSegment* connected_segment = node.getSegment(node::NetSide::East);
+	NetSegment* connected_segment = node.getSegment(model::ConnectedSegmentSide::east);
 	if (!connected_segment)
 	{
-		connected_segment = node.getSegment(node::NetSide::West);
+		connected_segment = node.getSegment(model::ConnectedSegmentSide::west);
 	}
 	if (!connected_segment)
 	{
@@ -92,8 +92,32 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 			*connectd_socket->GetParentBlock()->GetModelId() };
 	}
 
-	GetObjectsManager()->GetSceneModel()->MoveLeafNetNode(
-		*AsNode(m_dragged_node)->GetId(), *AsNode(m_connected_node)->GetId(), new_point, connected_socket_id);
+
+	NetModificationRequest request{ AsNode(m_connected_node)->GetId()->net_id };
+
+	// request node position change
+	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ AsNode(m_dragged_node)->GetId()->node_id, new_point });
+	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ AsNode(m_connected_node)->GetId()->node_id, {m_second_node_start_point.x,new_point.y }});
+	
+
+	// remove old connection
+	auto* old_connected_socket = AsNode(m_dragged_node)->GetConnectedSocket();
+	if (old_connected_socket && old_connected_socket != connectd_socket)
+	{
+		assert(old_connected_socket->GetId());
+		assert(old_connected_socket->GetParentBlock()->GetModelId());
+		request.removed_connections.push_back(model::SocketUniqueId{ *old_connected_socket->GetId(), *old_connected_socket->GetParentBlock()->GetModelId() });
+	}
+
+	// establish new connection
+	if (connected_socket_id && old_connected_socket != connectd_socket)
+	{
+		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+			*connected_socket_id, NetModificationRequest::NodeIdType::existing_id, AsNode(m_dragged_node)->GetId()->node_id
+			});
+	}
+	CleanUp();
+	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CLICKED;
 }
 
@@ -101,17 +125,7 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 
 void node::logic::LeafNetNodeDragLogic::OnCancel()
 {
-	if (!m_dragged_node.isAlive())
-	{
-		return;
-	}
-	assert(m_connected_node.isAlive());
-
-	auto* dragged_node = AsNode(m_dragged_node);
-	dragged_node->setCenter(m_first_node_start_point);
-	auto* connected_node = AsNode(m_connected_node);
-	connected_node->setCenter(m_second_node_start_point);
-	connected_node->UpdateConnectedSegments();
+	CleanUp();
 }
 
 node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const model::Point& point) const
@@ -143,5 +157,20 @@ node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const mo
 		}
 	}
 	return end_socket;
+}
+
+void node::logic::LeafNetNodeDragLogic::CleanUp()
+{
+	if (!m_dragged_node.isAlive())
+	{
+		return;
+	}
+	assert(m_connected_node.isAlive());
+
+	auto* dragged_node = AsNode(m_dragged_node);
+	dragged_node->setCenter(m_first_node_start_point);
+	auto* connected_node = AsNode(m_connected_node);
+	connected_node->setCenter(m_second_node_start_point);
+	connected_node->UpdateConnectedSegments();
 }
 

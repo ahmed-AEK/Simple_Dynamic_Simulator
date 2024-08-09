@@ -19,7 +19,7 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::Create(Block
 		int layer = 1000;
 		for (auto&& segment : segments)
 		{
-			auto new_segmet = std::make_unique<NetSegment>(NetOrientation::Vertical,nullptr, nullptr,scene);
+			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr,scene);
 			segment = new_segmet.get();
 			scene->AddObject(std::move(new_segmet), layer);
 			layer++;
@@ -76,9 +76,9 @@ node::logic::NewNetLogic::NewNetLogic(BlockSocketObject* socket, std::array<NetN
 	{
 		node->setCenter(socket->GetCenterInSpace());
 	}
-	segments[0]->Connect(nodes[0], nodes[1], NetOrientation::Horizontal);
-	segments[1]->Connect(nodes[1], nodes[2], NetOrientation::Vertical);
-	segments[2]->Connect(nodes[2], nodes[3], NetOrientation::Horizontal);
+	segments[0]->Connect(nodes[0], nodes[1], model::NetSegmentOrientation::horizontal);
+	segments[1]->Connect(nodes[1], nodes[2], model::NetSegmentOrientation::vertical);
+	segments[2]->Connect(nodes[2], nodes[3], model::NetSegmentOrientation::horizontal);
 }
 
 static node::NetNode* AsNode(node::HandlePtr<node::GraphicsObject>& obj)
@@ -144,7 +144,7 @@ node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::P
 {
 	using model::NetNodeId;
 	using model::NetSegmentId;
-	using enum model::NetNodeModel::ConnectedSegmentSide;
+	using enum model::ConnectedSegmentSide;
 
 	auto* end_socket = GetSocketAt(current_mouse_point);
 
@@ -191,9 +191,7 @@ node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::P
 		model::id_int start_node_id = 1;
 		for (auto&& segment : m_segments)
 		{
-			auto orientation = AsSegment(segment)->GetOrientation() == NetOrientation::Horizontal ?
-				model::NetSegmentModel::NetSegmentOrientation::horizontal :
-				model::NetSegmentModel::NetSegmentOrientation::vertical;
+			auto orientation = AsSegment(segment)->GetOrientation();
 			net.AddNetSegment(model::NetSegmentModel{ model::NetSegmentId{start_segment_id},
 				NetNodeId{start_node_id}, NetNodeId{start_node_id + 1}, orientation });
 			start_node_id++;

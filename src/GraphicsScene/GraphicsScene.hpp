@@ -54,6 +54,9 @@ public:
         SCREEN_DRAG
     };
 
+    static constexpr int BlockLayer = 100;
+    static constexpr int SegmentLayer = 200;
+    static constexpr int NetNodeLayer = 300;
 
     GraphicsScene(const SDL_Rect& rect, node::Scene* parent);
     ~GraphicsScene() override;
@@ -122,7 +125,7 @@ private:
     double m_scroll_ratio = 1.25;
     double m_zoomScale = 1;
     int m_spaceQuantization = 20;
-    std::optional<SDL_Point> m_current_mouse_position;
+    SDL_Point m_current_mouse_position{ 0,0 };
     SDL_Point m_StartPointScreen{ 0,0 };
     SDL_Point m_startEdgeSpace{ 0,0 };
     std::vector<ObjectSlot> m_objects;

@@ -9,6 +9,7 @@
 #include "BlockObject.hpp"
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
+#include "GraphicsLogic/VSegmentDragLogic.hpp"
 
 
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
@@ -57,6 +58,16 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
                     GetScene()->SetGraphicsLogic(std::move(ptr));
                     return MI::ClickEvent::CLICKED;
                 }
+            }
+            break;
+        }
+        case ObjectType::netSegment:
+        {
+            auto* segment = static_cast<NetSegment*>(current_hover);
+            if (auto ptr = logic::VSegmentDragLogic::Create(*segment->getStartNode(),
+                *segment->getEndNode(), *segment, p, GetScene(), GetObjectsManager()))
+            {
+                GetScene()->SetGraphicsLogic(std::move(ptr));
             }
             break;
         }

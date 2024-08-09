@@ -27,12 +27,14 @@ public:
 
     void MouseOut();
     void MouseIn();
+    void Start(const model::Point& current_mouse_point);
     void MouseMove(const model::Point& current_mouse_point);
     MI::ClickEvent LMBUp(const model::Point& current_mouse_point);
     void Cancel();
     bool IsDone() const { return b_done; }
     void SetDone(bool value = true) { b_done = value; }
 protected:
+    virtual void OnStart(const model::Point& current_mouse_point);
     virtual void OnMouseOut();
     virtual void OnMouseIn();
     virtual void OnMouseMove(const model::Point& current_mouse_point);

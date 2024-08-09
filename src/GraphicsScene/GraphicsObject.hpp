@@ -14,7 +14,7 @@ enum class ObjectType
     block,
     socket,
     netNode,
-    net,
+    netSegment,
     interactive,
     OBJECTTYPE_COUNT
 };
@@ -48,7 +48,8 @@ public:
     bool isSelectable() const { return b_selectable; }
     bool isDraggable() const { return b_draggable; }
     bool isAligned() const { return b_aligned; }
-
+    void SetVisible(bool visible = true) { b_isVisible = visible; };
+    bool IsVisible() const { return b_isVisible; }
     using GraphicsObjectMouseInteractable::GetInteractableAtPoint;
     using GraphicsObjectMouseInteractable::MouseOut;
     using GraphicsObjectMouseInteractable::MouseIn;
@@ -66,6 +67,7 @@ protected:
     bool b_selectable = true;
     bool b_draggable = true;
     bool b_aligned = true;
+    bool b_isVisible = true;
 private:
     ObjectType m_obj_type;
     IGraphicsScene* m_pScene;

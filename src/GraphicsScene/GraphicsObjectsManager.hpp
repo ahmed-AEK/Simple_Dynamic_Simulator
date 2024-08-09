@@ -26,6 +26,7 @@ protected:
 	void OnNotify(SceneModification& e) override;
 	void OnNotify(BlockObjectDropped& object) override;
 private:
+	void HandleNetUpdate(NetModificationReport& report);
 	GraphicsScene* m_scene;
 	std::shared_ptr<SceneModelManager> m_sceneModel;
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;

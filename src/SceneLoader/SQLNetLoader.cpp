@@ -28,7 +28,7 @@ std::optional<node::model::NetNodeModel> node::loader::SQLNetLoader::GetNetNode(
 
 bool node::loader::SQLNetLoader::SetNetNodeSegmentAt(
 	const node::model::id_int node_id,
-	const node::model::NetNodeModel::ConnectedSegmentSide side,
+	const node::model::ConnectedSegmentSide side,
 	const node::model::id_int segment_id) 
 {
 	UNUSED_PARAM(node_id);

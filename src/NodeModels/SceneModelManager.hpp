@@ -17,6 +17,25 @@ struct LeafNodeMovedReport
 	model::Point new_position;
 };
 
+struct NetModificationReport
+{
+	struct UpdateNodeReport
+	{
+		model::NetNodeId node_id;
+		model::Point new_position;
+	};
+
+	node::model::NetId net_id;
+	std::vector<model::SocketUniqueId> removed_connections;
+	std::vector<model::NetSegmentId> removed_segments;
+	std::vector<model::NetNodeId> removed_nodes;
+	std::vector<std::reference_wrapper<model::NetNodeModel>> added_nodes;
+	std::vector<UpdateNodeReport> update_nodes;
+	std::vector<std::reference_wrapper<model::NetSegmentModel>> update_segments;
+	std::vector<std::reference_wrapper<model::NetSegmentModel>> added_segments;
+	std::vector<std::reference_wrapper<model::SocketNodeConnection>> added_connections;
+};
+
 enum class SceneModificationType
 {
 	BlockAdded,
@@ -24,14 +43,75 @@ enum class SceneModificationType
 	BlockMoved,
 	NetAdded,
 	LeafNodeMoved,
+	NetUpdated,
 };
 
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport>;
+	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport, std::reference_wrapper<NetModificationReport>>;
 	SceneModificationType type;
 	data_t data;
+};
+
+
+struct NetModificationRequest
+{
+	enum class NodeIdType
+	{
+		existing_id,
+		new_id,
+	};
+
+	struct AddNodeRequest
+	{
+		model::Point position;
+	};
+
+	struct AddSegmentRequest
+	{
+		NodeIdType node1_type;
+		NodeIdType node2_type;
+		model::ConnectedSegmentSide node1_side;
+		model::ConnectedSegmentSide node2_side;
+		model::NetSegmentOrientation orientation;
+		model::NetNodeId node1;
+		model::NetNodeId node2;
+	};
+
+	struct UpdateNodeRequest
+	{
+		model::NetNodeId node_id;
+		model::Point new_position;
+	};
+
+	struct UpdateSegmentRequest
+	{
+		NodeIdType node1_type;
+		NodeIdType node2_type;
+		model::ConnectedSegmentSide node1_side;
+		model::ConnectedSegmentSide node2_side;
+		model::NetSegmentId segment_id;
+		model::NetNodeId node1;
+		model::NetNodeId node2;
+	};
+
+	struct SocketConnectionRequest
+	{
+		model::SocketUniqueId socket;
+		NodeIdType node_type;
+		model::NetNodeId node;
+	};
+
+	node::model::NetId net_id;
+	std::vector<model::SocketUniqueId> removed_connections;
+	std::vector<model::NetSegmentId> removed_segments;
+	std::vector<model::NetNodeId> removed_nodes;
+	std::vector<AddNodeRequest> added_nodes;
+	std::vector<UpdateNodeRequest> update_nodes;
+	std::vector<UpdateSegmentRequest> update_segments;
+	std::vector<AddSegmentRequest> added_segments;
+	std::vector<SocketConnectionRequest> added_connections;
 };
 
 class SceneModelManager : public MultiPublisher<SceneModification>
@@ -46,8 +126,7 @@ public:
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 
 	void AddNewNet(model::NetModel&& net);
-	void MoveLeafNetNode(model::NetNodeUniqueId main_node_id, model::NetNodeUniqueId second_node_id, model::Point new_position,
-		std::optional<model::SocketUniqueId> connected_socket);
+	void UpdateNet(NetModificationRequest& update_request);
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 };

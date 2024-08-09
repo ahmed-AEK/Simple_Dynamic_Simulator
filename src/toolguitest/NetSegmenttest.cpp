@@ -9,16 +9,16 @@ TEST(testNetSegment, testCreate)
 {
     node::NetNode node1{ {0,0},  nullptr };
     node::NetNode node2{ {0,1},  nullptr };
-    node::NetSegment segment1 = node::NetSegment(node::NetOrientation::Vertical, &node1, &node2);
+    node::NetSegment segment1 = node::NetSegment(model::NetSegmentOrientation::vertical, &node1, &node2);
     
     node::NetNode node3{ {0,0}, nullptr };
     node::NetNode node4{ {1,0}, nullptr };
-    node::NetSegment segment2 = node::NetSegment(node::NetOrientation::Horizontal, &node3, &node4);
+    node::NetSegment segment2 = node::NetSegment(model::NetSegmentOrientation::horizontal, &node3, &node4);
 
-    node::NetSegment segment3 = node::NetSegment(node::NetOrientation::Vertical, nullptr, nullptr);
+    node::NetSegment segment3 = node::NetSegment(model::NetSegmentOrientation::vertical, nullptr, nullptr);
 
-    EXPECT_EQ(segment1.GetOrientation(), node::NetOrientation::Vertical);
-    EXPECT_EQ(segment2.GetOrientation(), node::NetOrientation::Horizontal);
+    EXPECT_EQ(segment1.GetOrientation(), model::NetSegmentOrientation::vertical);
+    EXPECT_EQ(segment2.GetOrientation(), model::NetSegmentOrientation::horizontal);
     EXPECT_EQ(segment1.getStartNode(), &node1);
     EXPECT_EQ(segment1.getEndNode(), &node2);
     EXPECT_EQ(segment3.getStartNode(), nullptr);
@@ -28,21 +28,21 @@ TEST(testNetSegment, testCreate)
     EXPECT_EQ(segment1.GetSpaceRect(), rect1);
     EXPECT_EQ(segment2.GetSpaceRect(), rect2);
 
-    EXPECT_EQ(node1.getSegment(node::NetSide::South), &segment1);
-    EXPECT_EQ(node1.getSegment(node::NetSide::North), nullptr);
-    EXPECT_EQ(node2.getSegment(node::NetSide::North), &segment1);
-    EXPECT_EQ(node2.getSegment(node::NetSide::South), nullptr);
-    EXPECT_EQ(node3.getSegment(node::NetSide::East), &segment2);
-    EXPECT_EQ(node3.getSegment(node::NetSide::West), nullptr);
-    EXPECT_EQ(node4.getSegment(node::NetSide::West), &segment2);
-    EXPECT_EQ(node4.getSegment(node::NetSide::East), nullptr);
+    EXPECT_EQ(node1.getSegment(model::ConnectedSegmentSide::south), &segment1);
+    EXPECT_EQ(node1.getSegment(model::ConnectedSegmentSide::north), nullptr);
+    EXPECT_EQ(node2.getSegment(model::ConnectedSegmentSide::north), &segment1);
+    EXPECT_EQ(node2.getSegment(model::ConnectedSegmentSide::south), nullptr);
+    EXPECT_EQ(node3.getSegment(model::ConnectedSegmentSide::east), &segment2);
+    EXPECT_EQ(node3.getSegment(model::ConnectedSegmentSide::west), nullptr);
+    EXPECT_EQ(node4.getSegment(model::ConnectedSegmentSide::west), &segment2);
+    EXPECT_EQ(node4.getSegment(model::ConnectedSegmentSide::east), nullptr);
 }
 
 TEST(testNetSegment, testMoveNodeInLine)
 {
     node::NetNode node1{ {0,0},  nullptr };
     node::NetNode node2{ {0,1},  nullptr };
-    node::NetSegment segment1 = node::NetSegment(node::NetOrientation::Vertical, &node1, &node2);
+    node::NetSegment segment1 = node::NetSegment(model::NetSegmentOrientation::vertical, &node1, &node2);
 
     model::Rect rect1 = segment1.GetSpaceRect();
     node1.setCenter({ 2,2 });

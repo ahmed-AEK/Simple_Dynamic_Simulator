@@ -6,8 +6,8 @@
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
 
-node::NetSegment::NetSegment(const NetOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
-	: GraphicsObject({0,0,0,0}, ObjectType::net, scene),
+node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
+	: GraphicsObject({0,0,0,0}, ObjectType::netSegment, scene),
 	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation)
 {
 	b_draggable = false;
@@ -27,7 +27,7 @@ void node::NetSegment::Draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &ScreenRect);
 }
 
-void node::NetSegment::Connect(NetNode* start, NetNode* end, const NetOrientation& orientation)
+void node::NetSegment::Connect(NetNode* start, NetNode* end, const model::NetSegmentOrientation& orientation)
 {
 	assert(start);
 	assert(end);
@@ -35,33 +35,35 @@ void node::NetSegment::Connect(NetNode* start, NetNode* end, const NetOrientatio
 	m_endNode = end;
 	switch(orientation)
 	{
-	case NetOrientation::Vertical:
+		using enum model::NetSegmentOrientation;
+		using enum model::ConnectedSegmentSide;
+	case vertical:
 	{
-		m_orientation = NetOrientation::Vertical;
+		m_orientation = vertical;
 		if (start->getCenter().y > end->getCenter().y)
 		{
-			start->setSegment(this, NetSide::North);
-			end->setSegment(this, NetSide::South);
+			start->setSegment(this, north);
+			end->setSegment(this, south);
 		}
 		else
 		{
-			start->setSegment(this, NetSide::South);
-			end->setSegment(this, NetSide::North);
+			start->setSegment(this, south);
+			end->setSegment(this, north);
 		}
 		break;
 	}
-	case NetOrientation::Horizontal:
+	case horizontal:
 	{
-		m_orientation = NetOrientation::Horizontal;
+		m_orientation = horizontal;
 		if (start->getCenter().x > end->getCenter().x)
 		{
-			start->setSegment(this, NetSide::West);
-			end->setSegment(this, NetSide::East);
+			start->setSegment(this, west);
+			end->setSegment(this, east);
 		}
 		else
 		{
-			start->setSegment(this, NetSide::East);
-			end->setSegment(this, NetSide::West);
+			start->setSegment(this, east);
+			end->setSegment(this, west);
 		}
 		break;
 	}
@@ -71,45 +73,15 @@ void node::NetSegment::Connect(NetNode* start, NetNode* end, const NetOrientatio
 
 void node::NetSegment::Disconnect()
 {
-	auto remove_self = [&](NetNode*& node)
-	{
-	if (node)
-	{
-		if (NetOrientation::Vertical == m_orientation)
-		{
-			if (node->getSegment(NetSide::North) == this)
-			{
-				node->setSegment(nullptr, NetSide::North);
-			}
-			else if (node->getSegment(NetSide::South) == this)
-			{
-				node->setSegment(nullptr, NetSide::South);
-			}
-		}
-		else
-		{
-			if (node->getSegment(NetSide::East) == this)
-			{
-				node->setSegment(nullptr, NetSide::East);
-			}
-			else if (node->getSegment(NetSide::West) == this)
-			{
-				node->setSegment(nullptr, NetSide::West);
-			}
-		}
-		node = nullptr;
-	}
-	};
-	
-	remove_self(m_startNode);
-	remove_self(m_endNode);
+	m_startNode->ClearSegment(this);
+	m_endNode->ClearSegment(this);
 }
 
 void node::NetSegment::CalcRect()
 {
 	if (m_startNode && m_endNode)
 	{
-		SetSpaceRect(NetOrientation::Horizontal == m_orientation ?
+		SetSpaceRect(model::NetSegmentOrientation::horizontal == m_orientation ?
 			model::Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x),
 			std::min(m_startNode->getCenter().y, m_endNode->getCenter().y) - c_width/2,
 			std::abs(m_endNode->getCenter().x - m_startNode->getCenter().x),c_width} :
@@ -136,10 +108,13 @@ void node::NetNode::Draw(SDL_Renderer* renderer)
 
 void node::NetNode::UpdateConnectedSegments()
 {
-	if (m_northSegment) { m_northSegment->CalcRect(); }
-	if (m_southSegment) { m_southSegment->CalcRect(); }
-	if (m_eastSegment) { m_eastSegment->CalcRect(); }
-	if (m_westSegment) { m_westSegment->CalcRect(); }
+	for (const auto& segment : m_connected_segments)
+	{
+		if (segment)
+		{
+			segment->CalcRect();
+		}
+	}
 }
 void node::NetNode::SetConnectedSocket(BlockSocketObject* socket)
 {
@@ -167,27 +142,38 @@ node::BlockSocketObject* node::NetNode::GetConnectedSocket() noexcept
 uint8_t node::NetNode::GetConnectedSegmentsCount()
 {
 	uint8_t ret_val = 0;
-	ret_val += m_northSegment != 0;
-	ret_val += m_southSegment != 0;
-	ret_val += m_eastSegment != 0;
-	ret_val += m_westSegment != 0;
+	for (const auto& segment : m_connected_segments)
+	{
+		if (segment)
+		{
+			ret_val += 1;
+		}
+	}
 	return ret_val;
 }
 
-void node::NetNode::ClearSegment(const NetSegment* segment)
+void node::NetNode::ClearSegment(const NetSegment* target_segment)
 {
-
-	auto clearSegment = [&](NetSegment*& target_segment)
+	for (auto&& segment : m_connected_segments)
 	{
-		if (target_segment == segment)
+		if (segment == target_segment)
 		{
-			target_segment = nullptr;
+			segment = nullptr;
+			break;
 		}
-	};
-	clearSegment(m_northSegment);
-	clearSegment(m_southSegment);
-	clearSegment(m_westSegment);
-	clearSegment(m_eastSegment);
+	}
+}
+
+std::optional<node::model::ConnectedSegmentSide> node::NetNode::GetSegmentSide(NetSegment& segment) const
+{
+	for (size_t i = 0; i < 4; i++)
+	{
+		if (&segment == m_connected_segments[i])
+		{
+			return static_cast<node::model::ConnectedSegmentSide>(i);
+		}
+	}
+	return std::nullopt;
 }
 
 void node::NetNode::OnSetSpaceRect(const model::Rect& rect)
@@ -195,31 +181,10 @@ void node::NetNode::OnSetSpaceRect(const model::Rect& rect)
 	m_centerPoint = { rect.x + rect.w/2, rect.y + rect.h/2 };
 }
 
-void node::NetNode::setSegment(NetSegment* segment, NetSide side)
+void node::NetNode::setSegment(NetSegment* segment, model::ConnectedSegmentSide side)
 {
-	switch (side)
-	{
-	case NetSide::North:
-	{
-		m_northSegment = segment;
-		break;
-	}
-	case NetSide::South:
-	{
-		m_southSegment = segment;
-		break;
-	}
-	case NetSide::East:
-	{
-		m_eastSegment = segment;
-		break;
-	}
-	case NetSide::West:
-	{
-		m_westSegment = segment;
-		break;
-	}
-	}
+	assert(static_cast<size_t>(side) < 4);
+	m_connected_segments[static_cast<size_t>(side)] = segment;
 }
 
 

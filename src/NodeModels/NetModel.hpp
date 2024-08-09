@@ -11,18 +11,10 @@
 namespace node::model
 {
 
-
-
 class NetNodeModel
 {
 public:
-	enum class ConnectedSegmentSide
-	{
-		north=0,
-		south=1,
-		west=2,
-		east=3,
-	};
+
 
 	explicit NetNodeModel(const NetNodeId& id, const Point& position = {})
 		:m_Id{ id }, m_position{ position } {}
@@ -40,12 +32,6 @@ private:
 
 struct NetSegmentModel
 {
-	enum class NetSegmentOrientation
-	{
-		horizontal = 0,
-		vertical = 1,
-	};
-
 	const NetSegmentId& GetId() const noexcept { return m_Id; }
 	NetSegmentModel(NetSegmentId id, NetNodeId first_node, NetNodeId second_node, NetSegmentOrientation orientation)
 		:m_Id{ id }, m_firstNodeId{ first_node }, m_secondNodeId{ second_node }, m_orientation{ orientation } {}

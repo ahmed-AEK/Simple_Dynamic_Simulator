@@ -8,6 +8,20 @@ namespace node::model
 
 using id_int = int32_t;
 
+enum class ConnectedSegmentSide
+{
+	north = 0,
+	south = 1,
+	west = 2,
+	east = 3,
+};
+
+enum class NetSegmentOrientation
+{
+	horizontal = 0,
+	vertical = 1,
+};
+
 struct BlockId
 {
 	explicit BlockId(id_int value) : value{ value } {}

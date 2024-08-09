@@ -65,10 +65,10 @@ void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
 		assert(m_connected_node->GetConnectedSegmentsCount() == 1);
 
 		// set connected node position
-		NetSegment* next_segment = m_connected_node->getSegment(NetSide::East);
+		NetSegment* next_segment = m_connected_node->getSegment(model::ConnectedSegmentSide::east);
 		if (!next_segment)
 		{
-			next_segment = m_connected_node->getSegment(NetSide::West);
+			next_segment = m_connected_node->getSegment(model::ConnectedSegmentSide::west);
 		}
 
 		NetNode* next_node = next_segment->getStartNode();

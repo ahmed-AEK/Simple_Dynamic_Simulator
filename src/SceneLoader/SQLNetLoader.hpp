@@ -23,7 +23,7 @@ public:
 		const node::model::id_int node_id) override;
 	bool SetNetNodeSegmentAt(
 		const node::model::id_int node_id,
-		const node::model::NetNodeModel::ConnectedSegmentSide side,
+		const node::model::ConnectedSegmentSide side,
 		const node::model::id_int segment_id) override;
 	node::model::id_int GetNextNetNodeId() override;
 

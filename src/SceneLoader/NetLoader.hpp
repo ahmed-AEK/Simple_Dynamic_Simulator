@@ -19,7 +19,7 @@ public:
 		const node::model::id_int node_id) = 0;
 	virtual bool SetNetNodeSegmentAt(
 		const node::model::id_int node_id,
-		const node::model::NetNodeModel::ConnectedSegmentSide side, 
+		const node::model::ConnectedSegmentSide side, 
 		const node::model::id_int segment_id) = 0;
 	virtual node::model::id_int GetNextNetNodeId() = 0;
 

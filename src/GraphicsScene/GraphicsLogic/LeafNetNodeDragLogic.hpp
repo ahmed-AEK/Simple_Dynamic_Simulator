@@ -24,6 +24,7 @@ protected:
 	void OnCancel() override;
 private:
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
+	void CleanUp();
 
 	model::Point m_first_node_start_point;
 	model::Point m_second_node_start_point;

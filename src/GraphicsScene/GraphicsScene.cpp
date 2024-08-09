@@ -62,7 +62,7 @@ void node::GraphicsScene::Draw(SDL_Renderer *renderer)
     {
         auto&& object = *it;
         SDL_Rect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
-        if (SDL_HasIntersection(&screen_rect, &obj_rect))
+        if (object.m_ptr->IsVisible() && SDL_HasIntersection(&screen_rect, &obj_rect))
         {
             object.m_ptr->Draw(renderer);
         }
@@ -160,6 +160,7 @@ void node::GraphicsScene::OnDropExit(const DragDropObject& object)
 
 void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
 {
+    m_current_mouse_position = p;
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
     {
@@ -339,6 +340,10 @@ void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic>
         m_graphicsLogic->Cancel();
     }
     m_graphicsLogic = std::move(logic);
+    if (m_graphicsLogic)
+    {
+        m_graphicsLogic->Start(m_spaceScreenTransformer.ScreenToSpacePoint(m_current_mouse_position));
+    }
 }
 
 void  node::GraphicsScene::CancelCurrentLogic()
@@ -355,10 +360,9 @@ void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
     }
     m_tool = std::move(ptr);
     m_tool->OnStart();
-    if (m_current_mouse_position)
-    {
-        m_tool->OnMouseEnter(m_spaceScreenTransformer.ScreenToSpacePoint(*m_current_mouse_position));
-    }
+
+    m_tool->OnMouseEnter(m_spaceScreenTransformer.ScreenToSpacePoint(m_current_mouse_position));
+    
 }
 
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)

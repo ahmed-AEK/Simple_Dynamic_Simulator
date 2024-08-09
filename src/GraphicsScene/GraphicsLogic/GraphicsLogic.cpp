@@ -25,6 +25,11 @@ void node::logic::GraphicsLogic::MouseIn()
     this->OnMouseIn();
 }
 
+void node::logic::GraphicsLogic::Start(const model::Point& current_mouse_point)
+{
+    OnStart(current_mouse_point);
+}
+
 void node::logic::GraphicsLogic::MouseMove(const model::Point& current_mouse_point)
 {
     this->OnMouseMove(current_mouse_point);
@@ -41,6 +46,11 @@ void node::logic::GraphicsLogic::Cancel()
 MI::ClickEvent node::logic::GraphicsLogic::LMBUp(const model::Point& current_mouse_point)
 {
     return this->OnLMBUp(current_mouse_point);
+}
+
+void node::logic::GraphicsLogic::OnStart(const model::Point& current_mouse_point)
+{
+    UNUSED_PARAM(current_mouse_point);
 }
 
 void node::logic::GraphicsLogic::OnMouseOut()
