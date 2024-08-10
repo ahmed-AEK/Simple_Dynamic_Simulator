@@ -37,7 +37,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
             auto* socket = static_cast<BlockSocketObject*>(current_hover);
             if (!socket->GetConnectedNode())
             {
-                auto new_logic = logic::NewNetLogic::Create(socket, GetScene(), GetObjectsManager());
+                auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, GetScene(), GetObjectsManager());
                 if (new_logic)
                 {
                     GetScene()->SetGraphicsLogic(std::move(new_logic));

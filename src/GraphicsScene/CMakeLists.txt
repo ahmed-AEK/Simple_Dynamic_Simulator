@@ -11,8 +11,9 @@ GraphicsScene_exports.h
 IGraphicsScene.hpp
 
 tools/GraphicsTool.hpp
-tools/ArrowTool.hpp tools/ArrowTool.cpp
-tools/DeleteTool.hpp tools/DeleteTool.cpp
+tools/ArrowTool.hpp    tools/ArrowTool.cpp
+tools/DeleteTool.hpp   tools/DeleteTool.cpp
+tools/NetTool.hpp      tools/NetTool.cpp
 
 GraphicsLogic/GraphicsLogic.cpp 	    GraphicsLogic/GraphicsLogic.hpp
 GraphicsLogic/NewNetLogic.cpp 	    GraphicsLogic/NewNetLogic.hpp

@@ -24,6 +24,13 @@ namespace node
             {
                 switch (e.key.keysym.sym)
                 {
+                case SDLK_RCTRL:
+                case SDLK_LCTRL:
+                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetNodeScene())
+                    {
+                        GetScene()->GetToolsManager()->SetTemporaryTool("N");
+                    }
+                    return true;
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
                     if (e.key.repeat == 0 && GetScene() && GetScene()->GetNodeScene())
@@ -48,6 +55,13 @@ namespace node
             {
                 switch (e.key.keysym.sym)
                 {
+                case SDLK_RCTRL:
+                case SDLK_LCTRL:
+                    if (GetScene() && GetScene()->GetNodeScene())
+                    {
+                        GetScene()->GetToolsManager()->RemoveTemporaryTool("N");
+                    }
+                    return true;
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
                     if (GetScene() && GetScene()->GetNodeScene())

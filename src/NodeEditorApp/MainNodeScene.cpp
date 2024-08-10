@@ -11,6 +11,7 @@
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/tools/ArrowTool.hpp"
 #include "GraphicsScene/tools/DeleteTool.hpp"
+#include "GraphicsScene/tools/NetTool.hpp"
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 
@@ -66,8 +67,10 @@ void node::MainNodeScene::InitializeTools()
     m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
     m_toolsManager->AddTool("A", std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
+    m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "S", m_toolsManager));
+    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");

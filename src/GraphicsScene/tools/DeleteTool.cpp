@@ -37,15 +37,3 @@ MI::ClickEvent node::DeleteTool::OnLMBUp(const model::Point& p)
 	UNUSED_PARAM(p);
 	return MI::ClickEvent::NONE;
 }
-
-void node::DeleteTool::OnMouseMove(const model::Point& p)
-{
-	if (m_focused_object)
-	{
-		const auto* obj = GetScene()->GetObjectAt(p);
-		if (m_focused_object != obj)
-		{
-			m_focused_object = nullptr;
-		}
-	}
-}

@@ -7,10 +7,9 @@
 #include <array>
 #include <algorithm>
 
-std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::Create(BlockSocketObject* socket, 
+std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSocket(BlockSocketObject& socket, 
 	GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
-	assert(socket);
 	assert(scene);
 	std::array<NetNode*, 4> nodes{};
 	std::array<NetSegment*, 3> segments{};
@@ -32,7 +31,7 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::Create(Block
 			layer++;
 		}
 		assert(manager);
-		return std::make_unique<NewNetLogic>(socket, nodes, segments,scene, manager);
+		return std::make_unique<NewNetLogic>(SocketAnchor{socket.GetFocusHandlePtr(), socket.GetCenterInSpace()}, nodes, segments, scene, manager);
 	}
 	catch (...)
 	{
@@ -55,9 +54,55 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::Create(Block
 	return nullptr;
 }
 
-node::logic::NewNetLogic::NewNetLogic(BlockSocketObject* socket, std::array<NetNode*, 4> nodes, 
+std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSegment(NetSegment& base_segment, const model::Point& start_point, GraphicsScene* scene, GraphicsObjectsManager* manager)
+{
+	assert(scene);
+	std::array<NetNode*, 4> nodes{};
+	std::array<NetSegment*, 3> segments{};
+	try
+	{
+		int layer = 1000;
+		for (auto&& segment : segments)
+		{
+			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr, scene);
+			segment = new_segmet.get();
+			scene->AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer + layer);
+			layer++;
+		}
+		for (auto&& node : nodes)
+		{
+			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 }, scene);
+			node = new_node.get();
+			scene->AddObject(std::move(new_node), GraphicsScene::NetNodeLayer + layer);
+			layer++;
+		}
+		assert(manager);
+		return std::make_unique<NewNetLogic>(SegmentAnchor{ base_segment.GetFocusHandlePtr(), {base_segment.getStartNode()->getCenter().x, start_point.y}}, nodes, segments, scene, manager);
+	}
+	catch (...)
+	{
+		// if we failed to create the object, delete everything
+		for (const auto& node : nodes)
+		{
+			if (node)
+			{
+				scene->PopObject(node);
+			}
+		}
+		for (const auto& segment : segments)
+		{
+			if (segment)
+			{
+				scene->PopObject(segment);
+			}
+		}
+	}
+	return nullptr;
+}
+
+node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*, 4> nodes,
 	std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager }, m_socket{socket->GetFocusHandlePtr()}
+	:GraphicsLogic{scene, manager }, m_start_anchor{std::move(start_anchor)}
 {
 	
 	std::transform(nodes.begin(), nodes.end(), m_nodes.begin(), 
@@ -74,7 +119,7 @@ node::logic::NewNetLogic::NewNetLogic(BlockSocketObject* socket, std::array<NetN
 		});
 	for (auto&& node : nodes)
 	{
-		node->setCenter(socket->GetCenterInSpace());
+		node->setCenter(std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor));
 	}
 	segments[0]->Connect(nodes[0], nodes[1], model::NetSegmentOrientation::horizontal);
 	segments[1]->Connect(nodes[1], nodes[2], model::NetSegmentOrientation::vertical);
@@ -93,6 +138,17 @@ static node::NetSegment* AsSegment(node::HandlePtr<node::GraphicsObject>& obj)
 	return static_cast<node::NetSegment*>(obj.GetObjectPtr());
 }
 
+struct AnchorAlive
+{
+	bool operator()(const node::logic::NewNetLogic::SocketAnchor& socket)
+	{
+		return socket.socket.isAlive();
+	}
+	bool operator()(const node::logic::NewNetLogic::SegmentAnchor& segment)
+	{
+		return segment.segment.isAlive();
+	}
+};
 void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
 	BlockSocketObject* end_socket = GetSocketAt(current_mouse_point);
@@ -103,13 +159,13 @@ void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_poi
 		end_point = end_socket->GetCenterInSpace();
 	}
 
-	if (!m_socket.isAlive())
+	if (!std::visit(AnchorAlive{}, m_start_anchor))
 	{
 		GetScene()->SetGraphicsLogic(nullptr);
 		return;
 	}
 
-	model::Point start = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr())->GetCenterInSpace();
+	model::Point start = std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor);
 	model::node_int midpoint_x = (end_point.x + start.x) / 2;
 	AsNode(m_nodes[1])->setCenter({ midpoint_x, start.y });
 	AsNode(m_nodes[2])->setCenter({ midpoint_x, end_point.y });
@@ -122,7 +178,7 @@ void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_poi
 MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
-	if (!m_socket.isAlive())
+	if (!std::visit(AnchorAlive{}, m_start_anchor))
 	{
 		DeleteAllOwnedObjects();
 		return MI::ClickEvent::NONE;
@@ -238,19 +294,58 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 			});
 	}
 
+	BlockSocketObject* start_socket = nullptr;
+	if (std::holds_alternative<SocketAnchor>(m_start_anchor))
+	{
+		start_socket = static_cast<BlockSocketObject*>(std::get<SocketAnchor>(m_start_anchor).socket.GetObjectPtr());
+		if (start_socket)
+		{
+			assert(start_socket->GetId());
+			assert(start_socket->GetParentBlock());
+			assert(start_socket->GetParentBlock()->GetModelId());
 
-	auto* socket = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr());
+			request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+				model::SocketUniqueId{*(start_socket->GetId()), *(start_socket->GetParentBlock()->GetModelId())},
+				NetModificationRequest::NodeIdType::new_id,
+				NetNodeId{0}
+				});
+		}
+	}
+	else if (std::holds_alternative<SegmentAnchor>(m_start_anchor))
+	{
+		auto* start_segment = static_cast<NetSegment*>(std::get<SegmentAnchor>(m_start_anchor).segment.GetObjectPtr());
+		if (start_segment)
+		{
+			auto* start_node = start_segment->getStartNode();
+			auto* end_node = start_segment->getEndNode();
+			if (start_node->getCenter().y > end_node->getCenter().y)
+			{
+				std::swap(start_node, end_node); // make sure start is on top
+			}
+			assert(start_node->GetId());
+			assert(end_node->GetId());
+			request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
+				NetModificationRequest::NodeIdType::existing_id,
+				NetModificationRequest::NodeIdType::new_id,
+				model::ConnectedSegmentSide::south,
+				model::ConnectedSegmentSide::north,
+				*start_segment->GetId(),
+				*start_node->GetId(),
+				NetNodeId{0}
+				});
+			request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+				NetModificationRequest::NodeIdType::new_id,
+				NetModificationRequest::NodeIdType::existing_id,
+				model::ConnectedSegmentSide::south,
+				model::ConnectedSegmentSide::north,
+				model::NetSegmentOrientation::vertical,
+				model::NetNodeId{0},
+				*end_node->GetId()
+				});
+		}
+	}
 
-	assert(socket->GetId());
-	assert(socket->GetParentBlock());
-	assert(socket->GetParentBlock()->GetModelId());
-
-	request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
-		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())},
-		NetModificationRequest::NodeIdType::new_id,
-		NetNodeId{0}
-		});
-	if (end_socket)
+	if (end_socket && end_socket != start_socket)
 	{
 		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 			model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())},
@@ -279,7 +374,12 @@ node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Poin
 				}
 				return false;
 			});
-		if (it != sockets.end() && m_socket.GetObjectPtr() != it->get())
+		const GraphicsObject* owned_segment = nullptr;
+		if (std::holds_alternative<SocketAnchor>(m_start_anchor))
+		{
+			owned_segment = std::get<SocketAnchor>(m_start_anchor).socket.GetObjectPtr();
+		}
+		if (it != sockets.end() && owned_segment != it->get())
 		{
 			end_socket = it->get();
 			break;
