@@ -22,6 +22,8 @@ GraphicsLogic/ScreenDragLogic.cpp       GraphicsLogic/ScreenDragLogic.hpp
 GraphicsLogic/BlockDragLogic.cpp        GraphicsLogic/BlockDragLogic.hpp
 GraphicsLogic/LeafNetNodeDragLogic.cpp  GraphicsLogic/LeafNetNodeDragLogic.hpp
 GraphicsLogic/VSegmentDragLogic.cpp     GraphicsLogic/VSegmentDragLogic.hpp
+GraphicsLogic/SegmentDeleteLogic.cpp    GraphicsLogic/SegmentDeleteLogic.hpp
+GraphicsLogic/BlockDeleteLogic.cpp      GraphicsLogic/BlockDeleteLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp

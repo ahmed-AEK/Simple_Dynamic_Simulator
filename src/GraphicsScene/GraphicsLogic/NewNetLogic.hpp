@@ -11,6 +11,7 @@ class NetNode;
 class NetSegment;
 class GraphicsScene;
 class BlockSocketObject;
+struct NetModificationRequest;
 namespace model
 {
 	class NetModel;
@@ -33,7 +34,7 @@ protected:
 	void OnCancel() override;
 
 private:
-	model::NetModel PopulateResultNet(const model::Point& current_mouse_point);
+	NetModificationRequest PopulateResultNet(const model::Point& current_mouse_point);
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
 	void DeleteAllOwnedObjects();
 	std::array<HandlePtr<GraphicsObject>, 4> m_nodes;

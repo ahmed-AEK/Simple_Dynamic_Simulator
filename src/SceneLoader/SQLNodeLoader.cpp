@@ -89,13 +89,11 @@ bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel&
 	querySocket.bind(5, static_cast<int>(socket.GetType()));
 	if (auto val = socket.GetConnectedNetNode(); val)
 	{
-		querySocket.bind(6, val->node_id.value);
-		querySocket.bind(7, val->net_id.value);
+		querySocket.bind(6, val->value);
 	}
 	else
 	{
 		querySocket.bind(6);
-		querySocket.bind(7);
 	}
 	querySocket.exec();
 	return true;

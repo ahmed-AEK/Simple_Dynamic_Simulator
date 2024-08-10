@@ -23,9 +23,9 @@ namespace node
 		AddedNode CreateRequest(NetModificationRequest& request, const model::Point& last_point) override
 		{
 			assert(GetBaseNode()->GetId());
-			request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ GetBaseNode()->GetId()->node_id,
+			request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *GetBaseNode()->GetId(),
 				{ last_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y } });
-			return { NetModificationRequest::NodeIdType::existing_id, GetBaseNode()->GetId()->node_id, m_segment_side};
+			return { NetModificationRequest::NodeIdType::existing_id, *GetBaseNode()->GetId(), m_segment_side};
 		}
 		virtual void OnCancel()
 		{
@@ -132,12 +132,12 @@ void node::logic::VSegmentDragLogic::OnCancel()
 
 MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
-	NetModificationRequest request{m_first_node_handler->GetBaseNode()->GetId()->net_id};
+	NetModificationRequest request;
 	auto node1 = m_first_node_handler->CreateRequest(request, current_mouse_point);
 	auto node2 = m_second_node_handler->CreateRequest(request, current_mouse_point);	
 	request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
 		node1.node_type, node2.node_type, node1.connected_side, node2.connected_side,
-		static_cast<NetSegment*>(m_base_segment.get())->GetId()->segment_id,
+		*static_cast<NetSegment*>(m_base_segment.get())->GetId(),
 		node1.node_id, node2.node_id }
 		);
 	CleanUp();

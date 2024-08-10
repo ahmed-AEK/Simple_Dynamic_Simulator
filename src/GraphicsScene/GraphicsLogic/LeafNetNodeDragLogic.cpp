@@ -93,11 +93,11 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 	}
 
 
-	NetModificationRequest request{ AsNode(m_connected_node)->GetId()->net_id };
+	NetModificationRequest request;
 
 	// request node position change
-	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ AsNode(m_dragged_node)->GetId()->node_id, new_point });
-	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ AsNode(m_connected_node)->GetId()->node_id, {m_second_node_start_point.x,new_point.y }});
+	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *AsNode(m_dragged_node)->GetId(), new_point });
+	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *AsNode(m_connected_node)->GetId(), {m_second_node_start_point.x,new_point.y }});
 	
 
 	// remove old connection
@@ -113,7 +113,7 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 	if (connected_socket_id && old_connected_socket != connectd_socket)
 	{
 		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
-			*connected_socket_id, NetModificationRequest::NodeIdType::existing_id, AsNode(m_dragged_node)->GetId()->node_id
+			*connected_socket_id, NetModificationRequest::NodeIdType::existing_id, *AsNode(m_dragged_node)->GetId()
 			});
 	}
 	CleanUp();

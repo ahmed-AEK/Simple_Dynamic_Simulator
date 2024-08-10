@@ -1,7 +1,10 @@
 #include "DeleteTool.hpp"
 #include "GraphicsScene.hpp"
 #include "BlockObject.hpp"
+#include "NetObject.hpp"
 #include "GraphicsObjectsManager.hpp"
+#include "GraphicsLogic/BlockDeleteLogic.hpp"
+#include "GraphicsLogic/SegmentDeleteLogic.hpp"
 
 MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 {
@@ -11,26 +14,27 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 	{
 		return MI::ClickEvent::NONE;
 	}
-	m_focused_object = obj;
-	GetScene()->AddSelection(obj->GetMIHandlePtr());
-	return MI::ClickEvent::NONE;
+	switch (obj->GetObjectType())
+	{
+	case ObjectType::block:
+	{
+		GetScene()->SetGraphicsLogic(std::make_unique<logic::BlockDeleteLogic>(*static_cast<BlockObject*>(obj), GetScene(), GetObjectsManager()));
+		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		break;
+	}
+	case ObjectType::netSegment:
+	{
+		GetScene()->SetGraphicsLogic(std::make_unique<logic::SegmentDeleteLogic>(*static_cast<NetSegment*>(obj), GetScene(), GetObjectsManager()));
+		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		break;
+	}
+	}
+	return MI::ClickEvent::CLICKED;
 }
 
 MI::ClickEvent node::DeleteTool::OnLMBUp(const model::Point& p)
 {
-	auto* obj = GetScene()->GetObjectAt(p);
-	if (!obj || obj != m_focused_object)
-	{
-		m_focused_object = nullptr;
-		return MI::ClickEvent::NONE;
-	}
-
-	if (obj->GetObjectType() == ObjectType::block)
-	{
-		assert(GetObjectsManager());
-		assert(static_cast<BlockObject*>(obj)->GetModelId());
-		GetObjectsManager()->GetSceneModel()->RemoveBlockById(*static_cast<BlockObject*>(obj)->GetModelId());
-	}
+	UNUSED_PARAM(p);
 	return MI::ClickEvent::NONE;
 }
 

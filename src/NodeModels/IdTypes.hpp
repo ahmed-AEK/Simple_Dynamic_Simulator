@@ -64,20 +64,6 @@ struct SocketUniqueId
 	BlockId   block_id;
 };
 
-struct NetSegmentUniqueId
-{
-	bool operator==(const NetSegmentUniqueId&) const = default;
-	NetSegmentId segment_id;
-	NetId        net_id;
-};
-
-struct NetNodeUniqueId
-{
-	bool operator==(const NetNodeUniqueId&) const = default;
-	NetNodeId node_id;
-	NetId     net_id;
-};
-
 }
 
 template <>
@@ -90,19 +76,20 @@ struct std::hash<node::model::BlockId>
 };
 
 template <>
-struct std::hash<node::model::NetSegmentUniqueId>
+struct std::hash<node::model::NetSegmentId>
 {
-	std::size_t operator()(const node::model::NetSegmentUniqueId& k) const
+	std::size_t operator()(const node::model::NetSegmentId& k) const
 	{
-		return k.net_id.value ^ k.segment_id.value;
+		return k.value;
 	}
 };
 
 template <>
-struct std::hash<node::model::NetNodeUniqueId>
+struct std::hash<node::model::NetNodeId>
 {
-	std::size_t operator()(const node::model::NetNodeUniqueId& k) const
+	std::size_t operator()(const node::model::NetNodeId& k) const
 	{
-		return k.net_id.value ^ k.node_id.value;
+		return k.value;
 	}
 };
+

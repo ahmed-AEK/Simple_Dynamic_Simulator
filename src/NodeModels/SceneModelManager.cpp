@@ -56,34 +56,6 @@ static node::model::NetSegmentId GetMaxSegmentId(std::span<node::model::NetSegme
 	return model::NetSegmentId{ max_id };
 }
 
-void node::SceneModelManager::AddNewNet(model::NetModel&& net)
-{
-	assert(m_scene);
-	model::id_int max_id = 0;
-	for (auto&& it_net : m_scene->GetNets())
-	{
-		max_id = std::max(max_id, it_net.GetId().value);
-	}
-	auto net_id = model::NetId{ max_id + 1 };
-	net.SetId(net_id);
-	m_scene->AddNet(std::move(net));
-
-	auto net_ref = m_scene->GetNetById(net_id);
-	assert(net_ref);
-	model::NetModel&  new_net = *net_ref;
-	for (auto&& conn : new_net.GetSocketConnections())
-	{
-		auto block = m_scene->GetBlockById(conn.socketId.block_id);
-		assert(block);
-		auto sock = block->get().GetSocketById(conn.socketId.socket_id);
-		if (sock)
-		{
-			sock->get().SetConnectedNetNode(model::NetNodeUniqueId{ conn.NodeId, net_id });
-		}
-	}
-	Notify(SceneModification{ SceneModificationType::NetAdded, SceneModification::data_t{new_net} });
-}
-
 void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 {
 	auto block = m_scene->GetBlockById(id);
@@ -95,12 +67,7 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 			auto connected_node = socket.GetConnectedNetNode();
 			if (connected_node)
 			{
-				auto net = m_scene->GetNetById(connected_node->net_id);
-				assert(net);
-				if (net)
-				{
-					net->get().RemoveSocketConnectionForSocket(model::SocketUniqueId{ socket.GetId(), id });
-				}
+				m_scene->RemoveSocketConnectionForSocket({ socket.GetId(), block->get().GetId() });
 			}
 		}
 		m_scene->RemoveBlockById(id);
@@ -108,19 +75,12 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 	}
 }
 
-static void MoveNodeAndConnectedNodes(const node::model::NetNodeUniqueId& node_Id, const node::model::Point& point, 
+static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, const node::model::Point& point, 
 	node::model::NodeSceneModel& model)
 {
 	using namespace node::model;
-	auto net_wrap = model.GetNetById(node_Id.net_id);
-	assert(net_wrap);
-	if (!net_wrap)
-	{
-		return;
-	}
-
-	NetModel& net = net_wrap->get();
-	auto main_node_wrap = net.GetNetNodeById(node_Id.node_id);
+;
+	auto main_node_wrap = model.GetNetNodeById(node_Id);
 	assert(main_node_wrap);
 	if (!main_node_wrap)
 	{
@@ -135,11 +95,11 @@ static void MoveNodeAndConnectedNodes(const node::model::NetNodeUniqueId& node_I
 		std::optional<NetNodeId> other_side{ std::nullopt };
 		if (east_segment)
 		{
-			auto segment_model = net.GetNetSegmentById(*east_segment);
+			auto segment_model = model.GetNetSegmentById(*east_segment);
 			if (segment_model)
 			{
 				other_side = segment_model->get().m_firstNodeId;
-				if (other_side == node_Id.node_id)
+				if (other_side == node_Id)
 				{
 					other_side = segment_model->get().m_secondNodeId;
 				}
@@ -147,7 +107,7 @@ static void MoveNodeAndConnectedNodes(const node::model::NetNodeUniqueId& node_I
 		}
 		if (other_side)
 		{
-			auto other_node = net.GetNetNodeById(*other_side);
+			auto other_node = model.GetNetNodeById(*other_side);
 			if (other_node)
 			{
 				other_node->get().SetPosition({ other_node->get().GetPosition().x, point.y });
@@ -182,14 +142,6 @@ void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const mode
 
 void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 {
-	auto net_ref = m_scene->GetNetById(update_request.net_id);
-	assert(net_ref);
-	if (!net_ref)
-	{
-		return;
-	}
-
-	model::NetModel& net = *net_ref;
 
 	// handle deleted connections
 	for (const auto& deleted_connection : update_request.removed_connections)
@@ -202,19 +154,19 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			assert(socket);
 			socket->get().SetConnectedNetNode(std::nullopt);
 		}
-		net.RemoveSocketConnectionForSocket(deleted_connection);
+		m_scene->RemoveSocketConnectionForSocket(deleted_connection);
 	}
 
 	// handle deleted segments
 	for (auto&& deleted_segment_id : update_request.removed_segments)
 	{
-		auto deleted_segment = net.GetNetSegmentById(deleted_segment_id);
+		auto deleted_segment = m_scene->GetNetSegmentById(deleted_segment_id);
 		assert(deleted_segment);
 		if (deleted_segment)
 		{ 
 			{
 				auto node_id = deleted_segment->get().m_firstNodeId;
-				auto node = net.GetNetNodeById(node_id);
+				auto node = m_scene->GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
 					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
@@ -227,7 +179,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			}
 			{
 				auto node_id = deleted_segment->get().m_secondNodeId;
-				auto node = net.GetNetNodeById(node_id);
+				auto node = m_scene->GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
 					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
@@ -238,45 +190,45 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 					}
 				}
 			}
-			net.RemoveNetSegmentById(deleted_segment_id);
+			m_scene->RemoveNetSegmentById(deleted_segment_id);
 		}
 	}
 
 	// handle deleted nodes
 	for (auto&& deleted_node : update_request.removed_nodes)
 	{
-		auto node = net.GetNetNodeById(deleted_node);
+		auto node = m_scene->GetNetNodeById(deleted_node);
 		assert(node);
 		if (node)
 		{
-			auto conn = net.GetSocketConnectionForNode(node->get().GetId());
+			auto conn = m_scene->GetSocketConnectionForNode(node->get().GetId());
 			if (conn)
 			{
-				net.RemoveSocketConnectionForSocket(conn->get().socketId);
+				m_scene->RemoveSocketConnectionForSocket(conn->get().socketId);
 			}
-			net.RemoveNetNodeById(deleted_node);
+			m_scene->RemoveNetNodeById(deleted_node);
 		}
 	}
 
 	// handle added nodes
 	std::vector<model::NetNodeId> new_nodes;
-	new_nodes.reserve(new_nodes.size());
+	new_nodes.reserve(update_request.added_nodes.size());
 	model::NetNodeId max_id{ 0 };
-	if (new_nodes.size())
+	if (update_request.added_nodes.size())
 	{
-		max_id = GetMaxNodeId(net.GetNetNodes());
+		max_id = GetMaxNodeId(m_scene->GetNetNodes());
 	}
 	for (auto&& node_request : update_request.added_nodes)
 	{
 		max_id.value += 1;
-		net.AddNetNode(model::NetNodeModel{ max_id,node_request.position });
+		m_scene->AddNetNode(model::NetNodeModel{ max_id,node_request.position });
 		new_nodes.push_back(max_id);
 	}
 
 	// handle updated Nodes
 	for (auto&& node_request : update_request.update_nodes)
 	{
-		auto node = net.GetNetNodeById(node_request.node_id);
+		auto node = m_scene->GetNetNodeById(node_request.node_id);
 		assert(node);
 		if (node)
 		{
@@ -287,13 +239,13 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 	// handle updated segments
 	for (auto&& segment_request : update_request.update_segments)
 	{
-		auto deleted_segment = net.GetNetSegmentById(segment_request.segment_id);
+		auto deleted_segment = m_scene->GetNetSegmentById(segment_request.segment_id);
 		assert(deleted_segment);
 		if (deleted_segment)
 		{
 			{
 				auto node_id = deleted_segment->get().m_firstNodeId;
-				auto node = net.GetNetNodeById(node_id);
+				auto node = m_scene->GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
 					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
@@ -306,7 +258,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			}
 			{
 				auto node_id = deleted_segment->get().m_secondNodeId;
-				auto node = net.GetNetNodeById(node_id);
+				auto node = m_scene->GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
 					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
@@ -346,7 +298,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 		
 		{
 			auto node_id = deleted_segment->get().m_firstNodeId;
-			auto node = net.GetNetNodeById(node_id);
+			auto node = m_scene->GetNetNodeById(node_id);
 			assert(node);
 			if (node)
 			{
@@ -355,7 +307,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 		}
 		{
 			auto node_id = deleted_segment->get().m_secondNodeId;
-			auto node = net.GetNetNodeById(node_id);
+			auto node = m_scene->GetNetNodeById(node_id);
 			assert(node);
 			if (node)
 			{
@@ -371,7 +323,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 	model::NetSegmentId max_segment_id{ 0 };
 	if (update_request.added_segments.size())
 	{
-		max_segment_id = GetMaxSegmentId(net.GetNetSegments());
+		max_segment_id = GetMaxSegmentId(m_scene->GetNetSegments());
 	}
 	for (auto&& segment_request : update_request.added_segments)
 	{
@@ -413,12 +365,12 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 
 		{
 			model::NetSegmentModel new_segment{ id, *node1_id, *node2_id, segment_request.orientation };
-			net.AddNetSegment(std::move(new_segment));
+			m_scene->AddNetSegment(std::move(new_segment));
 			new_segments.push_back(id);
 		}
 
 		{
-			auto node = net.GetNetNodeById(*node1_id);
+			auto node = m_scene->GetNetNodeById(*node1_id);
 			assert(node);
 			if (node)
 			{
@@ -426,7 +378,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			}
 		}
 		{
-			auto node = net.GetNetNodeById(*node2_id);
+			auto node = m_scene->GetNetNodeById(*node2_id);
 			assert(node);
 			if (node)
 			{
@@ -451,21 +403,21 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			}
 			auto socket = block->get().GetSocketById(connection.socket.socket_id);
 			assert(socket);
-			socket->get().SetConnectedNetNode(model::NetNodeUniqueId{ node_id, net.GetId() });
-			net.AddSocketNodeConnection(model::SocketNodeConnection{ connection.socket , node_id });
+			socket->get().SetConnectedNetNode(node_id);
+			m_scene->AddSocketNodeConnection(model::SocketNodeConnection{ connection.socket , node_id });
 		}
 	}
 
 
 	// setup notification
-	NetModificationReport report{ net.GetId() };
+	NetModificationReport report;
 	report.removed_connections = std::move(update_request.removed_connections);
 	report.removed_nodes = std::move(update_request.removed_nodes);
 	report.removed_segments = std::move(update_request.removed_segments);
 	report.added_nodes.reserve(update_request.added_nodes.size());
 	for (auto&& node_id : new_nodes)
 	{
-		auto node = net.GetNetNodeById(node_id);
+		auto node = m_scene->GetNetNodeById(node_id);
 		assert(node);
 		report.added_nodes.push_back(*node);
 	}
@@ -475,13 +427,13 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 	}
 	for (auto&& update_segment_request : update_request.update_segments)
 	{
-		auto segment = net.GetNetSegmentById(update_segment_request.segment_id);
+		auto segment = m_scene->GetNetSegmentById(update_segment_request.segment_id);
 		assert(segment);
 		report.update_segments.push_back(*segment);
 	}
 	for (auto&& added_segment : new_segments)
 	{
-		auto segment = net.GetNetSegmentById(added_segment);
+		auto segment = m_scene->GetNetSegmentById(added_segment);
 		assert(segment);
 		report.added_segments.push_back(*segment);
 	}
@@ -493,7 +445,7 @@ void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 			assert(static_cast<size_t>(added_connection.node.value) < new_nodes.size());
 			node_id = new_nodes[static_cast<size_t>(added_connection.node.value)];
 		}
-		auto conn = net.GetSocketConnectionForNode(node_id);
+		auto conn = m_scene->GetSocketConnectionForNode(node_id);
 		assert(conn);
 		report.added_connections.push_back(*conn);
 	}

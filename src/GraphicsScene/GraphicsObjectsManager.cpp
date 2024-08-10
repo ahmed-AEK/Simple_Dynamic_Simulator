@@ -84,6 +84,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         }
         break;
     }
+    /*
     case SceneModificationType::NetAdded:
     {
         auto net_ref = std::get<model::NetModelRef>(e.data);
@@ -192,6 +193,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         connectd_node_obj->UpdateConnectedSegments();
         break;
     }
+    */
     case SceneModificationType::NetUpdated:
     {
         HandleNetUpdate(std::get<std::reference_wrapper<NetModificationReport>>(e.data));
@@ -239,7 +241,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     // handle removed segments
     for (const auto& removed_segement : report.removed_segments)
     {
-        auto it = m_net_segments.find({ removed_segement,report.net_id });
+        auto it = m_net_segments.find(removed_segement);
         assert(it != m_net_segments.end());
         if (it != m_net_segments.end())
         {
@@ -253,7 +255,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     // handle removed nodes
     for (const auto& removed_node : report.removed_nodes)
     {
-        auto it = m_net_nodes.find({ removed_node, report.net_id });
+        auto it = m_net_nodes.find(removed_node);
         assert(it != m_net_nodes.end());
         if (it != m_net_nodes.end())
         {
@@ -268,15 +270,15 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     for (const auto& added_node : report.added_nodes)
     {
         auto node = std::make_unique<NetNode>(added_node.get().GetPosition(), GetScene());
-        m_net_nodes.emplace(model::NetNodeUniqueId{ added_node.get().GetId(), report.net_id }, node.get());
-        node->SetId(model::NetNodeUniqueId{ added_node.get().GetId(), report.net_id });
+        m_net_nodes.emplace(added_node.get().GetId(), node.get());
+        node->SetId(added_node.get().GetId());
         GetScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
 
     // handle update nodes
     for (const auto& updated_node : report.update_nodes)
     {
-        auto it = m_net_nodes.find({ updated_node.node_id, report.net_id });
+        auto it = m_net_nodes.find(updated_node.node_id);
         assert(it != m_net_nodes.end());
         if (it != m_net_nodes.end())
         {
@@ -288,18 +290,18 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     // handle update segments
     for (const auto& update_segment : report.update_segments)
     {
-        auto it = m_net_segments.find({ update_segment.get().GetId(), report.net_id });
+        auto it = m_net_segments.find(update_segment.get().GetId());
         assert(it != m_net_segments.end());
         if (it != m_net_segments.end())
         {
             it->second->Disconnect();
-            auto it1 = m_net_nodes.find({update_segment.get().m_firstNodeId, report.net_id});
+            auto it1 = m_net_nodes.find(update_segment.get().m_firstNodeId);
             assert(it1 != m_net_nodes.end());
             if (it1 == m_net_nodes.end())
             {
                 continue;
             }
-            auto it2 = m_net_nodes.find({ update_segment.get().m_secondNodeId, report.net_id });
+            auto it2 = m_net_nodes.find(update_segment.get().m_secondNodeId);
             assert(it2 != m_net_nodes.end());
             if (it2 == m_net_nodes.end())
             {
@@ -312,20 +314,20 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     // handle added segments
     for (const auto& added_segment : report.added_segments)
     {
-        auto it1 = m_net_nodes.find({ added_segment.get().m_firstNodeId, report.net_id });
+        auto it1 = m_net_nodes.find(added_segment.get().m_firstNodeId);
         assert(it1 != m_net_nodes.end());
         if (it1 == m_net_nodes.end())
         {
             continue;
         }
-        auto it2 = m_net_nodes.find({ added_segment.get().m_secondNodeId, report.net_id });
+        auto it2 = m_net_nodes.find(added_segment.get().m_secondNodeId);
         assert(it2 != m_net_nodes.end());
         if (it2 == m_net_nodes.end())
         {
             continue;
         }
         auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second, GetScene());
-        auto id = model::NetSegmentUniqueId{ added_segment.get().GetId(), report.net_id };
+        auto id = added_segment.get().GetId();
         segment->SetId(id);
         m_net_segments.emplace(id, segment.get());
         GetScene()->AddObject(std::move(segment), GraphicsScene::SegmentLayer);
@@ -346,7 +348,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         {
             if (socket->GetId() && (*socket->GetId()) == added_conn.get().socketId.socket_id)
             {
-                auto it2 = m_net_nodes.find({ added_conn.get().NodeId, report.net_id });
+                auto it2 = m_net_nodes.find(added_conn.get().NodeId);
                 assert(it2 != m_net_nodes.end());
                 if (it2 == m_net_nodes.end())
                 {

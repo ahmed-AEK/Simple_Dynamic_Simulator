@@ -36,13 +36,13 @@ public:
 
 	std::optional<node::model::ConnectedSegmentSide> GetSegmentSide(NetSegment& segment) const;
 
-	void SetId(std::optional<model::NetNodeUniqueId> id) { m_id = std::move(id); }
-	std::optional<model::NetNodeUniqueId> GetId() const noexcept { return m_id; }
+	void SetId(std::optional<model::NetNodeId> id) { m_id = std::move(id); }
+	std::optional<model::NetNodeId> GetId() const noexcept { return m_id; }
 
 protected:
 	void OnSetSpaceRect(const model::Rect& rect) override;
 private:
-	std::optional<model::NetNodeUniqueId> m_id = std::nullopt;
+	std::optional<model::NetNodeId> m_id = std::nullopt;
 	model::Point m_centerPoint;
 	std::array<NetSegment*, 4> m_connected_segments{};
 	BlockSocketObject* m_socket = nullptr;
@@ -66,14 +66,14 @@ public:
 	const model::NetSegmentOrientation& GetOrientation() const noexcept { return m_orientation; }
 	int GetWidth() const { return c_width; }
 
-	void SetId(std::optional<model::NetSegmentUniqueId> id) { m_id = std::move(id); }
-	std::optional<model::NetSegmentUniqueId> GetId() const noexcept { return m_id; }
+	void SetId(std::optional<model::NetSegmentId> id) { m_id = std::move(id); }
+	std::optional<model::NetSegmentId> GetId() const noexcept { return m_id; }
 
 protected:
 private:
 	static constexpr int c_width = 10;
 
-	std::optional<model::NetSegmentUniqueId> m_id = std::nullopt;
+	std::optional<model::NetSegmentId> m_id = std::nullopt;
 	NetNode* m_startNode;
 	NetNode* m_endNode;
 	model::NetSegmentOrientation m_orientation{};

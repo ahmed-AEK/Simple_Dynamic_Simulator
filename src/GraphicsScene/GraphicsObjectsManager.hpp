@@ -30,8 +30,8 @@ private:
 	GraphicsScene* m_scene;
 	std::shared_ptr<SceneModelManager> m_sceneModel;
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;
-	std::unordered_map<model::NetSegmentUniqueId, NetSegment*> m_net_segments;
-	std::unordered_map<model::NetNodeUniqueId, NetNode*> m_net_nodes;
+	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;
+	std::unordered_map<model::NetNodeId, NetNode*> m_net_nodes;
 
 };
 

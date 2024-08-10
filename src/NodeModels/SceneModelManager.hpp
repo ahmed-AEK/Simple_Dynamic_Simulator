@@ -12,8 +12,8 @@ namespace node
 struct LeafNodeMovedReport
 {
 	std::optional<model::SocketUniqueId> new_socket;
-	model::NetNodeUniqueId moved_node;
-	model::NetNodeUniqueId second_moved_node;
+	model::NetNodeId moved_node;
+	model::NetNodeId second_moved_node;
 	model::Point new_position;
 };
 
@@ -25,7 +25,6 @@ struct NetModificationReport
 		model::Point new_position;
 	};
 
-	node::model::NetId net_id;
 	std::vector<model::SocketUniqueId> removed_connections;
 	std::vector<model::NetSegmentId> removed_segments;
 	std::vector<model::NetNodeId> removed_nodes;
@@ -103,7 +102,6 @@ struct NetModificationRequest
 		model::NetNodeId node;
 	};
 
-	node::model::NetId net_id;
 	std::vector<model::SocketUniqueId> removed_connections;
 	std::vector<model::NetSegmentId> removed_segments;
 	std::vector<model::NetNodeId> removed_nodes;

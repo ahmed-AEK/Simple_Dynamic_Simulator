@@ -129,9 +129,10 @@ MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mou
 	}
 
 	assert(GetObjectsManager());
-	GetObjectsManager()->GetSceneModel()->AddNewNet(PopulateResultNet(current_mouse_point));
-
+	auto request = PopulateResultNet(current_mouse_point);
 	DeleteAllOwnedObjects();
+
+	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CLICKED;
 }
 
@@ -140,7 +141,7 @@ void node::logic::NewNetLogic::OnCancel()
 	DeleteAllOwnedObjects();
 }
 
-node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::Point& current_mouse_point)
+node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const model::Point& current_mouse_point)
 {
 	using model::NetNodeId;
 	using model::NetSegmentId;
@@ -148,56 +149,95 @@ node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::P
 
 	auto* end_socket = GetSocketAt(current_mouse_point);
 
-	node::model::NetModel net;
-	std::array<NetNodeId, 4> node_ids{ NetNodeId{1},NetNodeId{2},NetNodeId{3},NetNodeId{4} };
-	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{1},NetSegmentId{2},NetSegmentId{3} };
+	NetModificationRequest request;
+	std::array<NetNodeId, 4> node_ids{ NetNodeId{0},NetNodeId{1},NetNodeId{2},NetNodeId{3} };
+	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{0},NetSegmentId{1},NetSegmentId{2} };
+	
+	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+		AsNode(m_nodes[0])->getCenter()
+		});
+	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+		AsNode(m_nodes[1])->getCenter()
+		});
+	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+		AsNode(m_nodes[2])->getCenter()
+		});
+	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+		AsNode(m_nodes[3])->getCenter()
+		});
 
 	{
-		model::id_int node_id = 0;
-		auto obj = model::NetNodeModel{ node_ids[node_id],
-	AsNode(m_nodes[node_id])->getCenter() };
-		obj.SetSegmentAt(east, segment_ids[0]);
-		net.AddNetNode(std::move(obj));
-	}
-
-	{
-		model::id_int node_id = 1;
-		auto obj = model::NetNodeModel{ node_ids[node_id],
-			AsNode(m_nodes[node_id])->getCenter() };
-		obj.SetSegmentAt(west, segment_ids[0]);
-		obj.SetSegmentAt(south, segment_ids[1]);
-		net.AddNetNode(std::move(obj));
-	}
-
-	{
-		model::id_int node_id = 2;
-		auto obj = model::NetNodeModel{ model::NetNodeId{node_ids[node_id]},
-	AsNode(m_nodes[node_id])->getCenter() };
-		obj.SetSegmentAt(north, segment_ids[1]);
-		obj.SetSegmentAt(east, segment_ids[2]);
-		net.AddNetNode(std::move(obj));
-	}
-
-	{
-		model::id_int node_id = 3;
-		auto obj = model::NetNodeModel{ model::NetNodeId{ node_ids[node_id]},
-	AsNode(m_nodes[node_id])->getCenter() };
-		obj.SetSegmentAt(west, segment_ids[2]);
-		net.AddNetNode(std::move(obj));
-	}
-
-	{
-		model::id_int start_segment_id = 1;
-		model::id_int start_node_id = 1;
-		for (auto&& segment : m_segments)
+		auto segment1_side = model::ConnectedSegmentSide{};
+		auto segment2_side = model::ConnectedSegmentSide{};
+		if (AsNode(m_nodes[0])->getCenter().x < AsNode(m_nodes[1])->getCenter().x) // node 0 on left
 		{
-			auto orientation = AsSegment(segment)->GetOrientation();
-			net.AddNetSegment(model::NetSegmentModel{ model::NetSegmentId{start_segment_id},
-				NetNodeId{start_node_id}, NetNodeId{start_node_id + 1}, orientation });
-			start_node_id++;
-			start_segment_id++;
+			segment1_side = model::ConnectedSegmentSide::east;
+			segment2_side = model::ConnectedSegmentSide::west;
 		}
+		else
+		{
+			segment1_side = model::ConnectedSegmentSide::west;
+			segment2_side = model::ConnectedSegmentSide::east;
+		}
+			request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::NodeIdType::new_id,
+			segment1_side,
+			segment2_side,
+			model::NetSegmentOrientation::horizontal,
+			NetNodeId{0},
+			NetNodeId{1}
+			});
 	}
+
+	{
+		auto segment1_side = model::ConnectedSegmentSide{};
+		auto segment2_side = model::ConnectedSegmentSide{};
+		if (AsNode(m_nodes[1])->getCenter().y <= AsNode(m_nodes[2])->getCenter().y) // node1 above node 2
+		{
+			segment1_side = model::ConnectedSegmentSide::south;
+			segment2_side = model::ConnectedSegmentSide::north;
+		}
+		else
+		{
+			segment1_side = model::ConnectedSegmentSide::north;
+			segment2_side = model::ConnectedSegmentSide::south;
+		}
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::NodeIdType::new_id,
+			segment1_side,
+			segment2_side,
+			model::NetSegmentOrientation::vertical,
+			NetNodeId{1},
+			NetNodeId{2}
+			});
+	}
+
+	{
+		auto segment1_side = model::ConnectedSegmentSide{};
+		auto segment2_side = model::ConnectedSegmentSide{};
+		if (AsNode(m_nodes[2])->getCenter().x < AsNode(m_nodes[3])->getCenter().x) // node 2 on left
+		{
+			segment1_side = model::ConnectedSegmentSide::east;
+			segment2_side = model::ConnectedSegmentSide::west;
+		}
+		else
+		{
+			segment1_side = model::ConnectedSegmentSide::west;
+			segment2_side = model::ConnectedSegmentSide::east;
+		}
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::NodeIdType::new_id,
+			segment1_side,
+			segment2_side,
+			model::NetSegmentOrientation::horizontal,
+			NetNodeId{2},
+			NetNodeId{3}
+			});
+	}
+
 
 	auto* socket = static_cast<BlockSocketObject*>(m_socket.GetObjectPtr());
 
@@ -205,14 +245,20 @@ node::model::NetModel node::logic::NewNetLogic::PopulateResultNet(const model::P
 	assert(socket->GetParentBlock());
 	assert(socket->GetParentBlock()->GetModelId());
 
-	net.AddSocketNodeConnection(model::SocketNodeConnection{
-		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())}, node_ids[0]});
+	request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+		model::SocketUniqueId{*(socket->GetId()), *(socket->GetParentBlock()->GetModelId())},
+		NetModificationRequest::NodeIdType::new_id,
+		NetNodeId{0}
+		});
 	if (end_socket)
 	{
-		net.AddSocketNodeConnection(model::SocketNodeConnection{
-		model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())}, node_ids[3] });
+		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+			model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())},
+			NetModificationRequest::NodeIdType::new_id,
+			NetNodeId{3}
+			});
 	}
-	return net;
+	return request;
 }
 
 node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Point& point) const

@@ -66,36 +66,10 @@ public:
 	}
 	void SetName(std::optional<std::string> name) { m_name = std::move(name); }
 
-	void AddNetNode(NetNodeModel&& netNode) { m_nodes.push_back(std::move(netNode)); }
-	void RemoveNetNodeById(const NetNodeId& id);
-
-	std::optional<std::reference_wrapper<NetNodeModel>>
-		GetNetNodeById(const NetNodeId& id);
-	std::span<NetNodeModel>
-		GetNetNodes() { return m_nodes; }
-
-	void AddNetSegment(NetSegmentModel&& netSegment) { m_segments.push_back(std::move(netSegment)); }
-	void RemoveNetSegmentById(const NetSegmentId& id);
-
-	std::optional<std::reference_wrapper<NetSegmentModel>>
-		GetNetSegmentById(const NetSegmentId& id);
-	std::span<NetSegmentModel>
-		GetNetSegments() { return m_segments; }
-
-	std::span<model::SocketNodeConnection> GetSocketConnections() { return m_SocketConnections; }
-	void AddSocketNodeConnection(const model::SocketNodeConnection& connection);
-	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
-	std::optional<std::reference_wrapper<node::model::SocketNodeConnection>> 
-		GetSocketConnectionForNode(const model::NetNodeId& node_id);
-
-	void ReserveNodes(size_t size) { m_nodes.reserve(size); }
-	void ReserveSegments(size_t size) { m_segments.reserve(size); }
 private:
 	NetId m_Id;
 	std::optional<std::string> m_name;
-	std::vector<NetNodeModel> m_nodes;
-	std::vector<NetSegmentModel> m_segments;
-	std::vector<SocketNodeConnection> m_SocketConnections;
+
 };
 
 using NetModelRef = typename std::reference_wrapper<NetModel>;
