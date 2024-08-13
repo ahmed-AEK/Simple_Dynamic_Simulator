@@ -1,2 +1,4 @@
 *
 !.gitignore
+!sdl2_gfx/
+!sdl2_gfx/*

@@ -1,6 +1,7 @@
 #include "ToolBar.hpp"
 #include "Scene.hpp"
 #include "Application.hpp"
+#include "SDL_Framework/Utility.hpp"
 
 node::ToolBar::ToolBar(const SDL_Rect& rect, Scene* parent)
 	:Widget(rect, parent)
@@ -162,19 +163,21 @@ std::string_view node::ToolBarButton::GetName() noexcept
 
 void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 {
-	SDL_Color color = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255};
-	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderFillRect(renderer, &GetRect());
-	SDL_Rect inner_rect = GetRect();
-	inner_rect.x += 2;
-	inner_rect.y += 2;
-	inner_rect.w -= 4;
-	inner_rect.h -= 4;
-	SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
-	color = b_active ? SDL_Color{230, 230, 230, 255} : inactive_color;
-	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderFillRect(renderer, &inner_rect);
+	const int thickness = 2;
+	{
+		SDL_Color color_outer = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255 };
+		const int radius = 7;
+		SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color color_inner = b_active ? SDL_Color{ 230, 230, 230, 255 } : inactive_color;
+		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner);
+	}
 
+
+	SDL_Rect inner_rect = GetRect();
+	inner_rect.x += thickness;
+	inner_rect.y += thickness;
+	inner_rect.w -= 2 * thickness;
+	inner_rect.h -= 2 * thickness;
 	if (!m_name_texture)
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };

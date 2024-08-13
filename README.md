@@ -22,6 +22,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - nlopt
 - SDL, SDL-TTF, SDL-image
 - google-test
+- sdl2_gfx (in external folder)
 
 ### testing
 
@@ -35,7 +36,7 @@ currently only the solver has full test coverage, the GUI has no tests, but it w
 
 the dependencies make it hard to build this on other machines, i don't want to use a package manager yet so that i don't have to re-download the dependencies on each platform.
 
-you need `SDL` and `nlopt` in your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
+you need `SDL` and `nlopt` and `sdl2_gfx` in your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
 
 ```
 mkdir build

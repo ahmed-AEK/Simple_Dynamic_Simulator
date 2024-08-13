@@ -1,5 +1,6 @@
 #include "SidePanel.hpp"
 #include "toolgui/Scene.hpp"
+#include "SDL_Framework/Utility.hpp"
 
 static double easeOut(double val) { return 2 * val - val * val; }
 
@@ -206,12 +207,13 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 		break;
 	}
 	SDL_Rect knob_rect = GetKnobRect();
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &knob_rect);
-	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ knob_rect.x + 2, knob_rect.y + 2, knob_rect.w - 4, knob_rect.h - 4 };
-	SDL_RenderFillRect(renderer, &inner_rect);
 
+	//SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	//SDL_RenderFillRect(renderer, &knob_rect);
+	//SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
+	SDL_Rect inner_rect{ knob_rect.x + 2, knob_rect.y + 2, knob_rect.w - 4, knob_rect.h - 4 };
+	//SDL_RenderFillRect(renderer, &inner_rect);
+	ThickFilledRoundRect(renderer, knob_rect, 7, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 });
 	// draw arrow
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	std::array<SDL_Vertex, 3> arrow_verts;

@@ -1,5 +1,6 @@
 #include "BlockStyler.hpp"
 #include <algorithm>
+#include "SDL_Framework/Utility.hpp"
 
 void node::BlockStyler::PositionNodes(model::BlockModel& block)
 {
@@ -40,18 +41,10 @@ void node::BlockStyler::PositionNodes(model::BlockModel& block)
 void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model, const SpaceScreenTransformer& transformer, bool selected)
 {
 	SDL_Rect screenRect = transformer.SpaceToScreenRect(model.GetBounds());
-	if (!selected)
-	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	}
-	else
-	{
-		SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
-	}
-	SDL_RenderFillRect(renderer, &screenRect);
-	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ screenRect.x + 2, screenRect.y + 2, screenRect.w - 4, screenRect.h - 4 };
-	SDL_RenderFillRect(renderer, &inner_rect);
+	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
+	SDL_Color inner_color{ 220,220,220,255 };
+	
+	ThickFilledRoundRect(renderer, screenRect, screenRect.w / 10, 2, outer_color, inner_color);
 
 	SDL_Point socket_length = transformer.SpaceToScreenVector({ SocketLength, SocketLength });
 	for (const auto& socket : model.GetSockets())
@@ -85,18 +78,10 @@ void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockMode
 void node::BlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, bool selected)
 {
 	SDL_Rect screenRect = transformer.SpaceToScreenRect(bounds);
-	if (!selected)
-	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	}
-	else
-	{
-		SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
-	}
-	SDL_RenderFillRect(renderer, &screenRect);
-	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ screenRect.x + 2, screenRect.y + 2, screenRect.w - 4, screenRect.h - 4 };
-	SDL_RenderFillRect(renderer, &inner_rect);
+	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
+	SDL_Color inner_color{ 220,220,220,255 };
+
+	ThickFilledRoundRect(renderer, screenRect, screenRect.w/10, 2, outer_color, inner_color);
 }
 
 void node::BlockStyler::DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center, const SpaceScreenTransformer& transformer, 

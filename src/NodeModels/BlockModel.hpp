@@ -8,6 +8,7 @@
 #include <cassert>
 #include <memory>
 #include <string>
+#include <variant>
 
 namespace node::model
 {
@@ -49,6 +50,22 @@ private:
 	std::optional<NetNodeId> m_connectedNetNode;
 };
 
+enum class BlockPropertyType
+{
+	String,
+	FloatNumber, // float
+	Integer, // maybe negative
+	UnsignedInteger, // unsigned
+};
+
+struct BlockProperty
+{
+	using property_t = std::variant<std::string, double, int64_t, uint64_t>;
+
+	std::string name;
+	BlockPropertyType type;
+	property_t property;
+};
 
 class BlockModel
 {
@@ -89,11 +106,18 @@ public:
 		m_sockets.reserve(size);
 	}
 
+	const std::string& GetClass() const { return m_block_class; }
+	void SetClass(std::string block_class) { m_block_class = block_class; }
+
+	const std::string& GetStyler() const { return m_block_styler; }
+	void SetStyler(std::string block_styler) { m_block_styler = block_styler; }
+
 private:
 	Rect m_bounds;
 	std::vector<BlockSocketModel> m_sockets;
-	std::string block_styler;
-	std::string block_class;
+	std::vector<BlockProperty> m_properties;
+	std::string m_block_styler;
+	std::string m_block_class;
 	BlockId m_Id;
 };
 

@@ -94,11 +94,12 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         element->block.AddSocket(node::model::BlockSocketModel{
             node::model::BlockSocketModel::SocketType::output, model::SocketId{1}, {0,0}
             });
+        element->block.SetClass("Gain");
+        element->block.SetStyler("Default");
         element->styler = std::make_shared<BlockStyler>();
         element->styler->PositionNodes(element->block);
-        element->block_template = "Add";
+        element->block_template = "Gain";
         pallete_provider->AddElement(element);
-
     }
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
