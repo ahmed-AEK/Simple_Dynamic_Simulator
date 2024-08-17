@@ -9,4 +9,4 @@ GainBlockClass.cpp GainBlockClass.hpp
 
 target_include_directories(BlockClasses PRIVATE ".")
 target_include_directories(BlockClasses PUBLIC "..")
-target_link_libraries(BlockClasses PUBLIC NodeModels)
+target_link_libraries(BlockClasses PUBLIC NodeModels NLOptimizer)

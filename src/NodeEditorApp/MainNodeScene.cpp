@@ -15,6 +15,9 @@
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 
+#include "BlockClasses/BlockClassesManager.hpp"
+#include "BlockClasses/GainBlockClass.hpp"
+
 #include "BlockPallete/BlockPallete.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
@@ -83,23 +86,19 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     UNUSED_PARAM(gScene);
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{ 0,0,300,m_rect.h}, this);
 
-    auto&& pallete_provider = std::make_shared<PalleteProvider>();
+    auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager);
+    auto block_template = BlockTemplate{
+        "Gain1",
+        "Gain",
+        "Default",
+        std::vector<model::BlockProperty>{
+            model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
+        }
+    };
+
     for (int i = 0; i < 5; i++)
     {
-        auto&& element = std::make_shared<PalleteElement>();
-        element->block.SetBounds({ 0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight });
-        element->block.AddSocket(node::model::BlockSocketModel{
-            node::model::BlockSocketModel::SocketType::input, model::SocketId{0}, {0,0}
-            });
-        element->block.AddSocket(node::model::BlockSocketModel{
-            node::model::BlockSocketModel::SocketType::output, model::SocketId{1}, {0,0}
-            });
-        element->block.SetClass("Gain");
-        element->block.SetStyler("Default");
-        element->styler = std::make_shared<BlockStyler>();
-        element->styler->PositionNodes(element->block);
-        element->block_template = "Gain";
-        pallete_provider->AddElement(element);
+        pallete_provider->AddElement(block_template);
     }
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
@@ -110,11 +109,18 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
+}
+
+void node::MainNodeScene::OnInit()
+{
     using namespace node;
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
     m_graphicsObjectsManager = std::make_unique<GraphicsObjectsManager>(*gScene);
     m_graphicsScene->Attach(*m_graphicsObjectsManager);
+
+    m_classesManager = std::make_shared<BlockClassesManager>();
+    m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
 
     InitializeSidePanel(gScene.get());
 

@@ -11,19 +11,34 @@
 
 namespace node
 {
-	struct PalleteElement
-	{
-		std::string block_template;
-		model::BlockModel block{ model::BlockId{0}, model::Rect{0,0,0,0} };
-		std::shared_ptr<BlockStyler> styler;
-	};
+class BlockClassesManager;
 
-	class PalleteProvider
-	{
-	public:
-		std::span<std::shared_ptr<PalleteElement>> GetElements() { return m_elements; }
-		void AddElement(std::shared_ptr<PalleteElement> element) { m_elements.push_back(element); }
-	private:
-		std::vector<std::shared_ptr<PalleteElement>> m_elements;
-	};
+struct BlockTemplate
+{
+	std::string template_name;
+	std::string class_name;
+	std::string styler_name;
+	std::vector<model::BlockProperty> default_properties;
+};
+
+struct PalleteElement
+{
+	std::string block_template;
+	model::BlockModel block{ model::BlockId{0}, model::Rect{0,0,0,0} };
+	std::shared_ptr<BlockStyler> styler;
+};
+
+class PalleteProvider
+{
+public:
+	PalleteProvider(std::shared_ptr<BlockClassesManager> manager);
+	void AddElement(const BlockTemplate& temp);
+	void AddElement(std::unique_ptr<PalleteElement> element) { m_elements.push_back(std::move(element)); }
+
+	std::span<const std::unique_ptr<PalleteElement>> GetElements() { return m_elements; }
+private:
+	std::vector<std::unique_ptr<PalleteElement>> m_elements;
+	std::shared_ptr<BlockClassesManager> m_classesManager;
+};
+
 }

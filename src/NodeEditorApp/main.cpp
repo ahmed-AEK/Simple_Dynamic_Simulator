@@ -1,5 +1,3 @@
-#define SDL_MAIN_HANDLED
-
 #include "NodeEditorApp.hpp"
 #include "toolgui/NodeMacros.h"
 

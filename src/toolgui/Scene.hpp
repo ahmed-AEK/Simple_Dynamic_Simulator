@@ -43,6 +43,7 @@ namespace node
         Application* GetApp() { return p_parent; }
         void AddWidget(std::unique_ptr<Widget> widget, int z_order);
 
+        virtual void OnInit() {};
         virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}
         virtual void LMBDown(const SDL_Point& p) {OnLMBDown(p);}
         virtual void RMBDown(const SDL_Point& p) {OnRMBDown(p);}

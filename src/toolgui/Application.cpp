@@ -194,6 +194,7 @@ namespace node
         assert(m_scene);
         if (m_scene)
         {
+            m_scene->OnInit();
             m_scene->SetRect(m_rect);
         }
         

@@ -61,10 +61,12 @@ enum class BlockPropertyType
 struct BlockProperty
 {
 	using property_t = std::variant<std::string, double, int64_t, uint64_t>;
+	BlockProperty(std::string name, BlockPropertyType type, property_t prop)
+		:name{ name }, type{ type }, prop{ prop } {}
 
 	std::string name;
 	BlockPropertyType type;
-	property_t property;
+	property_t prop;
 };
 
 class BlockModel
@@ -111,6 +113,9 @@ public:
 
 	const std::string& GetStyler() const { return m_block_styler; }
 	void SetStyler(std::string block_styler) { m_block_styler = block_styler; }
+
+	const std::vector<BlockProperty>& GetProperties() const { return m_properties; }
+	std::vector<BlockProperty>& GetProperties() { return m_properties; }
 
 private:
 	Rect m_bounds;
