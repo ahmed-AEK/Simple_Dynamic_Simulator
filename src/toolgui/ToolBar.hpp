@@ -4,6 +4,7 @@
 #include "SDL_Framework/SDLCPP.hpp"
 #include <variant>
 #include <functional>
+#include "SDL_Framework/Utility.hpp"
 
 namespace node
 {
@@ -32,6 +33,8 @@ protected:
 	bool b_held_down = false;
 	std::string m_name{};
 	SDLTexture m_name_texture;
+	std::unique_ptr<RoundRectPainter> m_painter_outer;
+	std::unique_ptr<RoundRectPainter> m_painter_inner;
 };
 
 class ToolBar: public Widget

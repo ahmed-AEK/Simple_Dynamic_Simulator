@@ -213,7 +213,7 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 	//SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	SDL_Rect inner_rect{ knob_rect.x + 2, knob_rect.y + 2, knob_rect.w - 4, knob_rect.h - 4 };
 	//SDL_RenderFillRect(renderer, &inner_rect);
-	ThickFilledRoundRect(renderer, knob_rect, 7, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 });
+	ThickFilledRoundRect(renderer, knob_rect, 15, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 });
 	// draw arrow
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	std::array<SDL_Vertex, 3> arrow_verts;
@@ -261,7 +261,7 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 		assert(0);
 		break;
 	}
-
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 	SDL_RenderGeometry(renderer, nullptr, arrow_verts.data(), 3, nullptr, 0);
 }
 

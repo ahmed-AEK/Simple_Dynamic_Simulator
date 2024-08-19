@@ -103,7 +103,8 @@ void node::ToolBar::Draw(SDL_Renderer * renderer)
 		{
 			SDL_Rect separator_rect{ AsSeparator(button).position_x, inner_rect.y + ToolBarSeparator::VMargin, 
 				ToolBarSeparator::width, inner_rect.h - 2 * ToolBarSeparator::VMargin };
-			SDL_SetRenderDrawColor(renderer, 180, 180, 180, 180);
+			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+			SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
 			SDL_RenderFillRect(renderer, &separator_rect);
 		}
 	}
@@ -148,7 +149,9 @@ void node::ToolBar::OnSetRect(const SDL_Rect& rect)
 
 
 node::ToolBarButton::ToolBarButton(const SDL_Rect& rect, Scene* parent, std::string name)
-	:Widget(rect, parent), m_name{std::move(name)}
+	:Widget(rect, parent), m_name{std::move(name)}, 
+	m_painter_outer{std::make_unique<RoundRectPainter>()},
+	m_painter_inner{ std::make_unique<RoundRectPainter>() }
 {
 }
 
@@ -166,10 +169,11 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 	const int thickness = 2;
 	{
 		SDL_Color color_outer = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255 };
-		const int radius = 7;
+		const int radius = 10;
 		SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
 		SDL_Color color_inner = b_active ? SDL_Color{ 230, 230, 230, 255 } : inactive_color;
-		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner);
+		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner, 
+			*m_painter_outer, *m_painter_inner);
 	}
 
 
