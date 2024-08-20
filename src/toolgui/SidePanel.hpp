@@ -3,6 +3,7 @@
 #include "toolgui/Widget.hpp"
 #include <cassert>
 #include <array>
+#include "SDL_Framework/Utility.hpp"
 
 namespace node
 {
@@ -51,6 +52,8 @@ namespace node
 			openning,
 			closing,
 		};
+		RoundRectPainter m_outer_painter;
+		RoundRectPainter m_inner_painter;
 
 		std::unique_ptr<Widget> m_contained_widget;
 		PanelSide m_side = PanelSide::right;

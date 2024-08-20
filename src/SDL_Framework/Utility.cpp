@@ -106,7 +106,6 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
         SDL_RenderFillRects(renderer, rects, static_cast<int>(std::size(rects)));
     }
 
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     {
         // draw lower right corner
         SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y + rect.h - radius, stored_radius, stored_radius };
@@ -152,6 +151,8 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
     stored_arc_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, stored_radius, stored_radius);
     SDL_SetTextureBlendMode(stored_arc_texture, SDL_BLENDMODE_BLEND);
     SDL_SetRenderTarget(renderer, stored_arc_texture);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
+    SDL_RenderClear(renderer); // clear renderer
     DrawFilledArcAA3(renderer, { 0,0 }, stored_radius - 1, stored_color);
     SDL_SetRenderTarget(renderer, old_texture);
     {
