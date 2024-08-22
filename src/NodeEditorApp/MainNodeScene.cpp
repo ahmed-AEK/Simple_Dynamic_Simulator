@@ -3,6 +3,7 @@
 #include "toolgui/ButtonWidget.hpp"
 #include "toolgui/SidePanel.hpp"
 #include "toolgui/ToolBar.hpp"
+#include "toolgui/Application.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -19,6 +20,8 @@
 #include "BlockClasses/GainBlockClass.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
+
+#include "NodeEditorApp/SimulatorRunner.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
@@ -64,6 +67,39 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 }
 
 
+void node::MainNodeScene::RunSimulator()
+{
+    if (!current_running_simulator)
+    {
+        auto runner = std::make_shared<SimulatorRunner>(std::function<void()>{
+            [this] { GetApp()->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); });} 
+        });
+        current_running_simulator = runner;
+        runner->Run();
+    }
+}
+
+void node::MainNodeScene::StopSimulator()
+{
+    if (current_running_simulator)
+    {
+        current_running_simulator->Stop();
+        current_running_simulator = nullptr;
+    }
+}
+
+void node::MainNodeScene::CheckSimulatorEnded()
+{
+    if (current_running_simulator)
+    {
+        if (current_running_simulator->IsEnded())
+        {
+            SimulationEvent e{};
+            OnSimulationEnd(e);
+        }
+    }
+}
+
 void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
@@ -75,7 +111,8 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     toolbar->AddSeparator();
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", []() {SDL_Log("Run!"); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->StopSimulator(); }));
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
 }
@@ -132,6 +169,12 @@ void node::MainNodeScene::OnInit()
 }
 
 node::MainNodeScene::~MainNodeScene() = default;
+
+void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
+{
+    UNUSED_PARAM(event);
+    current_running_simulator = nullptr;
+}
 
 bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)
 {

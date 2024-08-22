@@ -62,7 +62,7 @@ namespace node
 		double m_expand_percent = 0;
 		uint64_t m_last_action_time = 0;
 		int64_t m_corner_position = 0;
-		int64_t m_updateTaskId = -1;
+		int64_t m_updateTaskId = 0;
 
 		static constexpr double TICKS_PER_SECOND = 1000;
 		static constexpr double TRANSITION_TIME = 0.25;

@@ -4,9 +4,11 @@
 #include "NodeModels/BlockModel.hpp"
 #include "toolgui/NodeMacros.h"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
+#include "SDL_Framework/Utility.hpp"
 
 namespace node
 {
+
 	class BlockStyler
 	{
 	public:
@@ -21,6 +23,8 @@ namespace node
 
 		void DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center,
 			const SpaceScreenTransformer& transformer, const model::BlockSocketModel::SocketType& type);
-
+	private:
+		RoundRectPainter m_inner_painter;
+		RoundRectPainter m_outer_painter;
 	};
 }

@@ -3,6 +3,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <array>
+#include <cassert>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color)
 {
@@ -30,7 +31,7 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect,
 
 
 
-void DrawFilledArcAA3(SDL_Renderer* renderer, SDL_Point midpoint, int radius, const SDL_Color color);
+void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color);
 
 class RoundRectPainter;
 std::mutex painters_mutex{};
@@ -50,16 +51,19 @@ RoundRectPainter::RoundRectPainter(RoundRectPainter&& other) noexcept
     :stored_arc_texture{ std::exchange(other.stored_arc_texture, nullptr) },
     stored_color{ other.stored_color }, stored_radius{ other.stored_radius }
 {
+    if (stored_arc_texture)
     {
         std::lock_guard g{ painters_mutex };
         auto it = painters.find(stored_arc_texture);
         it->second = this;
-    }
+    }    
 }
 
 RoundRectPainter& RoundRectPainter::operator=(RoundRectPainter&& other) noexcept
 {
     stored_arc_texture = std::exchange(other.stored_arc_texture, nullptr);
+
+    if (stored_arc_texture)
     {
         std::lock_guard g{ painters_mutex };
         auto it = painters.find(stored_arc_texture);
@@ -90,7 +94,14 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
         stored_radius = radius;
         if (stored_arc_texture)
         {
+            {
+                std::lock_guard g{ painters_mutex };
+                auto it = painters.find(stored_arc_texture);
+                assert(it != painters.end());
+                painters.erase(it);
+            }
             SDL_DestroyTexture(stored_arc_texture);
+            stored_arc_texture = nullptr;
         }
         ReCreateArcTexture(renderer);
     }
@@ -153,32 +164,36 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
     SDL_SetRenderTarget(renderer, stored_arc_texture);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
     SDL_RenderClear(renderer); // clear renderer
-    DrawFilledArcAA3(renderer, { 0,0 }, stored_radius - 1, stored_color);
+    DrawFilledArcAA3(renderer, stored_radius - 1, stored_color);
     SDL_SetRenderTarget(renderer, old_texture);
     {
         std::lock_guard g{ painters_mutex };
         painters.emplace(stored_arc_texture, this);
     }
 }
-void DrawFilledArcAA3(SDL_Renderer* renderer, SDL_Point midpoint, int radius, const SDL_Color color)
+
+void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
 {
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     int y = 0;
-    int max_y = radius + 1;
+    int max_y = radius;
     int raidus_squared = radius * radius;
     while (y <= max_y)
     {
         double x = sqrt(raidus_squared - y * y);
+        if (std::isnan(x))
+        {
+            break;
+        }
         {
             int max_x = static_cast<int>(floor(x));
-            if (floor(x) < y)
+            if (floor(x) + 2 < y)
             {
                 break;
             }
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
             std::array<SDL_Point, 4> points{
-            SDL_Point{midpoint.x, midpoint.y + y}, SDL_Point{midpoint.x + max_x, midpoint.y + y},
-            SDL_Point{midpoint.x + y, midpoint.y}, SDL_Point{midpoint.x + y, midpoint.y + max_x},
+            SDL_Point{0, y}, SDL_Point{max_x,y},
+            SDL_Point{y, 0}, SDL_Point{y, max_x},
             };
             SDL_RenderDrawLines(renderer, points.data(), static_cast<int>(points.size()));
         }
@@ -189,8 +204,8 @@ void DrawFilledArcAA3(SDL_Renderer* renderer, SDL_Point midpoint, int radius, co
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, static_cast<Uint8>(color_value));
             int max_x = static_cast<int>(floor(x + 1));
             std::array<SDL_Point, 2> points{
-                SDL_Point{midpoint.x + max_x, midpoint.y + y},
-                SDL_Point{midpoint.x + y, midpoint.y + max_x},
+                SDL_Point{max_x, y},
+                SDL_Point{y, max_x},
             };
 
             SDL_RenderDrawPoints(renderer, points.data(), static_cast<int>(points.size()));
@@ -216,14 +231,18 @@ void DrawFilledArcAA4(SDL_Renderer* renderer, SDL_Point midpoint, int radius, co
     const int x_mul_i = static_cast<int>(x_mul);
     const int y_mul_i = static_cast<int>(y_mul);
     int y = 0;
-    int max_y = radius + 1;
+    int max_y = radius;
     int raidus_squared = radius * radius;
     while (y <= max_y)
     {
         double x = sqrt(raidus_squared - y * y);
+        if (std::isnan(x))
+        {
+            break;
+        }
         {
             int max_x = static_cast<int>(floor(x));
-            if (floor(x) < y)
+            if (floor(x) + 2 < y)
             {
                 break;
             }

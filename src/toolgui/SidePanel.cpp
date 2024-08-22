@@ -1,6 +1,7 @@
 #include "SidePanel.hpp"
 #include "toolgui/Scene.hpp"
 #include "SDL_Framework/Utility.hpp"
+#include "toolgui/Application.hpp"
 
 static double easeOut(double val) { return 2 * val - val * val; }
 
@@ -18,7 +19,7 @@ void node::SidePanel::Expand() noexcept
 	}
 	m_last_action_time = SDL_GetTicks64();
 	m_state = PanelState::openning;
-	m_updateTaskId = GetScene()->AddUpdateTask({ GetMIHandlePtr(), [this]() { this->UpdatePanelMotion(); } });
+	m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
 
 void node::SidePanel::Retract() noexcept
@@ -29,7 +30,7 @@ void node::SidePanel::Retract() noexcept
 	}
 	m_last_action_time = SDL_GetTicks64();
 	m_state = PanelState::closing;
-	m_updateTaskId = GetScene()->AddUpdateTask({ GetMIHandlePtr(), [this]() { this->UpdatePanelMotion(); } });
+	m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
 
 void node::SidePanel::SetWidget(std::unique_ptr<Widget> widget)
@@ -144,8 +145,8 @@ void node::SidePanel::UpdatePanelMotion()
 		{
 			m_expand_percent = 1;
 			m_state = PanelState::open;
-			GetScene()->RemoveUpdateTask(m_updateTaskId);
-			m_updateTaskId = -1;
+			GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+			m_updateTaskId = 0;
 		}
 		RepositionWidget();
 	}
@@ -158,8 +159,8 @@ void node::SidePanel::UpdatePanelMotion()
 		{
 			m_expand_percent = 0;
 			m_state = PanelState::closed;
-			GetScene()->RemoveUpdateTask(m_updateTaskId);
-			m_updateTaskId = -1;
+			GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+			m_updateTaskId = 0;
 		}
 		RepositionWidget();
 	}

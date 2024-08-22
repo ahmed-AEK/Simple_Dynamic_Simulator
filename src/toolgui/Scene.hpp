@@ -7,12 +7,12 @@
 #include <vector>
 #include <memory>
 #include "toolgui/NodeMacros.h"
-#include <functional>
 #include <optional>
 #include "toolgui/DragDropObject.hpp"
 
 namespace node
 {
+
     class Application;
     class Widget;
     struct SceneWidgetIterator;
@@ -24,12 +24,6 @@ namespace node
     {
         std::unique_ptr<node::Widget> m_ptr;
         int z_order;
-    };
-
-    struct TOOLGUI_API UpdateTask
-    {
-        node::HandlePtr<node::Widget> widget;
-        std::function<void()> task;
     };
 
     class TOOLGUI_API Scene
@@ -63,11 +57,6 @@ namespace node
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
         void SetgScene(std::unique_ptr<Widget> scene);
-        
-        bool UpdateTasksEmpty() { return m_updateTasks.empty() && m_new_updateTasks.empty(); }
-        void DoUpdateTasks();
-        int64_t AddUpdateTask(UpdateTask task);
-        void RemoveUpdateTask(int64_t task_id);
 
         void StartDragObject(DragDropObject object);
         void CancelCurrentLogic();
@@ -98,11 +87,6 @@ namespace node
         std::unique_ptr<SidePanel> m_sidePanel;
         std::unique_ptr<ToolBar> m_toolbar;
         std::unique_ptr<Widget> m_gScene;
-
-        std::unordered_map<int64_t, UpdateTask> m_updateTasks;
-        std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
-        std::vector<int64_t> m_deleted_updateTasks;
-        int64_t m_current_task_id = 0;
 
         std::optional<DragDropObject> m_dragObject = std::nullopt;
         bool b_mouseCaptured = false;

@@ -8,11 +8,34 @@
 
 #include <memory>
 #include <string>
+#include <functional>
+#include <optional>
+#include <queue>
+#include <mutex>
 
 namespace node
 {
 
 class Scene;
+class Widget;
+
+class TaskQueue
+{
+public:
+    void Push(std::function<void()> func);
+    std::optional<std::function<void()>> TryPop();
+    bool IsEmpty();
+private:
+    std::queue<std::function<void()>> m_tasks;
+    std::mutex m_mutex;
+};
+
+struct TOOLGUI_API UpdateTask
+{
+    std::function<bool()> isAlive;
+    std::function<void()> task;
+    static UpdateTask FromWidget(Widget& widget, std::function<void()> task);
+};
 
 class TOOLGUI_API Application
 {
@@ -27,6 +50,15 @@ public:
     const SDL_Rect& getRect() const;
     void InvalidateRect();
     const TTFFont& getFont() { return m_appFont; }
+
+    void AddMainThreadTask(std::function<void()> task);
+    void HandleMainThreadTasks();
+
+    bool UpdateTasksEmpty() { return m_updateTasks.empty() && m_new_updateTasks.empty(); }
+    void DoUpdateTasks();
+    int64_t AddUpdateTask(UpdateTask task);
+    void RemoveUpdateTask(int64_t task_id);
+
 protected:
     virtual void OnInit() {};
     virtual void OnRun();
@@ -56,5 +88,12 @@ private:
     bool b_dragging = false;
     bool b_redrawScene = true;
     TTFFont m_appFont;
+
+    std::unordered_map<int64_t, UpdateTask> m_updateTasks;
+    std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
+    std::vector<int64_t> m_deleted_updateTasks;
+    int64_t m_current_task_id = 1;
+    TaskQueue m_mainThreadTasks;
+
 };
 }

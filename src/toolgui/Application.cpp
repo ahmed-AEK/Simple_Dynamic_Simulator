@@ -5,6 +5,7 @@
 #include <cassert>
 #include <fstream>
 #include "SDL_Framework/Utility.hpp"
+#include "Widget.hpp"
 
 static int resizingEventWatcher(void* data, SDL_Event* event) {
     if (event->type == SDL_WINDOWEVENT &&
@@ -168,13 +169,21 @@ namespace node
                         return true;
                     }
                 }
+                case SDL_USEREVENT:
+                {
+                    if (e.user.code == 1)
+                    {
+                        HandleMainThreadTasks();
+                    }
+                    return true;
+                }
             }
             return false;
     }
     void Application::HandleInputs()
     {
         SDL_Event e;
-        if (m_scene == nullptr || m_scene->UpdateTasksEmpty())
+        if (m_scene == nullptr || UpdateTasksEmpty())
         {
             SDL_WaitEvent(&e);
             HandleEvent(e);
@@ -183,9 +192,9 @@ namespace node
         {
             HandleEvent(e);
         }
-        if (m_scene && !m_scene->UpdateTasksEmpty())
+        if (m_scene && !UpdateTasksEmpty())
         {
-            m_scene->DoUpdateTasks();
+            DoUpdateTasks();
         }
     }
 
@@ -250,6 +259,72 @@ namespace node
         b_redrawScene = true;
     }
 
+
+    void Application::DoUpdateTasks()
+    {
+        for (auto&& [key, value] : m_new_updateTasks)
+        {
+            m_updateTasks.emplace(key, std::move(value));
+        }
+        m_new_updateTasks.clear();
+
+        for (auto&& id : m_deleted_updateTasks)
+        {
+            auto it = m_updateTasks.find(id);
+            assert(it != m_updateTasks.end());
+            if (it != m_updateTasks.end())
+            {
+                m_updateTasks.erase(it);
+            }
+        }
+        m_deleted_updateTasks.clear();
+
+        for (auto&& task : m_updateTasks)
+        {
+            if (task.second.isAlive())
+            {
+                task.second.task();
+            }
+            else
+            {
+                m_deleted_updateTasks.push_back(task.first);
+            }
+        }
+    }
+
+    int64_t Application::AddUpdateTask(UpdateTask task)
+    {
+        auto current_task = m_current_task_id;
+        m_new_updateTasks.emplace(current_task, std::move(task));
+        m_current_task_id++;
+        return current_task;
+    }
+
+    void Application::RemoveUpdateTask(int64_t task_id)
+    {
+        m_deleted_updateTasks.push_back(task_id);
+    }
+
+    void Application::AddMainThreadTask(std::function<void()> task)
+    {
+        m_mainThreadTasks.Push(std::move(task));
+        SDL_Event event;
+        event.type = SDL_USEREVENT;
+        event.user.type = SDL_USEREVENT;
+        event.user.timestamp = SDL_GetTicks();
+        event.user.code = 1;
+        SDL_PushEvent(&event);
+    }
+
+    void Application::HandleMainThreadTasks()
+    {
+        std::optional<std::function<void()>> func;
+        while (func = m_mainThreadTasks.TryPop())
+        {
+            (*func)();
+        }
+    }
+
     SDL_Point Application::convert_to_renderer_coordinates(int x, int y)
     {
         SDL_Rect viewport;
@@ -259,4 +334,37 @@ namespace node
         return {static_cast<int>((x / scale_x) - viewport.x),
         static_cast<int>((y / scale_y) - viewport.y)};
     }
+}
+
+
+void node::TaskQueue::Push(std::function<void()> func)
+{
+    std::lock_guard g{ m_mutex };
+    m_tasks.push(std::move(func));
+}
+
+std::optional<std::function<void()>> node::TaskQueue::TryPop()
+{
+    std::optional<std::function<void()>> ret_val = std::nullopt;
+    {
+        std::lock_guard g{ m_mutex };
+        if (m_tasks.empty())
+        {
+            return ret_val;
+        }
+        ret_val = m_tasks.front();
+        m_tasks.pop();
+    }
+    return ret_val;
+}
+
+bool node::TaskQueue::IsEmpty()
+{
+    std::lock_guard g{ m_mutex };
+    return m_tasks.empty();
+}
+
+node::UpdateTask node::UpdateTask::FromWidget(Widget& widget, std::function<void()> task)
+{
+    return UpdateTask{ [handle = widget.GetMIHandlePtr()]() {return handle.isAlive(); }, std::move(task) };
 }

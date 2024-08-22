@@ -2,6 +2,7 @@
 
 #include "toolgui/Scene.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
+#include "SimulatorRunner.hpp"
 
 namespace node
 {
@@ -19,17 +20,22 @@ public:
     NodeGraphicsScene* GetNodeScene() { return m_graphicsScene; }
     ~MainNodeScene() override;
     ToolsManager* GetToolsManager() const { return m_toolsManager.get(); }
-protected:
+    void CheckSimulatorEnded();
 
+protected:
+    void OnSimulationEnd(SimulationEvent& event);
     virtual bool OnRMBUp(const SDL_Point& p) override;
     NodeGraphicsScene* m_graphicsScene = nullptr;
 private:
+    void RunSimulator();
+    void StopSimulator();
     void InitializeTools();
     void InitializeSidePanel(node::GraphicsScene* gScene);
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::unique_ptr<GraphicsObjectsManager> m_graphicsObjectsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;
 
+    std::shared_ptr<SimulatorRunner> current_running_simulator = nullptr;
 };
 
 }

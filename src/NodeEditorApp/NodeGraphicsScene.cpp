@@ -28,6 +28,8 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
     const SDL_Point start_point_screen = transformer.SpaceToScreenPoint({ start_x, start_y });
     SDL_Point step_screen = transformer.SpaceToScreenVector({ m_dotspace, m_dotspace });
     int dot_width = 2;
+    static std::vector<SDL_Rect> rects;
+    rects.clear();
     if (GetZoomScale() > 1.3)
     {
         dot_width = 1;
@@ -41,9 +43,11 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
         for (int j = start_point_screen.y + 5; j < GetRect().y + GetRect().h; j += step_screen.y)
         {
             SDL_Rect rect{ i,j,dot_width,dot_width };
-            SDL_RenderFillRect(renderer, &rect);
+            rects.push_back(rect);
         }
     }
+    SDL_RenderFillRects(renderer, rects.data(), static_cast<int>(rects.size()));
+
 }
 void node::NodeGraphicsScene::DrawCurrentInsertMode(SDL_Renderer* renderer) const
 {

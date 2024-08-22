@@ -5,6 +5,7 @@ NodeEditorApp.cpp NodeEditorApp.hpp
 MainNodeScene.cpp MainNodeScene.hpp
 ExampleContextMenu.cpp ExampleContextMenu.hpp
 NodeGraphicsScene.cpp NodeGraphicsScene.hpp
+SimulatorRunner.hpp SimulatorRunner.cpp
 )
 
 target_include_directories(NodeEditor PRIVATE ".")
