@@ -39,6 +39,7 @@ struct SocketId
 struct NetNodeId
 {
 	explicit NetNodeId(id_int value) : value{ value } {}
+	bool operator<(const NetNodeId& other) const { return value < other.value; }
 	bool operator==(const NetNodeId&) const = default;
 	id_int value{};
 };
@@ -90,6 +91,15 @@ struct std::hash<node::model::NetNodeId>
 	std::size_t operator()(const node::model::NetNodeId& k) const
 	{
 		return k.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::SocketUniqueId>
+{
+	std::size_t operator()(const node::model::SocketUniqueId& k) const
+	{
+		return k.block_id.value ^ k.socket_id.value;
 	}
 };
 

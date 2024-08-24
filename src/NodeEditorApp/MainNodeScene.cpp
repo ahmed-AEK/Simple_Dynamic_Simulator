@@ -32,6 +32,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{ 1 }, model::Rect{ 10,10,100,100 }};
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetClass("Gain");
+        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -39,6 +41,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{2}, model::Rect{ 200,10,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetClass("Gain");
+        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -46,6 +50,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{3}, model::Rect{ 400,10,100,100 }};
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetClass("Gain");
+        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -53,6 +59,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{4}, model::Rect{ 200,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetClass("Gain");
+        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -61,6 +69,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetClass("Gain");
+        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
     manager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
@@ -69,30 +79,32 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 
 void node::MainNodeScene::RunSimulator()
 {
-    if (!current_running_simulator)
+    if (!m_current_running_simulator)
     {
-        auto runner = std::make_shared<SimulatorRunner>(std::function<void()>{
+        auto runner = std::make_shared<SimulatorRunner>(
+            m_graphicsObjectsManager->GetSceneModel()->GetModel(),
+            m_classesManager,
+            std::function<void()>{
             [this] { GetApp()->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); });} 
         });
-        current_running_simulator = runner;
+        m_current_running_simulator = runner;
         runner->Run();
     }
 }
 
 void node::MainNodeScene::StopSimulator()
 {
-    if (current_running_simulator)
+    if (m_current_running_simulator)
     {
-        current_running_simulator->Stop();
-        current_running_simulator = nullptr;
+        m_current_running_simulator->Stop();
     }
 }
 
 void node::MainNodeScene::CheckSimulatorEnded()
 {
-    if (current_running_simulator)
+    if (m_current_running_simulator)
     {
-        if (current_running_simulator->IsEnded())
+        if (m_current_running_simulator->IsEnded())
         {
             SimulationEvent e{};
             OnSimulationEnd(e);
@@ -111,8 +123,10 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     toolbar->AddSeparator();
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->StopSimulator(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
+        [this]() { return this->m_current_running_simulator != nullptr; }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->StopSimulator(); }, 
+        [this]() { return this->m_current_running_simulator == nullptr; }));
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
 }
@@ -173,7 +187,8 @@ node::MainNodeScene::~MainNodeScene() = default;
 void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
 {
     UNUSED_PARAM(event);
-    current_running_simulator = nullptr;
+    m_current_running_simulator = nullptr;
+    SDL_Log("simulation Ended!");
 }
 
 bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)

@@ -125,16 +125,18 @@ private:
     double m_scroll_ratio = 1.25;
     double m_zoomScale = 1;
     int m_spaceQuantization = 20;
+
     SDL_Point m_current_mouse_position{ 0,0 };
-    SDL_Point m_StartPointScreen{ 0,0 };
-    SDL_Point m_startEdgeSpace{ 0,0 };
+    
     std::vector<ObjectSlot> m_objects;
     HandlePtr<GraphicsObject> m_current_mouse_hover;
     std::vector<HandlePtr<GraphicsObject>> m_current_selection;
-    std::vector<DragObject> m_drag_objects;
+    
     std::unique_ptr<logic::GraphicsLogic> m_graphicsLogic;
     std::shared_ptr<GraphicsTool> m_tool;
+    
     SpaceScreenTransformer m_spaceScreenTransformer;
+
     std::optional<DragDropDrawObject> m_dragDropDrawObject;
     CAPTURE_MODE m_mouse_capture_mode = CAPTURE_MODE::NONE;
 };

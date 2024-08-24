@@ -52,7 +52,6 @@ std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node:
 void node::GraphicsScene::ClearAllObjects()
 {
     m_objects.clear();
-    m_drag_objects.clear();
 }
 
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)

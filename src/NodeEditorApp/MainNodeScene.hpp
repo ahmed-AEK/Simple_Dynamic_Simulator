@@ -35,7 +35,7 @@ private:
     std::unique_ptr<GraphicsObjectsManager> m_graphicsObjectsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;
 
-    std::shared_ptr<SimulatorRunner> current_running_simulator = nullptr;
+    std::shared_ptr<SimulatorRunner> m_current_running_simulator = nullptr;
 };
 
 }

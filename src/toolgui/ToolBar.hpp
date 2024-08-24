@@ -20,8 +20,8 @@ public:
 	~ToolBarButton() override;
 	std::string_view GetName() noexcept;
 	void Draw(SDL_Renderer* renderer) override;
-	void SetActive(bool value = true);
 protected:
+	virtual bool IsActive() { return false; }
 	void OnMouseOut() override final;
 	void OnMouseIn() override final;
 	virtual void OnButonClicked();
@@ -29,7 +29,6 @@ protected:
 	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override final;
 
 	bool b_hovered = false;
-	bool b_active = false;
 	bool b_held_down = false;
 	std::string m_name{};
 	SDLTexture m_name_texture;
@@ -68,10 +67,13 @@ class ToolBarCommandButton : public ToolBarButton
 {
 public:
 	ToolBarCommandButton(const SDL_Rect& rect, Scene* parent,
-		std::string name = {}, std::function<void()> func = {});
+		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return false; });
 	void OnButonClicked() override;
+protected:
+	bool IsActive() override { return m_isActive(); }
 private:
 	std::function<void()> m_action;
+	std::function<bool()> m_isActive;
 };
 
 }

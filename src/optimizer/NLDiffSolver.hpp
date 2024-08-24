@@ -13,6 +13,7 @@ public:
 	NLDiffSolver();
 	void AddDiffEquation(DiffEquation eq);
 	void AddNLEquation(NLEquation eq);
+	void AddNLStatefulEquation(NLStatefulEquation eq);
 	void AddObserver(Observer obs);
 	void Initialize(double start_time, double end_time);
 	[[nodiscard]] constexpr double GetStartTime() const { return m_diffSolver.GetStartTime(); }

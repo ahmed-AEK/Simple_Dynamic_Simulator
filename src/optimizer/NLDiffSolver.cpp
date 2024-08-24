@@ -22,6 +22,11 @@ void opt::NLDiffSolver::AddNLEquation(NLEquation eq)
 	m_NLSolver.AddEquation(std::move(eq));
 }
 
+void opt::NLDiffSolver::AddNLStatefulEquation(NLStatefulEquation eq)
+{
+	m_NLSolver.AddStatefulEquation(std::move(eq));
+}
+
 void opt::NLDiffSolver::AddObserver(Observer obs)
 {
 	m_observers.push_back(std::move(obs));

@@ -21,7 +21,7 @@ public:
 	const NetNodeId& GetId() const noexcept { return m_Id; }
 	const Point& GetPosition() const noexcept { return m_position; };
 	void SetPosition(const Point& position) { m_position = position; }
-	std::optional<NetSegmentId> GetSegmentAt(const ConnectedSegmentSide side);
+	std::optional<NetSegmentId> GetSegmentAt(const ConnectedSegmentSide side) const;
 	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<NetSegmentId> segment);
 private:
 	NetNodeId m_Id;

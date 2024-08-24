@@ -18,7 +18,7 @@ bool node::BlockClassesManager::RegisterBlockClass(const std::shared_ptr<BlockCl
 	return true;
 }
 
-std::shared_ptr<node::BlockClass> node::BlockClassesManager::GetBlockByName(const std::string& name)
+std::shared_ptr<node::BlockClass> node::BlockClassesManager::GetBlockClassByName(const std::string& name)
 {
 	auto it = m_classes.find(name);
 	if (it != m_classes.end())

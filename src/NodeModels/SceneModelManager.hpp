@@ -125,6 +125,7 @@ public:
 
 	void AddNewNet(model::NetModel&& net);
 	void UpdateNet(NetModificationRequest& update_request);
+	const model::NodeSceneModel& GetModel() const { return *m_scene; }
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 };

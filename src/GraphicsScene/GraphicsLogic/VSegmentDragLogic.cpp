@@ -49,7 +49,7 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		for (size_t i = 0; i < 4; i++)
 		{
 			auto segment_ptr = node1.getSegment(static_cast<model::ConnectedSegmentSide>(i));
-			if (segment_ptr != nullptr && segment_ptr != &segment)
+			if (segment_ptr != nullptr && segment_ptr == &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
 			}
@@ -71,7 +71,7 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		for (size_t i = 0; i < 4; i++)
 		{
 			auto segment_ptr = node2.getSegment(static_cast<model::ConnectedSegmentSide>(i));
-			if (segment_ptr != nullptr && segment_ptr != &segment)
+			if (segment_ptr != nullptr && segment_ptr == &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
 			}
@@ -135,11 +135,13 @@ MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& curre
 	NetModificationRequest request;
 	auto node1 = m_first_node_handler->CreateRequest(request, current_mouse_point);
 	auto node2 = m_second_node_handler->CreateRequest(request, current_mouse_point);	
+	/*
 	request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
 		node1.node_type, node2.node_type, node1.connected_side, node2.connected_side,
 		*static_cast<NetSegment*>(m_base_segment.get())->GetId(),
 		node1.node_id, node2.node_id }
 		);
+	*/
 	CleanUp();
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CLICKED;

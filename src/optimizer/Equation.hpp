@@ -22,6 +22,8 @@ public:
 	[[nodiscard]] constexpr std::span<double> get_output_buffer() { return m_output_buffer; }
 	[[nodiscard]] constexpr std::span<const int64_t> get_input_ids() const { return m_input_ids; }
 	[[nodiscard]] constexpr std::span<const int64_t> get_output_ids() const { return m_output_ids; }
+	[[nodiscard]] constexpr std::span<int64_t> get_input_ids() { return m_input_ids; }
+	[[nodiscard]] constexpr std::span<int64_t> get_output_ids() { return m_output_ids; }
 	[[nodiscard]] std::pmr::polymorphic_allocator<double> get_allocator() { return m_output_buffer.get_allocator(); }
 protected:
 	std::pmr::vector<int64_t> m_input_ids;

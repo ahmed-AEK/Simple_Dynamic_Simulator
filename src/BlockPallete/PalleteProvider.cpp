@@ -13,7 +13,7 @@ node::PalleteProvider::PalleteProvider(std::shared_ptr<BlockClassesManager> mana
 void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 {
 	assert(m_classesManager);
-	auto block_class = m_classesManager->GetBlockByName(temp.class_name);
+	auto block_class = m_classesManager->GetBlockClassByName(temp.class_name);
 	assert(block_class);
 	if (!block_class)
 	{

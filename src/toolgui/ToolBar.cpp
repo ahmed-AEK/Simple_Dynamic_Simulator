@@ -171,7 +171,7 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 		SDL_Color color_outer = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255 };
 		const int radius = 10;
 		SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color color_inner = b_active ? SDL_Color{ 230, 230, 230, 255 } : inactive_color;
+		SDL_Color color_inner = IsActive() ? SDL_Color{230, 230, 230, 255} : inactive_color;
 		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner, 
 			*m_painter_outer, *m_painter_inner);
 	}
@@ -195,11 +195,6 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 	SDL_RenderCopy(renderer, m_name_texture.get(), NULL, &text_rect);
 }
 
-void node::ToolBarButton::SetActive(bool value)
-{
-	b_active = value;
-}
-
 void node::ToolBarButton::OnMouseOut()
 {
 	b_hovered = false;
@@ -213,7 +208,6 @@ void node::ToolBarButton::OnMouseIn()
 
 void node::ToolBarButton::OnButonClicked()
 {
-	b_active = !b_active;
 }
 
 MI::ClickEvent node::ToolBarButton::OnLMBDown(const SDL_Point& current_mouse_point)
@@ -235,12 +229,15 @@ MI::ClickEvent node::ToolBarButton::OnLMBUp(const SDL_Point& current_mouse_point
 }
 
 node::ToolBarCommandButton::ToolBarCommandButton(const SDL_Rect& rect, Scene* parent, 
-	std::string name, std::function<void()> func)
-	:ToolBarButton{rect, parent, name}, m_action{std::move(func)}
+	std::string name, std::function<void()> func, std::function<bool()> Active)
+	:ToolBarButton{rect, parent, name}, m_action{std::move(func)}, m_isActive{Active}
 {
 }
 
 void node::ToolBarCommandButton::OnButonClicked()
 {
-	m_action();
+	if (!m_isActive())
+	{
+		m_action();
+	}
 }

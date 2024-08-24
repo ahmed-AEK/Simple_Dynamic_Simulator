@@ -3,6 +3,7 @@
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "tools/GraphicsTool.hpp"
 #include "toolgui/ToolBar.hpp"
+#include "ToolButton.hpp"
 
 static auto GetToolByName(const std::string& tool_name, auto&& vec) -> decltype(vec.begin())
 {
@@ -15,12 +16,12 @@ void node::ToolsManager::ChangeTool(const std::string& tool_name)
 	auto it = GetToolByName(tool_name, m_tools);
 	if (it != m_tools.end())
 	{
-		auto btn1 = m_toolbar->GetButton(m_current_tool);
+		auto btn1 = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_tool));
 		if (btn1)
 		{
 			btn1->SetActive(false);
 		}
-		auto btnt = m_toolbar->GetButton(m_current_temporary_tool);
+		auto btnt = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_temporary_tool));
 		if (btnt)
 		{
 			btnt->SetActive(false);
@@ -30,7 +31,7 @@ void node::ToolsManager::ChangeTool(const std::string& tool_name)
 		m_current_temporary_tool = std::string{};
 		SDL_Log("changed tool to %s", m_current_tool.c_str());
 		m_scene->SetTool(it->second);
-		auto btn2 = m_toolbar->GetButton(tool_name);
+		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(tool_name));
 		if (btn2)
 		{
 			btn2->SetActive(true);
@@ -52,12 +53,12 @@ void node::ToolsManager::SetTemporaryTool(const std::string& tool_name)
 	auto it = GetToolByName(tool_name, m_tools);
 	if (it != m_tools.end())
 	{
-		auto btn1 = m_toolbar->GetButton(m_current_tool);
+		auto btn1 = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_tool));
 		if (btn1)
 		{
 			btn1->SetActive(false);
 		}
-		auto btnt = m_toolbar->GetButton(m_current_temporary_tool);
+		auto btnt = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_temporary_tool));
 		if (btnt)
 		{
 			btnt->SetActive(false);
@@ -66,7 +67,7 @@ void node::ToolsManager::SetTemporaryTool(const std::string& tool_name)
 		m_current_temporary_tool = tool_name;
 		SDL_Log("changed tool temporary to %s", m_current_temporary_tool.c_str());
 		m_scene->SetTool(it->second);
-		auto btn2 = m_toolbar->GetButton(tool_name);
+		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(tool_name));
 		if (btn2)
 		{
 			btn2->SetActive(true);
@@ -84,7 +85,7 @@ void node::ToolsManager::RemoveTemporaryTool(const std::string& tool_name)
 	auto it = GetToolByName(m_current_tool, m_tools);
 	if (it != m_tools.end())
 	{
-		auto btn1 = m_toolbar->GetButton(m_current_temporary_tool);
+		auto btn1 = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_temporary_tool));
 		if (btn1)
 		{
 			btn1->SetActive(false);
@@ -93,7 +94,7 @@ void node::ToolsManager::RemoveTemporaryTool(const std::string& tool_name)
 		m_current_temporary_tool = std::string{};
 		SDL_Log("changed tool from temporary to %s", m_current_tool.c_str());
 		m_scene->SetTool(it->second);
-		auto btn2 = m_toolbar->GetButton(m_current_tool);
+		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_tool));
 		if (btn2)
 		{
 			btn2->SetActive(true);

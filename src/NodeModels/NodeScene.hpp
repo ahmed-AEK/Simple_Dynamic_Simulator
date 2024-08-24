@@ -23,14 +23,22 @@ public:
 	void AddNetNode(NetNodeModel&& netNode) { m_nodes.push_back(std::move(netNode)); }
 	void RemoveNetNodeById(const NetNodeId& id);
 
+	std::optional<std::reference_wrapper<const NetNodeModel>>
+		GetNetNodeById(const NetNodeId& id) const;
+
 	std::optional<std::reference_wrapper<NetNodeModel>>
 		GetNetNodeById(const NetNodeId& id);
+
 	std::span<NetNodeModel>
 		GetNetNodes() { return m_nodes; }
+	std::span<const NetNodeModel>
+		GetNetNodes() const { return m_nodes; }
 
 	void AddNetSegment(NetSegmentModel&& netSegment) { m_segments.push_back(std::move(netSegment)); }
 	void RemoveNetSegmentById(const NetSegmentId& id);
 
+	std::optional<std::reference_wrapper<const NetSegmentModel>>
+		GetNetSegmentById(const NetSegmentId& id) const;
 	std::optional<std::reference_wrapper<NetSegmentModel>>
 		GetNetSegmentById(const NetSegmentId& id);
 	std::span<NetSegmentModel>
@@ -41,6 +49,10 @@ public:
 		m_SocketConnections.push_back(connection);
 	}
 	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
+	std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>>
+		GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const;
+	std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>>
+		GetSocketConnectionForNode(const model::NetNodeId& node_id) const;
 	std::optional<std::reference_wrapper<node::model::SocketNodeConnection>>
 		GetSocketConnectionForNode(const model::NetNodeId& node_id);
 

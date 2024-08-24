@@ -2,7 +2,7 @@
 #include <cassert>
 #include <algorithm>
 
-std::optional<node::model::NetSegmentId> node::model::NetNodeModel::GetSegmentAt(const ConnectedSegmentSide side)
+std::optional<node::model::NetSegmentId> node::model::NetNodeModel::GetSegmentAt(const ConnectedSegmentSide side) const
 {
 	if (!m_valid_sides[static_cast<size_t>(side)])
 	{
