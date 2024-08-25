@@ -102,13 +102,17 @@ void node::MainNodeScene::StopSimulator()
 
 void node::MainNodeScene::CheckSimulatorEnded()
 {
-    if (m_current_running_simulator)
+    if (m_current_running_simulator && m_current_running_simulator->IsEnded())
     {
-        if (m_current_running_simulator->IsEnded())
+        if (auto result = m_current_running_simulator->GetResult())
         {
-            SimulationEvent e{};
-            OnSimulationEnd(e);
+            OnSimulationEnd(*result);
         }
+        else
+        {
+            assert(false); // simulation ended but no result !!
+        }
+        
     }
 }
 
@@ -184,9 +188,34 @@ void node::MainNodeScene::OnInit()
 
 node::MainNodeScene::~MainNodeScene() = default;
 
+// helper type for the visitor #4
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
 void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
 {
-    UNUSED_PARAM(event);
+    std::visit(overloaded{
+        [](SimulationEvent::NetFloatingError&)
+        {
+            SDL_Log("Floating Net!");
+        },
+        [](SimulationEvent::OutputSocketsConflict&)
+        {
+            SDL_Log("Sockets Conflict!");
+        },
+        [](SimulationEvent::FloatingInput&)
+        {
+           SDL_Log("Floating Input!");
+        },
+        [](SimulationEvent::Success&)
+        {
+            SDL_Log("Success!");
+        }
+        }, event.e);
+    
     m_current_running_simulator = nullptr;
     SDL_Log("simulation Ended!");
 }

@@ -5,6 +5,7 @@
 #include "GraphicsObjectsManager.hpp"
 #include "GraphicsLogic/BlockDeleteLogic.hpp"
 #include "GraphicsLogic/SegmentDeleteLogic.hpp"
+#include "GraphicsLogic/NetNodeDeleteLogic.hpp"
 
 MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 {
@@ -28,6 +29,10 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 		GetScene()->AddSelection(obj->GetMIHandlePtr());
 		break;
 	}
+	case ObjectType::netNode:
+		GetScene()->SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), GetScene(), GetObjectsManager()));
+		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		break;
 	}
 	return MI::ClickEvent::CLICKED;
 }

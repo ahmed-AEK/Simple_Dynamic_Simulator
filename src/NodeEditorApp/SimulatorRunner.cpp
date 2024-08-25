@@ -253,7 +253,7 @@ node::SimulatorRunner::~SimulatorRunner()
 
 void node::SimulatorRunner::Run()
 {
-	m_thread = std::thread{ [this]() {this->RunImpl(); } };
+	m_thread = std::thread{ [this]() { this->RunImpl(); } };
 }
 
 void node::SimulatorRunner::Stop()
@@ -266,7 +266,7 @@ bool node::SimulatorRunner::IsEnded()
 	return m_ended.test();
 }
 
-void node::SimulatorRunner::RunImpl()
+node::SimulationEvent node::SimulatorRunner::DoSimulation()
 {
 	auto nets = SplitToNets(*m_model);
 	auto socket_mappings = MapSockets(*m_model, nets);
@@ -275,8 +275,53 @@ void node::SimulatorRunner::RunImpl()
 	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
 	RemapFunctions(blocks, socket_mappings);
 
+	for (auto& net : nets.nets)
+	{
+		if (net.in_sockets_count > 0 && net.out_sockets_count == 0)
+		{
+			return { SimulationEvent::NetFloatingError{ std::move(net.nodes) } };
+		}
+		if (net.out_sockets_count > 1)
+		{
+			std::vector<model::SocketUniqueId> output_sockets;
+			for (const auto& socket_id : net.sockets)
+			{
+				if (auto block = m_model->GetBlockById(socket_id.block_id))
+				{
+					auto socket = block->get().GetSocketById(socket_id.socket_id);
+					assert(socket);
+					if (socket->get().GetType() == model::BlockSocketModel::SocketType::output)
+					{
+						output_sockets.push_back(socket_id);
+					}
+				}
+			}
+			return { SimulationEvent::OutputSocketsConflict{std::move(net.nodes), std::move(output_sockets)}};
+		}
+	}
+	std::vector<model::SocketUniqueId> floating_inputs;
+	for (const auto& mapping : socket_mappings)
+	{
+		for (const auto& socket : mapping.mappings)
+		{
+			if (socket.connected == false && socket.socket_type == model::BlockSocketModel::SocketType::input)
+			{
+				floating_inputs.push_back({ socket.socket_id, mapping.block_id });
+			}
+		}
+	}
+	if (floating_inputs.size())
+	{
+		return { SimulationEvent::FloatingInput{std::move(floating_inputs) } };
+	}
 	opt::NLDiffSolver solver;
 	AddFuncs(solver, blocks);
+	return { SimulationEvent::Success{} };
+}
+
+void node::SimulatorRunner::RunImpl()
+{
+	m_evt = DoSimulation();
 	
 	m_ended.test_and_set();
 	if (m_end_callback)
