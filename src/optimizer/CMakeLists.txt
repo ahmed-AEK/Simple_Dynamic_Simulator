@@ -12,6 +12,7 @@ NLDiffSolver.cpp NLDiffSolver.hpp
 FatAny.cpp FatAny.hpp
 NLStatefulEquation.cpp NLStatefulEquation.hpp
 Observer.cpp Observer.hpp
+SourceEq.cpp SourceEq.hpp
 )
 
 target_include_directories(NLOptimizer PRIVATE ".")

@@ -28,5 +28,4 @@ TEST(testObserver, testApply)
 	{
 		EXPECT_EQ(inputs[i], outputs[i]) << "Vectors x and y differ at index " << i;
 	}
-	outputs[3] = 5;
 }

@@ -8,6 +8,7 @@ namespace opt
 	class NLEquation;
 	class NLStatefulEquation;
 	class Observer;
+	class SourceEq;
 }
 
 namespace node
@@ -22,7 +23,7 @@ enum class BlockType
 	Stateless,
 };
 
-using BlockFunctor = typename std::variant<opt::DiffEquation, opt::NLEquation, opt::NLStatefulEquation, opt::Observer>;
+using BlockFunctor = typename std::variant<opt::DiffEquation, opt::NLEquation, opt::NLStatefulEquation, opt::Observer, opt::SourceEq>;
 
 class BlockClass
 {

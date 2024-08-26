@@ -5,6 +5,8 @@ BlockClassesManager.cpp BlockClassesManager.hpp
 BlockClass.cpp BlockClass.hpp
 AddBlockClass.cpp AddBlockClass.hpp
 GainBlockClass.cpp GainBlockClass.hpp
+ConstantSourceClass.cpp ConstantSourceClass.hpp
+ScopeDisplayClass.cpp ScopeDisplayClass.hpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

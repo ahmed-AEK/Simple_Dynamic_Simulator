@@ -18,6 +18,8 @@
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
+#include "BlockClasses/ConstantSourceClass.hpp"
+#include "BlockClasses/ScopeDisplayClass.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
 
@@ -156,6 +158,28 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         pallete_provider->AddElement(block_template);
     }
 
+    auto constant_block = BlockTemplate{
+        "Constant Source",
+        "Constant Source",
+        "Default",
+        std::vector<model::BlockProperty>{
+        model::BlockProperty{"Value", model::BlockPropertyType::FloatNumber, 1.0}
+        }
+    };
+    pallete_provider->AddElement(std::move(constant_block));
+
+
+    auto scope_block = BlockTemplate{
+        "Scope",
+        "Scope Display",
+        "Default",
+        std::vector<model::BlockProperty>{
+        model::BlockProperty{"Inputs", model::BlockPropertyType::Integer, static_cast<uint64_t>(1)}
+        } 
+    };
+    pallete_provider->AddElement(std::move(scope_block));
+
+
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
         std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
@@ -176,7 +200,8 @@ void node::MainNodeScene::OnInit()
 
     m_classesManager = std::make_shared<BlockClassesManager>();
     m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
-
+    m_classesManager->RegisterBlockClass(std::make_shared<ConstantSourceClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<ScopeDisplayClass>());
     InitializeSidePanel(gScene.get());
 
     InitializeTools();

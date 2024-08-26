@@ -2,6 +2,8 @@
 #include "gtest/gtest.h"
 #include "optimizer/NLDiffSolver.hpp"
 #include "toolgui/NodeMacros.h"
+#include "optimizer/Observer.hpp"
+#include "optimizer/SourceEq.hpp"
 
 TEST(testNLDiffSolver, testConstructor)
 {

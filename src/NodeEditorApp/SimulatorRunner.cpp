@@ -12,6 +12,7 @@
 #include "optimizer/NLStatefulEquation.hpp"
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "optimizer/NLDiffSolver.hpp"
+#include "optimizer/SourceEq.hpp"
 
 struct Net
 {
@@ -47,6 +48,7 @@ struct BlocksFunctions
 	std::vector<std::pair<opt::NLStatefulEquation, node::model::BlockId>> nl_st_eqs;
 	std::vector<std::pair<opt::DiffEquation, node::model::BlockId>> diff_eqs;
 	std::vector<std::pair<opt::Observer, node::model::BlockId>> observers;
+	std::vector<std::pair<opt::SourceEq, node::model::BlockId>> sources;
 };
 
 // helper type for the visitor #4
@@ -69,7 +71,8 @@ static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, no
 			[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
-			[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); }
+			[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
+			[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
 			}, functor);
 	}
 	return funcs;
@@ -212,6 +215,7 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 	remap(funcs.nl_st_eqs);
 	remap(funcs.diff_eqs);
 	remap(funcs.observers);
+	remap(funcs.sources);
 }
 
 static void AddFuncs(opt::NLDiffSolver& solver, BlocksFunctions& funcs)
@@ -231,6 +235,10 @@ static void AddFuncs(opt::NLDiffSolver& solver, BlocksFunctions& funcs)
 	for (auto& func : funcs.nl_st_eqs)
 	{
 		solver.AddNLStatefulEquation(std::move(func.first));
+	}
+	for (auto& func : funcs.sources)
+	{
+		solver.AddSource(std::move(func.first));
 	}
 	
 }

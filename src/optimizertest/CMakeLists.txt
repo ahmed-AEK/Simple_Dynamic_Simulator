@@ -12,6 +12,7 @@ NLDiffSolverTest.cpp
 FatAnyTest.cpp
 NLStatefulEquationTest.cpp
 ObserverTest.cpp
+SourceEqTest.cpp
 )
 
 target_include_directories(NLOptimizertest PRIVATE ".")
