@@ -78,8 +78,8 @@ MI::ClickEvent node::NodeGraphicsScene::OnRMBUp(const SDL_Point& p)
     {
         return ret;
     }
-    std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(this->p_parent);
-    this->p_parent->ShowContextMenu(std::move(menu), {p.x, p.y});
+    std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(GetScene());
+    GetScene()->ShowContextMenu(std::move(menu), {p.x, p.y});
     return MI::ClickEvent::CLICKED;
 }
 

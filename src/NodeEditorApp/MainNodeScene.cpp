@@ -4,6 +4,7 @@
 #include "toolgui/SidePanel.hpp"
 #include "toolgui/ToolBar.hpp"
 #include "toolgui/Application.hpp"
+#include "toolgui/Dialog.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -202,6 +203,8 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ConstantSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ScopeDisplayClass>());
+
+    AddNormalDialog(std::make_unique<node::Dialog>(std::string{"Hello!"}, SDL_Rect{200,200,300,200}, this));
     InitializeSidePanel(gScene.get());
 
     InitializeTools();

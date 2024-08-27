@@ -303,8 +303,9 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
         return false;
     }
     model::Rect new_rect = GetSpaceRect();
-    double x_ratio = static_cast<double>(GetRect().w) / m_rect_base.w;
-    double y_ratio = static_cast<double>(GetRect().h) / m_rect_base.h;
+    SDL_Rect rect_base = GetBaseRect();
+    double x_ratio = static_cast<double>(GetRect().w) / rect_base.w;
+    double y_ratio = static_cast<double>(GetRect().h) / rect_base.h;
     new_rect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
     new_rect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
     SetSpaceRect(new_rect);
@@ -367,8 +368,9 @@ void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
 void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)
 {
     Widget::OnSetRect(rect);
-    double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
-    double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
+    SDL_Rect rect_base = GetBaseRect();
+    double x_ratio = static_cast<double>(rect.w)/ rect_base.w;
+    double y_ratio = static_cast<double>(rect.h)/ rect_base.h;
     m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
     m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
     m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };

@@ -15,27 +15,22 @@ namespace node
 
     class Application;
     class Widget;
-    struct SceneWidgetIterator;
     class ContextMenu;
     class SidePanel;
     class ToolBar;
-
-    struct TOOLGUI_API WidgetSlot
-    {
-        std::unique_ptr<node::Widget> m_ptr;
-        int z_order;
-    };
+    class Dialog;
 
     class TOOLGUI_API Scene
     {
-        friend SceneWidgetIterator;
     public:
         Scene(SDL_Rect rect, Application* parent);
         void Draw(SDL_Renderer* renderer);
         void SetRect(const SDL_Rect& rect);
+        SDL_Rect GetRect() const { return m_rect; }
         virtual ~Scene();
         Application* GetApp() { return p_parent; }
-        void AddWidget(std::unique_ptr<Widget> widget, int z_order);
+        void AddNormalDialog(std::unique_ptr<node::Dialog> dialog);
+        std::unique_ptr<node::Dialog> PopDialog(node::Dialog* dialog);
 
         virtual void OnInit() {};
         virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}
@@ -50,9 +45,6 @@ namespace node
 
         void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_Point& p);
         void DestroyContextMenu();
-
-        SceneWidgetIterator begin();
-        SceneWidgetIterator end();
 
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
@@ -78,9 +70,9 @@ namespace node
         Application* p_parent;
         SDL_Rect m_rect_base;
         SDL_Rect m_rect;
-        std::vector<WidgetSlot> m_widgets;
 
     private:
+        std::vector<std::unique_ptr<Dialog>> m_dialogs;
 
         node::HandlePtr<node::Widget> m_current_mouse_hover;
                 
@@ -90,19 +82,5 @@ namespace node
 
         std::optional<DragDropObject> m_dragObject = std::nullopt;
         bool b_mouseCaptured = false;
-    };
-
-    struct SceneWidgetIterator
-    {
-        SceneWidgetIterator(Scene* scene, size_t position) : p_scene{ scene }, m_position{ position } {}
-        SceneWidgetIterator operator++(int) { return SceneWidgetIterator(p_scene, m_position++); }
-        SceneWidgetIterator& operator++() { m_position++; return *this; }
-        node::Widget& operator*() const { return *(p_scene->m_widgets[m_position].m_ptr.get()); }
-        bool operator==(const SceneWidgetIterator& rhs) const { return this->m_position == rhs.m_position; }
-        bool operator!=(const SceneWidgetIterator& rhs) const { return this->m_position != rhs.m_position; }
-        node::Widget* get() {return p_scene->m_widgets[m_position].m_ptr.get(); }
-    private:
-        Scene* p_scene;
-        size_t m_position{};
     };
 }

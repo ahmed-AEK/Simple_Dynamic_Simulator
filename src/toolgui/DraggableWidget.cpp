@@ -16,7 +16,7 @@ void node::DragableWidget::OnMouseMove(const SDL_Point& current_mouse_point)
         new_rect.x = current_mouse_point.x - m_dragStartPoint.x;
         new_rect.y = current_mouse_point.y - m_dragStartPoint.y;
         SetRect(new_rect);
-        this->p_parent->InvalidateRect();
+        GetScene()->InvalidateRect();
     }
 }
 MI::ClickEvent node::DragableWidget::OnLMBDown(const SDL_Point& current_mouse_point)

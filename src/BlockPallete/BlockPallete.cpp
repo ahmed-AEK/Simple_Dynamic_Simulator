@@ -175,7 +175,7 @@ void node::BlockPallete::DrawElementText(SDL_Renderer* renderer,
 {
 
 	SDL_Color Black = { 50, 50, 50, 255 };
-	auto textSurface = SDLSurface{ TTF_RenderText_Solid(p_parent->GetApp()->getFont().get(), name.c_str(), Black) };
+	auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), name.c_str(), Black)};
 	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
 	
 	SDL_Rect text_rect{};

@@ -9,11 +9,6 @@
 namespace node
 {
     class Scene;
-    enum class WidgetScaling
-    {
-        ScaleWithWindow,
-        FixedPixels
-    };
 
     class Widget;
     using WidgetMouseInteractable = MI::MouseInteractable<Widget, SDL_Rect, SDL_Point>;
@@ -28,7 +23,6 @@ namespace node
         const SDL_Rect& GetBaseRect() noexcept;
         void SetBaseRect(const SDL_Rect& rect) noexcept;
         void InvalidateRect();
-        WidgetScaling GetScalingType() const;
         node::Scene* GetScene() const noexcept;
         bool Scroll(const double amount, const SDL_Point& p) {return OnScroll(amount, p);}
         
@@ -70,10 +64,9 @@ namespace node
         virtual void OnSetRect(const SDL_Rect& rect);
         virtual bool OnScroll(const double amount, const SDL_Point& p);
         virtual Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
+    private:
         node::Scene* p_parent;
         SDL_Rect m_rect_base;
-        WidgetScaling m_scalingType = WidgetScaling::ScaleWithWindow;
-    private:
         bool m_isDropTarget = false;
     };
 }

@@ -80,7 +80,7 @@ MI::ClickEvent node::ContextMenu::OnLMBUp(const SDL_Point& current_mouse_point)
     }
     if (handled)
     {
-        this->p_parent->DestroyContextMenu();
+        GetScene()->DestroyContextMenu();
         return MI::ClickEvent::CLICKED;
     }
     return MI::ClickEvent::NONE;

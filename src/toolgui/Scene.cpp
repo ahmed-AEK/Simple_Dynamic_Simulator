@@ -8,6 +8,7 @@
 #include "Widget.hpp"
 #include "SidePanel.hpp"
 #include "ToolBar.hpp"
+#include "Dialog.hpp"
 
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
@@ -30,14 +31,14 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     {
         m_toolbar->Draw(renderer);
     }
-    for (auto&& it = m_widgets.rbegin(); it != m_widgets.rend(); it++)
-    {
-        auto&& widget = *it;
-        widget.m_ptr->Draw(renderer);
-    }
     if (m_sidePanel)
     {
         m_sidePanel->Draw(renderer);
+    }
+    for (auto&& it = m_dialogs.rbegin(); it != m_dialogs.rend(); it++)
+    {
+        auto&& widget = *it;
+        widget->Draw(renderer);
     }
     if (m_pContextMenu)
     {
@@ -54,16 +55,6 @@ void node::Scene::ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const
 void node::Scene::DestroyContextMenu()
 {
     m_pContextMenu.reset(nullptr);
-}
-
-node::SceneWidgetIterator node::Scene::begin()
-{
-    return SceneWidgetIterator(this, 0);
-}
-
-node::SceneWidgetIterator node::Scene::end()
-{
-    return SceneWidgetIterator(this, this->m_widgets.size());
 }
 
 void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
@@ -172,19 +163,20 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
             return interactable;
         }
     }
+    for (auto it = m_dialogs.rbegin(); it != m_dialogs.rend(); it++)
+    {
+        auto&& widget = *it;
+        node::Widget* current_hover = widget->GetInteractableAtPoint(p);
+        if (current_hover)
+        {
+            return current_hover;
+        }
+    }
     if (m_sidePanel)
     {
         if (auto result = m_sidePanel->GetInteractableAtPoint(p))
         {
             return result;
-        }
-    }
-    for (auto& widget : m_widgets)
-    {
-        node::Widget* current_hover = widget.m_ptr->GetInteractableAtPoint(p);
-        if (current_hover)
-        {
-            return current_hover;
         }
     }
     if (m_toolbar)
@@ -204,11 +196,22 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
     return nullptr;
 }
 
-void node::Scene::AddWidget(std::unique_ptr<Widget> widget, int z_order)
+void node::Scene::AddNormalDialog(std::unique_ptr<node::Dialog> dialog)
 {
-    WidgetSlot slot = {std::move(widget), z_order};
-    auto iter = std::lower_bound(m_widgets.begin(), m_widgets.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
-    m_widgets.insert(iter, std::move(slot));
+    m_dialogs.push_back(std::move(dialog));
+}
+
+std::unique_ptr<node::Dialog> node::Scene::PopDialog(node::Dialog* dialog)
+{
+    auto it = std::find_if(m_dialogs.begin(), m_dialogs.end(), [&](const auto& ptr) { return ptr.get() == dialog; });
+    assert(it != m_dialogs.end());
+    if (it != m_dialogs.end())
+    {
+        auto out = std::move(*it);
+        m_dialogs.erase(it);
+        return out;
+    }
+    return nullptr;
 }
 
 void node::Scene::SetRect(const SDL_Rect& rect)
@@ -241,8 +244,12 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
 
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
-    for (auto& widget : m_widgets)
+    for (auto& widget : m_dialogs)
     {
+        UNUSED_PARAM(widget);
+        UNUSED_PARAM(x_ratio);
+        UNUSED_PARAM(y_ratio);
+        /*
         if (WidgetScaling::FixedPixels == widget.m_ptr->GetScalingType())
         {
             continue;
@@ -253,6 +260,7 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
         modified_rect.y = static_cast<int>(modified_rect.y * y_ratio);
         modified_rect.h = static_cast<int>(modified_rect.h * y_ratio);
         widget.m_ptr->SetRect(modified_rect);
+        */
     }
 }
 

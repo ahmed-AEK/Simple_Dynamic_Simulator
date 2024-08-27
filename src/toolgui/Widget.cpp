@@ -46,10 +46,7 @@ namespace node
     {
         p_parent->InvalidateRect();
     }
-    WidgetScaling Widget::GetScalingType() const
-    {
-        return m_scalingType;
-    }
+
     node::Widget* Widget::OnGetInteractableAtPoint(const SDL_Point &point)
     {
         UNUSED_PARAM(point);
