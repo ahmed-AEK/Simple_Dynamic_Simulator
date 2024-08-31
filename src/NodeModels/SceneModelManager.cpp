@@ -140,6 +140,16 @@ void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const mode
 	}
 }
 
+void node::SceneModelManager::ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties)
+{
+	auto block = m_scene->GetBlockById(id);
+	assert(block);
+	if (block)
+	{
+		block->get().GetProperties() = std::move(new_properties);
+	}
+}
+
 void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
 {
 

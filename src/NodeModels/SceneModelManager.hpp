@@ -123,6 +123,8 @@ public:
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 
+	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
+
 	void AddNewNet(model::NetModel&& net);
 	void UpdateNet(NetModificationRequest& update_request);
 	const model::NodeSceneModel& GetModel() const { return *m_scene; }

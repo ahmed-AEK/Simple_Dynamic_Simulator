@@ -49,8 +49,8 @@ public:
 
 	void AddControl(std::unique_ptr<DialogControl> control, int position = -1);
 	void AddButton(std::string title, std::function<void()> callback);
-	void TriggerClose();
-	void TriggerOk();
+	void TriggerClose() { OnClose(); }
+	void TriggerOk() { OnOk(); }
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point);
 	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
@@ -58,6 +58,8 @@ protected:
 	void OnMouseOut() override;
 	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
 	void OnSetRect(const SDL_Rect& rect) override;
+	virtual void OnClose();
+	virtual void OnOk();
 
 private:
 	void RepositionControls();

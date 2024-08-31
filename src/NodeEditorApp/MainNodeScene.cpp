@@ -219,7 +219,7 @@ void node::MainNodeScene::OpenPropertiesDialog()
     }
 
     assert(m_classesManager);
-    AddNormalDialog(std::make_unique<BlockPropertiesDialog>(*block, *m_classesManager, SDL_Rect{ 100,100,300,300 }, this));
+    AddNormalDialog(std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager->GetSceneModel(), *m_classesManager, SDL_Rect{ 100,100,300,300 }, this));
 
 }
 

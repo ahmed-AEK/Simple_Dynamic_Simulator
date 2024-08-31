@@ -23,10 +23,12 @@ class HandlePtr
     std::shared_ptr<Handle<T>> m_ptr;
 public:
     HandlePtr() = default;
+    HandlePtr(nullptr_t) : m_ptr(nullptr) {}
     explicit HandlePtr(std::shared_ptr<Handle<T>> ptr) : m_ptr(std::move(ptr)) {}
-    T* GetObjectPtr() { if (m_ptr) { return m_ptr->object;} else { return nullptr;}}
-    const T* GetObjectPtr() const { if (m_ptr) { return m_ptr->object; } else { return nullptr; } }
+    T* GetObjectPtr() const { if (m_ptr) { return m_ptr->object; } else { return nullptr; } }
     bool isAlive() const {if (m_ptr && m_ptr->isAlive()) {return true;} else { return false; }}
+    explicit operator bool() const { return isAlive(); }
+    T* operator->() const { return GetObjectPtr(); }
 };
 
 template <typename T>

@@ -149,14 +149,22 @@ namespace node
                     this->HandleMouseMotion(e);
                     return true;
                 }
-                case SDL_KEYUP:
+                case SDL_KEYDOWN:
                 {
-                    if (SDL_SCANCODE_Q == e.key.keysym.scancode)
+                    if (SDL_SCANCODE_BACKSPACE == e.key.keysym.scancode || SDL_SCANCODE_RETURN == e.key.keysym.scancode)
                     {
-                        b_running = false;
+                        m_scene->KeyPress(e.key.keysym.scancode);
                         return true;
-                    };
+                    }
                     break;
+                }
+                case SDL_TEXTINPUT:
+                {
+                    std::string_view sv{ e.text.text };
+                    for (auto&& letter : sv)
+                    {
+                        m_scene->CharPress(letter);
+                    }
                 }
                 case SDL_WINDOWEVENT:
                 {
@@ -168,6 +176,7 @@ namespace node
                         b_redrawScene = true;
                         return true;
                     }
+                    break;
                 }
                 case SDL_USEREVENT:
                 {

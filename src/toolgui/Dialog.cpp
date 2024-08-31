@@ -57,12 +57,12 @@ void node::Dialog::AddButton(std::string title, std::function<void()> callback)
 	ResizeToFitChildren();
 }
 
-void node::Dialog::TriggerClose()
+void node::Dialog::OnClose()
 {
 	GetScene()->PopDialog(this);
 }
 
-void node::Dialog::TriggerOk()
+void node::Dialog::OnOk()
 {
 	GetScene()->PopDialog(this);
 }
@@ -162,6 +162,13 @@ void node::Dialog::OnMouseOut()
 
 node::Widget* node::Dialog::OnGetInteractableAtPoint(const SDL_Point& point)
 {
+	for (auto&& control : m_controls)
+	{
+		if (auto ptr = control->GetInteractableAtPoint(point))
+		{
+			return ptr;
+		}
+	}
 	for (auto&& button : m_buttons)
 	{
 		if (auto object = button->GetInteractableAtPoint(point))

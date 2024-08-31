@@ -54,6 +54,9 @@ namespace node
 
         void StartDragObject(DragDropObject object);
         void CancelCurrentLogic();
+
+        void KeyPress(int32_t key) { OnKeyPress(key); }
+        void CharPress(int32_t key) { OnChar(key); }
     protected:
         virtual void OnStart() {};
 
@@ -67,6 +70,9 @@ namespace node
         virtual bool OnRMBUp(const SDL_Point& p);
         virtual bool OnScroll(const double amount, SDL_Point p);
 
+        virtual void OnKeyPress(int32_t key);
+        virtual void OnChar(int32_t key);
+
         virtual node::Widget* GetInteractableAt(const SDL_Point& p) const;
         std::unique_ptr<node::ContextMenu> m_pContextMenu;
         Application* p_parent;
@@ -77,7 +83,8 @@ namespace node
         std::vector<std::unique_ptr<Dialog>> m_dialogs;
 
         node::HandlePtr<node::Widget> m_current_mouse_hover;
-                
+        node::HandlePtr<node::Widget> m_current_keyboar_focus;
+
         std::unique_ptr<SidePanel> m_sidePanel;
         std::unique_ptr<ToolBar> m_toolbar;
         std::unique_ptr<Widget> m_gScene;

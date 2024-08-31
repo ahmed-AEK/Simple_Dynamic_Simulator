@@ -301,8 +301,19 @@ bool node::Scene::OnLMBDown(const SDL_Point& p)
     {
         DestroyContextMenu();
     }
+    if (m_current_keyboar_focus.GetObjectPtr() && m_current_keyboar_focus.GetObjectPtr() != current_hover)
+    {
+        m_current_keyboar_focus.GetObjectPtr()->SetFocused(false);
+        m_current_keyboar_focus = nullptr;
+    }
     if (current_hover)
     {
+        if (current_hover->IsFocusable())
+        {
+            m_current_keyboar_focus = current_hover->GetMIHandlePtr();
+            current_hover->SetFocused(true);
+        }
+
         auto result = current_hover->LMBDown(p);
         switch (result)
         {
@@ -497,6 +508,22 @@ bool node::Scene::OnScroll(const double amount, SDL_Point p)
         m_current_mouse_hover.GetObjectPtr()->Scroll(amount, p);
     }
     return false;
+}
+
+void node::Scene::OnKeyPress(int32_t key)
+{
+    if (m_current_keyboar_focus)
+    {
+        m_current_keyboar_focus->KeyPress(key);
+    }
+}
+
+void node::Scene::OnChar(int32_t key)
+{
+    if (m_current_keyboar_focus)
+    {
+        m_current_keyboar_focus->CharPress(key);
+    }
 }
 
 node::Scene::Scene(SDL_Rect rect, Application* parent)

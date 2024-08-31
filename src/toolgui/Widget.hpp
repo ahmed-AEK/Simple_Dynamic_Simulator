@@ -42,7 +42,28 @@ namespace node
         {
             OnDrawDropObject(renderer, object, p);
         }
+
+        void CharPress(int32_t key) { OnChar(key); }
+        void KeyPress(int32_t key) { OnKeyPress(key); }
+        void SetFocusable(bool value = true) { b_focusable = value; }
+        bool IsFocusable() const { return b_focusable; }
+        void SetFocused(bool value = true) { 
+            b_focused = value;
+            if (value)
+            {
+                OnKeyboardFocusIn();
+            }
+            else
+            {
+                OnKeyboardFocusOut();
+            }
+        }
     protected:
+        virtual void OnChar(int32_t key) { UNUSED_PARAM(key); } // a or A, etc..
+        virtual void OnKeyPress(int32_t key) { UNUSED_PARAM(key); } // SDLK_BACKSPACE and SDLK_RETURN, left and right
+        virtual void OnKeyboardFocusIn() {}
+        virtual void OnKeyboardFocusOut() {}
+
         virtual void OnDropEnter(const DragDropObject& object) { UNUSED_PARAM(object); };
         virtual void OnDropExit(const DragDropObject& object) { UNUSED_PARAM(object); };
         virtual void OnDropHover(const DragDropObject& object, const SDL_Point& p) 
@@ -63,10 +84,12 @@ namespace node
         void SetDropTarget(bool value = true) { m_isDropTarget = value; }
         virtual void OnSetRect(const SDL_Rect& rect);
         virtual bool OnScroll(const double amount, const SDL_Point& p);
-        virtual Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
+        Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
     private:
         node::Scene* p_parent;
         SDL_Rect m_rect_base;
         bool m_isDropTarget = false;
+        bool b_focusable = false;
+        bool b_focused = false;
     };
 }
