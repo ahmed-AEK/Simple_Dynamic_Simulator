@@ -56,11 +56,12 @@ enum class BlockPropertyType
 	FloatNumber, // float
 	Integer, // maybe negative
 	UnsignedInteger, // unsigned
+	Boolean,
 };
 
 struct BlockProperty
 {
-	using property_t = std::variant<std::string, double, int64_t, uint64_t>;
+	using property_t = std::variant<std::string, double, int64_t, uint64_t, bool>;
 	BlockProperty(std::string name, BlockPropertyType type, property_t prop)
 		:name{ name }, type{ type }, prop{ prop } {}
 
@@ -127,5 +128,7 @@ private:
 };
 
 using BlockModelRef = std::reference_wrapper<BlockModel>;
+using BlockModelConstRef = std::reference_wrapper<const BlockModel>;
+
 
 }

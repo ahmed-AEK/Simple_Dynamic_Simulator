@@ -25,6 +25,7 @@
 #include "BlockPallete/BlockPallete.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
+#include "NodeEditorApp/BlockPropertiesDialog.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
@@ -130,6 +131,7 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     toolbar->AddSeparator();
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
         [this]() { return this->m_current_running_simulator != nullptr; }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->StopSimulator(); }, 
@@ -186,6 +188,41 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     SetSidePanel(std::move(sidePanel));
 }
 
+void node::MainNodeScene::OpenPropertiesDialog()
+{
+    auto&& selection = m_graphicsScene->GetCurrentSelection();
+    if (selection.size() != 1)
+    {
+        SDL_Log("More than one object selected!");
+        return;
+    }
+
+    auto object = selection[0].GetObjectPtr();
+    if (!object || object->GetObjectType() != ObjectType::block)
+    {
+        SDL_Log("block not selected!");
+        return;
+    }
+    auto model_id = static_cast<BlockObject*>(object)->GetModelId();
+    assert(model_id);
+    if (!model_id)
+    {   
+        SDL_Log("Block has no model!");
+        return;
+    }
+
+    auto block = m_graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
+    if (!block)
+    {
+        SDL_Log("couldn't find the block model!");
+        return;
+    }
+
+    assert(m_classesManager);
+    AddNormalDialog(std::make_unique<BlockPropertiesDialog>(*block, *m_classesManager, SDL_Rect{ 100,100,300,300 }, this));
+
+}
+
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 :Scene(rect, parent)
 {
@@ -204,7 +241,6 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<ConstantSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ScopeDisplayClass>());
 
-    AddNormalDialog(std::make_unique<node::Dialog>(std::string{"Hello!"}, SDL_Rect{200,200,300,200}, this));
     InitializeSidePanel(gScene.get());
 
     InitializeTools();

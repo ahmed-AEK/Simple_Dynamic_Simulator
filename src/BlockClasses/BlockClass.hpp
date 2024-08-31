@@ -33,6 +33,7 @@ public:
 
 	void SetName(std::string name) { m_name = name; }
 	const std::string& GetName() const { return m_name; }
+	virtual const std::string_view& GetDescription() const = 0;
 	
 	virtual const std::vector<model::BlockProperty>& GetClassProperties() = 0;
 	virtual bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties) = 0;

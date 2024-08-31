@@ -17,3 +17,12 @@
 - provide a mode to fix the dialog in the center of the screen, for modal dialogs.
 - when screen is too small to contain the widget it will shrink and display nothing in the middle
 - when screen is too small the title will say "screen too small" and the X button.
+
+
+## Properties Dialog
+- multiple buttons (Ok, Cancel)
+- Block name
+- Block Description
+- multiple properties, one after the other
+
+![Properties Dialog](Properties_dialog.png)

@@ -6,6 +6,7 @@ MainNodeScene.cpp MainNodeScene.hpp
 ExampleContextMenu.cpp ExampleContextMenu.hpp
 NodeGraphicsScene.cpp NodeGraphicsScene.hpp
 SimulatorRunner.hpp SimulatorRunner.cpp
+BlockPropertiesDialog.hpp BlockPropertiesDialog.cpp
 )
 
 target_include_directories(NodeEditor PRIVATE ".")

@@ -61,13 +61,25 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
     current_mouse_point.x - m_startPointMouseSpace.x,
     current_mouse_point.y - m_startPointMouseSpace.y };
 
+    // undo motion for now
+    block->SetSpaceOrigin(GetScene()->QuantizePoint({
+    m_startObjectEdge.x,
+    m_startObjectEdge.y
+        }));
+
+    {
+        // nothing to do if drag is zero.
+        model::Point quantized_drag_vector = scene->QuantizePoint(drag_vector + m_startObjectEdge);
+        if (quantized_drag_vector == m_startObjectEdge)
+        {
+            return MI::ClickEvent::NONE;
+        }
+    }
+
     assert(GetObjectsManager());
     auto block_id = block->GetModelId();
     assert(block_id);
-    GetObjectsManager()->GetSceneModel()->MoveBlockById(*block_id, scene->QuantizePoint({
-        m_startObjectEdge.x + drag_vector.x,
-        m_startObjectEdge.y + drag_vector.y
-        }));
+    GetObjectsManager()->GetSceneModel()->MoveBlockById(*block_id, scene->QuantizePoint(drag_vector + m_startObjectEdge));
 
     return MI::ClickEvent::CLICKED;
 }

@@ -31,6 +31,8 @@ private:
     void StopSimulator();
     void InitializeTools();
     void InitializeSidePanel(node::GraphicsScene* gScene);
+    void OpenPropertiesDialog();
+
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::unique_ptr<GraphicsObjectsManager> m_graphicsObjectsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;

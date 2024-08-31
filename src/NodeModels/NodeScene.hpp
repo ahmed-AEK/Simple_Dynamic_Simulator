@@ -18,6 +18,7 @@ public:
 	{ m_blocks.push_back(std::move(block)); }
 
 	std::optional<node::model::BlockModelRef> GetBlockById(const BlockId& id);
+	std::optional<node::model::BlockModelConstRef> GetBlockById(const BlockId& id) const;
 	void RemoveBlockById(const BlockId& id);
 
 	void AddNetNode(NetNodeModel&& netNode) { m_nodes.push_back(std::move(netNode)); }

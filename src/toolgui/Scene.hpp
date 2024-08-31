@@ -29,7 +29,9 @@ namespace node
         SDL_Rect GetRect() const { return m_rect; }
         virtual ~Scene();
         Application* GetApp() { return p_parent; }
+
         void AddNormalDialog(std::unique_ptr<node::Dialog> dialog);
+        void BumpDialogToTop(node::Dialog* dialog);
         std::unique_ptr<node::Dialog> PopDialog(node::Dialog* dialog);
 
         virtual void OnInit() {};

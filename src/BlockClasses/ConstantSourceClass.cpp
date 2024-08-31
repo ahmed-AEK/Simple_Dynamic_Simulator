@@ -9,6 +9,7 @@
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Value", node::model::BlockPropertyType::FloatNumber, 1}
 };
+static constexpr std::string_view Description = "Output = Value";
 
 node::ConstantSourceClass::ConstantSourceClass()
 	:BlockClass("Constant Source")
@@ -27,6 +28,11 @@ std::vector<node::model::BlockSocketModel::SocketType> node::ConstantSourceClass
 	return {
 		node::model::BlockSocketModel::SocketType::output
 	};
+}
+
+const std::string_view& node::ConstantSourceClass::GetDescription() const
+{
+	return Description;
 }
 
 bool node::ConstantSourceClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)

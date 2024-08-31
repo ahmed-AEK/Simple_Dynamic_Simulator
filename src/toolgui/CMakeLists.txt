@@ -14,6 +14,7 @@ SidePanel.hpp SidePanel.cpp
 DragDropObject.hpp DragDropObject.cpp
 ToolBar.hpp ToolBar.cpp
 Dialog.hpp Dialog.cpp
+MessageBox.hpp MessageBox.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

@@ -35,7 +35,7 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     {
         m_sidePanel->Draw(renderer);
     }
-    for (auto&& it = m_dialogs.rbegin(); it != m_dialogs.rend(); it++)
+    for (auto&& it = m_dialogs.begin(); it != m_dialogs.end(); it++)
     {
         auto&& widget = *it;
         widget->Draw(renderer);
@@ -201,6 +201,17 @@ void node::Scene::AddNormalDialog(std::unique_ptr<node::Dialog> dialog)
     m_dialogs.push_back(std::move(dialog));
 }
 
+void node::Scene::BumpDialogToTop(node::Dialog* dialog)
+{
+    auto it = std::find_if(m_dialogs.begin(), m_dialogs.end(), [&](const auto& ptr) {return ptr.get() == dialog; });
+    if (it != m_dialogs.end())
+    {
+        auto dialog_ptr = std::move(*it);
+        m_dialogs.erase(it);
+        m_dialogs.push_back(std::move(dialog_ptr));
+    }
+}
+
 std::unique_ptr<node::Dialog> node::Scene::PopDialog(node::Dialog* dialog)
 {
     auto it = std::find_if(m_dialogs.begin(), m_dialogs.end(), [&](const auto& ptr) { return ptr.get() == dialog; });
@@ -244,23 +255,34 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
 
     double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
-    for (auto& widget : m_dialogs)
+    for (auto& dialog: m_dialogs)
     {
-        UNUSED_PARAM(widget);
+        UNUSED_PARAM(dialog);
         UNUSED_PARAM(x_ratio);
         UNUSED_PARAM(y_ratio);
-        /*
-        if (WidgetScaling::FixedPixels == widget.m_ptr->GetScalingType())
+        
+        if (Dialog::ScreenResizeStrategy::FixedPosition != dialog->GetResizeStrategy())
         {
             continue;
         }
-        SDL_Rect modified_rect = widget.m_ptr->GetBaseRect();
-        modified_rect.x = static_cast<int>(modified_rect.x * x_ratio);
-        modified_rect.w = static_cast<int>(modified_rect.w * x_ratio);
-        modified_rect.y = static_cast<int>(modified_rect.y * y_ratio);
-        modified_rect.h = static_cast<int>(modified_rect.h * y_ratio);
-        widget.m_ptr->SetRect(modified_rect);
-        */
+        SDL_Rect modified_rect = dialog->GetRect();
+        if (modified_rect.x + modified_rect.w > rect.w)
+        {
+            modified_rect.x = rect.w - modified_rect.w;
+        }
+        if (modified_rect.x < 0)
+        {
+            modified_rect.x = 0;
+        }
+        if (modified_rect.y + modified_rect.h > rect.h)
+        {
+            modified_rect.y = rect.h - modified_rect.h;
+        }
+        if (modified_rect.y < 0)
+        {
+            modified_rect.y = 0;
+        }
+        dialog->SetRect(modified_rect);
     }
 }
 

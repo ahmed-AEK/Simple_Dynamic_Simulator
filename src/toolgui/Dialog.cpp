@@ -10,15 +10,9 @@ node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
 
 void node::Dialog::Draw(SDL_Renderer* renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &GetRect());
-	SDL_Rect inner_rect = GetRect();
-	inner_rect.x += 2;
-	inner_rect.y += 2;
-	inner_rect.w -= 4;
-	inner_rect.h -= 4;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &inner_rect);
+	
+	DrawOutline(renderer, GetRect());
+
 	SDL_Rect banner_rect = GetTitleBarRect();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &banner_rect);
@@ -31,6 +25,46 @@ void node::Dialog::Draw(SDL_Renderer* renderer)
 
 	DrawTitle(renderer, SDL_Point{ banner_rect.x + 5, banner_rect.y });
 	DrawXButton(renderer, GetXButtonRect());
+
+	for (auto&& button : m_buttons)
+	{
+		button->Draw(renderer);
+	}
+	for (auto&& control : m_controls)
+	{
+		control->Draw(renderer);
+	}
+}
+
+void node::Dialog::AddControl(std::unique_ptr<DialogControl> control, int position)
+{
+	if (position == -1 || position >= m_controls.size())
+	{
+		m_controls.push_back(std::move(control));
+	}
+	else
+	{
+		m_controls.insert(m_controls.begin() + position, std::move(control));
+	}
+
+	ResizeToFitChildren();
+
+}
+
+void node::Dialog::AddButton(std::string title, std::function<void()> callback)
+{
+	m_buttons.push_back(std::make_unique<DialogButton>(std::move(title), std::move(callback), SDL_Rect{ 0,0,80,ButtonHeight }, GetScene()));
+	ResizeToFitChildren();
+}
+
+void node::Dialog::TriggerClose()
+{
+	GetScene()->PopDialog(this);
+}
+
+void node::Dialog::TriggerOk()
+{
+	GetScene()->PopDialog(this);
 }
 
 void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
@@ -76,6 +110,11 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 
 MI::ClickEvent node::Dialog::OnLMBDown(const SDL_Point& current_mouse_point)
 {
+	if (GetScene())
+	{
+		GetScene()->BumpDialogToTop(this);
+	}
+
 	const auto& X_btn_rect = GetXButtonRect();
 	if (SDL_PointInRect(&current_mouse_point, &X_btn_rect))
 	{
@@ -103,7 +142,7 @@ MI::ClickEvent node::Dialog::OnLMBUp(const SDL_Point& current_mouse_point)
 		const auto& X_rect = GetXButtonRect();
 		if (SDL_PointInRect(&current_mouse_point, &X_rect))
 		{
-			GetScene()->PopDialog(this);
+			TriggerClose();
 			return MI::ClickEvent::CLICKED;
 		}
 	}
@@ -118,6 +157,86 @@ MI::ClickEvent node::Dialog::OnLMBUp(const SDL_Point& current_mouse_point)
 void node::Dialog::OnMouseOut()
 {
 	b_being_closed = false;
+	b_mouse_on_close = false;
+}
+
+node::Widget* node::Dialog::OnGetInteractableAtPoint(const SDL_Point& point)
+{
+	for (auto&& button : m_buttons)
+	{
+		if (auto object = button->GetInteractableAtPoint(point))
+		{
+			return object;
+		}
+	}
+	return this;
+}
+
+void node::Dialog::OnSetRect(const SDL_Rect& rect)
+{
+	Widget::OnSetRect(rect);
+	RepositionControls();
+	RepositionButtons();
+}
+
+void node::Dialog::RepositionControls()
+{
+	int x = ControlsMargin + GetRect().x;
+	int y = GetRect().y + GetTitleBarRect().h + ControlsMargin;
+	for (auto&& control : m_controls)
+	{
+		const SDL_Rect& old_rect = control->GetRect();
+		control->SetRect({ x, y, old_rect.w, old_rect.h });
+		y += old_rect.h + ControlsMargin;
+	}
+	
+}
+
+void node::Dialog::RepositionButtons()
+{
+	const int buttons_widths = [&]()
+	{
+		int buttons_widths = 0;
+		for (const auto& button : m_buttons)
+		{
+			buttons_widths += button->GetRect().w;
+		}
+		return buttons_widths;
+	}();
+	int current_x = GetRect().x + GetRect().w - buttons_widths - ButtonsMargin * static_cast<int>(m_buttons.size());
+	const int current_y = GetRect().y + GetRect().h - ButtonsMargin - ButtonHeight;
+	for (auto&& button : m_buttons)
+	{
+		const auto& current_rect = button->GetRect();
+		button->SetRect({ current_x, current_y, current_rect.w, current_rect.h});
+		current_x += current_rect.w + ButtonsMargin;
+	}
+}
+
+void node::Dialog::ResizeToFitChildren()
+{
+	int width = 0;
+	int height = ControlsMargin + GetTitleBarRect().h;
+	for (const auto& control : m_controls)
+	{
+		height += control->GetRect().h + ControlsMargin;
+		width = std::max(width, control->GetRect().w);
+	}
+	if (m_buttons.size())
+	{
+		height += ButtonHeight + ButtonsMargin;
+	}
+	width += ControlsMargin * 2; // pad both sides
+	int buttons_width = ButtonsMargin; // pad left
+	for (const auto& button : m_buttons)
+	{
+		buttons_width += button->GetRect().w + ButtonsMargin;
+	}
+	width = std::max(width, buttons_width);
+	width = std::max(width, MinWidth);
+	SetRect({ GetRect().x, GetRect().y, width, height });
+	RepositionControls();
+	RepositionButtons();
 }
 
 void node::Dialog::DrawTitle(SDL_Renderer* renderer, const SDL_Point& start )
@@ -146,7 +265,7 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 	{
 		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	}
-	else if (b_mouse_on_close)
+	else if (b_mouse_on_close && !b_being_dragged)
 	{
 		SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255);
 	}
@@ -157,7 +276,7 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 	SDL_RenderFillRect(renderer, &base);
 
 	const int dist_from_side = 8;
-	if (b_mouse_on_close)
+	if (b_mouse_on_close && !b_being_dragged)
 	{
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	}
@@ -172,6 +291,19 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 
 }
 
+void node::Dialog::DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect)
+{
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderFillRect(renderer, &rect);
+	SDL_Rect inner_rect = rect;
+	inner_rect.x += 2;
+	inner_rect.y += 2;
+	inner_rect.w -= 4;
+	inner_rect.h -= 4;
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	SDL_RenderFillRect(renderer, &inner_rect);
+}
+
 SDL_Rect node::Dialog::GetTitleBarRect() const
 {
 	const auto& this_rect = GetRect();
@@ -182,4 +314,62 @@ SDL_Rect node::Dialog::GetXButtonRect() const
 {
 	const auto& this_rect = GetRect();
 	return SDL_Rect{ this_rect.x + this_rect.w - 40, this_rect.y + 5, 30, 30 };
+}
+
+node::DialogButton::DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Scene* scene)
+	:Widget{rect, scene}, m_text{text}, m_onClick{OnClick}
+{
+}
+
+void node::DialogButton::Draw(SDL_Renderer* renderer)
+{
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderFillRect(renderer, &GetRect());
+	SDL_Rect inner_rect{ GetRect() };
+	inner_rect.x += 2;
+	inner_rect.y += 2;
+	inner_rect.w -= 4;
+	inner_rect.h -= 4;
+	if (b_being_clicked)
+	{
+		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	}
+	SDL_RenderFillRect(renderer, &inner_rect);
+
+	SDL_Color Black = { 50, 50, 50, 255 };
+	auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_text.c_str(), Black) };
+	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
+
+	SDL_Rect text_rect{};
+	SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+	text_rect.x = GetRect().x + (GetRect().w - text_rect.w) / 2;
+	text_rect.y = GetRect().y + (GetRect().h - text_rect.h) / 2;
+	SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+}
+
+void node::DialogButton::OnMouseOut()
+{
+	b_being_clicked = false;
+}
+
+MI::ClickEvent node::DialogButton::OnLMBDown(const SDL_Point& current_mouse_point)
+{
+	UNUSED_PARAM(current_mouse_point);
+	b_being_clicked = true;
+	return MI::ClickEvent::CLICKED;
+}
+
+MI::ClickEvent node::DialogButton::OnLMBUp(const SDL_Point& current_mouse_point)
+{
+	UNUSED_PARAM(current_mouse_point);
+	if (b_being_clicked)
+	{
+		m_onClick();
+		return MI::ClickEvent::CLICKED;
+	}
+	return MI::ClickEvent::NONE;
 }

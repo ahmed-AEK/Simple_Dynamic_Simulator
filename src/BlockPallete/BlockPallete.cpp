@@ -44,7 +44,7 @@ bool node::BlockPallete::OnScroll(const double amount, const SDL_Point& p)
 	{
 		int elements_height = static_cast<int>(
 			m_palleteProvider->GetElements().size() * PalleteData::ElementTotalHeight + PalleteData::TopPadding);
-		m_scrollPos -= static_cast<int>(amount * 10);
+		m_scrollPos -= static_cast<int>(amount * 30);
 		if (m_scrollPos > (elements_height - inner_rect.h))
 		{
 			m_scrollPos = elements_height - inner_rect.h;

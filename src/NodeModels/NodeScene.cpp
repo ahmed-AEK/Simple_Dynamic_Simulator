@@ -14,6 +14,17 @@ std::optional<node::model::BlockModelRef> node::model::NodeSceneModel::GetBlockB
 	return std::nullopt;
 }
 
+std::optional<node::model::BlockModelConstRef> node::model::NodeSceneModel::GetBlockById(const BlockId& id) const
+{
+	auto iter = std::find_if(m_blocks.begin(), m_blocks.end(),
+		[id](const BlockModel& node) {return id == node.GetId(); });
+	if (iter != m_blocks.end())
+	{
+		return { *iter };
+	}
+	return std::nullopt;
+}
+
 void node::model::NodeSceneModel::RemoveBlockById(const BlockId& id) {
 	auto it = std::find_if(m_blocks.begin(), m_blocks.end(),
 		[&](const BlockModel& node) { return node.GetId() == id; });

@@ -10,6 +10,8 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::Integer, static_cast<uint64_t>(1)}
 };
 
+static constexpr std::string_view Description = "Displays Input signals";
+
 node::ScopeDisplayClass::ScopeDisplayClass()
 	:BlockClass("Scope Display")
 {
@@ -48,6 +50,11 @@ bool node::ScopeDisplayClass::ValidateClassProperties(const std::vector<model::B
 		return false;
 	}
 	return true;
+}
+
+const std::string_view& node::ScopeDisplayClass::GetDescription() const
+{
+	return Description;
 }
 
 node::BlockType node::ScopeDisplayClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
