@@ -9,6 +9,8 @@
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
 
+#include "NodeModels/NodeScene.hpp"
+
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/tools/ArrowTool.hpp"
@@ -120,11 +122,42 @@ void node::MainNodeScene::CheckSimulatorEnded()
     }
 }
 
+void node::MainNodeScene::DeleteEventReceiver(NodeSceneEventReceiver* handler)
+{
+    auto it = std::find_if(m_event_receivers.begin(), m_event_receivers.end(), [&](const auto& ptr) {return ptr.get() == handler; });
+    assert(it != m_event_receivers.end());
+    if (it != m_event_receivers.end())
+    {
+        m_event_receivers.erase(it);
+    }
+}
+
+namespace
+{
+struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public node::SingleObserver<node::BlockDoubleClickedEvent>
+{
+    DoubleClickEventReceiver(node::MainNodeScene& scene, std::function<void(node::BlockObject&)> functor)
+        :NodeSceneEventReceiver{ scene }, m_functor{std::move(functor)} {}
+    void OnNotify(node::BlockDoubleClickedEvent& block) override
+    {
+        m_functor(*(block.block));
+    }
+    std::function<void(node::BlockObject&)> m_functor;
+};
+
+}
+
 void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
     m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
-    m_toolsManager->AddTool("A", std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
+    {
+        auto arrow_tool = std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get());
+        auto receiver = std::make_unique<DoubleClickEventReceiver>(*this, [this](BlockObject& block) {this->OpenBlockDialog(block); } );
+        arrow_tool->Attach(*receiver);
+        AddEventReceiver(std::move(receiver));
+        m_toolsManager->AddTool("A", std::move(arrow_tool));
+    }
     m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager));
@@ -156,7 +189,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         }
     };
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 1; i++)
     {
         pallete_provider->AddElement(block_template);
     }
@@ -203,6 +236,17 @@ void node::MainNodeScene::OpenPropertiesDialog()
         SDL_Log("block not selected!");
         return;
     }
+
+    {
+        auto it = m_objects_dialogs.find(static_cast<BlockObject*>(object));
+        if (it != m_objects_dialogs.end() && it->second.isAlive())
+        {
+            Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
+            BumpDialogToTop(dialog);
+            return;
+        }
+    }
+
     auto model_id = static_cast<BlockObject*>(object)->GetModelId();
     assert(model_id);
     if (!model_id)
@@ -219,8 +263,47 @@ void node::MainNodeScene::OpenPropertiesDialog()
     }
 
     assert(m_classesManager);
-    AddNormalDialog(std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager->GetSceneModel(), *m_classesManager, SDL_Rect{ 100,100,300,300 }, this));
+    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager->GetSceneModel(), *m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
+    m_objects_dialogs.emplace(static_cast<BlockObject*>(object), dialog->GetMIHandlePtr());
 
+    AddNormalDialog(std::move(dialog));
+
+}
+
+void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
+{
+    if (!block.GetModelId())
+    {
+        assert(false);
+        return;
+    }
+
+    auto it = m_objects_dialogs.find(&block);
+    if (it != m_objects_dialogs.end() && it->second.isAlive())
+    {
+        Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
+        BumpDialogToTop(dialog);
+        return;
+    }
+
+    auto block_model = m_graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
+    if (!block_model)
+    {
+        assert(false);
+        return;
+    }
+
+    auto class_ptr = m_classesManager->GetBlockClassByName(block_model->get().GetClass());
+    if (class_ptr->HasBlockDialog())
+    {
+        auto sim_data = std::any{};
+        auto dialog = class_ptr->CreateBlockDialog(*this, *block_model, sim_data);
+        if (dialog)
+        {
+            m_objects_dialogs.emplace(&block, dialog->GetMIHandlePtr());
+            AddNormalDialog(std::move(dialog));
+        }
+    }
 }
 
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)

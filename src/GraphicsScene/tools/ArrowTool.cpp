@@ -24,7 +24,18 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         {
         case ObjectType::block:
         {
-
+            auto current_time = SDL_GetTicks64();
+            if (m_last_clicked_block.GetObjectPtr() == current_hover && (current_time - m_last_click_point) < 2000)
+            {
+                b_second_click_in_progress = true;
+                return MI::ClickEvent::CLICKED;
+            }
+            else
+            {
+                b_second_click_in_progress = false;
+                m_last_click_point = current_time;
+                m_last_clicked_block = current_hover->GetFocusHandlePtr();
+            }
             auto* block_obj = static_cast<BlockObject*>(current_hover);
             auto obj_rect = current_hover->GetSpaceRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, 
@@ -92,8 +103,17 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 
 MI::ClickEvent node::ArrowTool::OnLMBUp(const model::Point& p)
 {
+    node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
+    auto current_time = SDL_GetTicks64();
+    if (b_second_click_in_progress && current_hover == m_last_clicked_block.GetObjectPtr() && (current_time - m_last_click_point) < 2000)
+    {
+        BlockDoubleClickedEvent e{ static_cast<BlockObject*>(current_hover) };
+        Notify(e);
+        return MI::ClickEvent::CLICKED;
+    }
+
     UNUSED_PARAM(p);
-	return MI::ClickEvent();
+	return MI::ClickEvent::NONE;
 }
 
 void node::ArrowTool::OnMouseMove(const model::Point& p)

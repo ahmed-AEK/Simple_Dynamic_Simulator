@@ -7,8 +7,9 @@ AddBlockClass.cpp AddBlockClass.hpp
 GainBlockClass.cpp GainBlockClass.hpp
 ConstantSourceClass.cpp ConstantSourceClass.hpp
 ScopeDisplayClass.cpp ScopeDisplayClass.hpp
+ScopeDisplayDialog.cpp ScopeDisplayDialog.hpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")
 target_include_directories(BlockClasses PUBLIC "..")
-target_link_libraries(BlockClasses PUBLIC NodeModels NLOptimizer)
+target_link_libraries(BlockClasses PUBLIC NodeModels NLOptimizer toolgui)

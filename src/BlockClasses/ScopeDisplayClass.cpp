@@ -1,10 +1,14 @@
 #include "ScopeDisplayClass.hpp"
+
 #include "toolgui/NodeMacros.h"
+#include "toolgui/Dialog.hpp"
+
 #include "optimizer/NLEquation.hpp"
 #include "optimizer/DiffEquation.hpp"
 #include "optimizer/NLStatefulEquation.hpp"
 #include "optimizer/Observer.hpp"
 #include "optimizer/SourceEq.hpp"
+#include "ScopeDisplayDialog.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::Integer, static_cast<uint64_t>(1)}
@@ -89,6 +93,19 @@ node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::
 			(*vec)[out.size()].push_back(t);
 		}}
 	};
+}
+
+std::unique_ptr<node::Dialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data)
+{
+	UNUSED_PARAM(model);
+	UNUSED_PARAM(simulation_data);
+	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_Rect{ 200,200, 500,500 }, &scene);
+	return dialog;
+}
+
+bool node::ScopeDisplayClass::HasBlockDialog() const
+{
+	return true;
 }
 
 

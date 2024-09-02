@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NodeModels/BlockModel.hpp"
+#include <any>
 
 namespace opt
 {
@@ -13,6 +14,9 @@ namespace opt
 
 namespace node
 {
+
+class Dialog;
+class Scene;
 
 enum class BlockType
 {
@@ -42,6 +46,9 @@ public:
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) = 0;
 	virtual BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) = 0;
 	virtual BlockFunctor GetFunctor(const std::vector<model::BlockProperty>& properties) = 0;
+
+	virtual std::unique_ptr<Dialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data);
+	virtual bool HasBlockDialog() const { return false; }
 private:
 	std::string m_name;
 };
