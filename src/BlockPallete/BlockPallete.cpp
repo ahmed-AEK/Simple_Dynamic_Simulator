@@ -167,20 +167,22 @@ void node::BlockPallete::DrawElement(SDL_Renderer* renderer, const PalleteElemen
 	element.styler->DrawBlock(renderer, element.block, transformer, false);
 	SDL_Rect TextArea = { contained_rect.x, contained_rect.y + contained_rect.h,
 		area.w, area.h - contained_rect.h };
-	DrawElementText(renderer, element.block_template, TextArea);
+	DrawElementText(renderer, element, TextArea);
 }
 
-void node::BlockPallete::DrawElementText(SDL_Renderer* renderer, 
-	const std::string& name, const SDL_Rect& area)
+void node::BlockPallete::DrawElementText(SDL_Renderer* renderer,
+	const PalleteElement& element, const SDL_Rect& area)
 {
+	if (!element.text_painter->GetFont())
+	{
+		element.text_painter->SetFont(GetScene()->GetApp()->getFont().get());
+		element.text_painter->SetText(element.block_template);
+	}
 
 	SDL_Color Black = { 50, 50, 50, 255 };
-	auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), name.c_str(), Black)};
-	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
-	
-	SDL_Rect text_rect{};
-	SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+
+	SDL_Rect text_rect = element.text_painter->GetRect(renderer, Black);
 	text_rect.x = area.x + area.w / 2 - text_rect.w / 2;
 	text_rect.y = area.y + area.h / 2 - text_rect.h / 2 - 10;
-	SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+	element.text_painter->Draw(renderer, { text_rect.x, text_rect.y }, Black);
 }

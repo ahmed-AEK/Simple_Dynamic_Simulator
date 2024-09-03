@@ -31,7 +31,7 @@ namespace node
 		void DrawScrollBar(SDL_Renderer* renderer, const SDL_Rect& area);
 		void DrawElements(SDL_Renderer* renderer, const SDL_Rect& area);
 		void DrawElement(SDL_Renderer* renderer, const PalleteElement& element, const SDL_Rect& area);
-		void DrawElementText(SDL_Renderer* renderer, const std::string& name, const SDL_Rect& area);
+		void DrawElementText(SDL_Renderer* renderer, const PalleteElement& element, const SDL_Rect& area);
 
 
 		std::shared_ptr<PalleteProvider> m_palleteProvider;

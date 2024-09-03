@@ -12,6 +12,7 @@
 #include <optional>
 #include <queue>
 #include <mutex>
+#include <array>
 
 namespace node
 {
@@ -37,6 +38,12 @@ struct TOOLGUI_API UpdateTask
     static UpdateTask FromWidget(Widget& widget, std::function<void()> task);
 };
 
+enum class FontType : char
+{
+    Title,
+    Label
+};
+
 class TOOLGUI_API Application
 {
 public:
@@ -49,7 +56,7 @@ public:
     virtual ~Application();
     const SDL_Rect& getRect() const;
     void InvalidateRect();
-    const TTFFont& getFont() { return m_appFont; }
+    const TTFFont& getFont(FontType type = FontType::Title) const { return m_appFonts[static_cast<int>(type)]; }
 
     void AddMainThreadTask(std::function<void()> task);
     void HandleMainThreadTasks();
@@ -87,7 +94,7 @@ private:
     bool b_running = false;
     bool b_dragging = false;
     bool b_redrawScene = true;
-    TTFFont m_appFont;
+    std::array<TTFFont,2> m_appFonts;
 
     std::unordered_map<int64_t, UpdateTask> m_updateTasks;
     std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;

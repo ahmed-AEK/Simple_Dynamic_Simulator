@@ -11,7 +11,7 @@
 #include "ScopeDisplayDialog.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::Integer, static_cast<uint64_t>(1)}
+	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
 };
 
 static constexpr std::string_view Description = "Displays Input signals";
@@ -99,7 +99,7 @@ std::unique_ptr<node::Dialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& 
 {
 	UNUSED_PARAM(model);
 	UNUSED_PARAM(simulation_data);
-	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_Rect{ 200,200, 500,500 }, &scene);
+	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_Rect{ 100,100, 500,500 }, &scene);
 	return dialog;
 }
 

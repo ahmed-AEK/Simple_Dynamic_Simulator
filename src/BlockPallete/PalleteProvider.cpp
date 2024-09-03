@@ -49,7 +49,9 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 		std::make_unique<PalleteElement>(PalleteElement{
 			temp.template_name,
 			std::move(block),
-			std::move(styler) }
+			std::move(styler),
+			std::make_shared<TextPainter>(nullptr),
+			}
 			)
 	);
 }

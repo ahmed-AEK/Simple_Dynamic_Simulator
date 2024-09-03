@@ -18,14 +18,15 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 {
 	assert(parent);
 	assert(SceneModel);
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent));
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), parent));
 	auto class_ptr = manager.GetBlockClassByName(block.GetClass());
 	if (class_ptr)
 	{
-		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, parent->GetApp()->getFont().get(), 500);
-		const int line_height = TTF_FontHeight(parent->GetApp()->getFont().get());
+		auto font = parent->GetApp()->getFont(FontType::Label).get();
+		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font, 500);
+		const int line_height = TTF_FontHeight(font);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
-		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_Rect{ 0,0,500, line_height * static_cast<int>(lines.size()) + lines_gap }, parent));
+		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_Rect{ 0,0,500, line_height * static_cast<int>(lines.size()) + lines_gap }, font, parent));
 	}
 
 	if (block.GetProperties().size())
@@ -172,9 +173,10 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 	return lines;
 }
 
-node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, Scene* parent)
-	:DialogControl{rect, parent}, m_lines{std::move(lines)}
+node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, TTF_Font* font, Scene* parent)
+	:DialogControl{rect, parent}, m_lines{std::move(lines)}, m_font{font}
 {
+	assert(m_font);
 	assert(parent);
 }
 
@@ -182,26 +184,38 @@ void node::DialogLabel::Draw(SDL_Renderer* renderer)
 {
 	int y = 0;
 
-	int font_height = TTF_FontHeight(GetScene()->GetApp()->getFont().get());
-	for (const auto& line : m_lines)
+	if (!m_painters.size())
 	{
+		m_painters.reserve(m_lines.size());
+		for (const auto& line : m_lines)
+		{
+			UNUSED_PARAM(line);
+			m_painters.emplace_back(m_font);
+		}
+	}
+	int font_height = TTF_FontHeight(m_font);
+	assert(m_lines.size() == m_painters.size());
+	for (size_t i = 0; i < m_lines.size(); i++)
+	{
+		const auto& line = m_lines[i];
+		auto&& painter = m_painters[i];
+
 		SDL_Color Black = { 50, 50, 50, 255 };
-		auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), line.c_str(), Black) };
-		auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
+		painter.SetText(line);
 
 		SDL_Rect text_rect{};
-		SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-		text_rect.x = GetRect().x;
-		text_rect.y = GetRect().y + y;
-		SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+		SDL_Point text_start{ GetRect().x, GetRect().y + y };
+		painter.Draw(renderer, text_start, Black);
 		y += font_height + LinesMargin;
 	}
 
 }
 
 node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_Rect& rect, Scene* parent)
-	:DialogControl{ rect, parent }, m_name{ std::move(name) }, m_name_width{ name_width }, m_edit{ std::move(initial_value), {rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h}, parent }
+	:DialogControl{ rect, parent }, m_name{ std::move(name) }, m_name_width{ name_width }, m_edit{ std::move(initial_value), {rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h}, parent },
+	m_painter{ GetScene()->GetApp()->getFont().get() }
 {
+	m_painter.SetText(m_name);
 	assert(parent);
 }
 
@@ -209,14 +223,8 @@ void node::PropertyEditControl::Draw(SDL_Renderer* renderer)
 {
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_name.c_str(), Black) };
-		auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
-
-		SDL_Rect text_rect{};
-		SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-		text_rect.x = GetRect().x;
-		text_rect.y = GetRect().y;
-		SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+		SDL_Point text_start{ GetRect().x, GetRect().y };
+		m_painter.Draw(renderer, text_start, Black);
 	}
 	m_edit.Draw(renderer);
 }
@@ -243,9 +251,10 @@ void node::SeparatorControl::Draw(SDL_Renderer* renderer)
 }
 
 node::LineEditControl::LineEditControl(std::string initial_value, const SDL_Rect& rect, Scene* parent)
-	:Widget{rect,parent}, m_value{std::move(initial_value)}
+	:Widget{rect,parent}, m_value{std::move(initial_value)}, m_painter{ GetScene()->GetApp()->getFont().get() }
 {
 	SetFocusable(true);
+	m_painter.SetText(m_value);
 }
 
 void node::LineEditControl::Draw(SDL_Renderer* renderer)
@@ -254,22 +263,16 @@ void node::LineEditControl::Draw(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &edit_box);
 	SDL_Rect inner_rect{ edit_box };
-	inner_rect.x += 2;
-	inner_rect.y += 2;
-	inner_rect.w -= 4;
-	inner_rect.h -= 4;
+	inner_rect.x += 1;
+	inner_rect.y += 1;
+	inner_rect.w -= 2;
+	inner_rect.h -= 2;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &inner_rect);
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_value.c_str(), Black) };
-		auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
-
-		SDL_Rect text_rect{};
-		SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-		text_rect.x = inner_rect.x;
-		text_rect.y = inner_rect.y;
-		SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+		SDL_Point text_start{ inner_rect.x, inner_rect.y };
+		m_painter.Draw(renderer, text_start, Black);
 	}
 }
 
@@ -281,6 +284,7 @@ void node::LineEditControl::OnKeyPress(int32_t key)
 		if (m_value.size())
 		{
 			m_value.pop_back();
+			m_painter.SetText(m_value);
 		}
 	}
 	else if (key == SDL_SCANCODE_RETURN)
@@ -300,5 +304,6 @@ void node::LineEditControl::OnChar(int key)
 	if (key < 128 && key >= 0)
 	{
 		m_value.push_back(static_cast<char>(key));
+		m_painter.SetText(m_value);
 	}
 }

@@ -1,8 +1,10 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#include "SDL_Framework/SDL_headers.h"
+#include "SDL_Framework/SDLCPP.hpp"
 #include <unordered_map>
 #include <mutex>
+#include <optional>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color);
 
@@ -43,3 +45,31 @@ private:
 
 void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2,
     RoundRectPainter& outer, RoundRectPainter& inner);
+
+class TextPainter
+{
+public:
+    explicit TextPainter(TTF_Font* font) :m_font{ font } {}
+    TextPainter(const TextPainter& other) :m_font{ other.m_font }, m_text{ other.m_text } {}
+    TextPainter& operator=(const TextPainter& other) { m_font = other.m_font; m_text = other.m_text; }
+    ~TextPainter();
+
+    void Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color);
+    SDL_Rect GetRect(SDL_Renderer* renderer, const SDL_Color color);
+
+    void SetText(std::string text);
+    void SetFont(TTF_Font* font);
+    TTF_Font* GetFont() const { return m_font; }
+
+    void DropTexture();
+    void DropTextureNoLock();
+private:
+    void ReCreateTexture(SDL_Renderer* renderer);
+    void AssureTexture(SDL_Renderer* renderer, const SDL_Color& color);
+
+    std::string m_text;
+    TTF_Font* m_font;
+    SDLTexture m_texture;
+    SDL_Color m_stored_color{ 0,0,0,0 };
+
+};

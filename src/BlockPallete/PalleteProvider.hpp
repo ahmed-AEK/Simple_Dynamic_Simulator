@@ -26,6 +26,7 @@ struct PalleteElement
 	std::string block_template;
 	model::BlockModel block{ model::BlockId{0}, model::Rect{0,0,0,0} };
 	std::shared_ptr<BlockStyler> styler;
+	std::shared_ptr<TextPainter> text_painter;
 };
 
 class PalleteProvider

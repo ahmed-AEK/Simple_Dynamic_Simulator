@@ -2,6 +2,7 @@
 
 #include "toolgui/Widget.hpp"
 #include <functional>
+#include "SDL_Framework/Utility.hpp"
 
 namespace node
 {
@@ -42,7 +43,7 @@ public:
 	Dialog(std::string title, const SDL_Rect& rect, Scene* parent);
 	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetTitle() const { return m_title; };
-	void SetTitle(std::string title) { m_title = title; }
+	void SetTitle(std::string title) { m_title = title; m_title_painter.SetText(title); }
 
 	ScreenResizeStrategy GetResizeStrategy() const { return m_resize_strategy; }
 	void SetResizeStrategy(ScreenResizeStrategy strategy) { m_resize_strategy = strategy; }
@@ -73,6 +74,8 @@ private:
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;
 	std::vector<std::unique_ptr<DialogButton>> m_buttons;
+
+	TextPainter m_title_painter;
 
 	std::string m_title;
 	SDL_Point m_drag_edge_start_position{ 0,0 };

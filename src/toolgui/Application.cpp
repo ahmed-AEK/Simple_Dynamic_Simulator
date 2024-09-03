@@ -71,11 +71,17 @@ namespace node
         }
 
         // load Font
-        m_appFont = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 24) };
-        if (!m_appFont)
+        m_appFonts[0] = TTFFont{TTF_OpenFont("./assets/FreeSans.ttf", 24)};
+        if (!m_appFonts[0])
         {
             SDL_Log("Failed to load Font \"./assets/FreeSans.ttf\"");
         }
+        m_appFonts[1] = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 16) };
+        if (!m_appFonts[1])
+        {
+            SDL_Log("Failed to load Font \"./assets/FreeSans.ttf\"");
+        }
+
         b_running = true;
 
         SDL_AddEventWatch(resizingEventWatcher, m_window.get());

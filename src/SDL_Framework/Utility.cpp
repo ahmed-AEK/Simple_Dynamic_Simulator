@@ -35,16 +35,23 @@ void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
 
 class RoundRectPainter;
 std::mutex painters_mutex{};
-std::unordered_map<SDL_Texture*, RoundRectPainter*> painters{};
+std::unordered_map<SDL_Texture*, RoundRectPainter*> Rectpainters{};
+
+std::unordered_map<SDL_Texture*, RoundRectPainter*> Textpainters{};
 
 void textures::ResetAllTextures()
 {
     std::lock_guard g{ painters_mutex };
-    for (auto&& painter_it : painters)
+    for (auto&& painter_it : Rectpainters)
     {
         painter_it.second->DropTextureNoLock();
     }
-    painters.clear();
+    Rectpainters.clear();
+    for (auto&& painter_it : Textpainters)
+    {
+        painter_it.second->DropTextureNoLock();
+    }
+    Textpainters.clear();
 }
 
 RoundRectPainter::RoundRectPainter(RoundRectPainter&& other) noexcept
@@ -54,7 +61,7 @@ RoundRectPainter::RoundRectPainter(RoundRectPainter&& other) noexcept
     if (stored_arc_texture)
     {
         std::lock_guard g{ painters_mutex };
-        auto it = painters.find(stored_arc_texture);
+        auto it = Rectpainters.find(stored_arc_texture);
         it->second = this;
     }    
 }
@@ -66,7 +73,7 @@ RoundRectPainter& RoundRectPainter::operator=(RoundRectPainter&& other) noexcept
     if (stored_arc_texture)
     {
         std::lock_guard g{ painters_mutex };
-        auto it = painters.find(stored_arc_texture);
+        auto it = Rectpainters.find(stored_arc_texture);
         it->second = this;
     }
     stored_color = other.stored_color;
@@ -81,7 +88,7 @@ RoundRectPainter::~RoundRectPainter()
         SDL_DestroyTexture(stored_arc_texture);
         {
             std::lock_guard g{ painters_mutex };
-            painters.erase(stored_arc_texture);
+            Rectpainters.erase(stored_arc_texture);
         }
     }
 }
@@ -96,9 +103,9 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
         {
             {
                 std::lock_guard g{ painters_mutex };
-                auto it = painters.find(stored_arc_texture);
-                assert(it != painters.end());
-                painters.erase(it);
+                auto it = Rectpainters.find(stored_arc_texture);
+                assert(it != Rectpainters.end());
+                Rectpainters.erase(it);
             }
             SDL_DestroyTexture(stored_arc_texture);
             stored_arc_texture = nullptr;
@@ -145,7 +152,7 @@ void RoundRectPainter::DropTexture()
     {
         {
             std::lock_guard g{ painters_mutex };
-            painters.erase(stored_arc_texture);
+            Rectpainters.erase(stored_arc_texture);
         }
     }
     stored_arc_texture = nullptr;
@@ -168,7 +175,7 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
     SDL_SetRenderTarget(renderer, old_texture);
     {
         std::lock_guard g{ painters_mutex };
-        painters.emplace(stored_arc_texture, this);
+        Rectpainters.emplace(stored_arc_texture, this);
     }
 }
 
@@ -307,4 +314,82 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect,
         int radius = original_radius - thickness;
         inner.Draw(renderer, rect, radius, color2);
     }
+}
+
+TextPainter::~TextPainter()
+{
+    DropTexture();
+}
+
+void TextPainter::Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color)
+{
+    assert(m_font);
+    AssureTexture(renderer, color);
+
+    SDL_Rect text_rect{ 0,0,0,0 };
+    SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+    text_rect.x = point.x;
+    text_rect.y = point.y;
+    SDL_RenderCopy(renderer, m_texture.get(), NULL, &text_rect);
+
+}
+
+SDL_Rect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
+{
+    assert(m_font);
+    AssureTexture(renderer, color);
+    SDL_Rect text_rect{ 0,0,0,0 };
+    SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+    return text_rect;
+}
+
+void TextPainter::SetText(std::string text)
+{
+    m_text = std::move(text);
+    DropTexture();
+}
+
+void TextPainter::DropTexture()
+{
+    if (m_texture)
+    {
+        {
+            std::lock_guard g{ painters_mutex };
+            Textpainters.erase(m_texture.get());
+        }
+    }
+    m_texture.reset(nullptr);
+}
+
+void TextPainter::DropTextureNoLock()
+{
+    m_texture.reset(nullptr);
+}
+
+void TextPainter::ReCreateTexture(SDL_Renderer* renderer)
+{
+    {
+        SDL_Color color = m_stored_color;
+        auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), color) };
+        m_texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
+        SDL_Rect text_rect{};
+        SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+    }
+}
+
+void TextPainter::AssureTexture(SDL_Renderer* renderer, const SDL_Color& color)
+{
+    assert(m_font);
+    if (!m_texture || color.r != m_stored_color.r || color.g != m_stored_color.g || color.b != m_stored_color.b)
+    {
+        m_stored_color = color;
+        DropTexture();
+        ReCreateTexture(renderer);
+    }
+}
+
+void TextPainter::SetFont(TTF_Font* font)
+{
+    m_font = font;
+    DropTexture();
 }

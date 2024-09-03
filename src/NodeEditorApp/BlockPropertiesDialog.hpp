@@ -12,13 +12,15 @@ class SceneModelManager;
 class DialogLabel: public DialogControl
 {
 public:
-	DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, Scene* parent);
+	DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, TTF_Font* font, Scene* parent);
 	static std::vector<std::string> SplitToLinesofWidth(const std::string& str, TTF_Font* font, int width);
 	void Draw(SDL_Renderer* renderer) override;
 
 	static constexpr int LinesMargin = 5;
 private:
 	std::vector<std::string> m_lines;
+	TTF_Font* m_font;
+	std::vector<TextPainter> m_painters;
 };
 
 class LineEditControl : public Widget
@@ -32,6 +34,7 @@ protected:
 	void OnKeyPress(int32_t key) override;
 private:
 	std::string m_value;
+	TextPainter m_painter;
 };
 class PropertyEditControl : public DialogControl
 {
@@ -46,6 +49,7 @@ protected:
 private:
 	LineEditControl m_edit;
 	std::string m_name;
+	TextPainter m_painter;
 	int m_name_width;
 };
 

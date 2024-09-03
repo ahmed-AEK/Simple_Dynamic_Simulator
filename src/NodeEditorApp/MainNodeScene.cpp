@@ -74,9 +74,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
     {
         model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        model.SetClass("Gain");
-        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
+        model.SetClass("Scope Display");
+        model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
     manager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
@@ -210,7 +209,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         "Scope Display",
         "Default",
         std::vector<model::BlockProperty>{
-        model::BlockProperty{"Inputs", model::BlockPropertyType::Integer, static_cast<uint64_t>(1)}
+        model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
         } 
     };
     pallete_provider->AddElement(std::move(scope_block));
@@ -294,6 +293,11 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     }
 
     auto class_ptr = m_classesManager->GetBlockClassByName(block_model->get().GetClass());
+    if (!class_ptr)
+    {
+        SDL_Log("class '%s' not found!", block_model->get().GetClass().c_str());
+        return;
+    }
     if (class_ptr->HasBlockDialog())
     {
         auto sim_data = std::any{};

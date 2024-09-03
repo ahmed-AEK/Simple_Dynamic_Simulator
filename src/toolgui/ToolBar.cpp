@@ -185,7 +185,7 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 	if (!m_name_texture)
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		auto surface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_name.c_str(), Black)};
+		auto surface = SDLSurface{ TTF_RenderText_Blended(GetScene()->GetApp()->getFont().get(), m_name.c_str(), Black)};
 		m_name_texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, surface.get()) };
 	}
 	SDL_Rect text_rect{};

@@ -4,8 +4,10 @@
 #include "Application.hpp"
 
 node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
-	:Widget{ rect, parent }, m_title{ std::move(title) }
+	:Widget{ rect, parent }, m_title{ std::move(title) }, m_title_painter{parent->GetApp()->getFont().get()}
 {
+	assert(parent);
+	m_title_painter.SetText(m_title);
 }
 
 void node::Dialog::Draw(SDL_Renderer* renderer)
@@ -16,10 +18,10 @@ void node::Dialog::Draw(SDL_Renderer* renderer)
 	SDL_Rect banner_rect = GetTitleBarRect();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &banner_rect);
-	banner_rect.x += 2;
-	banner_rect.y += 2;
-	banner_rect.w -= 4;
-	banner_rect.h -= 4;
+	banner_rect.x += 1;
+	banner_rect.y += 1;
+	banner_rect.w -= 2;
+	banner_rect.h -= 2;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &banner_rect);
 
@@ -249,14 +251,9 @@ void node::Dialog::ResizeToFitChildren()
 void node::Dialog::DrawTitle(SDL_Renderer* renderer, const SDL_Point& start )
 {
 	SDL_Color Black = { 50, 50, 50, 255 };
-	auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_title.c_str(), Black) };
-	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
-
-	SDL_Rect text_rect{};
-	SDL_QueryTexture(textTexture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-	text_rect.x = start.x;
-	text_rect.y = start.y + 40 / 2 - text_rect.h / 2;
-	SDL_RenderCopy(renderer, textTexture.get(), NULL, &text_rect);
+	SDL_Rect text_rect = m_title_painter.GetRect(renderer, Black);
+	SDL_Point text_start{ start.x, start.y + 40 / 2 - text_rect.h / 2 };
+	m_title_painter.Draw(renderer, text_start, Black);
 }
 
 void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
@@ -264,10 +261,10 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 	SDL_Rect base = rect;
 	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	SDL_RenderFillRect(renderer, &base);
-	base.x += 2;
-	base.y += 2;
-	base.w -= 4;
-	base.h -= 4;
+	base.x += 1;
+	base.y += 1;
+	base.w -= 2;
+	base.h -= 2;
 	if (b_being_closed)
 	{
 		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
@@ -303,10 +300,10 @@ void node::Dialog::DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &rect);
 	SDL_Rect inner_rect = rect;
-	inner_rect.x += 2;
-	inner_rect.y += 2;
-	inner_rect.w -= 4;
-	inner_rect.h -= 4;
+	inner_rect.x += 1;
+	inner_rect.y += 1;
+	inner_rect.w -= 2;
+	inner_rect.h -= 2;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &inner_rect);
 }
@@ -333,10 +330,10 @@ void node::DialogButton::Draw(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &GetRect());
 	SDL_Rect inner_rect{ GetRect() };
-	inner_rect.x += 2;
-	inner_rect.y += 2;
-	inner_rect.w -= 4;
-	inner_rect.h -= 4;
+	inner_rect.x += 1;
+	inner_rect.y += 1;
+	inner_rect.w -= 2;
+	inner_rect.h -= 2;
 	if (b_being_clicked)
 	{
 		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
@@ -348,7 +345,7 @@ void node::DialogButton::Draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &inner_rect);
 
 	SDL_Color Black = { 50, 50, 50, 255 };
-	auto textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_text.c_str(), Black) };
+	auto textSurface = SDLSurface{ TTF_RenderText_Blended(GetScene()->GetApp()->getFont().get(), m_text.c_str(), Black) };
 	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
 
 	SDL_Rect text_rect{};
