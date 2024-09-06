@@ -55,6 +55,7 @@ private:
     std::unordered_map<BlockObject*, HandlePtr<Widget>> m_objects_dialogs;
 
     std::shared_ptr<SimulatorRunner> m_current_running_simulator = nullptr;
+    std::vector<BlockResult> m_last_simulation_result;
 };
 
 }

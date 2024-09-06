@@ -266,6 +266,7 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
             continue;
         }
         SDL_Rect modified_rect = dialog->GetRect();
+        SDL_Rect title_rect = dialog->GetTitleBarRect();
         if (modified_rect.x + modified_rect.w > rect.w)
         {
             modified_rect.x = rect.w - modified_rect.w;
@@ -274,9 +275,9 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
         {
             modified_rect.x = 0;
         }
-        if (modified_rect.y + modified_rect.h > rect.h)
+        if (modified_rect.y + title_rect.h > rect.h)
         {
-            modified_rect.y = rect.h - modified_rect.h;
+            modified_rect.y = rect.h - title_rect.h;
         }
         if (modified_rect.y < 0)
         {

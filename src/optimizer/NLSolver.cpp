@@ -110,29 +110,8 @@ double opt::NLSolver::CalcPenalty(FlatMap& state)
     return std::sqrt(penalty);
 }
 
-void opt::NLSolver::UpdateState(std::span<const double> x, FlatMap& state)
+void opt::NLSolver::UpdateStateInternal(FlatMap& state)
 {
-    LoadDatatoMap(x, state);
-    for (auto& eq : m_equations)
-    {
-        auto input_buffer = eq.get_input_buffer();
-        auto input_ids = eq.get_input_ids();
-        assert(input_buffer.size() == input_ids.size());
-        for (size_t i = 0; i < input_buffer.size(); i++)
-        {
-            const auto val = state.get(input_ids[i]);
-            input_buffer[i] = val;
-        }
-        eq.Apply();
-        auto output_buffer = eq.get_output_buffer();
-        auto output_ids = eq.get_output_ids();
-        assert(output_buffer.size() == output_ids.size());
-        for (size_t i = 0;i < output_buffer.size(); i++)
-        {
-            const double result = output_buffer[i];
-            state.modify(output_ids[i], result);
-        }
-    }
     for (auto element : m_stateful_equations | boost::adaptors::indexed())
     {
         auto& eq = element.value();
@@ -146,14 +125,6 @@ void opt::NLSolver::UpdateState(std::span<const double> x, FlatMap& state)
             input_buffer[i] = val;
         }
         m_equations_states[n] = eq.Apply(m_current_time, m_equations_states[n]);
-        auto output_buffer = eq.get_output_buffer();
-        auto output_ids = eq.get_output_ids();
-        assert(output_buffer.size() == output_ids.size());
-        for (size_t i = 0; i < output_buffer.size(); i++)
-        {
-            const double result = output_buffer[i];
-            state.modify(output_ids[i], result);
-        }
     }
 }
 
@@ -213,6 +184,18 @@ void opt::NLSolver::Solve(FlatMap& state, const double& time)
     std::vector<double> x = LoadMaptoVec(state);
     double min_value;
     [[maybe_unused]] nlopt::result result = m_optimizer.optimize(x, min_value);
+    LoadDatatoMap(x, state);
+}
 
-    UpdateState(x, state);
+void opt::NLSolver::UpdateState(FlatMap& state, const double& time)
+{
+    if (0 == m_output_ids.size())
+    {
+        return;
+    }
+
+    m_current_time = time;
+    opt::FlatMap::sync(state, m_current_state);
+
+    UpdateStateInternal(state);
 }

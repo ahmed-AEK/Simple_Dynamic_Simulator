@@ -81,7 +81,7 @@ public:
 	[[nodiscard]] bool IsEmpty() const { return nullptr == p_manager; }
 
 private:
-	static constexpr size_t FatAnySize = std::max(2 * sizeof(void*), 2 * sizeof(double));
+	static constexpr size_t FatAnySize = std::max(3 * sizeof(void*), 3 * sizeof(double));
 	union data_buffer {
 		std::array<void*, FatAnySize / sizeof(void*)> buff;
 	};

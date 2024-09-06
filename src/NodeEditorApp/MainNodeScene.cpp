@@ -23,6 +23,9 @@
 #include "BlockClasses/GainBlockClass.hpp"
 #include "BlockClasses/ConstantSourceClass.hpp"
 #include "BlockClasses/ScopeDisplayClass.hpp"
+#include "BlockClasses/RampSourceClass.hpp"
+#include "BlockClasses/IntegrationBlockClass.hpp"
+#include "BlockClasses/DerivativeBlockClass.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
 
@@ -78,6 +81,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
+
     manager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
 }
 
@@ -188,10 +192,29 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         }
     };
 
+
     for (int i = 0; i < 1; i++)
     {
         pallete_provider->AddElement(block_template);
     }
+
+    auto integrate_block = BlockTemplate{
+        "Integration",
+        "Integration",
+        "Default",
+        std::vector<model::BlockProperty>{
+        }
+    };
+    pallete_provider->AddElement(std::move(integrate_block));
+
+    auto deriv_block = BlockTemplate{
+    "Derivative",
+    "Derivative",
+    "Default",
+    std::vector<model::BlockProperty>{
+    }
+    };
+    pallete_provider->AddElement(std::move(deriv_block));
 
     auto constant_block = BlockTemplate{
         "Constant Source",
@@ -203,6 +226,15 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     };
     pallete_provider->AddElement(std::move(constant_block));
 
+    auto ramp_block = BlockTemplate{
+        "Ramp",
+        "Ramp",
+        "Default",
+        std::vector<model::BlockProperty>{
+        model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
+        }
+    };
+    pallete_provider->AddElement(std::move(ramp_block));
 
     auto scope_block = BlockTemplate{
         "Scope",
@@ -263,8 +295,7 @@ void node::MainNodeScene::OpenPropertiesDialog()
 
     assert(m_classesManager);
     auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager->GetSceneModel(), *m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
-    m_objects_dialogs.emplace(static_cast<BlockObject*>(object), dialog->GetMIHandlePtr());
-
+    m_objects_dialogs[static_cast<BlockObject*>(object)] = dialog->GetMIHandlePtr();
     AddNormalDialog(std::move(dialog));
 
 }
@@ -277,14 +308,18 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         return;
     }
 
-    auto it = m_objects_dialogs.find(&block);
-    if (it != m_objects_dialogs.end() && it->second.isAlive())
     {
-        Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
-        BumpDialogToTop(dialog);
-        return;
+        auto it = m_objects_dialogs.find(&block);
+        if (it != m_objects_dialogs.end() && it->second.isAlive())
+        {
+            Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
+            BumpDialogToTop(dialog);
+            return;
+        }
     }
 
+
+    assert(block.GetModelId());
     auto block_model = m_graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
     if (!block_model)
     {
@@ -301,10 +336,19 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     if (class_ptr->HasBlockDialog())
     {
         auto sim_data = std::any{};
+        {
+            auto model_id = *block.GetModelId();
+            auto block_it = std::find_if(m_last_simulation_result.begin(), m_last_simulation_result.end(),
+                [&](const BlockResult& r) {return r.id == model_id; });
+            if (block_it != m_last_simulation_result.end())
+            {
+                sim_data = block_it->data;
+            }
+        }
         auto dialog = class_ptr->CreateBlockDialog(*this, *block_model, sim_data);
         if (dialog)
         {
-            m_objects_dialogs.emplace(&block, dialog->GetMIHandlePtr());
+            m_objects_dialogs[&block] = dialog->GetMIHandlePtr();
             AddNormalDialog(std::move(dialog));
         }
     }
@@ -327,6 +371,9 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ConstantSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ScopeDisplayClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<RampSourceClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<IntegrationBlockClass>());    
+    m_classesManager->RegisterBlockClass(std::make_shared<DerivativeBlockClass>());
 
     InitializeSidePanel(gScene.get());
 
@@ -361,9 +408,10 @@ void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
         {
            SDL_Log("Floating Input!");
         },
-        [](SimulationEvent::Success&)
+        [&](SimulationEvent::Success& e)
         {
             SDL_Log("Success!");
+            m_last_simulation_result = std::move(e.result);
         }
         }, event.e);
     

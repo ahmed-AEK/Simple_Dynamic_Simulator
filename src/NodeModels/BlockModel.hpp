@@ -95,6 +95,9 @@ public:
 	std::optional<std::reference_wrapper<BlockSocketModel>>
 		GetSocketById(SocketId id);
 
+	std::optional<std::reference_wrapper<const BlockSocketModel>>
+		GetSocketById(SocketId id) const;
+
 
 	auto GetSockets() const { 
 		return std::span{ m_sockets };

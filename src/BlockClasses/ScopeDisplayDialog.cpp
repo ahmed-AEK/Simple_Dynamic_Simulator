@@ -10,7 +10,13 @@ node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,500,400}, parent);
 	XYSeries series{ {{0,0},{1,1},{2,2},{3,3},{4,4}, {5,0}, {6,3},{7,-1}} };
 	plot->SetData(std::move(series));
+	plot_widget = plot.get();
 	AddControl(std::move(plot));
+}
+
+void node::ScopeDiplayDialog::SetData(XYSeries data)
+{
+	plot_widget->SetData(std::move(data));
 }
 
 node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Scene* parent)
@@ -46,12 +52,21 @@ void node::PlotWidget::SetData(XYSeries data)
 		max_point.x = std::max(max_point.x, point.x);
 		max_point.y = std::max(max_point.y, point.y);
 	}
-	const float x_distance = max_point.x - min_point.x;
-	const float y_distance = max_point.y - min_point.y;
+
+	float x_distance = max_point.x - min_point.x;
+	float y_distance = max_point.y - min_point.y;
+	if (y_distance == 0)
+	{
+		min_point.y = std::min<float>(min_point.y, 0);
+		max_point.y = std::max<float>(max_point.y, 0);
+		y_distance = max_point.y - min_point.y;
+	}
 	min_point.x -= x_distance * 0.1f;
 	min_point.y -= y_distance * 0.1f;
 	max_point.x += x_distance * 0.1f;
 	max_point.y += y_distance * 0.1f;
+
+	
 	m_space_extent = SDL_FRect{ min_point.x, min_point.y, max_point.x - min_point.x, max_point.y - min_point.y };
 
 	ResetPainters();
@@ -88,7 +103,8 @@ void node::PlotWidget::ResetPainters()
 	SDL_Rect inner_rect = GetInnerRect();
 	m_painters.clear();
 	
-	bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
+	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
+	bool draw_text = true;
 	{
 		{
 			const int spacing = (inner_rect.h) / static_cast<int>(y_ticks_count + 1);

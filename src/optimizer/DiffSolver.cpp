@@ -71,14 +71,16 @@ void opt::DiffSolver::LoadMaptoVec(FlatMap& state, std::vector<double>& target)
 
 opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
 {
+
     opt::FlatMap::sync(state, m_current_state);
     LoadMaptoVec(state, m_current_x);
 
     auto diffsystem = DiffSystem(*this);
     auto result = boost::numeric::odeint::controlled_step_result::fail;
-    if (m_last_dt + m_current_time > m_end_time)
+
+    if (m_last_dt > m_max_step)
     {
-        m_last_dt = m_end_time - m_current_time;
+        m_last_dt = m_max_step;
     }
 
     while (result != boost::numeric::odeint::controlled_step_result::success)
@@ -86,6 +88,7 @@ opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
         result = m_stepper.try_step(diffsystem, m_current_x, m_current_time, m_last_dt);
     }
     LoadDatatoMap(m_current_x, state);
+
     if (m_current_time >= m_end_time)
     {
         m_current_time = m_end_time;
@@ -97,10 +100,8 @@ opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
 void opt::DiffSolver::StepInternal(const opt::DiffSolver::state_type& x, opt::DiffSolver::state_type& dxdt, const double t)
 {
     LoadDatatoMap(x, m_current_state);
-    if (m_preprocessor)
-    {
-        m_preprocessor(m_current_state, t);
-    }
+
+    ApplyPreprocessor(m_current_state, t);
     
     for (auto& eq : m_equations)
     {
@@ -128,4 +129,25 @@ void opt::DiffSolver::StepInternal(const opt::DiffSolver::state_type& x, opt::Di
 void opt::DiffSolver::SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor)
 {
     m_preprocessor = std::move(preprocessor);
+}
+
+void opt::DiffSolver::SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor)
+{
+    m_postprocessor = std::move(postprocessor);
+}
+
+void opt::DiffSolver::ApplyPreprocessor(opt::FlatMap& state, const double t)
+{
+    if (m_preprocessor)
+    {
+        m_preprocessor(state, t);
+    }
+}
+
+void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
+{
+    if (m_postprocessor)
+    {
+        m_postprocessor(state, t);
+    }
 }

@@ -5,6 +5,15 @@
 #include "SourceEq.hpp"
 #include "Observer.hpp"
 
+namespace opt
+{
+	struct ObserverSlot
+	{
+		size_t id;
+		Observer o;
+	};
+}
+
 opt::NLDiffSolver::NLDiffSolver()
 {
 	auto preprocessor = [this](auto& state, const double time)
@@ -13,6 +22,14 @@ opt::NLDiffSolver::NLDiffSolver()
 			m_NLSolver.Solve(state, time);
 		};
 	m_diffSolver.SetPreprocessor(std::move(preprocessor));
+
+	auto postprocessor = [this](auto& state, const double time)
+		{
+			this->UpdateSources(state, time);
+			m_NLSolver.Solve(state, time);
+			m_NLSolver.UpdateState(state, time);
+		};
+	m_diffSolver.SetPostprocessor(std::move(postprocessor));
 }
 
 opt::NLDiffSolver::~NLDiffSolver()
@@ -34,9 +51,15 @@ void opt::NLDiffSolver::AddNLStatefulEquation(NLStatefulEquation eq)
 	m_NLSolver.AddStatefulEquation(std::move(eq));
 }
 
-void opt::NLDiffSolver::AddObserver(Observer obs)
+size_t opt::NLDiffSolver::AddObserver(Observer obs)
 {
-	m_observers.push_back(std::move(obs));
+	size_t new_id = 0;
+	if (m_observers.size())
+	{
+		new_id = m_observers.back().id + 1;
+	}
+	m_observers.emplace_back(new_id, std::move(obs));
+	return new_id;
 }
 
 void opt::NLDiffSolver::AddSource(SourceEq source)
@@ -50,7 +73,7 @@ void opt::NLDiffSolver::Initialize(double start_time, double end_time)
 	m_NLSolver.Initialize();
 	for (auto& observer : m_observers)
 	{
-		observer.Initialize(start_time, end_time);
+		observer.o.Initialize(start_time, end_time);
 	}
 }
 
@@ -58,6 +81,7 @@ void opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
 {
 	UpdateSources(state, GetCurrentTime());
 	m_NLSolver.Solve(state, GetCurrentTime());
+	m_NLSolver.UpdateState(state, GetCurrentTime());
 	NotifyObservers(state, GetCurrentTime());
 }
 
@@ -65,28 +89,43 @@ void opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)
 {
 	for (auto& observer : m_observers)
 	{
-		auto input_buffer = observer.get_input_buffer();
-		auto input_ids = observer.get_input_ids();
+		auto input_buffer = observer.o.get_input_buffer();
+		auto input_ids = observer.o.get_input_ids();
 		assert(input_buffer.size() == input_ids.size());
 		for (size_t i = 0; i < input_buffer.size(); i++)
 		{
 			const auto val = state.get(input_ids[i]);
 			input_buffer[i] = val;
 		}
-		observer.Apply(t);
+		observer.o.Apply(t);
 	}
+}
+
+std::vector<opt::ObserverData> opt::NLDiffSolver::GetObserversData()
+{
+	std::vector<ObserverData> result;
+	for (auto&& [id, observer] : m_observers)
+	{
+		result.emplace_back(id, observer.GetResults());
+	}
+	return result;
 }
 
 opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 {
 	const auto result = m_diffSolver.Step(state);
-	m_NLSolver.Solve(state, GetCurrentTime());
-	NotifyObservers(state, GetCurrentTime());
+	m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
+	if (GetCurrentTime() - m_last_oberver_time > 1e-4)
+	{
+		NotifyObservers(state, GetCurrentTime());
+		m_last_oberver_time = GetCurrentTime();
+	}
+
 	if (result == opt::StepResult::ReachedEnd)
 	{
 		for (auto& observer : m_observers)
 		{
-			observer.CaptureEnd(GetCurrentTime());
+			observer.o.CaptureEnd(GetCurrentTime());
 		}
 	}
 	return result;

@@ -6,7 +6,7 @@ TEST(testDiffEquation, testApply)
 {
 	
 	opt::DiffEquation eq({0, 1, 2 }, { 3 },
-		opt::DiffEquation::DiffFunctor{[](auto inputs, auto output, const auto& t) -> void
+		opt::DiffEquation::DiffFunctor{[](auto inputs, auto output, const auto t) -> void
 		{
 			output[0] = inputs[0] + inputs[1] + inputs[2] + t;
 		} } );

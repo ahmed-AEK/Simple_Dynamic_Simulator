@@ -36,8 +36,9 @@ class ScopeDiplayDialog : public Dialog
 {
 public:
 	ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent);
+	void SetData(XYSeries data);
 private:
-	
+	PlotWidget* plot_widget = nullptr;
 };
 
 }

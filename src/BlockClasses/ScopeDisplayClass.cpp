@@ -91,6 +91,11 @@ node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::
 				(*vec)[i].push_back(out[i]);
 			}
 			(*vec)[out.size()].push_back(t);
+		}},
+		{}, {},
+		opt::Observer::GetResultsFunctor{[vec]() 
+		{
+			return std::any{*vec};
 		}}
 	};
 }
@@ -98,8 +103,20 @@ node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::
 std::unique_ptr<node::Dialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data)
 {
 	UNUSED_PARAM(model);
-	UNUSED_PARAM(simulation_data);
+
 	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_Rect{ 100,100, 500,500 }, &scene);
+	if (simulation_data.type() == typeid(std::vector<std::vector<double>>))
+	{
+		std::vector<std::vector<double>> data = std::any_cast<std::vector<std::vector<double>>>(simulation_data);
+		XYSeries xydata;
+		assert(data.size() >= 2);
+		for (size_t i = 0; i < data[1].size(); i++)
+		{
+			xydata.points.push_back(SDL_FPoint{ static_cast<float>(data[1][i]), static_cast<float>(data[0][i]) });
+		}
+		dialog->SetData(std::move(xydata));
+	}
+
 	return dialog;
 }
 

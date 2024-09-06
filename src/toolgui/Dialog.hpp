@@ -52,6 +52,8 @@ public:
 	void AddButton(std::string title, std::function<void()> callback);
 	void TriggerClose() { OnClose(); }
 	void TriggerOk() { OnOk(); }
+	SDL_Rect GetTitleBarRect() const;
+
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point);
 	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
@@ -69,7 +71,6 @@ private:
 	void DrawTitle(SDL_Renderer* renderer, const SDL_Point& start);
 	void DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect);
 	void DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect);
-	SDL_Rect GetTitleBarRect() const;
 	SDL_Rect GetXButtonRect() const;
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;

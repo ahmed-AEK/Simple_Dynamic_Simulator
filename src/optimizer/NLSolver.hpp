@@ -15,6 +15,7 @@ public:
 	NLSolver();
 	void Initialize();
 	void Solve(FlatMap& state, const double& time);
+	void UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquation eq);
 	void AddStatefulEquation(NLStatefulEquation eq);
 protected:
@@ -23,7 +24,7 @@ protected:
 	void LoadDatatoMap(std::span<const double> x, FlatMap& state);
 	[[nodiscard]] std::vector<double> LoadMaptoVec(FlatMap& state);
 	[[nodiscard]] double CalcPenalty(FlatMap& state);
-	void UpdateState(std::span<const double> x, FlatMap& state);
+	void UpdateStateInternal(FlatMap& state);
 private:
 	std::vector<NLEquation> m_equations;
 	std::vector<NLStatefulEquation> m_stateful_equations;

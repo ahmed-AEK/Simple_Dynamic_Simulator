@@ -2,11 +2,20 @@
 
 #include "optimizer/NLSolver.hpp"
 #include "optimizer/DiffSolver.hpp"
+#include <any>
 
 namespace opt
 {
 class Observer;
 class SourceEq;
+
+struct ObserverSlot;
+
+struct ObserverData
+{
+	size_t id;
+	std::any data;
+};
 
 class NLDiffSolver
 {
@@ -18,7 +27,7 @@ public:
 	void AddDiffEquation(DiffEquation eq);
 	void AddNLEquation(NLEquation eq);
 	void AddNLStatefulEquation(NLStatefulEquation eq);
-	void AddObserver(Observer obs);
+	size_t AddObserver(Observer obs);
 	void AddSource(SourceEq source);
 	void Initialize(double start_time, double end_time);
 	[[nodiscard]] constexpr double GetStartTime() const { return m_diffSolver.GetStartTime(); }
@@ -26,12 +35,14 @@ public:
 	[[nodiscard]] constexpr double GetCurrentTime() const { return m_diffSolver.GetCurrentTime(); }
 	void CalculateInitialConditions(FlatMap& state);
 	void NotifyObservers(const FlatMap& state, const double t);
+	std::vector<ObserverData> GetObserversData();
 	StepResult Step(FlatMap& state);
 private:
 	void UpdateSources(FlatMap& state, const double t);
+	DiffSolver::time_type m_last_oberver_time = 0;
 	std::vector<SourceEq> m_sources;
 	DiffSolver m_diffSolver;
 	NLSolver m_NLSolver;
-	std::vector<Observer> m_observers;
+	std::vector<ObserverSlot> m_observers;
 };
 }

@@ -218,29 +218,58 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 	remap(funcs.sources);
 }
 
-static void AddFuncs(opt::NLDiffSolver& solver, BlocksFunctions& funcs)
+struct ObserverMapping
 {
+	size_t observer_id;
+	node::model::BlockId block_id;
+};
+
+static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFunctions& funcs)
+{
+	std::vector<ObserverMapping> result;
+
 	for (auto& func : funcs.diff_eqs)
 	{
+		auto out_ids = func.first.get_output_ids();
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
 		solver.AddDiffEquation(std::move(func.first));
 	}
 	for (auto& func : funcs.nl_eqs)
 	{
+		auto out_ids = func.first.get_output_ids();
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
 		solver.AddNLEquation(std::move(func.first));
 	}
 	for (auto& func : funcs.observers)
 	{
-		solver.AddObserver(std::move(func.first));
+		auto obs_id = solver.AddObserver(std::move(func.first));
+		result.emplace_back(obs_id, func.second);
 	}
 	for (auto& func : funcs.nl_st_eqs)
 	{
+		auto out_ids = func.first.get_output_ids();
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
 		solver.AddNLStatefulEquation(std::move(func.first));
 	}
 	for (auto& func : funcs.sources)
 	{
+		auto out_ids = func.first.get_output_ids();
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
 		solver.AddSource(std::move(func.first));
 	}
-	
+	return result;
 }
 node::SimulatorRunner::SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback)
 	:m_end_callback{ std::move(end_callback) }, m_model{std::make_unique<model::NodeSceneModel>(model)}, m_classes_mgr{std::move(classes_mgr)}
@@ -274,15 +303,12 @@ bool node::SimulatorRunner::IsEnded()
 	return m_ended.test();
 }
 
-node::SimulationEvent node::SimulatorRunner::DoSimulation()
+using ErrorsVariant = std::variant<node::SimulationEvent::NetFloatingError, node::SimulationEvent::OutputSocketsConflict, node::SimulationEvent::FloatingInput>;
+using ValidationResult = std::optional<ErrorsVariant>;
+
+static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vector<SocketMappings>& socket_mappings, const node::model::NodeSceneModel& model)
 {
-	auto nets = SplitToNets(*m_model);
-	auto socket_mappings = MapSockets(*m_model, nets);
-
-	assert(m_classes_mgr);
-	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
-	RemapFunctions(blocks, socket_mappings);
-
+	using namespace node;
 	for (auto& net : nets.nets)
 	{
 		if (net.in_sockets_count > 0 && net.out_sockets_count == 0)
@@ -294,7 +320,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 			std::vector<model::SocketUniqueId> output_sockets;
 			for (const auto& socket_id : net.sockets)
 			{
-				if (auto block = m_model->GetBlockById(socket_id.block_id))
+				if (auto block = model.GetBlockById(socket_id.block_id))
 				{
 					auto socket = block->get().GetSocketById(socket_id.socket_id);
 					assert(socket);
@@ -304,7 +330,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 					}
 				}
 			}
-			return { SimulationEvent::OutputSocketsConflict{std::move(net.nodes), std::move(output_sockets)}};
+			return { SimulationEvent::OutputSocketsConflict{std::move(net.nodes), std::move(output_sockets)} };
 		}
 	}
 	std::vector<model::SocketUniqueId> floating_inputs;
@@ -322,9 +348,52 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	{
 		return { SimulationEvent::FloatingInput{std::move(floating_inputs) } };
 	}
+	return std::nullopt;
+}
+node::SimulationEvent node::SimulatorRunner::DoSimulation()
+{
+	auto nets = SplitToNets(*m_model);
+	auto socket_mappings = MapSockets(*m_model, nets);
+
+	assert(m_classes_mgr);
+	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
+	RemapFunctions(blocks, socket_mappings);
+	
+	assert(m_model);
+	auto validation_result = ValidateNets(nets, socket_mappings, *m_model);
+	if (validation_result)
+	{
+		return std::visit([](auto& val) {return SimulationEvent{std::move(val)}; }, *validation_result);
+	}
+	
 	opt::NLDiffSolver solver;
-	AddFuncs(solver, blocks);
-	return { SimulationEvent::Success{} };
+	auto observer_mapping = AddFuncs(solver, blocks);
+	
+	solver.Initialize(0, 10);
+
+	opt::FlatMap simulation_nets{ nets.nets.size()};
+	opt::StepResult step_result = opt::StepResult::Success;
+	
+	solver.CalculateInitialConditions(simulation_nets);
+
+	while (step_result != opt::StepResult::ReachedEnd)
+	{
+		step_result = solver.Step(simulation_nets);
+	}
+	
+	auto simulation_result = solver.GetObserversData();
+	std::vector<BlockResult> result;
+	for (auto&& item : simulation_result)
+	{
+		auto it = std::find_if(observer_mapping.begin(), observer_mapping.end(),
+			[&](const ObserverMapping& mapping) {return mapping.observer_id == item.id; });
+		assert(it != observer_mapping.end());
+		if (it != observer_mapping.end())
+		{
+			result.emplace_back(it->block_id, item.data);
+		}
+	}
+ 	return { SimulationEvent::Success{result} };
 }
 
 void node::SimulatorRunner::RunImpl()

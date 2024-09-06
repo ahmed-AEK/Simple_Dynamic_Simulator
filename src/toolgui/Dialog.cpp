@@ -90,6 +90,7 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 	int x_distance = current_mouse_point.x - m_drag_mouse_start_position.x;
 	int y_distance = current_mouse_point.y - m_drag_mouse_start_position.y;
 	SDL_Rect new_rect{ m_drag_edge_start_position.x + x_distance, m_drag_edge_start_position.y + y_distance , GetRect().w, GetRect().h};
+	SDL_Rect title_rect = GetTitleBarRect();
 	if (new_rect.x + new_rect.w > GetScene()->GetRect().w)
 	{
 		new_rect.x = GetScene()->GetRect().w - new_rect.w;
@@ -98,9 +99,9 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 	{
 		new_rect.x = 0;
 	}
-	if (new_rect.y + new_rect.h > GetScene()->GetRect().h)
+	if (new_rect.y + title_rect.h > GetScene()->GetRect().h)
 	{
-		new_rect.y = GetScene()->GetRect().h - new_rect.h;
+		new_rect.y = GetScene()->GetRect().h - title_rect.h;
 	}
 	if (new_rect.y < 0)
 	{

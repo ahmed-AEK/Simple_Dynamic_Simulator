@@ -9,20 +9,21 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - adding and removing nodes (use ctrl to fork an edge, and shift to delete nodes and edges)
 - moving and connecting nodes
 - Algebraic Differential Solver
+- Display simulation result on Scope block
+- Block pallete to add blocks
 
 ### Not Implemented yet:
 - persistent storing and loading nodes
-- storing functions in nodes
-- link solver and GUI
-- ability to customize nodes
-- ability to preview solver results
+- ability to customize nodes appearance
+- better scope control
+- scripting engine
+
 
 ### Dependencies:
 - Boost (containers, odeint)
 - nlopt
 - SDL, SDL-TTF, SDL-image
 - google-test
-- sdl2_gfx (in external folder)
 
 ### testing
 

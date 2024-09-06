@@ -8,10 +8,16 @@
 #include <optional>
 #include <vector>
 #include "NodeModels/IdTypes.hpp"
+#include <any>
 
 namespace node
 {
 
+struct BlockResult
+{
+	model::BlockId id;
+	std::any data;
+};
 
 struct SimulationEvent
 {
@@ -29,7 +35,10 @@ struct SimulationEvent
 		std::vector<model::SocketUniqueId> sockets;
 	};
 
-	struct Success {};
+	struct Success 
+	{
+		std::vector<BlockResult> result;
+	};
 
 	using Event_t = typename std::variant<Success, NetFloatingError, OutputSocketsConflict, FloatingInput>;
 	Event_t e;

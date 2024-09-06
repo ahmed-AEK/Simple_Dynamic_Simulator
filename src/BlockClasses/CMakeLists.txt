@@ -6,8 +6,11 @@ BlockClass.cpp BlockClass.hpp
 AddBlockClass.cpp AddBlockClass.hpp
 GainBlockClass.cpp GainBlockClass.hpp
 ConstantSourceClass.cpp ConstantSourceClass.hpp
+RampSourceClass.cpp RampSourceClass.hpp
 ScopeDisplayClass.cpp ScopeDisplayClass.hpp
 ScopeDisplayDialog.cpp ScopeDisplayDialog.hpp
+IntegrationBlockClass.cpp IntegrationBlockClass.hpp
+DerivativeBlockClass.cpp DerivativeBlockClass.hpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

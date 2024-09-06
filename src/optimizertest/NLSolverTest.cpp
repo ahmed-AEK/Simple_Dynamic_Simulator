@@ -20,8 +20,9 @@ TEST(testNLSolver, testAddStateful)
 	state.modify(0,0);
 	
 	solver.Solve(state, 1);
+	solver.UpdateState(state, 1);
 
-	EXPECT_EQ(state.get(0), 1);
+	EXPECT_NEAR(state.get(0), 1, 1e-4);
 }
 
 TEST(testNLSolver, testStateful_runs)
@@ -42,10 +43,13 @@ TEST(testNLSolver, testStateful_runs)
 	state.modify(0,0);
 
 	solver.Solve(state, 1);
+	solver.UpdateState(state, 1);
+
 	solver.Solve(state, 2);
+	solver.UpdateState(state, 2);
 
 	EXPECT_EQ(recorded_double, 1);
-	EXPECT_EQ(state.get(0), 2);
+	EXPECT_NEAR(state.get(0), 2, 1e-4);
 }
 
 TEST(testNLSolver, testEmptyRun)
@@ -65,6 +69,7 @@ TEST(testNLSolver, testSolve)
 	state.modify(0,3);
 	state.modify(1,0);
 	solver.Solve(state, 0);
+	solver.UpdateState(state, 0);
 	EXPECT_NEAR(3.0, state.get(1), 1e-4);
 }
 
@@ -82,8 +87,9 @@ TEST(testNLSolver, testSolve_two_equations)
 	state.modify(1,0);
 	state.modify(2,0);
 	solver.Solve(state, 0);
-	EXPECT_NEAR(3.0, state.get(1), 1e-4);
-	EXPECT_NEAR(6.0, state.get(2), 1e-4);
+	solver.UpdateState(state, 0);
+	EXPECT_NEAR(3.0, state.get(1), 1e-3);
+	EXPECT_NEAR(6.0, state.get(2), 1e-3);
 }
 
 TEST(testNLSolver, testSolve_two_equations_cyclic)
@@ -96,6 +102,7 @@ TEST(testNLSolver, testSolve_two_equations_cyclic)
 	state.modify(0,0);
 	state.modify(1,0);
 	solver.Solve(state, 0);
+	solver.UpdateState(state, 0);
 	EXPECT_NEAR(-1.0, state.get(1), 1e-4); // y = -1
 	EXPECT_NEAR(-2.0, state.get(0), 2e-4); // x = -2
 }

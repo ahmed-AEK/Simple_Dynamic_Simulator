@@ -10,7 +10,7 @@ namespace opt
 class DiffEquation : public Equation
 {
 public:
-	using DiffFunctor = std::function<void(std::span<const double>, std::span<double>, const double&)>;
+	using DiffFunctor = std::function<void(std::span<const double>, std::span<double>, const double)>;
 
 	DiffEquation(std::pmr::vector<int64_t> input_ids,
 		std::pmr::vector<int64_t> output_ids, 
