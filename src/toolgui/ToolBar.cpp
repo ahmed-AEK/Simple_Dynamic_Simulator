@@ -30,14 +30,11 @@ node::ToolBar::~ToolBar()
 
 void node::ToolBar::AddButton(std::unique_ptr<ToolBarButton> button, int position)
 {
-
 	if (position == -1)
 	{
 		m_buttons.push_back(std::move(button));
-		return;
 	}
-
-	if (static_cast<size_t>(position) < m_buttons.size())
+	else if (static_cast<size_t>(position) < m_buttons.size())
 	{
 		m_buttons.insert(m_buttons.begin() + position, std::move(button));
 	}
@@ -45,7 +42,8 @@ void node::ToolBar::AddButton(std::unique_ptr<ToolBarButton> button, int positio
 	{
 		m_buttons.push_back(std::move(button));
 	}
-	
+	RepositionButtons();
+
 }
 
 void node::ToolBar::AddSeparator(int position)
@@ -129,13 +127,19 @@ node::Widget* node::ToolBar::OnGetInteractableAtPoint(const SDL_Point& point)
 void node::ToolBar::OnSetRect(const SDL_Rect& rect)
 {
 	Widget::OnSetRect(rect);
+	RepositionButtons();
+	
+}
 
-	int position_x = ToolBarButton::Hmargin;
+void node::ToolBar::RepositionButtons()
+{
+	int position_x = ToolBarButton::Hmargin + GetRect().x;
+	int position_y = GetRect().y;
 	for (auto&& button : m_buttons)
 	{
 		if (isButton(button))
 		{
-			AsButton(button)->SetRect({ position_x, 4, ToolBarButton::width, ToolBarButton::height });
+			AsButton(button)->SetRect({ position_x, position_y + 4, ToolBarButton::width, ToolBarButton::height });
 			position_x += ToolBarButton::Hmargin + ToolBarButton::width;
 		}
 		else

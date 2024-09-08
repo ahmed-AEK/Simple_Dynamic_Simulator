@@ -5,8 +5,6 @@
 #include "optimizer/Observer.hpp"
 #include "optimizer/SourceEq.hpp"
 
-#include <iostream>
-
 static const std::vector<node::model::BlockProperty> ClassProperties{
 };
 

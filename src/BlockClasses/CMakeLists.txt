@@ -11,6 +11,8 @@ ScopeDisplayClass.cpp ScopeDisplayClass.hpp
 ScopeDisplayDialog.cpp ScopeDisplayDialog.hpp
 IntegrationBlockClass.cpp IntegrationBlockClass.hpp
 DerivativeBlockClass.cpp DerivativeBlockClass.hpp
+AddSimpleClass.cpp AddSimpleClass.hpp
+MultiplyBlockClass.cpp MultiplyBlockClass.hpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

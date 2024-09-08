@@ -26,6 +26,8 @@
 #include "BlockClasses/RampSourceClass.hpp"
 #include "BlockClasses/IntegrationBlockClass.hpp"
 #include "BlockClasses/DerivativeBlockClass.hpp"
+#include "BlockClasses/AddSimpleClass.hpp"
+#include "BlockClasses/MultiplyBlockClass.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
 
@@ -184,7 +186,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
 
     auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager);
     auto block_template = BlockTemplate{
-        "Gain1",
+        "Gain",
         "Gain",
         "Default",
         std::vector<model::BlockProperty>{
@@ -197,6 +199,15 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     {
         pallete_provider->AddElement(block_template);
     }
+
+    auto add_block = BlockTemplate{
+    "Add",
+    "Add Simple",
+    "Default",
+    std::vector<model::BlockProperty>{
+    }
+    };
+    pallete_provider->AddElement(std::move(add_block));
 
     auto integrate_block = BlockTemplate{
         "Integration",
@@ -246,6 +257,14 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     };
     pallete_provider->AddElement(std::move(scope_block));
 
+    auto multiply_block = BlockTemplate{
+    "Multiply",
+    "Multiply",
+    "Default",
+    std::vector<model::BlockProperty>{
+    }
+    };
+    pallete_provider->AddElement(std::move(multiply_block));
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
         std::move(pallete_provider), this));
@@ -274,6 +293,8 @@ void node::MainNodeScene::OpenPropertiesDialog()
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
             BumpDialogToTop(dialog);
+            SDL_Rect dialog_rect = dialog->GetRect();
+            dialog->SetRect({ 100,100,dialog_rect.w, dialog_rect.h });
             return;
         }
     }
@@ -314,6 +335,8 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
             BumpDialogToTop(dialog);
+            SDL_Rect dialog_rect = dialog->GetRect();
+            dialog->SetRect({ 100,100,dialog_rect.w, dialog_rect.h });
             return;
         }
     }
@@ -374,6 +397,8 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<RampSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<IntegrationBlockClass>());    
     m_classesManager->RegisterBlockClass(std::make_shared<DerivativeBlockClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<AddSimpleBlockClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<MultiplyBlockClass>());
 
     InitializeSidePanel(gScene.get());
 

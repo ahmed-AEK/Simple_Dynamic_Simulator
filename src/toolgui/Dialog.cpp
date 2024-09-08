@@ -2,6 +2,7 @@
 #include "SDL_Framework/SDLCPP.hpp"
 #include "Scene.hpp"
 #include "Application.hpp"
+#include "ToolBar.hpp"
 
 node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
 	:Widget{ rect, parent }, m_title{ std::move(title) }, m_title_painter{parent->GetApp()->getFont().get()}
@@ -9,6 +10,8 @@ node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
 	assert(parent);
 	m_title_painter.SetText(m_title);
 }
+
+node::Dialog::~Dialog() = default;
 
 void node::Dialog::Draw(SDL_Renderer* renderer)
 {
@@ -28,6 +31,10 @@ void node::Dialog::Draw(SDL_Renderer* renderer)
 	DrawTitle(renderer, SDL_Point{ banner_rect.x + 5, banner_rect.y });
 	DrawXButton(renderer, GetXButtonRect());
 
+	if (m_toolbar)
+	{
+		m_toolbar->Draw(renderer);
+	}
 	for (auto&& button : m_buttons)
 	{
 		button->Draw(renderer);
@@ -165,6 +172,13 @@ void node::Dialog::OnMouseOut()
 
 node::Widget* node::Dialog::OnGetInteractableAtPoint(const SDL_Point& point)
 {
+	if (m_toolbar)
+	{
+		if (auto ptr = m_toolbar->GetInteractableAtPoint(point))
+		{
+			return ptr;
+		}
+	}
 	for (auto&& control : m_controls)
 	{
 		if (auto ptr = control->GetInteractableAtPoint(point))
@@ -191,8 +205,16 @@ void node::Dialog::OnSetRect(const SDL_Rect& rect)
 
 void node::Dialog::RepositionControls()
 {
+	auto title_bar_rect = GetTitleBarRect();
 	int x = ControlsMargin + GetRect().x;
-	int y = GetRect().y + GetTitleBarRect().h + ControlsMargin;
+	int y = GetRect().y + title_bar_rect.h + ControlsMargin;
+	if (m_toolbar)
+	{
+		SDL_Rect self_rect = GetRect();
+		m_toolbar->SetRect({ self_rect.x, self_rect.y + title_bar_rect.h, self_rect.w, ToolBar::height });
+		y += ToolBar::height;
+	}
+
 	for (auto&& control : m_controls)
 	{
 		const SDL_Rect& old_rect = control->GetRect();
@@ -227,6 +249,10 @@ void node::Dialog::ResizeToFitChildren()
 {
 	int width = 0;
 	int height = ControlsMargin + GetTitleBarRect().h;
+	if (m_toolbar)
+	{
+		height += ToolBar::height;
+	}
 	for (const auto& control : m_controls)
 	{
 		height += control->GetRect().h + ControlsMargin;
@@ -313,6 +339,14 @@ SDL_Rect node::Dialog::GetTitleBarRect() const
 {
 	const auto& this_rect = GetRect();
 	return SDL_Rect{ this_rect.x, this_rect.y, this_rect.w, 40 };
+}
+
+void node::Dialog::SetToolbar(std::unique_ptr<ToolBar> toolbar)
+{
+	m_toolbar = std::move(toolbar);
+	SDL_Rect self_rect = GetRect();
+	auto title_bar_rect = GetTitleBarRect();
+	m_toolbar->SetRect({ self_rect.x, self_rect.y + title_bar_rect.h, self_rect.w, ToolBar::height });
 }
 
 SDL_Rect node::Dialog::GetXButtonRect() const

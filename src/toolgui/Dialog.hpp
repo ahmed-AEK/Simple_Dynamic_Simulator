@@ -31,6 +31,8 @@ private:
 
 };
 
+class ToolBar;
+
 class Dialog : public Widget
 {
 public:
@@ -41,6 +43,7 @@ public:
 	};
 
 	Dialog(std::string title, const SDL_Rect& rect, Scene* parent);
+	~Dialog();
 	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetTitle() const { return m_title; };
 	void SetTitle(std::string title) { m_title = title; m_title_painter.SetText(title); }
@@ -53,7 +56,7 @@ public:
 	void TriggerClose() { OnClose(); }
 	void TriggerOk() { OnOk(); }
 	SDL_Rect GetTitleBarRect() const;
-
+	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point);
 	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
@@ -75,7 +78,7 @@ private:
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;
 	std::vector<std::unique_ptr<DialogButton>> m_buttons;
-
+	std::unique_ptr<ToolBar> m_toolbar;
 	TextPainter m_title_painter;
 
 	std::string m_title;

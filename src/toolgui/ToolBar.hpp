@@ -59,6 +59,7 @@ protected:
 	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
 	void OnSetRect(const SDL_Rect& rect) override;
 private:
+	void RepositionButtons();
 	std::vector<ToolBarElement> m_buttons;
 };
 
