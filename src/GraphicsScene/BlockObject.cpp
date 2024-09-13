@@ -10,7 +10,7 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 
-std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::shared_ptr<BlockStyler> styler)
+std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {
     auto ptr = std::make_unique<BlockObject>(scene, model.GetBounds(), std::move(styler), model.GetId());
     for (const auto& socket : model.GetSockets())
@@ -23,7 +23,7 @@ std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* sce
 }
 
 node::BlockObject::BlockObject(IGraphicsScene* scene, const model::Rect& rect,
-    std::shared_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id)
+    std::unique_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id)
     :GraphicsObject{rect, ObjectType::block, scene}, m_id{model_id}, m_styler{std::move(styler)}
 {
 }
@@ -48,11 +48,13 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
 
     auto&& transformer = GetScene()->GetSpaceScreenTransformer();
     assert(m_styler);
-    m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, GetScene()->IsObjectSelected(*this));
+    auto selected = GetScene()->IsObjectSelected(*this);
+    m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, selected);
     for (const auto& socket : m_sockets)
     {
         m_styler->DrawBlockSocket(renderer, socket->GetCenterInSpace(), transformer, socket->GetSocketType());
     }
+    m_styler->DrawBlockDetails(renderer, GetSpaceRect(), transformer, selected);
 }
 
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)

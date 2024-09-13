@@ -8,9 +8,13 @@
 #include "GraphicsScene/NetObject.hpp"
 #include "GraphicsLogic/GraphicsLogic.hpp"
 
-node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene)
-	:m_scene{&scene}
+#include "NodeSDLStylers/BlockStylerFactory.hpp"
+
+node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory)
+    :m_scene{&scene}, m_blockStylerFactory{std::move(styler_factory)}
 {
+    assert(GetScene());
+    assert(m_blockStylerFactory);
 }
 
 void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManager> scene)
@@ -26,11 +30,11 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     }
     m_sceneModel = std::move(scene);
     m_sceneModel->Attach(*this);
-    auto styler = std::make_shared<node::BlockStyler>();
     for (auto&& block : m_sceneModel->GetBlocks())
     {
+        auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block.GetStylerProperties());
         styler->PositionNodes(block);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, styler);
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, std::move(styler));
         auto ptr = obj.get();
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(block.GetId(), ptr);
@@ -43,9 +47,9 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
     case SceneModification::type_t::BlockAdded:
     {
-        auto styler = std::make_shared<node::BlockStyler>();
         auto& model_ref = std::get<model::BlockModelRef>(e.data);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, styler);
+        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref.get().GetStylerProperties());
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
@@ -209,9 +213,6 @@ void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     block.SetPosition(GetScene()->QuantizePoint(GetScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
-
-    auto styler = std::make_shared<node::BlockStyler>();
-    styler->PositionNodes(block);
     m_sceneModel->AddNewBlock(std::move(block));
 }
 

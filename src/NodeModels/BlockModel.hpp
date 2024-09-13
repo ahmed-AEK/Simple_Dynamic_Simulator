@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <variant>
+#include <unordered_map>
 
 namespace node::model
 {
@@ -70,6 +71,11 @@ struct BlockProperty
 	property_t prop;
 };
 
+struct BlockStyleProperties
+{
+	std::unordered_map<std::string, std::string> properties;
+};
+
 class BlockModel
 {
 public:
@@ -121,12 +127,15 @@ public:
 	const std::vector<BlockProperty>& GetProperties() const { return m_properties; }
 	std::vector<BlockProperty>& GetProperties() { return m_properties; }
 
+	void SetStylerProperties(BlockStyleProperties properties) { m_stylerProperties = std::move(properties); }
+	const BlockStyleProperties& GetStylerProperties() const { return m_stylerProperties; }
 private:
 	Rect m_bounds;
 	std::vector<BlockSocketModel> m_sockets;
 	std::vector<BlockProperty> m_properties;
 	std::string m_block_styler;
 	std::string m_block_class;
+	BlockStyleProperties m_stylerProperties;
 	BlockId m_Id;
 };
 

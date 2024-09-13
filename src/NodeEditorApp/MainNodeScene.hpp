@@ -12,6 +12,7 @@ class NodeGraphicsScene;
 class GraphicsObjectsManager;
 class BlockClassesManager;
 class BlockObject;
+class BlockStylerFactory;
 
 class NodeSceneEventReceiver
 {
@@ -50,7 +51,7 @@ private:
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::unique_ptr<GraphicsObjectsManager> m_graphicsObjectsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;
-
+    std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
     std::vector<std::unique_ptr<NodeSceneEventReceiver>> m_event_receivers;
     std::unordered_map<BlockObject*, HandlePtr<Widget>> m_objects_dialogs;
 

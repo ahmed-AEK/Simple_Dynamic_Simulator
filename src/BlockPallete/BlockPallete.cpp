@@ -3,6 +3,7 @@
 #include "SDL_Framework/SDLCPP.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/Application.hpp"
+#include "NodeSDLStylers/BlockStylerFactory.hpp"
 
 namespace PalleteData {
 	static constexpr int TopPadding = 20;
@@ -81,7 +82,12 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_poin
 	assert(selected_item_index >= 0);
 	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
 
-	GetScene()->StartDragObject(DragDropObject{ pallete_elements[selected_item_index]->block_template, model::BlockModel{pallete_elements[selected_item_index]->block}});
+	auto&& selected_element = pallete_elements[selected_item_index];
+	GetScene()->StartDragObject(DragDropObject{ selected_element->block_template,
+		model::BlockModel{selected_element->block},
+		std::shared_ptr<BlockStyler>{m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), 
+			selected_element->block.GetStylerProperties())}
+		});
 	return MI::ClickEvent::NONE;
 }
 

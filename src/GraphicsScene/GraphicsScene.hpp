@@ -9,7 +9,6 @@
 #include "GraphicsScene/tools/GraphicsTool.hpp"
 #include <optional>
 #include "NodeModels/SceneModelManager.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
 
 namespace node
 {
@@ -25,6 +24,7 @@ class BlockSocketObject;
 class GraphicsObject;
 class IGraphicsSceneController;
 class Scene;
+class BlockStyler;
 
 struct GRAPHICSSCENE_API ObjectSlot
 {
@@ -117,7 +117,7 @@ private:
     struct DragDropDrawObject
     {
         node::model::BlockModel model;
-        node::BlockStyler styler;
+        std::shared_ptr<node::BlockStyler> styler;
     };
 
     model::Rect m_spaceRect_base;

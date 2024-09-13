@@ -5,7 +5,7 @@
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
+#include "NodeSDLStylers/DefaultBlockStyler.hpp"
 #include <utility>
 
 class GraphicsSceneMock: public node::IGraphicsScene {
@@ -38,8 +38,8 @@ TEST(testBlockObject, testAddSocket)
 	auto model = std::make_shared<node::model::BlockModel>(model::BlockId{0}, model::Rect{ 100,100,100,100 });
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0} });
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
-	auto styler = std::make_shared<node::BlockStyler>();
-	node::BlockObject block{ nullptr, model::Rect{0,0,0,0}, styler, model->GetId() };
+	auto styler = std::make_unique<node::DefaultBlockStyler>();
+	node::BlockObject block{ nullptr, model::Rect{0,0,0,0}, std::move(styler), model->GetId() };
 }
 
 

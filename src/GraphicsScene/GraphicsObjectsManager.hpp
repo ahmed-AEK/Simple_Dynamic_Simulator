@@ -10,11 +10,12 @@ namespace node
 class BlockObject;
 class NetSegment;
 class NetNode;
+class BlockStylerFactory;
 
 class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, public node::SingleObserver<BlockObjectDropped>
 {
 public:
-	GraphicsObjectsManager(GraphicsScene& scene);
+	GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory);
 	
 	GraphicsScene* GetScene() { return m_scene; }
 
@@ -32,7 +33,7 @@ private:
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;
 	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;
 	std::unordered_map<model::NetNodeId, NetNode*> m_net_nodes;
-
+	std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
 };
 
 }

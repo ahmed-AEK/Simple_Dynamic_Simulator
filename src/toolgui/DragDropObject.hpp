@@ -6,10 +6,14 @@
 
 namespace node
 {
+	class BlockStyler;
+
 	struct DragDropObject
 	{
 		std::string blockTemplateName;
 		model::BlockModel block;
+		std::shared_ptr<BlockStyler> styler;
+
 		void Draw(SDL_Renderer* renderer, const SDL_Point& p) const
 		{
 			UNUSED_PARAM(renderer);

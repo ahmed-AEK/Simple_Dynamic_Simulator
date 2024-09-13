@@ -31,6 +31,10 @@
 
 #include "BlockPallete/BlockPallete.hpp"
 
+#include "NodeSDLStylers/BlockStylerFactory.hpp"
+#include "NodeSDLStylers/DefaultBlockStyler.hpp"
+#include "NodeSDLStylers/TextBlockStyler.hpp"
+
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
 
@@ -44,6 +48,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         model.SetClass("Gain");
+        model.SetStyler("Default");
         model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -53,6 +58,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         model.SetClass("Gain");
+        model.SetStyler("Default");
         model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -62,6 +68,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         model.SetClass("Gain");
+        model.SetStyler("Default");
         model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -71,6 +78,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         model.SetClass("Gain");
+        model.SetStyler("Default");
         model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -80,6 +88,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.SetClass("Scope Display");
+        model.SetStyler("Default");
         model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
@@ -184,7 +193,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     UNUSED_PARAM(gScene);
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_Rect{ 0,0,300,m_rect.h}, this);
 
-    auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager);
+    auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager, m_blockStylerFactory);
     auto block_template = BlockTemplate{
         "Gain",
         "Gain",
@@ -203,27 +212,27 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto add_block = BlockTemplate{
     "Add",
     "Add Simple",
-    "Default",
-    std::vector<model::BlockProperty>{
-    }
+    "Text",
+    std::vector<model::BlockProperty>{},
+    model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
     };
     pallete_provider->AddElement(std::move(add_block));
 
     auto integrate_block = BlockTemplate{
         "Integration",
         "Integration",
-        "Default",
-        std::vector<model::BlockProperty>{
-        }
+        "Text",
+        std::vector<model::BlockProperty>{},
+        model::BlockStyleProperties{{{TextBlockStyler::key_text, "I"}}}
     };
     pallete_provider->AddElement(std::move(integrate_block));
 
     auto deriv_block = BlockTemplate{
     "Derivative",
     "Derivative",
-    "Default",
-    std::vector<model::BlockProperty>{
-    }
+    "Text",
+    std::vector<model::BlockProperty>{},
+    model::BlockStyleProperties{{{TextBlockStyler::key_text, "D"}}}
     };
     pallete_provider->AddElement(std::move(deriv_block));
 
@@ -240,10 +249,11 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto ramp_block = BlockTemplate{
         "Ramp",
         "Ramp",
-        "Default",
+        "Text",
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
-        }
+        },
+        model::BlockStyleProperties{{{TextBlockStyler::key_text, "R"}}}
     };
     pallete_provider->AddElement(std::move(ramp_block));
 
@@ -260,9 +270,10 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto multiply_block = BlockTemplate{
     "Multiply",
     "Multiply",
-    "Default",
+    "Text",
     std::vector<model::BlockProperty>{
-    }
+    },
+    model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
     };
     pallete_provider->AddElement(std::move(multiply_block));
 
@@ -385,9 +396,14 @@ node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)
 void node::MainNodeScene::OnInit()
 {
     using namespace node;
+    
+    m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
+    m_blockStylerFactory->AddStyler("Default", [](const model::BlockStyleProperties&) { return std::make_unique<DefaultBlockStyler>(); });
+    m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockStyleProperties& prop) { return TextBlockStyler::Create(prop, font); });
+
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
-    m_graphicsObjectsManager = std::make_unique<GraphicsObjectsManager>(*gScene);
+    m_graphicsObjectsManager = std::make_unique<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
     m_graphicsScene->Attach(*m_graphicsObjectsManager);
 
     m_classesManager = std::make_shared<BlockClassesManager>();

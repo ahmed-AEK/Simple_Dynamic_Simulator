@@ -9,22 +9,24 @@
 namespace node
 {
 
-	class BlockStyler
-	{
-	public:
-		static constexpr int SocketLength = 15;
-		void PositionNodes(model::BlockModel& block);
+class BlockStyler
+{
+public:
+	static constexpr int SocketLength = 15;
 
-		void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model,
-			const SpaceScreenTransformer& transformer, bool selected);
+	virtual void PositionNodes(model::BlockModel& block) = 0;
 
-		void DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds,
-			const SpaceScreenTransformer& transformer, bool selected);
+	void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model,
+		const SpaceScreenTransformer& transformer, bool selected);
 
-		void DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center,
-			const SpaceScreenTransformer& transformer, const model::BlockSocketModel::SocketType& type);
-	private:
-		RoundRectPainter m_inner_painter;
-		RoundRectPainter m_outer_painter;
-	};
+	virtual void DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds,
+		const SpaceScreenTransformer& transformer, bool selected) = 0;
+
+	virtual void DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center,
+		const SpaceScreenTransformer& transformer, const model::BlockSocketModel::SocketType& type) = 0;
+
+	virtual void DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds,
+		const SpaceScreenTransformer& transformer, bool selected) = 0;
+};
+
 }

@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.11)
 add_library(NodeSDLStylers
 BlockStyler.hpp BlockStyler.cpp
 SpaceScreenTransformer.hpp SpaceScreenTransformer.cpp
+BlockStylerFactory.hpp BlockStylerFactory.cpp
+DefaultBlockStyler.hpp DefaultBlockStyler.cpp
+GainBlockStyler.hpp GainBlockStyler.cpp
+TextBlockStyler.hpp TextBlockStyler.cpp
 )
 
 target_include_directories(NodeSDLStylers PRIVATE ".")

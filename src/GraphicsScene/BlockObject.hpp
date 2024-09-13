@@ -21,10 +21,10 @@ class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
 public:
     static std::unique_ptr<BlockObject> Create(IGraphicsScene* scene, const model::BlockModel& model,
-        std::shared_ptr<BlockStyler> styler = nullptr);
+        std::unique_ptr<BlockStyler> styler = nullptr);
 
     explicit BlockObject(IGraphicsScene* scene, const model::Rect& rect = {100,100,100,100}, 
-        std::shared_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt);
+        std::unique_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt);
     ~BlockObject() override;
     void Draw(SDL_Renderer* renderer) override;
 
@@ -40,7 +40,7 @@ protected:
 private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;
-    std::shared_ptr<BlockStyler> m_styler;
+    std::unique_ptr<BlockStyler> m_styler;
 };
 
 };
