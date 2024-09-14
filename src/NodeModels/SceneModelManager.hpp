@@ -8,6 +8,7 @@
 namespace node
 {
 
+class BlockClassesManager;
 
 struct LeafNodeMovedReport
 {
@@ -40,15 +41,15 @@ enum class SceneModificationType
 	BlockAdded,
 	BlockRemoved,
 	BlockMoved,
-	NetAdded,
-	LeafNodeMoved,
 	NetUpdated,
+	BlockPropertiesModified,
+	BlockPropertiesAndSocketsModified,
 };
 
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport, std::reference_wrapper<NetModificationReport>>;
+	using data_t = std::variant<model::BlockModelConstRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport, std::reference_wrapper<NetModificationReport>>;
 	SceneModificationType type;
 	data_t data;
 };
@@ -124,6 +125,7 @@ public:
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
+	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);
 
 	void AddNewNet(model::NetModel&& net);
 	void UpdateNet(NetModificationRequest& update_request);

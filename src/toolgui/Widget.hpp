@@ -3,8 +3,16 @@
 #include "SDL2/SDL.h"
 #include "toolgui/toolgui_exports.h"
 #include "toolgui/NodeMacros.h"
-#include "toolgui/MouseInteractable.hpp"
+#include "toolgui/MouseInteractable_interface.hpp"
 #include "toolgui/DragDropObject.hpp"
+
+
+namespace node
+{
+    class Widget;
+}
+
+extern template class MI::MouseInteractable<node::Widget, SDL_Rect, SDL_Point>;
 
 namespace node
 {

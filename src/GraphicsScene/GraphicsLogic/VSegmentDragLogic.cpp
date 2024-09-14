@@ -132,16 +132,8 @@ void node::logic::VSegmentDragLogic::OnCancel()
 
 MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
+	UNUSED_PARAM(current_mouse_point);
 	NetModificationRequest request;
-	auto node1 = m_first_node_handler->CreateRequest(request, current_mouse_point);
-	auto node2 = m_second_node_handler->CreateRequest(request, current_mouse_point);	
-	/*
-	request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
-		node1.node_type, node2.node_type, node1.connected_side, node2.connected_side,
-		*static_cast<NetSegment*>(m_base_segment.get())->GetId(),
-		node1.node_id, node2.node_id }
-		);
-	*/
 	CleanUp();
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CLICKED;

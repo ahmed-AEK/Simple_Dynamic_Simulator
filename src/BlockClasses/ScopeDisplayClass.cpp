@@ -30,9 +30,14 @@ std::vector<node::model::BlockSocketModel::SocketType> node::ScopeDisplayClass::
 {
 	UNUSED_PARAM(properties);
 	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::input
-	};
+	uint64_t count = std::get<uint64_t>(properties[0].prop);
+	std::vector<node::model::BlockSocketModel::SocketType> result;
+	result.reserve(count);
+	for (uint64_t i = 0; i < count; i++)
+	{
+		result.push_back(node::model::BlockSocketModel::SocketType::input);
+	}
+	return result;
 }
 
 bool node::ScopeDisplayClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
@@ -78,7 +83,7 @@ node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::
 		ports.push_back(i);
 	}
 	std::shared_ptr<std::vector<std::vector<double>>> vec = std::make_shared<std::vector<std::vector<double>>>();
-	for (int i = 0; i < value + 1; i++)
+	for (uint64_t i = 0; i < value + 1; i++)
 	{
 		vec->push_back({});
 	}
@@ -105,18 +110,23 @@ std::unique_ptr<node::Dialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& 
 	UNUSED_PARAM(model);
 
 	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_Rect{ 100,100, 500,500 }, &scene);
-	if (simulation_data.type() == typeid(std::vector<std::vector<double>>))
+
+	try
 	{
-		std::vector<std::vector<double>> data = std::any_cast<std::vector<std::vector<double>>>(simulation_data);
+		const auto& data = std::any_cast<const std::vector<std::vector<double>>&>(simulation_data);
 		XYSeries xydata;
 		assert(data.size() >= 2);
+		const size_t time_index = data.size() - 1;
 		for (size_t i = 0; i < data[1].size(); i++)
 		{
-			xydata.points.push_back(SDL_FPoint{ static_cast<float>(data[1][i]), static_cast<float>(data[0][i]) });
+			xydata.points.push_back(SDL_FPoint{ static_cast<float>(data[time_index][i]), static_cast<float>(data[0][i]) });
 		}
 		dialog->SetData(std::move(xydata));
 	}
-
+	catch (std::bad_cast&)
+	{
+		// do nothing
+	}
 	return dialog;
 }
 

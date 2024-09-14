@@ -2,6 +2,9 @@
 #include "IGraphicsScene.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "toolgui/NodeMacros.h"
+#include "toolgui/MouseInteractable.hpp"
+
+template class MI::MouseInteractable<node::GraphicsObject, node::model::Rect, node::model::Point>;
 
 node::GraphicsObject::GraphicsObject( node::model::Rect sceneRect, ObjectType type, node::IGraphicsScene* scene)
 :GraphicsObjectMouseInteractable{ sceneRect }, m_obj_type(type), m_pScene(scene)

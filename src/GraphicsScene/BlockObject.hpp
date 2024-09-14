@@ -30,6 +30,9 @@ public:
 
     std::optional<model::BlockId> GetModelId();
     const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
+    void UpdateStyler(const model::BlockModel& model);
+    const BlockStyler& GetStyler() const { return *m_styler; }
+    void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
     void OnSetSpaceRect(const model::Rect& rect) override;

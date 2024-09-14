@@ -9,6 +9,7 @@
 #include <cassert>
 #include "NodeModels/BlockModel.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
+#include "GraphicsScene/GraphicsScene.hpp"
 
 std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {
@@ -78,6 +79,33 @@ std::optional<node::model::BlockId> node::BlockObject::GetModelId()
 const std::vector<std::unique_ptr<node::BlockSocketObject>>& node::BlockObject::GetSockets() const
 {
     return m_sockets;
+}
+
+void node::BlockObject::UpdateStyler(const model::BlockModel& model)
+{
+    m_styler->UpdateProperties(model);
+}
+
+void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> new_sockets)
+{
+    // disconnect connected nodes
+    for (auto&& socket : GetSockets())
+    {
+        auto&& connected_node = socket->GetConnectedNode();
+        if (connected_node)
+        {
+            connected_node->SetConnectedSocket(nullptr);
+        }
+    }
+    m_sockets.clear();
+
+    // add new ones
+    for (const auto& socket : new_sockets)
+    {
+        auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(),
+            socket.GetPosition(), GetScene(), this);
+        AddSocket(std::move(socket_ptr));
+    }
 }
 
 void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)

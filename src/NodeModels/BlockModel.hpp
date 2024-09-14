@@ -69,6 +69,8 @@ struct BlockProperty
 	std::string name;
 	BlockPropertyType type;
 	property_t prop;
+
+	std::string to_string() const;
 };
 
 struct BlockStyleProperties
@@ -96,6 +98,11 @@ public:
 	void AddSocket(BlockSocketModel socket) 
 	{
 		m_sockets.push_back(std::move(socket));
+	}
+
+	void ClearSockets()
+	{
+		m_sockets.clear();
 	}
 
 	std::optional<std::reference_wrapper<BlockSocketModel>>

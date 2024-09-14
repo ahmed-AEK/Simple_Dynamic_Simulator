@@ -1,6 +1,6 @@
 #pragma once
 
-#include "toolgui/MouseInteractable.hpp"
+#include "toolgui/MouseInteractable_interface.hpp"
 
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/toolgui_exports.h"

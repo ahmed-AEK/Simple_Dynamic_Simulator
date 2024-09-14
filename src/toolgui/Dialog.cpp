@@ -5,7 +5,7 @@
 #include "ToolBar.hpp"
 
 node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
-	:Widget{ rect, parent }, m_title{ std::move(title) }, m_title_painter{parent->GetApp()->getFont().get()}
+	:Widget{ rect, parent }, m_title_painter{parent->GetApp()->getFont().get()}, m_title{ std::move(title) }
 {
 	assert(parent);
 	m_title_painter.SetText(m_title);
@@ -47,7 +47,7 @@ void node::Dialog::Draw(SDL_Renderer* renderer)
 
 void node::Dialog::AddControl(std::unique_ptr<DialogControl> control, int position)
 {
-	if (position == -1 || position >= m_controls.size())
+	if (position == -1 || static_cast<size_t>(position) >= m_controls.size())
 	{
 		m_controls.push_back(std::move(control));
 	}

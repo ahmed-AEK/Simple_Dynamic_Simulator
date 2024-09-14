@@ -1,4 +1,5 @@
 #include "Observer.hpp"
+#include <cassert>
 
 opt::Observer::Observer(std::pmr::vector<int64_t> input_ids, 
 	ObserverFunctor functor,

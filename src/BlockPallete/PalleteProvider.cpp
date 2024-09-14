@@ -41,15 +41,16 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	block.SetClass(temp.class_name);
 	block.SetStyler(temp.styler_name);
 	block.SetStylerProperties(temp.style_properties);
-	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, temp.style_properties);
-
-	assert(styler);
-	styler->PositionNodes(block);
 	auto& properties = block.GetProperties();
 	for (const auto& prop : temp.default_properties)
 	{
 		properties.push_back(prop);
 	}
+
+	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, block);
+
+	assert(styler);
+	styler->PositionSockets(block.GetSockets(), block.GetBounds());
 
 	m_elements.push_back(
 		std::make_unique<PalleteElement>(PalleteElement{

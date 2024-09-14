@@ -28,3 +28,8 @@ void node::TextBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model
 	m_textPainter.Draw(renderer, text_start, Black);
 	UNUSED_PARAM(selected);
 }
+
+void node::TextBlockStyler::SetText(std::string text)
+{
+	m_textPainter.SetText(std::move(text));
+}

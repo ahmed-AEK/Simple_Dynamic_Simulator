@@ -206,8 +206,6 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	auto* end_socket = GetSocketAt(current_mouse_point);
 
 	NetModificationRequest request;
-	std::array<NetNodeId, 4> node_ids{ NetNodeId{0},NetNodeId{1},NetNodeId{2},NetNodeId{3} };
-	std::array<NetSegmentId, 3> segment_ids{ NetSegmentId{0},NetSegmentId{1},NetSegmentId{2} };
 	
 	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
 		AsNode(m_nodes[0])->getCenter()

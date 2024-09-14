@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <array>
 #include <cassert>
+#include <utility>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color)
 {
@@ -55,8 +56,8 @@ void textures::ResetAllTextures()
 }
 
 RoundRectPainter::RoundRectPainter(RoundRectPainter&& other) noexcept
-    :stored_arc_texture{ std::exchange(other.stored_arc_texture, nullptr) },
-    stored_color{ other.stored_color }, stored_radius{ other.stored_radius }
+    :stored_color{ other.stored_color }, stored_radius{ other.stored_radius },
+    stored_arc_texture{ std::exchange(other.stored_arc_texture, nullptr) }    
 {
     if (stored_arc_texture)
     {

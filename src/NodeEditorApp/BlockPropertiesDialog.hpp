@@ -1,13 +1,14 @@
 #pragma once
 
 #include "toolgui/Dialog.hpp"
+#include "toolgui/LineEditControl.hpp"
 
 class SDLFont;
 
 namespace node
 {
 class BlockClassesManager;
-class SceneModelManager;
+class GraphicsObjectsManager;
 
 class DialogLabel: public DialogControl
 {
@@ -23,19 +24,6 @@ private:
 	std::vector<TextPainter> m_painters;
 };
 
-class LineEditControl : public Widget
-{
-public:
-	LineEditControl(std::string initial_value, const SDL_Rect& rect, Scene* parent);
-	void Draw(SDL_Renderer* renderer) override;
-	const std::string& GetValue() const { return m_value; }
-protected:
-	void OnChar(int32_t key) override;
-	void OnKeyPress(int32_t key) override;
-private:
-	std::string m_value;
-	TextPainter m_painter;
-};
 class PropertyEditControl : public DialogControl
 {
 public:
@@ -64,7 +52,7 @@ public:
 class BlockPropertiesDialog: public Dialog
 {
 public:
-	BlockPropertiesDialog(const model::BlockModel& block, std::shared_ptr<SceneModelManager> SceneModel, BlockClassesManager& manager, const SDL_Rect& rect, Scene* parent);
+	BlockPropertiesDialog(const model::BlockModel& block, std::shared_ptr<GraphicsObjectsManager> SceneModel, std::shared_ptr<BlockClassesManager> manager, const SDL_Rect& rect, Scene* parent);
 protected:
 	void OnOk() override;
 private:
@@ -75,7 +63,8 @@ private:
 	};
 
 	std::vector<BlockPropertySlot> m_property_edits;
-	std::shared_ptr<SceneModelManager> m_model_manager;
+	std::shared_ptr<GraphicsObjectsManager> m_scene_manager;
+	std::shared_ptr<BlockClassesManager> m_classesManager;
 	model::BlockId m_block_id;
 	
 };

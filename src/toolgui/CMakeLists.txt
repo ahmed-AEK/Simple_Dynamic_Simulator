@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 add_library(toolgui 
-MouseInteractable.cpp MouseInteractable.hpp
+MouseInteractable_interface.hpp MouseInteractable.hpp
 Application.cpp Application.hpp
 Widget.cpp Widget.hpp
 Scene.cpp Scene.hpp
@@ -15,6 +15,7 @@ DragDropObject.hpp DragDropObject.cpp
 ToolBar.hpp ToolBar.cpp
 Dialog.hpp Dialog.cpp
 MessageBox.hpp MessageBox.cpp
+LineEditControl.hpp LineEditControl.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

@@ -34,6 +34,8 @@
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
 #include "NodeSDLStylers/TextBlockStyler.hpp"
+#include "NodeSDLStylers/GainBlockStyler.hpp"
+#include "NodeSDLStylers/PropertyPrintStyler.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
@@ -43,33 +45,14 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
     assert(manager);
     using namespace node;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
-    {
-        model::BlockModel model{ model::BlockId{ 1 }, model::Rect{ 10,10,100,100 }};
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        model.SetClass("Gain");
-        model.SetStyler("Default");
-        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
-        sceneModel->AddBlock(std::move(model));
-    }
-
-    {
-        model::BlockModel model{ model::BlockId{2}, model::Rect{ 200,10,100,100 } };
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        model.SetClass("Gain");
-        model.SetStyler("Default");
-        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
-        sceneModel->AddBlock(std::move(model));
-    }
 
     {
         model::BlockModel model{ model::BlockId{3}, model::Rect{ 400,10,100,100 }};
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        model.SetClass("Gain");
-        model.SetStyler("Default");
-        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
+        model.SetClass("Ramp");
+        model.SetStyler("Text");
+        model.SetStylerProperties(model::BlockStyleProperties{ {{TextBlockStyler::key_text, "R"}} });
+        model.GetProperties().push_back(model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -78,7 +61,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
         model.SetClass("Gain");
-        model.SetStyler("Default");
+        model.SetStyler("Gain");
         model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -88,7 +71,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.SetClass("Scope Display");
-        model.SetStyler("Default");
+        model.SetStyler("Text");
+        model.SetStylerProperties(model::BlockStyleProperties{ {{TextBlockStyler::key_text, "S"}} });
         model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
@@ -197,10 +181,12 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto block_template = BlockTemplate{
         "Gain",
         "Gain",
-        "Default",
+        "Gain",
         std::vector<model::BlockProperty>{
             model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
         }
+        ,
+        model::BlockStyleProperties{}
     };
 
 
@@ -239,10 +225,11 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto constant_block = BlockTemplate{
         "Constant Source",
         "Constant Source",
-        "Default",
+        "Property Printer",
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Value", model::BlockPropertyType::FloatNumber, 1.0}
-        }
+        },
+        model::BlockStyleProperties{{{PropertyPrintStyler::printed_key_text, "Value"}}}
     };
     pallete_provider->AddElement(std::move(constant_block));
 
@@ -260,10 +247,11 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto scope_block = BlockTemplate{
         "Scope",
         "Scope Display",
-        "Default",
+        "Text",
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
-        } 
+        },
+        model::BlockStyleProperties{{{TextBlockStyler::key_text, "S"}}} 
     };
     pallete_provider->AddElement(std::move(scope_block));
 
@@ -326,7 +314,7 @@ void node::MainNodeScene::OpenPropertiesDialog()
     }
 
     assert(m_classesManager);
-    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager->GetSceneModel(), *m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
+    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
     m_objects_dialogs[static_cast<BlockObject*>(object)] = dialog->GetMIHandlePtr();
     AddNormalDialog(std::move(dialog));
 
@@ -398,12 +386,18 @@ void node::MainNodeScene::OnInit()
     using namespace node;
     
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
-    m_blockStylerFactory->AddStyler("Default", [](const model::BlockStyleProperties&) { return std::make_unique<DefaultBlockStyler>(); });
-    m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockStyleProperties& prop) { return TextBlockStyler::Create(prop, font); });
+    m_blockStylerFactory->AddStyler("Default", [](const model::BlockModel&) { return std::make_unique<DefaultBlockStyler>(); });
+    m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockModel& model) 
+        { return TextBlockStyler::Create(model.GetStylerProperties(), font); });
+    m_blockStylerFactory->AddStyler("Gain", [font = this->GetApp()->getFont().get()](const model::BlockModel& model)
+        { return std::make_unique<GainBlockStyler>(model, font); });
+    m_blockStylerFactory->AddStyler("Property Printer", [font = this->GetApp()->getFont().get()](const model::BlockModel& model)
+        { return PropertyPrintStyler::Create(model, font); });
+
 
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
-    m_graphicsObjectsManager = std::make_unique<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
+    m_graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
     m_graphicsScene->Attach(*m_graphicsObjectsManager);
 
     m_classesManager = std::make_shared<BlockClassesManager>();

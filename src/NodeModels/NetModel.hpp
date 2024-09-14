@@ -54,7 +54,7 @@ class NetModel
 {
 public:
 	explicit NetModel(id_int id = 0, std::optional<std::string> name = std::nullopt)
-		: m_name{ name }, m_Id{ id } {}
+		: m_Id{ id }, m_name{ name } {}
 
 	const NetId& GetId() const noexcept { return m_Id; }
 	void SetId(NetId id) { m_Id = id; }

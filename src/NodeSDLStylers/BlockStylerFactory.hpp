@@ -12,10 +12,10 @@ namespace node
 class BlockStylerFactory
 {
 public:
-	using styler_functor = std::function<std::unique_ptr<BlockStyler>(const model::BlockStyleProperties&)>;
+	using styler_functor = std::function<std::unique_ptr<BlockStyler>(const model::BlockModel&)>;
 	BlockStylerFactory();
 	void AddStyler(std::string name, styler_functor func);
-	std::unique_ptr<BlockStyler> GetStyler(std::string name, const  model::BlockStyleProperties& style_prop);
+	std::unique_ptr<BlockStyler> GetStyler(std::string name, const model::BlockModel& model);
 private:
 	std::unordered_map<std::string, styler_functor> m_factoryFunctors;
 };

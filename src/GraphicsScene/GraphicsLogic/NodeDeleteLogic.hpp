@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GraphicsLogic/GraphicsLogic.hpp"
-#include "toolgui/MouseInteractable.hpp"
 
 namespace node
 {

@@ -33,6 +33,7 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 		GetScene()->SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), GetScene(), GetObjectsManager()));
 		GetScene()->AddSelection(obj->GetMIHandlePtr());
 		break;
+	default: break;
 	}
 	return MI::ClickEvent::CLICKED;
 }

@@ -46,6 +46,7 @@ MI::ClickEvent node::NetTool::OnLMBDown(const model::Point& p)
         }
         break;
     }
+    default: break;
     }
 
     return MI::ClickEvent::CLICKED;

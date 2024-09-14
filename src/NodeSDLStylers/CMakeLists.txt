@@ -7,6 +7,7 @@ BlockStylerFactory.hpp BlockStylerFactory.cpp
 DefaultBlockStyler.hpp DefaultBlockStyler.cpp
 GainBlockStyler.hpp GainBlockStyler.cpp
 TextBlockStyler.hpp TextBlockStyler.cpp
+PropertyPrintStyler.hpp PropertyPrintStyler.cpp
 )
 
 target_include_directories(NodeSDLStylers PRIVATE ".")

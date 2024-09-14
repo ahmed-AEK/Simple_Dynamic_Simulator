@@ -5,7 +5,7 @@
 #include "toolgui/Application.hpp"
 #include "toolgui/ToolBar.hpp"
 #include <charconv>
-
+#include <cstring>
 
 namespace node
 {
@@ -596,7 +596,7 @@ void node::PlotWidget::DrawCoords(SDL_Renderer* renderer)
 {
 	if (m_current_point)
 	{
-		SDL_Color black{ 50,50,50 };
+		SDL_Color black{ 50, 50, 50, 255};
 		auto&& rect = GetInnerRect();
 		auto text_rect = m_current_point_painter.GetRect(renderer, black);
 		SDL_Point start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};

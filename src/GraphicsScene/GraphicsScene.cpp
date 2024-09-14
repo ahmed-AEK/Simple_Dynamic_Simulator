@@ -136,7 +136,8 @@ void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDro
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     auto point = QuantizePoint(m_spaceScreenTransformer.ScreenToSpacePoint(p) + offset);
     m_dragDropDrawObject->model.SetPosition(point);
-    m_dragDropDrawObject->styler->DrawBlockOutline(renderer, m_dragDropDrawObject->model.GetBounds(), 
+    bounds = m_dragDropDrawObject->model.GetBounds();
+    m_dragDropDrawObject->styler->DrawBlockOutline(renderer, bounds, 
         m_spaceScreenTransformer, true);
     for (const auto& socket : m_dragDropDrawObject->model.GetSockets())
     {

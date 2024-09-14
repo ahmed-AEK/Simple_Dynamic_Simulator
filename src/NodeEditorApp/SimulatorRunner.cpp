@@ -147,7 +147,7 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 	for (const auto& block : scene.GetBlocks())
 	{
 		auto block_id = block.GetId();
-		mappings.push_back({ block_id });
+		mappings.push_back(SocketMappings{ block_id, {} });
 		auto&& mapping = mappings.back();
 		for (const auto& socket : block.GetSockets())
 		{

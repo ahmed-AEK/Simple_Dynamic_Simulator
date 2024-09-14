@@ -1,4 +1,3 @@
-#pragma once
 #include "SourceEq.hpp"
 
 opt::SourceEq::SourceEq(std::pmr::vector<int64_t> output_ids, SourceFunctor functor, std::pmr::memory_resource* resource)

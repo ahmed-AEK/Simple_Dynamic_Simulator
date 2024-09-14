@@ -3,6 +3,7 @@
 node::SceneModelManager::SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene)
 	:m_scene(std::move(scene))
 {
+	assert(m_scene);
 }
 
 node::SceneModelManager::~SceneModelManager()
@@ -144,10 +145,38 @@ void node::SceneModelManager::ModifyBlockProperties(model::BlockId id, std::vect
 {
 	auto block = m_scene->GetBlockById(id);
 	assert(block);
-	if (block)
+	if (!block)
 	{
-		block->get().GetProperties() = std::move(new_properties);
+		return;
 	}
+
+	block->get().GetProperties() = std::move(new_properties);
+	Notify(SceneModification{ SceneModificationType::BlockPropertiesModified , SceneModification::data_t{*block} });
+}
+
+void node::SceneModelManager::ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets)
+{
+	auto block = m_scene->GetBlockById(id);
+	assert(block);
+	if (!block)
+	{
+		return;
+	}
+	block->get().GetProperties() = std::move(new_properties);
+	for (const auto& socket : block->get().GetSockets())
+	{
+		if (auto node_id = socket.GetConnectedNetNode())
+		{
+			m_scene->RemoveSocketConnectionForSocket({ socket.GetId(), block->get().GetId() });
+		}
+	}
+	block->get().ClearSockets();
+	block->get().ReserveSockets(new_sockets.size());
+	for (auto&& socket : new_sockets)
+	{
+		block->get().AddSocket(std::move(socket));
+	}
+	Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
 }
 
 void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)

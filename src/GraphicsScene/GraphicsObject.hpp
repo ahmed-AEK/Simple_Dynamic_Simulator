@@ -2,9 +2,17 @@
 
 #include "GraphicsScene/GraphicsScene_exports.h"
 
-#include "toolgui/MouseInteractable.hpp"
+#include "toolgui/MouseInteractable_interface.hpp"
 #include "toolgui/Handle.hpp"
 #include "NodeModels/Utils.hpp"
+
+
+namespace node
+{
+    class GraphicsObject;
+}
+
+extern template class MI::MouseInteractable<node::GraphicsObject, node::model::Rect, node::model::Point>;
 
 namespace node
 {

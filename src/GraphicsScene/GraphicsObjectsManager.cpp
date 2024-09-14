@@ -32,8 +32,8 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     m_sceneModel->Attach(*this);
     for (auto&& block : m_sceneModel->GetBlocks())
     {
-        auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block.GetStylerProperties());
-        styler->PositionNodes(block);
+        auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block);
+        styler->PositionSockets(block.GetSockets(), block.GetBounds());
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, std::move(styler));
         auto ptr = obj.get();
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
@@ -47,8 +47,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
     case SceneModification::type_t::BlockAdded:
     {
-        auto& model_ref = std::get<model::BlockModelRef>(e.data);
-        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref.get().GetStylerProperties());
+        auto& model_ref = std::get<model::BlockModelConstRef>(e.data);
+        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
@@ -79,8 +79,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     }
     case SceneModificationType::BlockMoved:
     {
-        auto model_id = std::get<model::BlockModelRef>(e.data).get().GetId();
-        auto new_position = std::get<model::BlockModelRef>(e.data).get().GetPosition();
+        auto model_id = std::get<model::BlockModelConstRef>(e.data).get().GetId();
+        auto new_position = std::get<model::BlockModelConstRef>(e.data).get().GetPosition();
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
         {
@@ -88,116 +88,29 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         }
         break;
     }
-    /*
-    case SceneModificationType::NetAdded:
+    case SceneModificationType::BlockPropertiesModified:
     {
-        auto net_ref = std::get<model::NetModelRef>(e.data);
-        auto net_id = net_ref.get().GetId();
-
-        std::vector<NetNode*> nodes;
-        for (auto&& node : net_ref.get().GetNetNodes())
+        auto model = std::get<model::BlockModelConstRef>(e.data);
+        auto it = m_blocks.find(model.get().GetId());
+        assert(it != m_blocks.end());
+        if (it != m_blocks.end())
         {
-            auto obj = std::make_unique<NetNode>(node.GetPosition(), GetScene());
-            obj->SetId(model::NetNodeUniqueId{ node.GetId(), net_id });
-            auto ptr = obj.get();
-            nodes.push_back(ptr);
-            GetScene()->AddObject(std::move(obj), GraphicsScene::NetNodeLayer);
-            m_net_nodes.emplace(model::NetNodeUniqueId{ node.GetId(), net_id}, ptr);
-        }
-        for (auto&& segment : net_ref.get().GetNetSegments())
-        {
-            auto orientation = segment.m_orientation;
-
-            auto start_node = std::find_if(nodes.begin(), nodes.end(),
-                [&](NetNode* node) {
-                    assert(node->GetId());
-                    return node->GetId()->node_id == segment.m_firstNodeId;
-                });
-            NetNode* start_node_ptr = start_node == nodes.end() ? nullptr : *start_node;
-            auto end_node = std::find_if(nodes.begin(), nodes.end(),
-                [&](NetNode* node) {
-                    assert(node->GetId());
-                    return node->GetId()->node_id == segment.m_secondNodeId;
-                });
-            NetNode* end_node_ptr = end_node == nodes.end() ? nullptr : *end_node;
-
-            auto obj = std::make_unique<NetSegment>(orientation, start_node_ptr, end_node_ptr, GetScene());
-            auto ptr = obj.get();
-            obj->SetId(model::NetSegmentUniqueId{ segment.GetId(), net_id });
-            GetScene()->AddObject(std::move(obj), GraphicsScene::SegmentLayer);
-            m_net_segments.emplace(model::NetSegmentUniqueId{ segment.GetId(), net_id }, ptr);
-        }
-        for (auto&& conn : net_ref.get().GetSocketConnections())
-        {
-            auto it = m_blocks.find(conn.socketId.block_id);
-            assert(it != m_blocks.end()); // attaching node to socket that doesn't exist !
-            if (it == m_blocks.end())
-            {
-                continue; // likely bug, but don't crash
-            }
-
-            for (auto&& sock : it->second->GetSockets())
-            {
-                if (sock->GetId() == conn.socketId.socket_id)
-                {
-                    auto connected_node = std::find_if(nodes.begin(), nodes.end(),
-                        [&](NetNode* node) {
-                            assert(node->GetId());
-                            return node->GetId()->node_id == conn.NodeId;
-                        });
-                    sock->SetConnectedNode(*connected_node);
-                    break;
-                }
-            }
+            it->second->UpdateStyler(model);
         }
         break;
     }
-    case SceneModificationType::LeafNodeMoved:
+    case SceneModificationType::BlockPropertiesAndSocketsModified:
     {
-        auto report = std::get<LeafNodeMovedReport>(e.data);
-        auto it = m_net_nodes.find(report.moved_node);
-        assert(it != m_net_nodes.end());
-        if (it == m_net_nodes.end())
+        auto model = std::get<model::BlockModelConstRef>(e.data);
+        auto it = m_blocks.find(model.get().GetId());
+        assert(it != m_blocks.end());
+        if (it != m_blocks.end())
         {
-            return;
+            it->second->RenewSockets(model.get().GetSockets());
+            it->second->UpdateStyler(model);
         }
-
-        auto it2 = m_net_nodes.find(report.moved_node);
-        assert(it2 != m_net_nodes.end());
-        if (it2 == m_net_nodes.end())
-        {
-            return;
-        }
-
-        auto* node_obj = it->second;
-        auto* connectd_node_obj = it2->second;
-        auto conn = report.new_socket;
-        if (!conn)
-        {
-            node_obj->SetConnectedSocket(nullptr);
-        }
-        else
-        {
-            auto it_block = m_blocks.find(conn->block_id);
-            assert(it_block != m_blocks.end());
-            if (it_block != m_blocks.end())
-            {
-                for (auto&& socket : it_block->second->GetSockets())
-                {
-                    if (socket->GetId() == conn->socket_id)
-                    {
-                        node_obj->SetConnectedSocket(socket.get());
-                        break;
-                    }
-                }
-            }
-        }
-        node_obj->setCenter(report.new_position);
-        connectd_node_obj->setCenter({ connectd_node_obj->getCenter().x, report.new_position.y });
-        connectd_node_obj->UpdateConnectedSegments();
         break;
     }
-    */
     case SceneModificationType::NetUpdated:
     {
         HandleNetUpdate(std::get<std::reference_wrapper<NetModificationReport>>(e.data));

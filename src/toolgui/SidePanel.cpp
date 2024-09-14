@@ -208,8 +208,6 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 		break;
 	}
 	SDL_Rect knob_rect = GetKnobRect();
-
-	SDL_Rect inner_rect{ knob_rect.x + 2, knob_rect.y + 2, knob_rect.w - 4, knob_rect.h - 4 };
 	ThickFilledRoundRect(renderer, knob_rect, 15, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 },
 		m_outer_painter, m_inner_painter);
 	// draw arrow

@@ -1,9 +1,9 @@
 #pragma once
-#include "optimizer/FatAny.hpp"
 #include <functional>
 #include <span>
 #include <memory_resource>
 #include "optimizer/Equation.hpp"
+#include <any>
 
 namespace opt
 {

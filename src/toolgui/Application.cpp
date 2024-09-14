@@ -171,6 +171,7 @@ namespace node
                     {
                         m_scene->CharPress(letter);
                     }
+                    return true;
                 }
                 case SDL_WINDOWEVENT:
                 {
@@ -334,7 +335,7 @@ namespace node
     void Application::HandleMainThreadTasks()
     {
         std::optional<std::function<void()>> func;
-        while (func = m_mainThreadTasks.TryPop())
+        while ((func = m_mainThreadTasks.TryPop()))
         {
             (*func)();
         }

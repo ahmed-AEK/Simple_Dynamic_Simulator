@@ -86,7 +86,7 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_poin
 	GetScene()->StartDragObject(DragDropObject{ selected_element->block_template,
 		model::BlockModel{selected_element->block},
 		std::shared_ptr<BlockStyler>{m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), 
-			selected_element->block.GetStylerProperties())}
+			selected_element->block)}
 		});
 	return MI::ClickEvent::NONE;
 }

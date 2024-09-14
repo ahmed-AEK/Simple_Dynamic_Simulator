@@ -23,7 +23,7 @@ public:
     RoundRectPainter() {}
 
     RoundRectPainter(const RoundRectPainter&) noexcept {}
-    RoundRectPainter& operator=(const RoundRectPainter&) noexcept {}
+    RoundRectPainter& operator=(const RoundRectPainter&) noexcept { return *this;}
 
     RoundRectPainter(RoundRectPainter&& other) noexcept;
     RoundRectPainter& operator=(RoundRectPainter&& other) noexcept;
@@ -50,8 +50,8 @@ class TextPainter
 {
 public:
     explicit TextPainter(TTF_Font* font) :m_font{ font } {}
-    TextPainter(const TextPainter& other) :m_font{ other.m_font }, m_text{ other.m_text } {}
-    TextPainter& operator=(const TextPainter& other) { m_font = other.m_font; m_text = other.m_text; }
+    TextPainter(const TextPainter& other) : m_text{ other.m_text }, m_font{ other.m_font } {}
+    TextPainter& operator=(const TextPainter& other) { m_font = other.m_font; m_text = other.m_text; return *this; }
     ~TextPainter();
 
     void Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color);

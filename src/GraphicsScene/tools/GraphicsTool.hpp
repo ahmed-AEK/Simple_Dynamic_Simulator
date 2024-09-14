@@ -1,5 +1,5 @@
 #pragma once
-#include "toolgui/MouseInteractable.hpp"
+#include "toolgui/MouseInteractable_interface.hpp"
 #include "NodeModels/Utils.hpp"
 
 namespace node

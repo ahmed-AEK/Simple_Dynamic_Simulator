@@ -34,7 +34,6 @@ MI::ClickEvent node::logic::NetNodeDeleteLogic::OnLMBUp(const model::Point& curr
 	{
 		return MI::ClickEvent::NONE;
 	}
-	auto node_id = *node.GetId();
 	request.removed_nodes.push_back(*node.GetId());
 
 	if (auto socket = node.GetConnectedSocket())

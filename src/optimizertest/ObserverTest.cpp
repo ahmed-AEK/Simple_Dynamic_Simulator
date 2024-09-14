@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include <memory_resource>
 #include "toolgui/NodeMacros.h"
-
+#include <array>
 TEST(testObserver, testApply)
 {
 	std::array<double, 4> outputs{ 0,0,0,0 };

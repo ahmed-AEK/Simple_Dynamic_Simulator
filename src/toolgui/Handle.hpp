@@ -34,8 +34,8 @@ public:
 template <typename T>
 class HandleOwnigPtr
 {
-    std::shared_ptr<Handle<T>> m_ptr;
 public:
+    std::shared_ptr<Handle<T>> m_ptr;
     explicit HandleOwnigPtr(std::shared_ptr<Handle<T>> ptr): m_ptr{ptr} {}
     HandleOwnigPtr(const HandleOwnigPtr<T>&) = delete;
     HandleOwnigPtr& operator=(const HandleOwnigPtr<T>&) = delete;
