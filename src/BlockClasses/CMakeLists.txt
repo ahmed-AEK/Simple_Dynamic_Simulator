@@ -13,6 +13,7 @@ IntegrationBlockClass.cpp IntegrationBlockClass.hpp
 DerivativeBlockClass.cpp DerivativeBlockClass.hpp
 AddSimpleClass.cpp AddSimpleClass.hpp
 MultiplyBlockClass.cpp MultiplyBlockClass.hpp
+BlockDialog.hpp BlockDialog.cpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

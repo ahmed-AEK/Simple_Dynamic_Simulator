@@ -14,7 +14,7 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
 };
 
-static constexpr std::string_view Description = "Displays Input signals";
+static constexpr std::string_view Description = "Displays Input signals, Double Tap to show the Scope Dialog";
 
 node::ScopeDisplayClass::ScopeDisplayClass()
 	:BlockClass("Scope Display")
@@ -105,7 +105,7 @@ node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::
 	};
 }
 
-std::unique_ptr<node::Dialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data)
+std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data)
 {
 	UNUSED_PARAM(model);
 

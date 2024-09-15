@@ -18,7 +18,7 @@ public:
 	BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) override;
 	BlockFunctor GetFunctor(const std::vector<model::BlockProperty>& properties) override;
 
-	std::unique_ptr<Dialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data) override;
+	std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data) override;
 	bool HasBlockDialog() const override;
 };
 

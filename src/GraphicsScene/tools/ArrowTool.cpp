@@ -25,9 +25,10 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         case ObjectType::block:
         {
             auto current_time = SDL_GetTicks64();
-            if (m_last_clicked_block.GetObjectPtr() == current_hover && (current_time - m_last_click_point) < 2000)
+            if (m_last_clicked_block.GetObjectPtr() == current_hover && (current_time - m_last_click_point) < 500)
             {
                 b_second_click_in_progress = true;
+                SDL_Log("Double Click Started!");
                 return MI::ClickEvent::CLICKED;
             }
             else
@@ -105,7 +106,7 @@ MI::ClickEvent node::ArrowTool::OnLMBUp(const model::Point& p)
 {
     node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
     auto current_time = SDL_GetTicks64();
-    if (b_second_click_in_progress && current_hover == m_last_clicked_block.GetObjectPtr() && (current_time - m_last_click_point) < 2000)
+    if (b_second_click_in_progress && current_hover == m_last_clicked_block.GetObjectPtr() && (current_time - m_last_click_point) < 1000)
     {
         BlockDoubleClickedEvent e{ static_cast<BlockObject*>(current_hover) };
         Notify(e);

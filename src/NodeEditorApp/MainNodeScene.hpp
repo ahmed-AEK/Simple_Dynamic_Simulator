@@ -24,6 +24,18 @@ private:
     MainNodeScene* m_scene;
 };
 
+enum class DialogType
+{
+    BlockDialog,
+    PropertiesDialog,
+};
+
+struct DialogSlot
+{
+    HandlePtr<Widget> dialog;
+    DialogType type;
+};
+
 class MainNodeScene: public node::Scene
 {
 public:
@@ -46,6 +58,7 @@ private:
     void InitializeTools();
     void InitializeSidePanel(node::GraphicsScene* gScene);
     void OpenPropertiesDialog();
+    void OpenPropertiesDialog(BlockObject& object);
     void OpenBlockDialog(BlockObject& block);
 
     std::shared_ptr<ToolsManager> m_toolsManager;
@@ -53,7 +66,7 @@ private:
     std::shared_ptr<BlockClassesManager> m_classesManager;
     std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
     std::vector<std::unique_ptr<NodeSceneEventReceiver>> m_event_receivers;
-    std::unordered_map<BlockObject*, HandlePtr<Widget>> m_objects_dialogs;
+    std::unordered_map<BlockObject*, DialogSlot> m_objects_dialogs;
 
     std::shared_ptr<SimulatorRunner> m_current_running_simulator = nullptr;
     std::vector<BlockResult> m_last_simulation_result;

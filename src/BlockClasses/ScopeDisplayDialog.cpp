@@ -253,7 +253,7 @@ void node::ScopeDisplayToolButton::OnButonClicked()
 }
 
 node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
-	:Dialog{"Scope Display", rect, parent}
+	:BlockDialog{"Scope Display", rect, parent}
 {	
 	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,500,400}, parent);
 	m_tools_manager.SetWidget(*plot);
@@ -293,6 +293,26 @@ node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 void node::ScopeDiplayDialog::SetData(XYSeries data)
 {
 	plot_widget->SetData(std::move(data));
+}
+
+void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
+{
+	try
+	{
+		const auto& data = std::any_cast<const std::vector<std::vector<double>>&>(new_result);
+		XYSeries xydata;
+		assert(data.size() >= 2);
+		const size_t time_index = data.size() - 1;
+		for (size_t i = 0; i < data[1].size(); i++)
+		{
+			xydata.points.push_back(SDL_FPoint{ static_cast<float>(data[time_index][i]), static_cast<float>(data[0][i]) });
+		}
+		SetData(std::move(xydata));
+	}
+	catch (std::bad_cast&)
+	{
+		// do nothing
+	}
 }
 
 node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Scene* parent)

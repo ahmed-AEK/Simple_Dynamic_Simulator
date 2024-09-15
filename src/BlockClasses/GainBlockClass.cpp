@@ -9,7 +9,7 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Multiplier", node::model::BlockPropertyType::FloatNumber, 1}
 };
 
-static constexpr std::string_view Description = "Sets its output to its input multiplied by \"Multiplier\" Plus a Very Long String that a specially crafted to fit on more than one line, preferrably 2 or 3 but i would be okay with only 3";
+static constexpr std::string_view Description = "Sets its output to its input multiplied by \"Multiplier\"";
 
 
 node::GainBlockClass::GainBlockClass()

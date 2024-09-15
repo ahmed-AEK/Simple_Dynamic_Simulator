@@ -29,6 +29,8 @@
 #include "BlockClasses/AddSimpleClass.hpp"
 #include "BlockClasses/MultiplyBlockClass.hpp"
 
+#include "BlockClasses/BlockDialog.hpp"
+
 #include "BlockPallete/BlockPallete.hpp"
 
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
@@ -286,11 +288,16 @@ void node::MainNodeScene::OpenPropertiesDialog()
         return;
     }
 
+    OpenPropertiesDialog(*static_cast<BlockObject*>(object));
+}
+
+void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
+{
     {
-        auto it = m_objects_dialogs.find(static_cast<BlockObject*>(object));
-        if (it != m_objects_dialogs.end() && it->second.isAlive())
+        auto it = m_objects_dialogs.find(static_cast<BlockObject*>(&object));
+        if (it != m_objects_dialogs.end() && it->second.dialog.isAlive())
         {
-            Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
+            Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
             SDL_Rect dialog_rect = dialog->GetRect();
             dialog->SetRect({ 100,100,dialog_rect.w, dialog_rect.h });
@@ -298,10 +305,10 @@ void node::MainNodeScene::OpenPropertiesDialog()
         }
     }
 
-    auto model_id = static_cast<BlockObject*>(object)->GetModelId();
+    auto model_id = static_cast<BlockObject*>(&object)->GetModelId();
     assert(model_id);
     if (!model_id)
-    {   
+    {
         SDL_Log("Block has no model!");
         return;
     }
@@ -315,9 +322,8 @@ void node::MainNodeScene::OpenPropertiesDialog()
 
     assert(m_classesManager);
     auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
-    m_objects_dialogs[static_cast<BlockObject*>(object)] = dialog->GetMIHandlePtr();
+    m_objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
     AddNormalDialog(std::move(dialog));
-
 }
 
 void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
@@ -330,9 +336,9 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
 
     {
         auto it = m_objects_dialogs.find(&block);
-        if (it != m_objects_dialogs.end() && it->second.isAlive())
+        if (it != m_objects_dialogs.end() && it->second.dialog.isAlive())
         {
-            Dialog* dialog = static_cast<Dialog*>(it->second.GetObjectPtr());
+            Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
             SDL_Rect dialog_rect = dialog->GetRect();
             dialog->SetRect({ 100,100,dialog_rect.w, dialog_rect.h });
@@ -370,9 +376,13 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         auto dialog = class_ptr->CreateBlockDialog(*this, *block_model, sim_data);
         if (dialog)
         {
-            m_objects_dialogs[&block] = dialog->GetMIHandlePtr();
+            m_objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
             AddNormalDialog(std::move(dialog));
         }
+    }
+    else
+    {
+        OpenPropertiesDialog(block);
     }
 }
 
@@ -447,6 +457,18 @@ void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
         {
             SDL_Log("Success!");
             m_last_simulation_result = std::move(e.result);
+            for (auto&& block_result : m_last_simulation_result)
+            {
+                auto&& block_it = m_graphicsObjectsManager->getBlocksRegistry().find(block_result.id);
+                if (block_it != m_graphicsObjectsManager->getBlocksRegistry().end())
+                {
+                    auto dialog_it = m_objects_dialogs.find(block_it->second);
+                    if (dialog_it != m_objects_dialogs.end() && dialog_it->second.type == DialogType::BlockDialog && dialog_it->second.dialog.isAlive())
+                    {
+                        static_cast<BlockDialog*>(dialog_it->second.dialog.GetObjectPtr())->UpdateResults(block_result.data);
+                    }
+                }
+            }
         }
         }, event.e);
     
@@ -460,8 +482,8 @@ bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)
     {
         return true;
     }
-    std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(this);
-    this->ShowContextMenu(std::move(menu), {p.x, p.y});
+    //std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(this);
+    //this->ShowContextMenu(std::move(menu), {p.x, p.y});
     return true;
 }
 

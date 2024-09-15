@@ -1,6 +1,6 @@
 #pragma once
 
-#include "toolgui/Dialog.hpp"
+#include "BlockClasses/BlockDialog.hpp"
 
 namespace node
 {
@@ -90,11 +90,13 @@ private:
 	static constexpr size_t y_ticks_count = 9;
 };
 
-class ScopeDiplayDialog : public Dialog
+class ScopeDiplayDialog : public BlockDialog
 {
 public:
 	ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent);
 	void SetData(XYSeries data);
+	void UpdateResults(std::any new_result) override;
+
 private:
 	PlotWidget* plot_widget = nullptr;
 	ScopeDisplayToolsManager m_tools_manager;
