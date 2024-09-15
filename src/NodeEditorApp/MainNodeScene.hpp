@@ -3,6 +3,7 @@
 #include "toolgui/Scene.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
 #include "SimulatorRunner.hpp"
+#include "NodeEditorApp/SimulationManager.hpp"
 
 namespace node
 {
@@ -49,12 +50,14 @@ public:
     void DeleteEventReceiver(NodeSceneEventReceiver* handler);
     void AddEventReceiver(std::unique_ptr<NodeSceneEventReceiver> handler) { m_event_receivers.push_back(std::move(handler)); }
 protected:
-    void OnSimulationEnd(SimulationEvent& event);
     virtual bool OnRMBUp(const SDL_Point& p) override;
     NodeGraphicsScene* m_graphicsScene = nullptr;
 private:
     void RunSimulator();
-    void StopSimulator();
+    void OnSimulationEnd(const SimulationEvent& event);
+    
+    void OnSettingsClicked();
+
     void InitializeTools();
     void InitializeSidePanel(node::GraphicsScene* gScene);
     void OpenPropertiesDialog();
@@ -68,8 +71,10 @@ private:
     std::vector<std::unique_ptr<NodeSceneEventReceiver>> m_event_receivers;
     std::unordered_map<BlockObject*, DialogSlot> m_objects_dialogs;
 
-    std::shared_ptr<SimulatorRunner> m_current_running_simulator = nullptr;
-    std::vector<BlockResult> m_last_simulation_result;
+    SimulationManager m_sim_mgr;
+
+    HandlePtr<Widget> m_settings_dialog;
+
 };
 
 }

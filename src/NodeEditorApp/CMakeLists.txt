@@ -7,6 +7,8 @@ ExampleContextMenu.cpp ExampleContextMenu.hpp
 NodeGraphicsScene.cpp NodeGraphicsScene.hpp
 SimulatorRunner.hpp SimulatorRunner.cpp
 BlockPropertiesDialog.hpp BlockPropertiesDialog.cpp
+SimulationSettingsDialog.hpp SimulationSettingsDialog.cpp
+SimulationManager.hpp SimulationManager.cpp
 )
 
 target_include_directories(NodeEditor PRIVATE ".")

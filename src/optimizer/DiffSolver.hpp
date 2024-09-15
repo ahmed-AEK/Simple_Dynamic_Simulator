@@ -39,6 +39,7 @@ public:
     void SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor);
     void ApplyPreprocessor(opt::FlatMap& state, const double t);
     void ApplyPostProcessor(opt::FlatMap& state, const double t);
+    void SetMaxStep(double step_size);
 protected:
     void LoadDatatoMap(std::span<const double> x, FlatMap& state);
     void LoadMaptoVec(FlatMap& state, std::vector<double>& target);

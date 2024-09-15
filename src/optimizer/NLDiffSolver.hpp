@@ -24,6 +24,7 @@ public:
 	NLDiffSolver(const NLDiffSolver&) = delete;
 	NLDiffSolver& operator=(const NLDiffSolver&) = delete;
 	~NLDiffSolver();
+	void SetMaxStep(double step_size);
 	void AddDiffEquation(DiffEquation eq);
 	void AddNLEquation(NLEquation eq);
 	void AddNLStatefulEquation(NLStatefulEquation eq);

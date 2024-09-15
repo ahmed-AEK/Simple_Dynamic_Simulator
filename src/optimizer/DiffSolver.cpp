@@ -151,3 +151,8 @@ void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
         m_postprocessor(state, t);
     }
 }
+
+void opt::DiffSolver::SetMaxStep(double step_size)
+{
+    m_max_step = step_size;
+}

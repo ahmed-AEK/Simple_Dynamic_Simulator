@@ -51,8 +51,7 @@ void node::LineEditControl::OnKeyPress(int32_t key)
 
 void node::LineEditControl::OnChar(int key)
 {
-	char keys[2]{ static_cast<char>(key), '\0' };
-	SDL_Log("%s", keys);
+	SDL_Log("%d", key);
 	if (key < 128 && key >= 0)
 	{
 		m_value.push_back(static_cast<char>(key));

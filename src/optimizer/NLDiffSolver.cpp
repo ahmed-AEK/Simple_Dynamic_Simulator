@@ -36,6 +36,11 @@ opt::NLDiffSolver::~NLDiffSolver()
 {
 }
 
+void opt::NLDiffSolver::SetMaxStep(double step_size)
+{
+	m_diffSolver.SetMaxStep(step_size);
+}
+
 void opt::NLDiffSolver::AddDiffEquation(DiffEquation eq)
 {
 	m_diffSolver.AddEquation(std::move(eq));

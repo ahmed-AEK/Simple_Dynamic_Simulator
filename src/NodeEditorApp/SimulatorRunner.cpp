@@ -271,8 +271,8 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	}
 	return result;
 }
-node::SimulatorRunner::SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback)
-	:m_end_callback{ std::move(end_callback) }, m_model{std::make_unique<model::NodeSceneModel>(model)}, m_classes_mgr{std::move(classes_mgr)}
+node::SimulatorRunner::SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, SimulationSettings settings)
+	:m_end_callback{ std::move(end_callback) }, m_model{std::make_unique<model::NodeSceneModel>(model)}, m_classes_mgr{std::move(classes_mgr)}, m_settings{settings}
 {
 }
 
@@ -369,18 +369,24 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	opt::NLDiffSolver solver;
 	auto observer_mapping = AddFuncs(solver, blocks);
 	
-	solver.Initialize(0, 10);
+	solver.SetMaxStep(m_settings.max_step);
+	solver.Initialize(m_settings.t_start, m_settings.t_end);
 
 	opt::FlatMap simulation_nets{ nets.nets.size()};
 	opt::StepResult step_result = opt::StepResult::Success;
 	
 	solver.CalculateInitialConditions(simulation_nets);
 
-	while (step_result != opt::StepResult::ReachedEnd)
+	while (step_result != opt::StepResult::ReachedEnd && !m_stopped.test())
 	{
 		step_result = solver.Step(simulation_nets);
 	}
 	
+	if (m_stopped.test())
+	{
+		return { SimulationEvent::Stopped{} };
+	}
+
 	auto simulation_result = solver.GetObserversData();
 	std::vector<BlockResult> result;
 	for (auto&& item : simulation_result)

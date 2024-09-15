@@ -9,6 +9,7 @@
 #include <vector>
 #include "NodeModels/IdTypes.hpp"
 #include <any>
+#include "NodeEditorApp/SimulationManager.hpp"
 
 namespace node
 {
@@ -34,13 +35,16 @@ struct SimulationEvent
 	{
 		std::vector<model::SocketUniqueId> sockets;
 	};
+	struct Stopped
+	{
 
+	};
 	struct Success 
 	{
 		std::vector<BlockResult> result;
 	};
 
-	using Event_t = typename std::variant<Success, NetFloatingError, OutputSocketsConflict, FloatingInput>;
+	using Event_t = typename std::variant<Success, Stopped, NetFloatingError, OutputSocketsConflict, FloatingInput>;
 	Event_t e;
 };
 
@@ -56,7 +60,7 @@ class BlockClassesManager;
 class SimulatorRunner
 {
 public:
-	SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback);
+	SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, SimulationSettings settings);
 	~SimulatorRunner();
 	SimulatorRunner(const SimulatorRunner&) = default;
 	SimulatorRunner(SimulatorRunner&&) = default;
@@ -85,6 +89,7 @@ private:
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;
 	std::thread m_thread;
 	std::optional<SimulationEvent> m_evt;
+	SimulationSettings m_settings;
 };
 
 }

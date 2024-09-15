@@ -28,6 +28,7 @@
 #include "BlockClasses/DerivativeBlockClass.hpp"
 #include "BlockClasses/AddSimpleClass.hpp"
 #include "BlockClasses/MultiplyBlockClass.hpp"
+#include "BlockClasses/SineSourceClass.hpp"
 
 #include "BlockClasses/BlockDialog.hpp"
 
@@ -41,6 +42,7 @@
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
+#include "NodeEditorApp/SimulationSettingsDialog.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
@@ -85,41 +87,9 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 
 void node::MainNodeScene::RunSimulator()
 {
-    if (!m_current_running_simulator)
-    {
-        auto runner = std::make_shared<SimulatorRunner>(
-            m_graphicsObjectsManager->GetSceneModel()->GetModel(),
-            m_classesManager,
-            std::function<void()>{
-            [this] { GetApp()->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); });} 
-        });
-        m_current_running_simulator = runner;
-        runner->Run();
-    }
-}
-
-void node::MainNodeScene::StopSimulator()
-{
-    if (m_current_running_simulator)
-    {
-        m_current_running_simulator->Stop();
-    }
-}
-
-void node::MainNodeScene::CheckSimulatorEnded()
-{
-    if (m_current_running_simulator && m_current_running_simulator->IsEnded())
-    {
-        if (auto result = m_current_running_simulator->GetResult())
-        {
-            OnSimulationEnd(*result);
-        }
-        else
-        {
-            assert(false); // simulation ended but no result !!
-        }
-        
-    }
+    assert(GetApp());
+    assert(m_classesManager);
+    m_sim_mgr.RunSimulator(m_graphicsObjectsManager->GetSceneModel()->GetModel(), m_classesManager, *GetApp());
 }
 
 void node::MainNodeScene::DeleteEventReceiver(NodeSceneEventReceiver* handler)
@@ -166,9 +136,10 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddSeparator();
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
-        [this]() { return this->m_current_running_simulator != nullptr; }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->StopSimulator(); }, 
-        [this]() { return this->m_current_running_simulator == nullptr; }));
+        [this]() { return this->m_sim_mgr.IsSimulationRunning(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); }, 
+        [this]() { return !this->m_sim_mgr.IsSimulationRunning(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); }));
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
 }
@@ -266,6 +237,18 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
     };
     pallete_provider->AddElement(std::move(multiply_block));
+
+    auto sine_block = BlockTemplate{
+    "Sine",
+    "Sine",
+    "Text",
+    std::vector<model::BlockProperty>{
+        model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
+        model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
+    },
+    model::BlockStyleProperties{{{TextBlockStyler::key_text, "Sin"}}}
+    };
+    pallete_provider->AddElement(std::move(sine_block));
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
         std::move(pallete_provider), this));
@@ -366,9 +349,10 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         auto sim_data = std::any{};
         {
             auto model_id = *block.GetModelId();
-            auto block_it = std::find_if(m_last_simulation_result.begin(), m_last_simulation_result.end(),
+            auto sim_results = m_sim_mgr.GetLastSimulationResults();
+            auto block_it = std::find_if(sim_results.begin(), sim_results.end(),
                 [&](const BlockResult& r) {return r.id == model_id; });
-            if (block_it != m_last_simulation_result.end())
+            if (block_it != sim_results.end())
             {
                 sim_data = block_it->data;
             }
@@ -395,6 +379,8 @@ void node::MainNodeScene::OnInit()
 {
     using namespace node;
     
+    m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
+
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
     m_blockStylerFactory->AddStyler("Default", [](const model::BlockModel&) { return std::make_unique<DefaultBlockStyler>(); });
     m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockModel& model) 
@@ -419,6 +405,7 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<DerivativeBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<AddSimpleBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<MultiplyBlockClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<SineSourceClass>());
 
     InitializeSidePanel(gScene.get());
 
@@ -438,26 +425,29 @@ struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
+void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
 {
     std::visit(overloaded{
-        [](SimulationEvent::NetFloatingError&)
+        [](const SimulationEvent::NetFloatingError&)
         {
             SDL_Log("Floating Net!");
         },
-        [](SimulationEvent::OutputSocketsConflict&)
+        [](const SimulationEvent::Stopped&)
+        {
+            SDL_Log("Stopped!");
+        },
+        [](const SimulationEvent::OutputSocketsConflict&)
         {
             SDL_Log("Sockets Conflict!");
         },
-        [](SimulationEvent::FloatingInput&)
+        [](const SimulationEvent::FloatingInput&)
         {
            SDL_Log("Floating Input!");
         },
-        [&](SimulationEvent::Success& e)
+        [&](const SimulationEvent::Success&)
         {
             SDL_Log("Success!");
-            m_last_simulation_result = std::move(e.result);
-            for (auto&& block_result : m_last_simulation_result)
+            for (auto&& block_result : m_sim_mgr.GetLastSimulationResults())
             {
                 auto&& block_it = m_graphicsObjectsManager->getBlocksRegistry().find(block_result.id);
                 if (block_it != m_graphicsObjectsManager->getBlocksRegistry().end())
@@ -471,9 +461,25 @@ void node::MainNodeScene::OnSimulationEnd(SimulationEvent& event)
             }
         }
         }, event.e);
-    
-    m_current_running_simulator = nullptr;
     SDL_Log("simulation Ended!");
+}
+
+void node::MainNodeScene::OnSettingsClicked()
+{
+    if (!m_settings_dialog.isAlive())
+    {
+        auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
+            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,400,400 }, this);
+        m_settings_dialog = dialog->GetMIHandlePtr();
+        AddNormalDialog(std::move(dialog));
+    }
+    else
+    {
+        auto* dialog = static_cast<SimulationSettingsDialog*>(m_settings_dialog.GetObjectPtr());
+        const auto& rect = dialog->GetRect();
+        dialog->SetRect({ 100, 100, rect.w, rect.h });
+        BumpDialogToTop(dialog);
+    }
 }
 
 bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)
