@@ -5,7 +5,7 @@
 namespace node
 {
     NodeEditorApplication::NodeEditorApplication()
-    : Application(800,600, "Node Editor")
+    : Application(800,600, "Dynamic Simulator")
     {
         std::unique_ptr<Scene> scene = std::make_unique<MainNodeScene>(getRect(), this);
         SetScene(std::move(scene));

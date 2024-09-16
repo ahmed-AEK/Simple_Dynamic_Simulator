@@ -1,4 +1,4 @@
-# Dummy NodeEditor
+# Simple Dynamic System Simulator
 A trial implementation of a node editor for solving differential algebraic systems.
 
 Implementation is heavily optimized, so it can acheive 60 fps on a potato using under 1% of CPU
