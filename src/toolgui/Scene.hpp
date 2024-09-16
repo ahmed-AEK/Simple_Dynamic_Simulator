@@ -31,8 +31,8 @@ namespace node
         Application* GetApp() { return p_parent; }
 
         void AddNormalDialog(std::unique_ptr<node::Dialog> dialog);
-        void BumpDialogToTop(node::Dialog* dialog);
-        std::unique_ptr<node::Dialog> PopDialog(node::Dialog* dialog);
+        void BumpDialogToTop(const node::Dialog* dialog);
+        std::unique_ptr<node::Dialog> PopDialog(const node::Dialog* dialog);
 
         virtual void OnInit() {};
         virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}

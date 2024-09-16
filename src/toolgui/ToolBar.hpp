@@ -18,7 +18,7 @@ public:
 
 	ToolBarButton(const SDL_Rect& rect, Scene* parent, std::string name = {});
 	~ToolBarButton() override;
-	std::string_view GetName() noexcept;
+	const std::string& GetName() const noexcept { return m_name; }
 	void Draw(SDL_Renderer* renderer) override;
 protected:
 	virtual bool IsActive() { return false; }

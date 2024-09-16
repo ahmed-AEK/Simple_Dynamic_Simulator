@@ -18,7 +18,7 @@ class BlockStylerFactory;
 class NodeSceneEventReceiver
 {
 public:
-    NodeSceneEventReceiver(MainNodeScene& scene) : m_scene{ &scene } {}
+    explicit NodeSceneEventReceiver(MainNodeScene& scene) : m_scene{ &scene } {}
     virtual ~NodeSceneEventReceiver() = default;
     MainNodeScene* GetScene() { return m_scene; }
 private:
@@ -47,7 +47,7 @@ public:
     ToolsManager* GetToolsManager() const { return m_toolsManager.get(); }
     void CheckSimulatorEnded();
 
-    void DeleteEventReceiver(NodeSceneEventReceiver* handler);
+    void DeleteEventReceiver(const NodeSceneEventReceiver* handler);
     void AddEventReceiver(std::unique_ptr<NodeSceneEventReceiver> handler) { m_event_receivers.push_back(std::move(handler)); }
 protected:
     virtual bool OnRMBUp(const SDL_Point& p) override;

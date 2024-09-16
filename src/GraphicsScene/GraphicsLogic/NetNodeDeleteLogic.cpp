@@ -12,7 +12,7 @@ node::logic::NetNodeDeleteLogic::NetNodeDeleteLogic(NetNode& segment, GraphicsSc
 
 void node::logic::NetNodeDeleteLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
-	auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
+	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_node.isAlive() || new_hover != m_node.GetObjectPtr())
 	{
 		GetScene()->SetGraphicsLogic(nullptr);

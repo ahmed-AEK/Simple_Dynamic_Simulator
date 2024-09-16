@@ -10,7 +10,7 @@ node::logic::BlockDeleteLogic::BlockDeleteLogic(BlockObject& block, GraphicsScen
 
 void node::logic::BlockDeleteLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
-	auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
+	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_block.isAlive() || new_hover != m_block.GetObjectPtr())
 	{
 		GetScene()->SetGraphicsLogic(nullptr);
@@ -19,7 +19,7 @@ void node::logic::BlockDeleteLogic::OnMouseMove(const model::Point& current_mous
 
 MI::ClickEvent node::logic::BlockDeleteLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
-	auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
+	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_block.isAlive() || new_hover != m_block.GetObjectPtr())
 	{
 		return MI::ClickEvent::NONE;

@@ -11,7 +11,9 @@ node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
 	m_title_painter.SetText(m_title);
 }
 
-node::Dialog::~Dialog() = default;
+node::Dialog::~Dialog()
+{
+}
 
 void node::Dialog::Draw(SDL_Renderer* renderer)
 {

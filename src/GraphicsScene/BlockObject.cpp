@@ -120,7 +120,7 @@ void node::BlockObject::RePositionSockets()
     auto&& origin = model::Util::get_rect_origin(block_rect);
     for (auto&& socket : m_sockets)
     {
-        auto& sock_pos = socket->GetCenterInBlock();
+        const auto& sock_pos = socket->GetCenterInBlock();
         socket->SetCenterInSpace(sock_pos + origin);
     }
 }

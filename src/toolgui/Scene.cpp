@@ -201,7 +201,7 @@ void node::Scene::AddNormalDialog(std::unique_ptr<node::Dialog> dialog)
     m_dialogs.push_back(std::move(dialog));
 }
 
-void node::Scene::BumpDialogToTop(node::Dialog* dialog)
+void node::Scene::BumpDialogToTop(const node::Dialog* dialog)
 {
     auto it = std::find_if(m_dialogs.begin(), m_dialogs.end(), [&](const auto& ptr) {return ptr.get() == dialog; });
     if (it != m_dialogs.end())
@@ -212,7 +212,7 @@ void node::Scene::BumpDialogToTop(node::Dialog* dialog)
     }
 }
 
-std::unique_ptr<node::Dialog> node::Scene::PopDialog(node::Dialog* dialog)
+std::unique_ptr<node::Dialog> node::Scene::PopDialog(const node::Dialog* dialog)
 {
     auto it = std::find_if(m_dialogs.begin(), m_dialogs.end(), [&](const auto& ptr) { return ptr.get() == dialog; });
     assert(it != m_dialogs.end());

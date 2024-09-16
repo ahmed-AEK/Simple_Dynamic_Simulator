@@ -163,11 +163,6 @@ node::ToolBarButton::~ToolBarButton()
 {
 }
 
-std::string_view node::ToolBarButton::GetName() noexcept
-{
-	return m_name;
-}
-
 void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 {
 	const int thickness = 2;

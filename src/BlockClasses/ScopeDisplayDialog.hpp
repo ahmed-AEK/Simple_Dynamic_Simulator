@@ -65,9 +65,9 @@ public:
 	void SetExtend(const SDL_FRect& rect);
 	SDL_Rect GetDrawingRect();
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point);
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point);
+	void OnMouseMove(const SDL_Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
 	void OnMouseOut() override;
 private:
 	void DrawAxes(SDL_Renderer* renderer);

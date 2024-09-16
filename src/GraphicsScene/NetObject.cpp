@@ -5,6 +5,7 @@
 #include <cmath>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
+#include <algorithm>
 
 node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
 	: GraphicsObject({0,0,0,0}, ObjectType::netSegment, scene),
@@ -141,30 +142,22 @@ node::BlockSocketObject* node::NetNode::GetConnectedSocket() noexcept
 
 uint8_t node::NetNode::GetConnectedSegmentsCount()
 {
-	uint8_t ret_val = 0;
-	for (const auto& segment : m_connected_segments)
-	{
-		if (segment)
-		{
-			ret_val += 1;
-		}
-	}
-	return ret_val;
+	auto ret_val = std::count_if(m_connected_segments.begin(), m_connected_segments.end(), 
+		[](const auto& segment) { return segment != nullptr; });
+	return static_cast<uint8_t>(ret_val);
 }
 
 void node::NetNode::ClearSegment(const NetSegment* target_segment)
 {
-	for (auto&& segment : m_connected_segments)
+	auto it = std::find_if(m_connected_segments.begin(), m_connected_segments.end(),
+		[&](const auto& segment) {return segment == target_segment; });
+	if (it != m_connected_segments.end())
 	{
-		if (segment == target_segment)
-		{
-			segment = nullptr;
-			break;
-		}
+		*it = nullptr;
 	}
 }
 
-std::optional<node::model::ConnectedSegmentSide> node::NetNode::GetSegmentSide(NetSegment& segment) const
+std::optional<node::model::ConnectedSegmentSide> node::NetNode::GetSegmentSide(const NetSegment& segment) const
 {
 	for (size_t i = 0; i < 4; i++)
 	{

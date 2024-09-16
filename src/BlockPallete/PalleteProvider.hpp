@@ -39,7 +39,7 @@ public:
 	void AddElement(std::unique_ptr<PalleteElement> element) { m_elements.push_back(std::move(element)); }
 
 	BlockStylerFactory& GetStylerFactory() { return *m_blockStyleFactory; }
-	std::span<const std::unique_ptr<PalleteElement>> GetElements() { return m_elements; }
+	const std::vector<std::unique_ptr<PalleteElement>>& GetElements() const { return m_elements; }
 private:
 	std::vector<std::unique_ptr<PalleteElement>> m_elements;
 	std::shared_ptr<BlockClassesManager> m_classesManager;

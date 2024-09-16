@@ -5,7 +5,6 @@ add_executable(NLOptimizertest
 flatmaptest.cpp
 EquationTest.cpp
 NLEquationTest.cpp
-NLSolverTest.cpp
 DiffSolverTest.cpp
 DiffEquationTest.cpp
 NLDiffSolverTest.cpp
@@ -13,6 +12,7 @@ FatAnyTest.cpp
 NLStatefulEquationTest.cpp
 ObserverTest.cpp
 SourceEqTest.cpp
+NLGraphSolverTest.cpp
 )
 
 target_include_directories(NLOptimizertest PRIVATE ".")

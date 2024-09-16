@@ -92,7 +92,7 @@ void node::MainNodeScene::RunSimulator()
     m_sim_mgr.RunSimulator(m_graphicsObjectsManager->GetSceneModel()->GetModel(), m_classesManager, *GetApp());
 }
 
-void node::MainNodeScene::DeleteEventReceiver(NodeSceneEventReceiver* handler)
+void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* handler)
 {
     auto it = std::find_if(m_event_receivers.begin(), m_event_receivers.end(), [&](const auto& ptr) {return ptr.get() == handler; });
     assert(it != m_event_receivers.end());

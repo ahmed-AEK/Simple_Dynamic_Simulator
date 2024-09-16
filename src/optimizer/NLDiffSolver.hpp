@@ -1,6 +1,6 @@
 #pragma once
 
-#include "optimizer/NLSolver.hpp"
+#include "optimizer/NLGraphSolver.hpp"
 #include "optimizer/DiffSolver.hpp"
 #include <any>
 
@@ -43,7 +43,7 @@ private:
 	DiffSolver::time_type m_last_oberver_time = 0;
 	std::vector<SourceEq> m_sources;
 	DiffSolver m_diffSolver;
-	NLSolver m_NLSolver;
+	NLGraphSolver m_NLSolver;
 	std::vector<ObserverSlot> m_observers;
 };
 }

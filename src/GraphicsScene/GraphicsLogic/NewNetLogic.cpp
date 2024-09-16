@@ -36,14 +36,14 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSo
 	catch (...)
 	{
 		// if we failed to create the object, delete everything
-		for (const auto& node : nodes)
+		for (const auto* node : nodes)
 		{
 			if (node)
 			{
 				scene->PopObject(node);
 			}
 		}
-		for (const auto& segment : segments)
+		for (const auto* segment : segments)
 		{
 			if (segment)
 			{
@@ -82,14 +82,14 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSe
 	catch (...)
 	{
 		// if we failed to create the object, delete everything
-		for (const auto& node : nodes)
+		for (const auto* node : nodes)
 		{
 			if (node)
 			{
 				scene->PopObject(node);
 			}
 		}
-		for (const auto& segment : segments)
+		for (const auto* segment : segments)
 		{
 			if (segment)
 			{
@@ -126,13 +126,13 @@ node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*
 	segments[2]->Connect(nodes[2], nodes[3], model::NetSegmentOrientation::horizontal);
 }
 
-static node::NetNode* AsNode(node::HandlePtr<node::GraphicsObject>& obj)
+static node::NetNode* AsNode(const node::HandlePtr<node::GraphicsObject>& obj)
 {
 	assert(obj.isAlive());
 	return static_cast<node::NetNode*>(obj.GetObjectPtr());
 }
 
-static node::NetSegment* AsSegment(node::HandlePtr<node::GraphicsObject>& obj)
+static node::NetSegment* AsSegment(const node::HandlePtr<node::GraphicsObject>& obj)
 {
 	assert(obj.isAlive());
 	return static_cast<node::NetSegment*>(obj.GetObjectPtr());
@@ -203,7 +203,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	using model::NetSegmentId;
 	using enum model::ConnectedSegmentSide;
 
-	auto* end_socket = GetSocketAt(current_mouse_point);
+	const auto* end_socket = GetSocketAt(current_mouse_point);
 
 	NetModificationRequest request;
 	
@@ -233,7 +233,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 			segment1_side = model::ConnectedSegmentSide::west;
 			segment2_side = model::ConnectedSegmentSide::east;
 		}
-			request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
 			NetModificationRequest::NodeIdType::new_id,
 			NetModificationRequest::NodeIdType::new_id,
 			segment1_side,
@@ -241,7 +241,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 			model::NetSegmentOrientation::horizontal,
 			NetNodeId{0},
 			NetNodeId{1}
-			});
+		});
 	}
 
 	{

@@ -10,7 +10,7 @@
 static int resizingEventWatcher(void* data, SDL_Event* event) {
     if (event->type == SDL_WINDOWEVENT &&
         event->window.event == SDL_WINDOWEVENT_RESIZED) {
-        SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
+        const SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
         if (win == static_cast<SDL_Window*>(data)) {
             textures::ResetAllTextures();
         }
@@ -148,7 +148,6 @@ namespace node
                 {
                     this->HandleMouseScroll(e);
                     return true;
-                    break;
                 }
                 case SDL_MOUSEMOTION:
                 {

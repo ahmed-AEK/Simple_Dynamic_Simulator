@@ -37,7 +37,6 @@ find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(NLopt REQUIRED)
-find_package(sdl2_gfx CONFIG)
 
 add_subdirectory(src/SDL_Framework)
 add_subdirectory(src/toolgui)

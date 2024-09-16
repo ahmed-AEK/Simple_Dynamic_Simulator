@@ -30,14 +30,14 @@ private:
 class ScopeArrowTool : public ScopeDisplayTool
 {
 public:
-	ScopeArrowTool(PlotWidget& widget) :ScopeDisplayTool{ "A", widget } {}
+	explicit ScopeArrowTool(PlotWidget& widget) :ScopeDisplayTool{ "A", widget } {}
 private:
 };
 
 class ScopeMoveTool : public ScopeDisplayTool
 {
 public:
-	ScopeMoveTool(PlotWidget& widget) :ScopeDisplayTool{ "M", widget } {}
+	explicit ScopeMoveTool(PlotWidget& widget) :ScopeDisplayTool{ "M", widget } {}
 protected:
 	MI::ClickEvent OnLMBDown(const SDL_Point& point) override
 	{
@@ -92,7 +92,7 @@ private:
 class ScopeZoomTool : public ScopeDisplayTool
 {
 public:
-	ScopeZoomTool(PlotWidget& widget) :ScopeDisplayTool{ "Z", widget } {}
+	explicit ScopeZoomTool(PlotWidget& widget) :ScopeDisplayTool{ "Z", widget } {}
 protected:
 	MI::ClickEvent OnLMBDown(const SDL_Point& point) override
 	{

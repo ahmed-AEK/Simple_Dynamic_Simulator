@@ -16,8 +16,8 @@ class BlockDeleteLogic : public GraphicsLogic
 public:
 	BlockDeleteLogic(BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
-	virtual void OnMouseMove(const model::Point& current_mouse_point);
-	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point);
+	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
+	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
 	HandlePtr<GraphicsObject> m_block;
 };

@@ -11,7 +11,7 @@ class DialogButton : public Widget
 {
 public:
 	DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Scene* scene);
-	void Draw(SDL_Renderer* renderer);
+	void Draw(SDL_Renderer* renderer) override;
 
 protected:
 	void OnMouseOut() override;
@@ -43,7 +43,7 @@ public:
 	};
 
 	Dialog(std::string title, const SDL_Rect& rect, Scene* parent);
-	~Dialog();
+	~Dialog() override;
 	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetTitle() const { return m_title; };
 	void SetTitle(std::string title) { m_title = title; m_title_painter.SetText(title); }
@@ -58,9 +58,9 @@ public:
 	SDL_Rect GetTitleBarRect() const;
 	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point);
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point);
+	void OnMouseMove(const SDL_Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
 	void OnMouseOut() override;
 	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
 	void OnSetRect(const SDL_Rect& rect) override;

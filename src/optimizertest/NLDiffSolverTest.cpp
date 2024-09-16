@@ -4,6 +4,8 @@
 #include "toolgui/NodeMacros.h"
 #include "optimizer/Observer.hpp"
 #include "optimizer/SourceEq.hpp"
+#include <cmath>
+#include <numbers>
 
 TEST(testNLDiffSolver, testConstructor)
 {
@@ -177,4 +179,59 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
     EXPECT_NEAR(state.get(1), 2, 2e-3);
     EXPECT_NEAR(state.get(2), 4, 4e-3);
     EXPECT_NEAR(state.get(3), 8, 8e-3);
+}
+
+TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
+{
+    auto s1 = opt::SourceEq{ {0} ,[](std::span<double> out, const double& t) { out[0] = std::sin(2 * std::numbers::pi * t); } };
+    auto s2 = opt::SourceEq{ {1} ,[](std::span<double> out, const double& t) { out[0] = std::sin(2 * std::numbers::pi * t); } };
+    auto mul = opt::NLEquation{ {0,1}, {2}, [](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; } };
+    auto diff = opt::NLStatefulEquation{
+        {2},
+        {3},
+        opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::FatAny& old_state) ->opt::FatAny
+        {
+            if (old_state.contains<std::array<double, 3>>())
+            {
+                auto& arr = old_state.get<std::array<double, 3>>();
+                if (arr[0] == t)
+                {
+                    out[0] = arr[2];
+                }
+                else
+                {
+                    out[0] = (in[0] - arr[1]) / (t - arr[0]);
+                }
+            }
+            else
+            {
+                out[0] = 0;
+            }
+
+            return opt::FatAny{ std::array<double, 3>{ t,in[0], out[0] }};
+        }}
+    };
+
+    opt::NLDiffSolver solver;
+    solver.AddSource(std::move(s1));
+    solver.AddSource(std::move(s2));
+    solver.AddNLEquation(std::move(mul));
+    solver.AddNLStatefulEquation(std::move(diff));
+    solver.Initialize(0, 10);
+    solver.SetMaxStep(0.01);
+    opt::FlatMap state(4);
+    state.modify(0, 1);
+    state.modify(1, 0);
+    state.modify(2, 0);
+    state.modify(3, 0);
+    double current_time = 0;
+
+    solver.CalculateInitialConditions(state);
+    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    {
+        EXPECT_GT(solver.GetCurrentTime(), current_time);
+        current_time = solver.GetCurrentTime();
+    }
+
+    EXPECT_NEAR(10, solver.GetCurrentTime(), 1e-3);
 }

@@ -27,7 +27,7 @@ namespace node
 				{ last_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y } });
 			return { NetModificationRequest::NodeIdType::existing_id, *GetBaseNode()->GetId(), m_segment_side};
 		}
-		virtual void OnCancel()
+		virtual void OnCancel() override
 		{
 			GetBaseNode()->setCenter(m_node_start_position);
 		}
@@ -48,7 +48,7 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		std::optional<model::ConnectedSegmentSide> side = std::nullopt;
 		for (size_t i = 0; i < 4; i++)
 		{
-			auto segment_ptr = node1.getSegment(static_cast<model::ConnectedSegmentSide>(i));
+			const auto* segment_ptr = node1.getSegment(static_cast<model::ConnectedSegmentSide>(i));
 			if (segment_ptr != nullptr && segment_ptr == &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
@@ -70,7 +70,7 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		std::optional<model::ConnectedSegmentSide> side = std::nullopt;
 		for (size_t i = 0; i < 4; i++)
 		{
-			auto segment_ptr = node2.getSegment(static_cast<model::ConnectedSegmentSide>(i));
+			const auto* segment_ptr = node2.getSegment(static_cast<model::ConnectedSegmentSide>(i));
 			if (segment_ptr != nullptr && segment_ptr == &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
@@ -158,11 +158,11 @@ void node::logic::VSegmentDragLogic::CleanUp()
 	GetScene()->AddObject(std::move(m_base_segment), GraphicsScene::SegmentLayer);
 	m_first_node_handler->GetBaseNode()->UpdateConnectedSegments();
 	m_second_node_handler->GetBaseNode()->UpdateConnectedSegments();
-	for (auto&& node : m_spare_nodes)
+	for (const auto* node : m_spare_nodes)
 	{
 		GetScene()->PopObject(node);
 	}
-	for (auto&& segment : m_spare_segments)
+	for (const auto* segment : m_spare_segments)
 	{
 		GetScene()->PopObject(segment);
 	}

@@ -8,11 +8,11 @@
 namespace opt
 {
 
-class NLSolver
+class NLGraphSolver
 {
 public:
-	explicit NLSolver(std::vector<NLEquation> equations);
-	NLSolver();
+	explicit NLGraphSolver(std::vector<NLEquation> equations);
+	NLGraphSolver();
 	void Initialize();
 	void Solve(FlatMap& state, const double& time);
 	void UpdateState(FlatMap& state, const double& time);
@@ -26,12 +26,37 @@ protected:
 	[[nodiscard]] double CalcPenalty(FlatMap& state);
 	void UpdateStateInternal(FlatMap& state);
 private:
+
+	
+
 	std::vector<NLEquation> m_equations;
 	std::vector<NLStatefulEquation> m_stateful_equations;
 	std::vector<FatAny> m_equations_states;
 	opt::FlatMap m_current_state;
 	double m_current_time = 0;
-	std::vector<int64_t> m_output_ids;
 	nlopt::opt m_optimizer;
+
+	enum class EquationType
+	{
+		NLEquation,
+		statefulNLEquation,
+	};
+	struct EquationIndex
+	{
+		size_t index;
+		EquationType type;
+	};
+
+	std::vector<EquationIndex> m_initial_solve_eqns;
+	std::vector<int64_t> m_initial_solve_output_ids;
+	void FillInitialSolveEqns(std::vector<int64_t>& remaining_output_ids);
+	void EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies);
+
+	std::vector<EquationIndex> m_estimated_eqns;
+	std::vector<int64_t> m_estimated_output_ids;
+	std::vector<EquationIndex> m_inner_solve_eqns;
+	std::vector<int64_t> m_inner_solve_output_ids;
+	void FillInnerSolveEqns(std::vector<int64_t>& remaining_output_ids);
 };
+
 }

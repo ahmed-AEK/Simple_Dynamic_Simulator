@@ -13,7 +13,6 @@ class SimulationSettingsDialog: public Dialog
 {
 public:
 	SimulationSettingsDialog(std::function<void(const SimulationSettings&)> ok_callback, const SimulationSettings& inital_value, const SDL_Rect& rect, Scene* parent);
-	~SimulationSettingsDialog();
 private:
 	void OnOk() override;
 	std::function<void(const SimulationSettings&)> m_ok_callback;

@@ -63,7 +63,7 @@ node::BlockFunctor node::DerivativeBlockClass::GetFunctor(const std::vector<mode
 		{
 			if (old_state.contains<std::array<double, 3>>())
 			{
-				auto& arr = old_state.get<std::array<double, 3>>();
+				const auto& arr = old_state.get<const std::array<double, 3>>();
 				if (arr[0] == t)
 				{
 					out[0] = arr[2];

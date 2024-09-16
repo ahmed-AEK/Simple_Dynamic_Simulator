@@ -13,7 +13,7 @@ class BlockObject;
 class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
-	BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt, 
+	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt, 
 		model::Point center_in_block = {0,0}, IGraphicsScene* parentScene = nullptr, BlockObject* parentBlock = nullptr);
 
 	void SetConnectedNode(NetNode* node);

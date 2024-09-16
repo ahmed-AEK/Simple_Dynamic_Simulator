@@ -37,7 +37,7 @@ node::logic::LeafNetNodeDragLogic::LeafNetNodeDragLogic(NetNode& dragged_node, N
 {
 }
 
-static node::NetNode* AsNode(node::HandlePtr<node::GraphicsObject>& obj)
+static node::NetNode* AsNode(const node::HandlePtr<node::GraphicsObject>& obj)
 {
 	return static_cast<node::NetNode*>(obj.GetObjectPtr());
 }
@@ -101,7 +101,7 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 	
 
 	// remove old connection
-	auto* old_connected_socket = AsNode(m_dragged_node)->GetConnectedSocket();
+	const auto* old_connected_socket = AsNode(m_dragged_node)->GetConnectedSocket();
 	if (old_connected_socket && old_connected_socket != connectd_socket)
 	{
 		assert(old_connected_socket->GetId());

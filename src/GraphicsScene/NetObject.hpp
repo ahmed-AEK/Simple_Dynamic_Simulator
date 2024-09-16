@@ -34,7 +34,7 @@ public:
 	uint8_t GetConnectedSegmentsCount();
 	void ClearSegment(const NetSegment* segment);
 
-	std::optional<node::model::ConnectedSegmentSide> GetSegmentSide(NetSegment& segment) const;
+	std::optional<node::model::ConnectedSegmentSide> GetSegmentSide(const NetSegment& segment) const;
 
 	void SetId(std::optional<model::NetNodeId> id) { m_id = std::move(id); }
 	std::optional<model::NetNodeId> GetId() const noexcept { return m_id; }

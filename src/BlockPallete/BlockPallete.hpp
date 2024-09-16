@@ -24,7 +24,7 @@ namespace node
 		static constexpr int ElementWidth = 100;
 	protected:
 		bool OnScroll(const double amount, const SDL_Point& p) override;
-		virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point);
+		virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
 
 	private:
 		SDL_Rect DrawPanelBorder(SDL_Renderer* renderer);

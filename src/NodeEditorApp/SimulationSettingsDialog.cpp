@@ -40,10 +40,6 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(std::function<void(cons
 	AddButton("Cancel", [this]() {this->TriggerClose(); });
 }
 
-node::SimulationSettingsDialog::~SimulationSettingsDialog()
-{
-}
-
 void node::SimulationSettingsDialog::OnOk()
 {
 	if (m_ok_callback)

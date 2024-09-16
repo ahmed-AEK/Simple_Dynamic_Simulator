@@ -5,6 +5,8 @@
 
 #include "BlockPallete.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
+#include <algorithm>
+#include <iterator>
 
 node::PalleteProvider::PalleteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
 	:m_classesManager{ manager }, m_blockStyleFactory{std::move(style_factory)}
@@ -42,10 +44,7 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	block.SetStyler(temp.styler_name);
 	block.SetStylerProperties(temp.style_properties);
 	auto& properties = block.GetProperties();
-	for (const auto& prop : temp.default_properties)
-	{
-		properties.push_back(prop);
-	}
+	properties = temp.default_properties;
 
 	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, block);
 
