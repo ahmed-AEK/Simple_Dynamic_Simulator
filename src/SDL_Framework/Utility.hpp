@@ -17,6 +17,26 @@ namespace textures
     void ResetAllTextures();
 }
 
+class DroppableTexture
+{
+public:
+    DroppableTexture() {}
+
+    DroppableTexture(DroppableTexture&& other) noexcept;
+    DroppableTexture& operator=(DroppableTexture&& other) noexcept;
+
+    ~DroppableTexture();
+
+    void DropTexture();
+    void DropTextureNoLock();
+    void SetTexture(SDLTexture texture);
+    SDL_Texture* GetTexture();
+    operator bool() const { return m_stored_texture != nullptr; }
+private:
+    SDLTexture m_stored_texture{ nullptr };
+
+};
+
 class RoundRectPainter
 {
 public:
@@ -25,22 +45,17 @@ public:
     RoundRectPainter(const RoundRectPainter&) noexcept {}
     RoundRectPainter& operator=(const RoundRectPainter&) noexcept { return *this;}
 
-    RoundRectPainter(RoundRectPainter&& other) noexcept;
-    RoundRectPainter& operator=(RoundRectPainter&& other) noexcept;
-
-    ~RoundRectPainter();
+    RoundRectPainter(RoundRectPainter&& other) noexcept = default;
+    RoundRectPainter& operator=(RoundRectPainter&& other) noexcept = default;
 
     void Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color);
-
-    void DropTexture();
-    void DropTextureNoLock();
 
 private:
     void ReCreateArcTexture(SDL_Renderer* renderer);
 
+    DroppableTexture m_arc_texture;
     SDL_Color stored_color{ 0,0,0,0 };
     int stored_radius{ 0 };
-    SDL_Texture* stored_arc_texture{ nullptr };
 };
 
 void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2,
@@ -52,7 +67,8 @@ public:
     explicit TextPainter(TTF_Font* font) :m_font{ font } {}
     TextPainter(const TextPainter& other) : m_text{ other.m_text }, m_font{ other.m_font } {}
     TextPainter& operator=(const TextPainter& other) { m_font = other.m_font; m_text = other.m_text; return *this; }
-    ~TextPainter();
+    TextPainter& operator=(TextPainter&&) = default;
+    TextPainter(TextPainter&&) = default;
 
     void Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color);
     SDL_Rect GetRect(SDL_Renderer* renderer, const SDL_Color color);
@@ -61,15 +77,13 @@ public:
     void SetFont(TTF_Font* font);
     TTF_Font* GetFont() const { return m_font; }
 
-    void DropTexture();
-    void DropTextureNoLock();
 private:
     void ReCreateTexture(SDL_Renderer* renderer);
     void AssureTexture(SDL_Renderer* renderer, const SDL_Color& color);
 
+    DroppableTexture m_text_texture;
     std::string m_text;
     TTF_Font* m_font;
-    SDLTexture m_texture;
     SDL_Color m_stored_color{ 0,0,0,0 };
 
 };

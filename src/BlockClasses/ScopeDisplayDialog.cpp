@@ -284,7 +284,7 @@ node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 		SetToolbar(std::move(toolbar));
 	}
 	m_tools_manager.ChangeTool("A");
-	XYSeries series{ {{0,0},{1,1},{2,2},{3,3},{4,4}, {5,0}, {6,3},{7,-1}} };
+	XYSeries series{ {{0,0},{4,4}, {5,0}, {6,3},{7,-1}} };
 	plot->SetData(std::move(series));
 	plot_widget = plot.get();
 	AddControl(std::move(plot));
@@ -372,6 +372,7 @@ void node::PlotWidget::SetData(XYSeries data)
 	m_base_space_extent = SDL_FRect{ min_point.x, min_point.y, max_point.x - min_point.x, max_point.y - min_point.y };
 	ResetZoom();
 	ResetPainters();
+	m_data_texture.DropTexture();
 }
 
 void node::PlotWidget::ResetZoom()
@@ -485,7 +486,8 @@ void node::PlotWidget::ResetPainters()
 {
 	SDL_Rect inner_rect = GetInnerRect();
 	m_painters.clear();
-	
+	m_data_texture.DropTexture();
+
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
 	{
@@ -531,27 +533,169 @@ void node::PlotWidget::ResetPainters()
 	}
 }
 
-void node::PlotWidget::DrawData(SDL_Renderer* renderer)
+static float ipart(float x)
 {
-	std::vector<SDL_Point> points;
+	return std::floor(x);
+}
+static float fpart(float x)
+{
+	return x - ipart(x);
+}
+static float rfpart(float x)
+{
+	return 1 - fpart(x);
+}
+
+static void drawPoint(float x, float y, float c, const SDL_Color& color, SDL_Surface* surface)
+{
+	if (x < 0 || x >= surface->w)
+	{
+		return;
+	}
+	if (y < 0 || y >= surface->h)
+	{
+		return;
+	}
+
+	int32_t* buffer = static_cast<int32_t*>(surface->pixels);
+	unsigned char* data = reinterpret_cast<unsigned char*>(&buffer[static_cast<int>(x) + static_cast<int>(y) * surface->pitch / 4]);
+	unsigned char old_alpha = data[3];
+	unsigned char new_alpha = std::max(old_alpha, static_cast<unsigned char>(c * 255));
+	data[0] = color.r;
+	data[1] = color.g;
+	data[2] = color.b;
+	data[3] = new_alpha;
+}
+
+static void DrawLineAA(SDL_Surface* surface, SDL_FPoint start, SDL_FPoint end, const SDL_Color& color)
+{
+	bool steep = std::abs(end.y - start.y) > std::abs(end.x - start.x);
+
+	if (steep)
+	{
+		//std::swap(start, end);
+		std::swap(start.x, start.y);
+		std::swap(end.x, end.y);
+	}
+	if (start.x > end.x)
+	{
+		std::swap(start, end);
+	}
+
+	float dx = end.x - start.x;
+	float dy = end.y - start.y;
+	float gradient = 1;
+	if (dx != 0.)
+	{
+		gradient = dy / dx;
+	}
+
+	// handle first endpoint
+	float xend = std::round(start.x);
+	float yend = start.y + gradient * (xend - start.x);
+	float xgap = rfpart(start.x + 0.5f);
+	float ygap = rfpart(start.y + 0.5f);
+	float xpxl1 = xend;
+	float ypxl1 = ipart(yend);
+	if (steep)
+	{
+		drawPoint(ypxl1 - 1, xpxl1    , rfpart(yend) * xgap, color, surface);
+		drawPoint(ypxl1    , xpxl1 - 1, rfpart(xend) * ygap, color, surface);
+		drawPoint(ypxl1    , xpxl1    , 1.0f, color, surface);
+		drawPoint(ypxl1    , xpxl1 + 1, fpart(xend) * ygap, color, surface);
+		drawPoint(ypxl1 + 1, xpxl1    , fpart(yend) * xgap, color, surface);
+	}
+	else
+	{
+		drawPoint(xpxl1    , ypxl1 - 1, rfpart(yend) * xgap, color, surface);
+		drawPoint(xpxl1 - 1, ypxl1    , rfpart(xend) * ygap, color, surface);
+		drawPoint(xpxl1    , ypxl1    , 1.0f, color, surface);
+		drawPoint(xpxl1 + 1, ypxl1    , fpart(xend) * ygap, color, surface);
+		drawPoint(xpxl1    , ypxl1 + 1, fpart(yend) * xgap, color, surface);
+	}
+
+	float intery = yend + gradient;
+
+	// handle second endpoint
+	xend = std::round(end.x);
+	yend = end.y + gradient * (xend - end.x);
+	xgap = fpart(end.x + 0.5f);
+	ygap = fpart(end.y + 0.5f);
+	float xpxl2 = xend;
+	float ypxl2 = ipart(yend);
+	if (steep)
+	{
+		drawPoint(ypxl2 - 1, xpxl2    , rfpart(yend) * xgap, color, surface);
+		drawPoint(ypxl2    , xpxl2 - 1, rfpart(xend) * ygap, color, surface);
+		drawPoint(ypxl2    , xpxl2    , 1.0f, color, surface);
+		drawPoint(ypxl2    , xpxl2 + 1, fpart(xend) * ygap, color, surface);
+		drawPoint(ypxl2 + 1, xpxl2    , fpart(yend) * xgap, color, surface);
+	}
+	else
+	{
+		drawPoint(xpxl2    , ypxl2 - 1, rfpart(yend) * xgap, color, surface);
+		drawPoint(xpxl2 - 1, ypxl2    , rfpart(xend) * ygap, color, surface);
+		drawPoint(xpxl2    , ypxl2    , 1.0f, color, surface);
+		drawPoint(xpxl2 + 1, ypxl2    , fpart(xend) * ygap, color, surface);
+		drawPoint(xpxl2    , ypxl2 + 1, fpart(yend) * xgap, color, surface);
+	}
+
+	if (steep)
+	{
+		for (int x = static_cast<int>(xpxl1 + 1); x < xpxl2; x++)
+		{
+			drawPoint(ipart(intery) - 1, static_cast<float>(x), rfpart(intery), color, surface);
+			drawPoint(ipart(intery)    , static_cast<float>(x), 1.0f, color, surface);
+			drawPoint(ipart(intery) + 1, static_cast<float>(x), fpart(intery), color, surface);
+			intery = intery + gradient;
+		}
+	}
+	else
+	{
+		for (int x = static_cast<int>(xpxl1 + 1); x < xpxl2; x++)
+		{
+			drawPoint(static_cast<float>(x), ipart(intery) - 1, rfpart(intery), color, surface);
+			drawPoint(static_cast<float>(x), ipart(intery)    , 1.0f, color, surface);
+			drawPoint(static_cast<float>(x), ipart(intery) + 1, fpart(intery), color, surface);
+			intery = intery + gradient;
+		}
+	}
+}
+
+
+void node::PlotWidget::ReDrawSurface()
+{
+	std::vector<SDL_FPoint> points;
 	points.reserve(m_data.points.size());
 	SDL_Rect inner_rect = GetInnerRect();
-	SDL_Rect old_rect;
-	SDL_RenderGetClipRect(renderer, &old_rect);
-	SDL_RenderSetClipRect(renderer, &inner_rect);
+	m_data_surface.reset(SDL_CreateRGBSurfaceWithFormat(0, inner_rect.w, inner_rect.h, 32, SDL_PIXELFORMAT_RGBA32));
 	for (const auto& point : m_data.points)
 	{
-		SDL_FPoint transformed{ (point.x - m_space_extent.x) / (m_space_extent.w) * inner_rect.w + inner_rect.x, inner_rect.y + inner_rect.h - (point.y - m_space_extent.y) / (m_space_extent.h) * inner_rect.h};
-		points.push_back({ static_cast<int>(transformed.x), static_cast<int>(transformed.y) });
+		SDL_FPoint transformed{ (point.x - m_space_extent.x) / (m_space_extent.w) * inner_rect.w, inner_rect.h - (point.y - m_space_extent.y) / (m_space_extent.h) * inner_rect.h };
+		points.push_back({ transformed.x, transformed.y });
 	}
-	SDL_SetRenderDrawColor(renderer, 30, 120, 180, 255);
-	SDL_RenderDrawLines(renderer, points.data(), static_cast<int>(points.size()));
-	for (auto&& point : points)
+	if (points.size() < 2)
 	{
-		point.y += 1;
+		return;
 	}
-	SDL_RenderDrawLines(renderer, points.data(), static_cast<int>(points.size()));
-	SDL_RenderSetClipRect(renderer, &old_rect);
+	SDL_Color color{ 30,120,180,255 };
+	for (size_t i = 1; i < points.size(); i++)
+	{
+		DrawLineAA(m_data_surface.get(), points[i - 1], points[i], color);
+	}
+
+
+}
+
+void node::PlotWidget::DrawData(SDL_Renderer* renderer)
+{
+	if (!m_data_texture)
+	{
+		ReDrawSurface();
+		m_data_texture.SetTexture(SDLTexture{ SDL_CreateTextureFromSurface(renderer, m_data_surface.get()) });
+	}
+	SDL_Rect inner_rect = GetInnerRect();
+	SDL_RenderCopy(renderer, m_data_texture.GetTexture(), nullptr, &inner_rect);
 }
 
 void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)

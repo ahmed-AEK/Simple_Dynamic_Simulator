@@ -34,82 +34,32 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect,
 
 void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color);
 
-class RoundRectPainter;
 std::mutex painters_mutex{};
-std::unordered_map<SDL_Texture*, RoundRectPainter*> Rectpainters{};
 
-std::unordered_map<SDL_Texture*, RoundRectPainter*> Textpainters{};
+std::unordered_map<SDL_Texture*, DroppableTexture*> Texturepainters{};
+
 
 void textures::ResetAllTextures()
 {
     std::lock_guard g{ painters_mutex };
-    for (auto&& painter_it : Rectpainters)
+    for (auto&& painter_it : Texturepainters)
     {
         painter_it.second->DropTextureNoLock();
     }
-    Rectpainters.clear();
-    for (auto&& painter_it : Textpainters)
-    {
-        painter_it.second->DropTextureNoLock();
-    }
-    Textpainters.clear();
+    Texturepainters.clear();
 }
 
-RoundRectPainter::RoundRectPainter(RoundRectPainter&& other) noexcept
-    :stored_color{ other.stored_color }, stored_radius{ other.stored_radius },
-    stored_arc_texture{ std::exchange(other.stored_arc_texture, nullptr) }    
-{
-    if (stored_arc_texture)
-    {
-        std::lock_guard g{ painters_mutex };
-        auto it = Rectpainters.find(stored_arc_texture);
-        it->second = this;
-    }    
-}
 
-RoundRectPainter& RoundRectPainter::operator=(RoundRectPainter&& other) noexcept
-{
-    stored_arc_texture = std::exchange(other.stored_arc_texture, nullptr);
-
-    if (stored_arc_texture)
-    {
-        std::lock_guard g{ painters_mutex };
-        auto it = Rectpainters.find(stored_arc_texture);
-        it->second = this;
-    }
-    stored_color = other.stored_color;
-    stored_radius = other.stored_radius;
-    return *this;
-}
-
-RoundRectPainter::~RoundRectPainter()
-{
-    if (stored_arc_texture)
-    {
-        SDL_DestroyTexture(stored_arc_texture);
-        {
-            std::lock_guard g{ painters_mutex };
-            Rectpainters.erase(stored_arc_texture);
-        }
-    }
-}
 
 void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color)
 {
-    if (!stored_arc_texture || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
+    if (!m_arc_texture.GetTexture() || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
     {
         stored_color = color;
         stored_radius = radius;
-        if (stored_arc_texture)
+        if (m_arc_texture.GetTexture())
         {
-            {
-                std::lock_guard g{ painters_mutex };
-                auto it = Rectpainters.find(stored_arc_texture);
-                assert(it != Rectpainters.end());
-                Rectpainters.erase(it);
-            }
-            SDL_DestroyTexture(stored_arc_texture);
-            stored_arc_texture = nullptr;
+            m_arc_texture.DropTexture();
         }
         ReCreateArcTexture(renderer);
     }
@@ -128,56 +78,36 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
     {
         // draw lower right corner
         SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y + rect.h - radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, stored_arc_texture, 0, &trgt, 0, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper right corner
         SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, stored_arc_texture, 0, &trgt, 270, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper left corner
         SDL_Rect trgt{ rect.x, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, stored_arc_texture, 0, &trgt, 180, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
     }
     {
         // draw lower left corner
         SDL_Rect trgt{ rect.x, rect.y + rect.h - stored_radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, stored_arc_texture, 0, &trgt, 90, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
     }
-}
-
-void RoundRectPainter::DropTexture()
-{
-    if (stored_arc_texture)
-    {
-        {
-            std::lock_guard g{ painters_mutex };
-            Rectpainters.erase(stored_arc_texture);
-        }
-    }
-    stored_arc_texture = nullptr;
-}
-
-void RoundRectPainter::DropTextureNoLock()
-{
-    stored_arc_texture = nullptr;
 }
 
 void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
 {
     SDL_Texture* old_texture = SDL_GetRenderTarget(renderer);
-    stored_arc_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, stored_radius, stored_radius);
-    SDL_SetTextureBlendMode(stored_arc_texture, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderTarget(renderer, stored_arc_texture);
+    SDLTexture stored_arc_texture{ SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, stored_radius, stored_radius) };
+    m_arc_texture.SetTexture(std::move(stored_arc_texture));
+    SDL_SetTextureBlendMode(m_arc_texture.GetTexture(), SDL_BLENDMODE_BLEND);
+    SDL_SetRenderTarget(renderer, m_arc_texture.GetTexture());
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
     SDL_RenderClear(renderer); // clear renderer
     DrawFilledArcAA3(renderer, stored_radius - 1, stored_color);
     SDL_SetRenderTarget(renderer, old_texture);
-    {
-        std::lock_guard g{ painters_mutex };
-        Rectpainters.emplace(stored_arc_texture, this);
-    }
 }
 
 void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
@@ -317,22 +247,16 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect,
     }
 }
 
-TextPainter::~TextPainter()
-{
-    DropTexture();
-}
-
 void TextPainter::Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color)
 {
     assert(m_font);
     AssureTexture(renderer, color);
 
     SDL_Rect text_rect{ 0,0,0,0 };
-    SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
     text_rect.x = point.x;
     text_rect.y = point.y;
-    SDL_RenderCopy(renderer, m_texture.get(), NULL, &text_rect);
-
+    SDL_RenderCopy(renderer, m_text_texture.GetTexture(), NULL, &text_rect);
 }
 
 SDL_Rect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
@@ -340,51 +264,33 @@ SDL_Rect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
     assert(m_font);
     AssureTexture(renderer, color);
     SDL_Rect text_rect{ 0,0,0,0 };
-    SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
+    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
     return text_rect;
 }
 
 void TextPainter::SetText(std::string text)
 {
     m_text = std::move(text);
-    DropTexture();
-}
-
-void TextPainter::DropTexture()
-{
-    if (m_texture)
-    {
-        {
-            std::lock_guard g{ painters_mutex };
-            Textpainters.erase(m_texture.get());
-        }
-    }
-    m_texture.reset(nullptr);
-}
-
-void TextPainter::DropTextureNoLock()
-{
-    m_texture.reset(nullptr);
+    m_text_texture.DropTexture();
 }
 
 void TextPainter::ReCreateTexture(SDL_Renderer* renderer)
 {
-    {
-        SDL_Color color = m_stored_color;
-        auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), color) };
-        m_texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
-        SDL_Rect text_rect{};
-        SDL_QueryTexture(m_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-    }
+    SDL_Color color = m_stored_color;
+    auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), color) };
+    auto texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
+    m_text_texture.SetTexture(std::move(texture));
+    SDL_Rect text_rect{};
+    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
 }
 
 void TextPainter::AssureTexture(SDL_Renderer* renderer, const SDL_Color& color)
 {
     assert(m_font);
-    if (!m_texture || color.r != m_stored_color.r || color.g != m_stored_color.g || color.b != m_stored_color.b)
+    if (!m_text_texture.GetTexture() || color.r != m_stored_color.r || color.g != m_stored_color.g || color.b != m_stored_color.b)
     {
         m_stored_color = color;
-        DropTexture();
+        m_text_texture.DropTexture();
         ReCreateTexture(renderer);
     }
 }
@@ -392,5 +298,69 @@ void TextPainter::AssureTexture(SDL_Renderer* renderer, const SDL_Color& color)
 void TextPainter::SetFont(TTF_Font* font)
 {
     m_font = font;
+    m_text_texture.DropTexture();
+}
+
+DroppableTexture::DroppableTexture(DroppableTexture&& other) noexcept
+{
+    m_stored_texture = std::move(other.m_stored_texture);
+    if (m_stored_texture)
+    {
+        std::lock_guard g{ painters_mutex };
+        auto it = Texturepainters.find(m_stored_texture.get());
+        it->second = this;
+    }
+}
+
+DroppableTexture& DroppableTexture::operator=(DroppableTexture&& other) noexcept
+{
+    if (&other == this)
+    {
+        return *this;
+    }
     DropTexture();
+    m_stored_texture = std::move(other.m_stored_texture);
+    if (m_stored_texture)
+    {
+        std::lock_guard g{ painters_mutex };
+        auto it = Texturepainters.find(m_stored_texture.get());
+        it->second = this;
+    }
+    return *this;
+}
+
+DroppableTexture::~DroppableTexture()
+{
+    DropTexture();
+}
+
+void DroppableTexture::DropTexture()
+{
+    if (m_stored_texture)
+    {
+        std::lock_guard g{ painters_mutex };
+        Texturepainters.erase(m_stored_texture.get());   
+    }
+    m_stored_texture = nullptr;
+}
+
+void DroppableTexture::DropTextureNoLock()
+{
+    m_stored_texture = nullptr;
+}
+
+void DroppableTexture::SetTexture(SDLTexture texture)
+{
+    DropTexture();
+    m_stored_texture = std::move(texture);
+    if (m_stored_texture)
+    {
+        std::lock_guard g{ painters_mutex };
+        Texturepainters.emplace(m_stored_texture.get(), this);
+    }
+}
+
+SDL_Texture* DroppableTexture::GetTexture()
+{
+    return m_stored_texture.get();
 }

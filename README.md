@@ -14,7 +14,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - customized block shapes
 
 ### Not Implemented yet:
-- persistent storing and loading nodes
+- persistent storing and loading blocks
 - ability to add user defined blocks
 - scripting engine
 - more blocks, saving output to disk, etc..

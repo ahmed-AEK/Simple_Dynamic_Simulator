@@ -77,6 +77,8 @@ private:
 	SDL_Rect GetInnerRect();
 	void ResetPainters();
 
+	void ReDrawSurface();
+
 	TTF_Font* m_font;
 	XYSeries m_data;
 	SDL_FRect m_base_space_extent{ 0,0,0,0 };
@@ -85,6 +87,8 @@ private:
 	std::shared_ptr<ScopeDisplayTool> m_tool;
 	std::optional<SDL_FPoint> m_current_point{ SDL_FPoint{ 0,0 } };
 	TextPainter m_current_point_painter;
+	DroppableTexture m_data_texture;
+	SDLSurface m_data_surface;
 
 	static constexpr size_t x_ticks_count = 9;
 	static constexpr size_t y_ticks_count = 9;
