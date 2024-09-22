@@ -62,7 +62,7 @@ node::BlockType node::ConstantSourceClass::GetBlockType(const std::vector<model:
 	return BlockType::Source;
 }
 
-node::BlockFunctor node::ConstantSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::ConstantSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));

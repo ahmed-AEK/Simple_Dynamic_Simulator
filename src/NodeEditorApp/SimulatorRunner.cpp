@@ -67,13 +67,27 @@ static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, no
 		auto block_class = mgr.GetBlockClassByName(block.GetClass());
 		assert(block_class);
 		auto functor = block_class->GetFunctor(block.GetProperties());
-		std::visit(overloaded{
+
+		auto block_adder = [&](node::BlockFunctor& functor) {
+			std::visit(overloaded{
 			[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
 			[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
-			}, functor);
+				}, functor);
+			};
+
+		std::visit(overloaded{ 
+			block_adder, 
+			[&](std::vector<node::BlockFunctor>& blocks) 
+			{
+				for (auto& block : blocks)
+				{
+					block_adder(block);
+				}
+			} }, functor);
+		
 	}
 	return funcs;
 }
@@ -175,39 +189,67 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 	return mappings;
 }
 
-static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappings>& mappings)
+static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappings>& mappings, size_t& max_net)
 {
 	using namespace node::model;
+	struct FunctorTerminalsMapping
+	{
+		size_t initial_value;
+		size_t transformed_value;
+	};
+
+	std::unordered_map<BlockId, std::vector<FunctorTerminalsMapping>> functors_mapping;
+	
 	auto remap = [&](auto&& range)
 		{
 			for (auto& func_obj : range)
 			{
 				auto& block_id = func_obj.second;
 				auto& func = func_obj.first;
-				int socket_id = 0;
-				int input_id = 0;
-				int output_id = 0;
 				auto it = std::find_if(mappings.begin(), mappings.end(), [&](const auto& obj)->bool {return obj.block_id == block_id; });
 				assert(it != mappings.end());
-				for (const auto& mapping : it->mappings)
+				auto id_mapper = [&](int64_t& id)
+					{
+						// look for the socket id in the scene sockets ids, if it is a block socket it should be there, otherwise it is an internal node
+						auto socket_it = std::find_if(it->mappings.begin(), it->mappings.end(), [&](const SocketMapping& mapping) {return mapping.socket_id.value == id; });
+						if (socket_it != it->mappings.end())
+						{
+							// if it is part of the nets mapping (block socket), map it if it is connected.
+							if (!it->mappings[id].connected)
+							{
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), 9999 });
+								id = 9999;
+							}
+							else
+							{
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), static_cast<size_t>(socket_it->net_id) });
+								id = socket_it->net_id;
+							}
+						}
+						else
+						{
+							// see if we have seen it before, if we have then assign the same net_id, otherwise assign a new net_id to it.
+							auto& mapping = functors_mapping[block_id];
+							auto mapping_it = std::find_if(mapping.begin(), mapping.end(), [&](const FunctorTerminalsMapping& term) {return term.initial_value == static_cast<size_t>(id); });
+							if (mapping_it != mapping.end())
+							{
+								id = mapping_it->transformed_value;
+							}
+							else
+							{
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), max_net });
+								id = max_net;
+								max_net++;
+							}
+						}
+					};
+				for (auto& id : func.get_input_ids())
 				{
-					auto value = mapping.net_id;
-					if (!mapping.connected)
-					{
-						value = 9999;
-					}
-					if (mapping.socket_type == BlockSocketModel::SocketType::input)
-					{
-						func.get_input_ids()[input_id] = value;
-						socket_id++;
-						input_id++;
-					}
-					else
-					{
-						func.get_output_ids()[output_id] = value;
-						socket_id++;
-						output_id++;
-					}
+					id_mapper(id);
+				}
+				for (auto& id : func.get_output_ids())
+				{
+					id_mapper(id);
 				}
 			}
 		};
@@ -357,7 +399,8 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 
 	assert(m_classes_mgr);
 	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
-	RemapFunctions(blocks, socket_mappings);
+	size_t max_net = nets.nets.size();
+	RemapFunctions(blocks, socket_mappings, max_net);
 	
 	assert(m_model);
 	auto validation_result = ValidateNets(nets, socket_mappings, *m_model);
@@ -372,7 +415,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	solver.SetMaxStep(m_settings.max_step);
 	solver.Initialize(m_settings.t_start, m_settings.t_end);
 
-	opt::FlatMap simulation_nets{ nets.nets.size()};
+	opt::FlatMap simulation_nets{ max_net };
 	opt::StepResult step_result = opt::StepResult::Success;
 	
 	solver.CalculateInitialConditions(simulation_nets);

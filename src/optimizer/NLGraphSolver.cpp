@@ -6,8 +6,9 @@
 #include <cmath>
 #include <boost/range/adaptors.hpp>
 #include <queue>
+#include "optimizer/NLGraphSolver_private.hpp"
 
-double opt::NLGraphSolver::SolveInternal(std::span<const double> x, std::span<double> grad)
+double opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::span<double> grad)
 {
     UNUSED_PARAM(grad);
     LoadDatatoMap(x, m_current_state);
@@ -27,10 +28,10 @@ double opt::NLGraphSolver::SolveInternal(std::span<const double> x, std::span<do
     return main_penalty;
 }
 
-double opt::NLGraphSolver::CostFunction(unsigned n, const double* x, double* grad, void* data)
+double opt::NLGraphSolver_impl::CostFunction(unsigned n, const double* x, double* grad, void* data)
 {
     UNUSED_PARAM(grad);
-    opt::NLGraphSolver* this_ptr = static_cast<opt::NLGraphSolver*>(data);
+    opt::NLGraphSolver_impl* this_ptr = static_cast<opt::NLGraphSolver_impl*>(data);
     std::span<double> grad_span;
     if (grad)
     {
@@ -39,7 +40,7 @@ double opt::NLGraphSolver::CostFunction(unsigned n, const double* x, double* gra
     return this_ptr->SolveInternal({ x, x + n }, grad_span);
 }
 
-void opt::NLGraphSolver::LoadDatatoMap(std::span<const double> x, FlatMap& state)
+void opt::NLGraphSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& state)
 {
     assert(x.size() == m_estimated_output_ids.size());
     for (size_t i = 0; i < x.size(); i++)
@@ -48,7 +49,7 @@ void opt::NLGraphSolver::LoadDatatoMap(std::span<const double> x, FlatMap& state
     }
 }
 
-std::vector<double> opt::NLGraphSolver::LoadMaptoVec(FlatMap& state)
+std::vector<double> opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state)
 {
     auto state_data = state.data();
     std::vector<double> output;
@@ -60,7 +61,7 @@ std::vector<double> opt::NLGraphSolver::LoadMaptoVec(FlatMap& state)
     return output;
 }
 
-double opt::NLGraphSolver::CalcPenalty(FlatMap& state)
+double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 {
     EvalSpecificFunctors(state, m_inner_solve_eqns);
     double penalty = 0.0;
@@ -120,7 +121,7 @@ double opt::NLGraphSolver::CalcPenalty(FlatMap& state)
     return std::sqrt(penalty);
 }
 
-void opt::NLGraphSolver::UpdateStateInternal(FlatMap& state)
+void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
 {
     for (auto element : m_stateful_equations | boost::adaptors::indexed())
     {
@@ -138,16 +139,16 @@ void opt::NLGraphSolver::UpdateStateInternal(FlatMap& state)
     }
 }
 
-opt::NLGraphSolver::NLGraphSolver(std::vector<NLEquation> equations)
+opt::NLGraphSolver_impl::NLGraphSolver_impl(std::vector<NLEquation> equations)
     :m_equations(std::move(equations))
 {
 }
 
-opt::NLGraphSolver::NLGraphSolver()
+opt::NLGraphSolver_impl::NLGraphSolver_impl()
 {
 }
 
-void opt::NLGraphSolver::Initialize()
+void opt::NLGraphSolver_impl::Initialize()
 {
     std::vector<int64_t> remaining_output_ids;
 
@@ -180,15 +181,16 @@ void opt::NLGraphSolver::Initialize()
         FillInnerSolveEqns(remaining_output_ids);
     }
     m_optimizer = nlopt::opt(nlopt::LD_SLSQP, static_cast<unsigned int>(m_estimated_output_ids.size()));
-    m_optimizer.set_min_objective(opt::NLGraphSolver::CostFunction, this);
+    m_optimizer.set_min_objective(opt::NLGraphSolver_impl::CostFunction, this);
     m_optimizer.set_xtol_rel(1e-6);
     m_optimizer.set_xtol_abs(1e-8);
     m_optimizer.set_ftol_rel(1e-6);
     m_optimizer.set_ftol_abs(1e-8);
 }
 
-void opt::NLGraphSolver::FillInitialSolveEqns(std::vector<int64_t>& remaining_output_ids)
+void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int64_t>& remaining_output_ids)
 {
+    // khan's algorithm, we see which blocks have no unevaluated inputs, add them to inital functors, then see whether the connected blocks can be evaluated yet.
     struct BlockInputsCount
     {
         EquationIndex index;
@@ -279,7 +281,7 @@ void opt::NLGraphSolver::FillInitialSolveEqns(std::vector<int64_t>& remaining_ou
     }
 }
 
-void opt::NLGraphSolver::EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies)
+void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies)
 {
     for (const auto& eq_index : indicies)
     {
@@ -334,7 +336,7 @@ void opt::NLGraphSolver::EvalSpecificFunctors(FlatMap& state, const std::vector<
     }
 }
 
-void opt::NLGraphSolver::FillInnerSolveEqns(std::vector<int64_t>& remaining_output_ids)
+void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining_output_ids)
 {
     struct BlockInputsCount
     {
@@ -512,12 +514,12 @@ void opt::NLGraphSolver::FillInnerSolveEqns(std::vector<int64_t>& remaining_outp
     }
 }
 
-void opt::NLGraphSolver::AddEquation(opt::NLEquation eq)
+void opt::NLGraphSolver_impl::AddEquation(opt::NLEquation eq)
 {
     m_equations.emplace_back(std::move(eq));
 }
 
-void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquation eq)
+void opt::NLGraphSolver_impl::AddStatefulEquation(NLStatefulEquation eq)
 {
     m_stateful_equations.push_back(eq);
 }
@@ -530,7 +532,7 @@ static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, 
     }
 }
 
-void opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
+void opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& time)
 {
     if ( 0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size())
     {
@@ -561,7 +563,7 @@ void opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
     //LoadDatatoMap(x, state);
 }
 
-void opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
+void opt::NLGraphSolver_impl::UpdateState(FlatMap& state, const double& time)
 {
     if (0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size())
     {
@@ -572,4 +574,40 @@ void opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
     opt::FlatMap::sync(state, m_current_state);
 
     UpdateStateInternal(state);
+}
+
+opt::NLGraphSolver::NLGraphSolver()
+    :m_impl{std::make_unique<NLGraphSolver_impl>()}
+{
+}
+
+opt::NLGraphSolver::~NLGraphSolver() = default;
+
+opt::NLGraphSolver::NLGraphSolver(NLGraphSolver&&) noexcept = default;
+
+opt::NLGraphSolver& opt::NLGraphSolver::operator=(NLGraphSolver&&) noexcept = default;
+
+void opt::NLGraphSolver::Initialize()
+{
+    m_impl->Initialize();
+}
+
+void opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
+{
+    m_impl->Solve(state, time);
+}
+
+void opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
+{
+    m_impl->UpdateState(state, time);
+}
+
+void opt::NLGraphSolver::AddEquation(NLEquation eq)
+{
+    m_impl->AddEquation(std::move(eq));
+}
+
+void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquation eq)
+{
+    m_impl->AddStatefulEquation(std::move(eq));
 }

@@ -45,7 +45,8 @@ public:
 	virtual std::vector<model::BlockSocketModel::SocketType> 
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) = 0;
 	virtual BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) = 0;
-	virtual BlockFunctor GetFunctor(const std::vector<model::BlockProperty>& properties) = 0;
+	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>>;
+	virtual GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) = 0;
 
 	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data);
 	virtual bool HasBlockDialog() const { return false; }

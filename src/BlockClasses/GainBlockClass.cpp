@@ -65,7 +65,7 @@ node::BlockType node::GainBlockClass::GetBlockType(const std::vector<model::Bloc
 	return BlockType::Stateless;
 }
 
-node::BlockFunctor node::GainBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::GainBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));

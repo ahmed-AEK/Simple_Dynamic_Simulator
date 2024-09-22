@@ -69,7 +69,7 @@ node::BlockType node::SineSourceClass::GetBlockType(const std::vector<model::Blo
 	return BlockType::Source;
 }
 
-node::BlockFunctor node::SineSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::SineSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(ValidateClassProperties(properties));
 	double phase_rad = std::get<double>(properties[0].prop) / 180.0 * std::numbers::pi;

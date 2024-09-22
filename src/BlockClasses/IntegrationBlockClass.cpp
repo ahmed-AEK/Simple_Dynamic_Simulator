@@ -52,7 +52,7 @@ node::BlockType node::IntegrationBlockClass::GetBlockType(const std::vector<mode
 	return BlockType::Differential;
 }
 
-node::BlockFunctor node::IntegrationBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);

@@ -156,7 +156,11 @@ namespace node
                 }
                 case SDL_KEYDOWN:
                 {
-                    if (SDL_SCANCODE_BACKSPACE == e.key.keysym.scancode || SDL_SCANCODE_RETURN == e.key.keysym.scancode)
+                    if (SDL_SCANCODE_BACKSPACE == e.key.keysym.scancode || 
+                        SDL_SCANCODE_DELETE == e.key.keysym.scancode ||
+                        SDL_SCANCODE_RETURN == e.key.keysym.scancode || 
+                        SDL_SCANCODE_LEFT == e.key.keysym.scancode || 
+                        SDL_SCANCODE_RIGHT == e.key.keysym.scancode)
                     {
                         m_scene->KeyPress(e.key.keysym.scancode);
                         return true;

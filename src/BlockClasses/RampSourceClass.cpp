@@ -62,7 +62,7 @@ node::BlockType node::RampSourceClass::GetBlockType(const std::vector<model::Blo
 	return BlockType::Source;
 }
 
-node::BlockFunctor node::RampSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::RampSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));

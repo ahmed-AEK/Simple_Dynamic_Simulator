@@ -52,7 +52,7 @@ node::BlockType node::DerivativeBlockClass::GetBlockType(const std::vector<model
 	return BlockType::Stateful;
 }
 
-node::BlockFunctor node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);

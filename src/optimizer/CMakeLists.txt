@@ -13,6 +13,8 @@ NLStatefulEquation.cpp NLStatefulEquation.hpp
 Observer.cpp Observer.hpp
 SourceEq.cpp SourceEq.hpp
 NLGraphSolver.cpp NLGraphSolver.hpp
+DiffSolver_private.hpp
+NLGraphSolver_private.hpp
 )
 
 target_include_directories(NLOptimizer PRIVATE ".")

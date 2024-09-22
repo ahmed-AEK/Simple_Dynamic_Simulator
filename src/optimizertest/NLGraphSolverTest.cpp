@@ -6,7 +6,8 @@
 TEST(testNLGraphSolver, testConstructor)
 {
 	opt::NLEquation eq1{ { 1 }, { 2 }, [](auto in, auto out) {out[0] = in[0];} };
-	opt::NLGraphSolver solver({std::move(eq1)});
+	opt::NLGraphSolver solver;
+	solver.AddEquation(std::move(eq1));
 }
 
 TEST(testNLGraphSolver, testAddStateful)
@@ -65,7 +66,9 @@ TEST(testNLGraphSolver, testEmptyRun)
 TEST(testNLGraphSolver, testSolve)
 {
 	opt::NLEquation eq1{ { 0 }, { 1 }, [](auto in, auto out) {out[0] = in[0];} };
-	opt::NLGraphSolver solver({std::move(eq1)});
+	opt::NLGraphSolver solver;
+	solver.AddEquation(std::move(eq1));
+
 	solver.Initialize();
 	opt::FlatMap state(2);
 	state.modify(0,3);
@@ -98,7 +101,10 @@ TEST(testNLGraphSolver, testSolve_two_equations_cyclic)
 {
 	opt::NLEquation eq1{ { 0 }, { 1 }, [](auto in, auto out) {out[0] = in[0] + 1;} }; // y = x + 1
 	opt::NLEquation eq2{ { 1 } , { 0 }, [](auto in, auto out) {out[0] = in[0] * 2;} }; // x = 2 * y
-	opt::NLGraphSolver solver({std::move(eq1), std::move(eq2)});
+	opt::NLGraphSolver solver;
+
+	solver.AddEquation(std::move(eq1));
+	solver.AddEquation(std::move(eq2));
 	solver.Initialize();
 	opt::FlatMap state(2);
 	state.modify(0,0);
@@ -139,8 +145,10 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 		}}
 	};
 
-	opt::NLGraphSolver solver({ std::move(mul)});
+	opt::NLGraphSolver solver;
+	solver.AddEquation(std::move(mul));
 	solver.AddStatefulEquation(std::move(diff));
+
 	solver.Initialize();
 	opt::FlatMap state(4);
 	state.modify(0, 0);

@@ -8,15 +8,13 @@ TEST(testDiffSolver, testConstructor)
     opt::DiffEquation eq({0},{1}, [](auto in, auto out, const auto& t) { return out[0] = in[0] + t;});
     opt::DiffSolver solver;
     solver.AddEquation(std::move(eq));
-
-    opt::DiffEquation eq2({0},{1}, [](auto in, auto out, const auto& t) { return out[0] = in[0] + t;});
-    opt::DiffSolver solver2{{std::move(eq2)}};
 }
 
 TEST(testDiffSolver, testInitialize)
 {
     opt::DiffEquation eq({0},{1}, [](auto in, auto out, const auto& t) { return out[0] = in[0] + t;});
-    opt::DiffSolver solver{{std::move(eq)}};
+    opt::DiffSolver solver{};
+    solver.AddEquation(std::move(eq));
     solver.Initialize(0, 10);
 
     EXPECT_EQ(solver.GetStartTime(), 0);
@@ -26,7 +24,8 @@ TEST(testDiffSolver, testInitialize)
 TEST(testDiffSolver, testStep_time_advances)
 {
     opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
-    opt::DiffSolver solver{{std::move(eq)}};
+    opt::DiffSolver solver{};
+    solver.AddEquation(std::move(eq));
     solver.Initialize(0, 2);
     opt::FlatMap state(2);
     state.modify(0,1);
@@ -45,7 +44,9 @@ TEST(testDiffSolver, testStep_time_advances)
 TEST(testDiffSolver, testPreprocessor)
 {
     opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
-    opt::DiffSolver solver{ {std::move(eq)} };
+    opt::DiffSolver solver{};
+    solver.AddEquation(std::move(eq));
+
     solver.Initialize(0, 2);
     opt::FlatMap state(2);
     state.modify(0,1);

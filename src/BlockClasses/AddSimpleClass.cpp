@@ -53,7 +53,7 @@ node::BlockType node::AddSimpleBlockClass::GetBlockType(const std::vector<model:
 	return BlockType::Stateless;
 }
 
-node::BlockFunctor node::AddSimpleBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);

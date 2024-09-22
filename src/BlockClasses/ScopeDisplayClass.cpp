@@ -72,7 +72,7 @@ node::BlockType node::ScopeDisplayClass::GetBlockType(const std::vector<model::B
 	return BlockType::Sink;
 }
 
-node::BlockFunctor node::ScopeDisplayClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<uint64_t>(properties[0].prop));

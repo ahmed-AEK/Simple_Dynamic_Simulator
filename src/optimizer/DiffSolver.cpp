@@ -2,35 +2,36 @@
 #include "cassert"
 #include "toolgui/NodeMacros.h"
 #include "boost/numeric/odeint/stepper/controlled_step_result.hpp"
+#include "optimizer/DiffSolver_private.hpp"
 
 class DiffSystem {
 
-    opt::DiffSolver& m_solver;
+    opt::DiffSolver_impl& m_solver;
 public:
-    explicit DiffSystem(opt::DiffSolver& solver) : m_solver(solver) { }
+    explicit DiffSystem(opt::DiffSolver_impl& solver) : m_solver(solver) { }
 
-    void operator() (const opt::DiffSolver::state_type& x, opt::DiffSolver::state_type& dxdt, const double t)
+    void operator() (const opt::DiffSolver_impl::state_type& x, opt::DiffSolver_impl::state_type& dxdt, const double t)
     {
         m_solver.StepInternal(x, dxdt, t);
     }
 };
 
-opt::DiffSolver::DiffSolver()
+opt::DiffSolver_impl::DiffSolver_impl()
 {
 
 }
 
-opt::DiffSolver::DiffSolver(std::vector<DiffEquation> equations)
+opt::DiffSolver_impl::DiffSolver_impl(std::vector<DiffEquation> equations)
 : m_equations(std::move(equations))
 {
 
 }
-void opt::DiffSolver::AddEquation(DiffEquation eq)
+void opt::DiffSolver_impl::AddEquation(DiffEquation eq)
 {
     m_equations.push_back(std::move(eq));
 }
 
-void opt::DiffSolver::Initialize(double start_time, double end_time)
+void opt::DiffSolver_impl::Initialize(double start_time, double end_time)
 {
     assert(end_time > start_time);
     m_start_time = start_time;
@@ -48,7 +49,7 @@ void opt::DiffSolver::Initialize(double start_time, double end_time)
     m_current_dxdt.reserve(m_output_ids.size());
 }
 
-void opt::DiffSolver::LoadDatatoMap(std::span<const double> x, FlatMap& state)
+void opt::DiffSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& state)
 {
     assert(x.size() == m_output_ids.size());
     for (size_t i = 0; i < x.size(); i++)
@@ -57,7 +58,7 @@ void opt::DiffSolver::LoadDatatoMap(std::span<const double> x, FlatMap& state)
     }
 }
 
-void opt::DiffSolver::LoadMaptoVec(FlatMap& state, std::vector<double>& target)
+void opt::DiffSolver_impl::LoadMaptoVec(FlatMap& state, std::vector<double>& target)
 {
     auto state_data = state.data();
     std::vector<double> output;
@@ -69,7 +70,7 @@ void opt::DiffSolver::LoadMaptoVec(FlatMap& state, std::vector<double>& target)
     }
 }
 
-opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
+opt::StepResult opt::DiffSolver_impl::Step(opt::FlatMap& state)
 {
 
     opt::FlatMap::sync(state, m_current_state);
@@ -97,7 +98,7 @@ opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
     return opt::StepResult::Success;
 }
 
-void opt::DiffSolver::StepInternal(const opt::DiffSolver::state_type& x, opt::DiffSolver::state_type& dxdt, const double t)
+void opt::DiffSolver_impl::StepInternal(const opt::DiffSolver_impl::state_type& x, opt::DiffSolver_impl::state_type& dxdt, const double t)
 {
     LoadDatatoMap(x, m_current_state);
 
@@ -126,17 +127,17 @@ void opt::DiffSolver::StepInternal(const opt::DiffSolver::state_type& x, opt::Di
     }
 }
 
-void opt::DiffSolver::SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor)
+void opt::DiffSolver_impl::SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor)
 {
     m_preprocessor = std::move(preprocessor);
 }
 
-void opt::DiffSolver::SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor)
+void opt::DiffSolver_impl::SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor)
 {
     m_postprocessor = std::move(postprocessor);
 }
 
-void opt::DiffSolver::ApplyPreprocessor(opt::FlatMap& state, const double t)
+void opt::DiffSolver_impl::ApplyPreprocessor(opt::FlatMap& state, const double t)
 {
     if (m_preprocessor)
     {
@@ -144,7 +145,7 @@ void opt::DiffSolver::ApplyPreprocessor(opt::FlatMap& state, const double t)
     }
 }
 
-void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
+void opt::DiffSolver_impl::ApplyPostProcessor(opt::FlatMap& state, const double t)
 {
     if (m_postprocessor)
     {
@@ -152,7 +153,77 @@ void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
     }
 }
 
-void opt::DiffSolver::SetMaxStep(double step_size)
+void opt::DiffSolver_impl::SetMaxStep(double step_size)
 {
     m_max_step = step_size;
 }
+
+opt::DiffSolver::DiffSolver()
+    :m_impl(std::make_unique<DiffSolver_impl>())
+{
+}
+
+opt::DiffSolver::DiffSolver(DiffSolver&&) noexcept = default;
+
+opt::DiffSolver& opt::DiffSolver::operator=(DiffSolver&&) noexcept = default;
+
+opt::DiffSolver::~DiffSolver() = default;
+
+void opt::DiffSolver::AddEquation(DiffEquation eq)
+{
+    m_impl->AddEquation(std::move(eq));
+}
+
+void opt::DiffSolver::Initialize(double start_time, double end_time)
+{
+    m_impl->Initialize(start_time, end_time);
+}
+
+opt::StepResult opt::DiffSolver::Step(opt::FlatMap& state)
+{
+    return m_impl->Step(state);
+}
+
+double opt::DiffSolver::GetStartTime() const
+{
+    return m_impl->GetStartTime();
+}
+
+double opt::DiffSolver::GetEndTime() const
+{
+    return m_impl->GetEndTime();
+}
+
+double opt::DiffSolver::GetCurrentTime() const
+{
+    return m_impl->GetCurrentTime();
+}
+
+void opt::DiffSolver::SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor)
+{
+    m_impl->SetPreprocessor(std::move(preprocessor));
+}
+
+void opt::DiffSolver::SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor)
+{
+    m_impl->SetPostprocessor(std::move(postprocessor));
+}
+
+void opt::DiffSolver::ApplyPreprocessor(opt::FlatMap& state, const double t)
+{
+    m_impl->ApplyPreprocessor(state, t);
+}
+
+void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
+{
+    m_impl->ApplyPostProcessor(state, t);
+}
+
+void opt::DiffSolver::SetMaxStep(double step_size)
+{
+    m_impl->SetMaxStep(step_size);
+}
+
+
+
+
