@@ -304,7 +304,7 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     }
 
     assert(m_classesManager);
-    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_Rect{ 100,100,300,300 }, this);
+    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_Rect{ 100,100,0,0 }, this);
     m_objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
     AddNormalDialog(std::move(dialog));
 }

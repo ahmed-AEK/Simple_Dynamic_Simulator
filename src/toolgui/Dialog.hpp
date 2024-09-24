@@ -26,9 +26,20 @@ private:
 class DialogControl : public Widget
 {
 public:
-	using Widget::Widget;
-private:
+	enum class SizingMode
+	{
+		constantSize,
+		expanding,
+	};
 
+	DialogControl(const SDL_Rect& rect, Scene* parent);
+	SDL_Rect GetSizeHint() const { return m_size_hint; }
+	void SetSizeHint(const SDL_Rect& rect) { m_size_hint = rect; }
+	SizingMode GetSizingMode() const { return m_sizingMode; }
+	void SetSizingMode(SizingMode mode) { m_sizingMode = mode; }
+private:
+	SDL_Rect m_size_hint{ 0,0,0,0 };
+	SizingMode m_sizingMode = SizingMode::constantSize;
 };
 
 class ToolBar;
@@ -57,6 +68,7 @@ public:
 	void TriggerOk() { OnOk(); }
 	SDL_Rect GetTitleBarRect() const;
 	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
+	void SetResizeable(bool value = true) { m_resizable = value; }
 protected:
 	void OnMouseMove(const SDL_Point& current_mouse_point) override;
 	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
@@ -75,23 +87,46 @@ private:
 	void DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect);
 	void DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect);
 	SDL_Rect GetXButtonRect() const;
+	SDL_Rect GetResizeGripRect() const;
+	bool BeingDragged() const;
+	SDL_Point CalculateMinSize() const;
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;
 	std::vector<std::unique_ptr<DialogButton>> m_buttons;
 	std::unique_ptr<ToolBar> m_toolbar;
 	TextPainter m_title_painter;
 
-	std::string m_title;
-	SDL_Point m_drag_edge_start_position{ 0,0 };
-	SDL_Point m_drag_mouse_start_position{ 0,0 };
-	bool b_being_dragged = false;
-	bool b_being_closed = false;
-	bool b_mouse_on_close = false;
-	ScreenResizeStrategy m_resize_strategy = ScreenResizeStrategy::FixedPosition;
-
 	static constexpr int ButtonHeight = 35;
 	static constexpr int ButtonsMargin = 10;
 	static constexpr int ControlsMargin = 10;
 	static constexpr int MinWidth = 300;
+	static constexpr int top_resize_grip_height = 3;
+
+	struct TitleDrag
+	{
+		SDL_Point drag_edge_start_position{ 0,0 };
+		SDL_Point drag_mouse_start_position{ 0,0 };
+	};
+	struct ResizeDrag
+	{
+		enum class DragMode
+		{
+			grip,
+			top,
+		};
+		SDL_Point drag_edge_start_position{ 0,0 };
+		SDL_Point min_size;
+		DragMode mode;
+	};
+	using DragData = std::variant<std::monostate, TitleDrag, ResizeDrag>;
+
+	DragData m_dragData;
+	std::string m_title;
+	size_t m_var_height_elements = 0;
+	bool b_being_closed = false;
+	bool b_mouse_on_close = false;
+	ScreenResizeStrategy m_resize_strategy = ScreenResizeStrategy::FixedPosition;
+	bool m_resizable = false;
+	int m_excess_height = 0;
 };
 }

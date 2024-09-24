@@ -255,9 +255,10 @@ void node::ScopeDisplayToolButton::OnButonClicked()
 node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 	:BlockDialog{"Scope Display", rect, parent}
 {	
-	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,500,400}, parent);
+	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,400,200}, parent);
 	m_tools_manager.SetWidget(*plot);
 	{
+		SetResizeable(true);
 
 		auto toolbar = std::make_unique<ToolBar>(rect, parent);
 		
@@ -318,6 +319,8 @@ void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
 node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Scene* parent)
 	:DialogControl{rect,parent}, m_font{font}, m_current_point_painter{font}
 {
+	SetSizingMode(DialogControl::SizingMode::expanding);
+
 	for (int i = 0; i < 18; i++)
 	{
 		m_painters.emplace_back(font);
@@ -560,7 +563,7 @@ static void drawPoint(float x, float y, float c, const SDL_Color& color, SDL_Sur
 	int32_t* buffer = static_cast<int32_t*>(surface->pixels);
 	unsigned char* data = reinterpret_cast<unsigned char*>(&buffer[static_cast<int>(x) + static_cast<int>(y) * surface->pitch / 4]);
 	unsigned char old_alpha = data[3];
-	unsigned char new_alpha = std::max(old_alpha, static_cast<unsigned char>(c * 255));
+	unsigned char new_alpha = std::max(old_alpha, static_cast<unsigned char>(c * 255.9));
 	data[0] = color.r;
 	data[1] = color.g;
 	data[2] = color.b;
@@ -689,12 +692,15 @@ void node::PlotWidget::ReDrawSurface()
 
 void node::PlotWidget::DrawData(SDL_Renderer* renderer)
 {
-	if (!m_data_texture)
+	int tex_w, tex_h;
+	SDL_QueryTexture(m_data_texture.GetTexture(), nullptr, nullptr, &tex_w, &tex_h);
+	SDL_Rect inner_rect = GetInnerRect();
+
+	if (!m_data_texture || inner_rect.w != tex_w || inner_rect.h != tex_h)
 	{
 		ReDrawSurface();
 		m_data_texture.SetTexture(SDLTexture{ SDL_CreateTextureFromSurface(renderer, m_data_surface.get()) });
 	}
-	SDL_Rect inner_rect = GetInnerRect();
 	SDL_RenderCopy(renderer, m_data_texture.GetTexture(), nullptr, &inner_rect);
 }
 

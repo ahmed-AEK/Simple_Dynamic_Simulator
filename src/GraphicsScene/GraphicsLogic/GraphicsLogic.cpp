@@ -70,7 +70,7 @@ void node::logic::GraphicsLogic::OnMouseMove(const model::Point& current_mouse_p
 MI::ClickEvent node::logic::GraphicsLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
     UNUSED_PARAM(current_mouse_point);
-    return MI::ClickEvent::NONE;
+    return MI::ClickEvent::CAPTURE_END;
 }
 
 

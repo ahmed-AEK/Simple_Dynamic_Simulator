@@ -53,7 +53,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
                 if (new_logic)
                 {
                     GetScene()->SetGraphicsLogic(std::move(new_logic));
-                    return MI::ClickEvent::CLICKED;
+                    return MI::ClickEvent::CAPTURE_START;
                 }
             }
             break;
@@ -68,7 +68,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
                 if (auto ptr = logic::LeafNetNodeDragLogic::TryCreate(*node, *GetScene(), *GetObjectsManager()))
                 {
                     GetScene()->SetGraphicsLogic(std::move(ptr));
-                    return MI::ClickEvent::CLICKED;
+                    return MI::ClickEvent::CAPTURE_START;
                 }
             }
             break;
@@ -97,7 +97,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         auto startEdgeSpace = model::Point{ space_rect.x, space_rect.y};
         auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene(), GetObjectsManager());
         GetScene()->SetGraphicsLogic(std::move(logic));
-        return MI::ClickEvent::CLICKED;
+        return MI::ClickEvent::CAPTURE_START;
     }
     return MI::ClickEvent::NONE;
 }

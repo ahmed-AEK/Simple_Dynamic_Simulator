@@ -31,7 +31,9 @@ private:
 
 	std::vector<NLEquation> m_equations;
 	std::vector<NLStatefulEquation> m_stateful_equations;
-	std::vector<FatAny> m_equations_states;
+	std::vector<FatAny> m_last_equations_states;
+	std::vector<FatAny> m_before_last_equation_states;
+	double m_last_state_time = 0;
 	opt::FlatMap m_current_state;
 	double m_current_time = 0;
 	nlopt::opt m_optimizer;

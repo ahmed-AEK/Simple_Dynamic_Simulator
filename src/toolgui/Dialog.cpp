@@ -52,12 +52,20 @@ void node::Dialog::AddControl(std::unique_ptr<DialogControl> control, int positi
 	if (position == -1 || static_cast<size_t>(position) >= m_controls.size())
 	{
 		m_controls.push_back(std::move(control));
+		if (m_controls.back()->GetSizingMode() == DialogControl::SizingMode::expanding)
+		{
+			m_var_height_elements++;
+		}
 	}
 	else
 	{
-		m_controls.insert(m_controls.begin() + position, std::move(control));
+		auto it = m_controls.insert(m_controls.begin() + position, std::move(control));
+		if (it->get()->GetSizingMode() == DialogControl::SizingMode::expanding)
+		{
+			m_var_height_elements++;
+		}
 	}
-
+	
 	ResizeToFitChildren();
 
 }
@@ -91,33 +99,58 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 		b_being_closed = false;
 	}
 
-	if (!b_being_dragged)
+	if (std::holds_alternative<TitleDrag>(m_dragData))
 	{
-		return;
-	}
+		auto& drag_data = std::get<TitleDrag>(m_dragData);
+		int x_distance = current_mouse_point.x - drag_data.drag_mouse_start_position.x;
+		int y_distance = current_mouse_point.y - drag_data.drag_mouse_start_position.y;
+		SDL_Rect new_rect{ drag_data.drag_edge_start_position.x + x_distance, drag_data.drag_edge_start_position.y + y_distance , GetRect().w, GetRect().h };
+		SDL_Rect title_rect = GetTitleBarRect();
+		if (new_rect.x + new_rect.w > GetScene()->GetRect().w)
+		{
+			new_rect.x = GetScene()->GetRect().w - new_rect.w;
+		}
+		if (new_rect.x < 0)
+		{
+			new_rect.x = 0;
+		}
+		if (new_rect.y + title_rect.h > GetScene()->GetRect().h)
+		{
+			new_rect.y = GetScene()->GetRect().h - title_rect.h;
+		}
+		if (new_rect.y < 0)
+		{
+			new_rect.y = 0;
+		}
 
-	int x_distance = current_mouse_point.x - m_drag_mouse_start_position.x;
-	int y_distance = current_mouse_point.y - m_drag_mouse_start_position.y;
-	SDL_Rect new_rect{ m_drag_edge_start_position.x + x_distance, m_drag_edge_start_position.y + y_distance , GetRect().w, GetRect().h};
-	SDL_Rect title_rect = GetTitleBarRect();
-	if (new_rect.x + new_rect.w > GetScene()->GetRect().w)
-	{
-		new_rect.x = GetScene()->GetRect().w - new_rect.w;
+		SetRect(new_rect);
 	}
-	if (new_rect.x < 0)
+	if (std::holds_alternative<ResizeDrag>(m_dragData))
 	{
-		new_rect.x = 0;
-	}
-	if (new_rect.y + title_rect.h > GetScene()->GetRect().h)
-	{
-		new_rect.y = GetScene()->GetRect().h - title_rect.h;
-	}
-	if (new_rect.y < 0)
-	{
-		new_rect.y = 0;
-	}
+		auto& drag_data = std::get<ResizeDrag>(m_dragData);
+		SDL_Rect old_Rect = GetRect();
+		SDL_Rect new_Rect = old_Rect;
+		switch (drag_data.mode)
+		{
+		case ResizeDrag::DragMode::grip:
+		{
+			new_Rect.w = std::max(current_mouse_point.x - old_Rect.x, drag_data.min_size.x);
+			new_Rect.h = std::max(current_mouse_point.y - old_Rect.y, drag_data.min_size.y);
+			break;
+		}
+		case ResizeDrag::DragMode::top:
+		{
+			new_Rect.h = std::max(drag_data.drag_edge_start_position.y - current_mouse_point.y, drag_data.min_size.y);
+			new_Rect.y = drag_data.drag_edge_start_position.y - new_Rect.h;
+			break;
+		}
+		}
 
-	SetRect(new_rect);
+		if (new_Rect.w != old_Rect.w || new_Rect.h != old_Rect.h)
+		{
+			SetRect(new_Rect);
+		}
+	}
 }
 
 MI::ClickEvent node::Dialog::OnLMBDown(const SDL_Point& current_mouse_point)
@@ -134,13 +167,42 @@ MI::ClickEvent node::Dialog::OnLMBDown(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CLICKED;
 	}
 
+	auto rect = GetRect();
+	if (m_resizable)
+	{
+		if (current_mouse_point.y >= rect.y && current_mouse_point.y <= (rect.y + top_resize_grip_height))
+		{
+			m_dragData = ResizeDrag{
+				SDL_Point{rect.x + rect.w, rect.y + rect.h},
+				CalculateMinSize(),
+				ResizeDrag::DragMode::top
+			};
+			return MI::ClickEvent::CAPTURE_START;
+		}
+	}
+
 	const auto& banner_rect = GetTitleBarRect();
 	if (SDL_PointInRect(&current_mouse_point, &banner_rect))
 	{
-		m_drag_edge_start_position = SDL_Point{ GetRect().x, GetRect().y };
-		m_drag_mouse_start_position = current_mouse_point;
-		b_being_dragged = true;
+		m_dragData = TitleDrag{
+			 SDL_Point{ GetRect().x, GetRect().y },
+			 current_mouse_point
+		};
 		return MI::ClickEvent::CAPTURE_START;
+	}
+	
+	if (m_resizable)
+	{
+		SDL_Rect ResizeGripRect = GetResizeGripRect();
+		if (SDL_PointInRect(&current_mouse_point, &ResizeGripRect))
+		{
+			m_dragData = ResizeDrag{
+				SDL_Point{rect.x + rect.w, rect.y + rect.h},
+				CalculateMinSize(),
+				ResizeDrag::DragMode::grip
+			};
+			return MI::ClickEvent::CAPTURE_START;
+		}
 	}
 
 	return MI::ClickEvent::NONE;
@@ -158,9 +220,9 @@ MI::ClickEvent node::Dialog::OnLMBUp(const SDL_Point& current_mouse_point)
 			return MI::ClickEvent::CLICKED;
 		}
 	}
-	if (b_being_dragged)
+	if (BeingDragged())
 	{
-		b_being_dragged = false;
+		m_dragData = std::monostate{};
 		return MI::ClickEvent::CAPTURE_END;
 	}
 	return MI::ClickEvent::NONE;
@@ -179,6 +241,14 @@ node::Widget* node::Dialog::OnGetInteractableAtPoint(const SDL_Point& point)
 		if (auto ptr = m_toolbar->GetInteractableAtPoint(point))
 		{
 			return ptr;
+		}
+	}
+	if (m_resizable)
+	{
+		SDL_Rect ResizeGripRect = GetResizeGripRect();
+		if (SDL_PointInRect(&point, &ResizeGripRect))
+		{
+			return this;
 		}
 	}
 	for (auto&& control : m_controls)
@@ -201,6 +271,8 @@ node::Widget* node::Dialog::OnGetInteractableAtPoint(const SDL_Point& point)
 void node::Dialog::OnSetRect(const SDL_Rect& rect)
 {
 	Widget::OnSetRect(rect);
+	SDL_Point min_size = CalculateMinSize();
+	m_excess_height = GetRect().h - min_size.y;
 	RepositionControls();
 	RepositionButtons();
 }
@@ -220,8 +292,15 @@ void node::Dialog::RepositionControls()
 	for (auto&& control : m_controls)
 	{
 		const SDL_Rect& old_rect = control->GetRect();
-		control->SetRect({ x, y, old_rect.w, old_rect.h });
-		y += old_rect.h + ControlsMargin;
+		if (control->GetSizingMode() == DialogControl::SizingMode::expanding)
+		{
+			control->SetRect({ x, y, GetRect().w, control->GetSizeHint().h + static_cast<int>(m_excess_height / m_var_height_elements) });
+		}
+		else
+		{
+			control->SetRect({ x, y, old_rect.w, old_rect.h });
+		}
+		y += control->GetRect().h + ControlsMargin;
 	}
 	
 }
@@ -249,32 +328,14 @@ void node::Dialog::RepositionButtons()
 
 void node::Dialog::ResizeToFitChildren()
 {
-	int width = 0;
-	int height = ControlsMargin + GetTitleBarRect().h;
-	if (m_toolbar)
+	SDL_Point min_size = CalculateMinSize();
+	int current_width = GetRect().w;
+	int current_height = GetRect().h;
+	if (current_width < min_size.x || current_height << min_size.y)
 	{
-		height += ToolBar::height;
+		SetRect({ GetRect().x, GetRect().y, std::max(min_size.x, current_width), std::max(min_size.y, current_height) });
 	}
-	for (const auto& control : m_controls)
-	{
-		height += control->GetRect().h + ControlsMargin;
-		width = std::max(width, control->GetRect().w);
-	}
-	if (m_buttons.size())
-	{
-		height += ButtonHeight + ButtonsMargin;
-	}
-	width += ControlsMargin * 2; // pad both sides
-	int buttons_width = ButtonsMargin; // pad left
-	for (const auto& button : m_buttons)
-	{
-		buttons_width += button->GetRect().w + ButtonsMargin;
-	}
-	width = std::max(width, buttons_width);
-	width = std::max(width, MinWidth);
-	SetRect({ GetRect().x, GetRect().y, width, height });
-	RepositionControls();
-	RepositionButtons();
+	m_excess_height = GetRect().h - min_size.y;
 }
 
 void node::Dialog::DrawTitle(SDL_Renderer* renderer, const SDL_Point& start )
@@ -298,7 +359,7 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 	{
 		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	}
-	else if (b_mouse_on_close && !b_being_dragged)
+	else if (b_mouse_on_close && !BeingDragged())
 	{
 		SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255);
 	}
@@ -309,7 +370,7 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect)
 	SDL_RenderFillRect(renderer, &base);
 
 	const int dist_from_side = 8;
-	if (b_mouse_on_close && !b_being_dragged)
+	if (b_mouse_on_close && !BeingDragged())
 	{
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	}
@@ -335,6 +396,21 @@ void node::Dialog::DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect)
 	inner_rect.h -= 2;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &inner_rect);
+
+	if (m_resizable)
+	{
+		// draw resize handle in bottom right corner
+		std::array<SDL_Vertex, 3> arrow_verts =
+			std::array<SDL_Vertex, 3>{
+			SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w - 20), static_cast<float>(inner_rect.y + inner_rect.h)
+			, {0,0,0,0}, {0,0} },
+				SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h),
+				{0,0,0,0}, {0,0} },
+				SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h - 20)
+				, {0,0,0,0}, {0,0} },
+		};
+		SDL_RenderGeometry(renderer, nullptr, arrow_verts.data(), 3, nullptr, 0);
+	}
 }
 
 SDL_Rect node::Dialog::GetTitleBarRect() const
@@ -355,6 +431,46 @@ SDL_Rect node::Dialog::GetXButtonRect() const
 {
 	const auto& this_rect = GetRect();
 	return SDL_Rect{ this_rect.x + this_rect.w - 40, this_rect.y + 5, 30, 30 };
+}
+
+SDL_Rect node::Dialog::GetResizeGripRect() const
+{
+	auto&& rect = GetRect();
+	return { rect.x + rect.w - 20, rect.y + rect.h - 20, 20, 20 };
+}
+
+bool node::Dialog::BeingDragged() const
+{
+	return !std::holds_alternative<std::monostate>(m_dragData);
+}
+
+SDL_Point node::Dialog::CalculateMinSize() const
+{
+	int min_width = 0;
+	int min_height = ControlsMargin + GetTitleBarRect().h;
+	if (m_toolbar)
+	{
+		min_height += ToolBar::height;
+	}
+	for (const auto& control : m_controls)
+	{
+		SDL_Rect size_hint = control->GetSizeHint();
+		min_height += size_hint.h + ControlsMargin;
+		min_width = std::max(min_width, size_hint.w);
+	}
+	if (m_buttons.size())
+	{
+		min_height += ButtonHeight + ButtonsMargin;
+	}
+	min_width += ControlsMargin * 2; // pad both sides
+	int buttons_width = ButtonsMargin; // pad left
+	for (const auto& button : m_buttons)
+	{
+		buttons_width += button->GetRect().w + ButtonsMargin;
+	}
+	min_width = std::max(min_width, buttons_width);
+	min_width = std::max(min_width, MinWidth);
+	return { min_width, min_height };
 }
 
 node::DialogButton::DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Scene* scene)
@@ -413,4 +529,9 @@ MI::ClickEvent node::DialogButton::OnLMBUp(const SDL_Point& current_mouse_point)
 		return MI::ClickEvent::CLICKED;
 	}
 	return MI::ClickEvent::NONE;
+}
+
+node::DialogControl::DialogControl(const SDL_Rect& rect, Scene* parent)
+	:Widget{ rect, parent }, m_size_hint{ rect }
+{
 }

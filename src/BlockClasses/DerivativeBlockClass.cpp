@@ -64,14 +64,7 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 			if (old_state.contains<std::array<double, 3>>())
 			{
 				const auto& arr = old_state.get<const std::array<double, 3>>();
-				if (arr[0] == t)
-				{
-					out[0] = arr[2];
-				}
-				else
-				{
-					out[0] = (in[0] - arr[1]) / (t - arr[0]);
-				}
+				out[0] = (in[0] - arr[1]) / (t - arr[0]);
 			}
 			else
 			{

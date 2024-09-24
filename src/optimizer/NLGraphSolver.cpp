@@ -87,8 +87,8 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
                 const double new_value = output_buffer[i];
-                const auto old_value = state.get(output_ids[i]);
-                penalty += (new_value - old_value) * (new_value - old_value);
+                const auto estimated_value = state.get(output_ids[i]);
+                penalty += (new_value - estimated_value) * (new_value - estimated_value);
             }
             break;
         }
@@ -104,15 +104,18 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
                 const auto val = state.get(input_ids[i]);
                 input_buffer[i] = val;
             }
-            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, m_equations_states[n]);
+
+            std::vector<FatAny>& equation_states =  (m_current_time > m_last_state_time) ? m_last_equations_states : m_before_last_equation_states;
+
+            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, equation_states[n]);
             auto output_buffer = eq.get_output_buffer();
             auto output_ids = eq.get_output_ids();
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
                 const double new_value = output_buffer[i];
-                const auto old_value = state.get(output_ids[i]);
-                penalty += (new_value - old_value) * (new_value - old_value);
+                const auto estimated_value = state.get(output_ids[i]);
+                penalty += (new_value - estimated_value) * (new_value - estimated_value);
             }
             break;
         }
@@ -123,6 +126,9 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 
 void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
 {
+    m_last_state_time = m_current_time;
+    std::move(m_last_equations_states.begin(), m_last_equations_states.end(), m_before_last_equation_states.begin());
+
     for (auto element : m_stateful_equations | boost::adaptors::indexed())
     {
         auto& eq = element.value();
@@ -135,7 +141,7 @@ void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
             const auto val = state.get(input_ids[i]);
             input_buffer[i] = val;
         }
-        m_equations_states[n] = eq.Apply(m_current_time, m_equations_states[n]);
+        m_last_equations_states[n] = eq.Apply(m_current_time, m_before_last_equation_states[n]);
     }
 }
 
@@ -164,7 +170,8 @@ void opt::NLGraphSolver_impl::Initialize()
         std::transform(range.begin(), range.end(), std::back_inserter(remaining_output_ids),
             [](const auto& item) { return item; });
     }
-    m_equations_states.resize(m_stateful_equations.size());
+    m_last_equations_states.resize(m_stateful_equations.size());
+    m_before_last_equation_states.resize(m_stateful_equations.size());
 
     FillInitialSolveEqns(remaining_output_ids);
     for (const auto& id: m_initial_solve_output_ids)
@@ -321,7 +328,10 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
                 const auto val = state.get(input_ids[i]);
                 input_buffer[i] = val;
             }
-            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, m_equations_states[n]);
+
+            std::vector<FatAny>& equation_states = (m_current_time > m_last_state_time) ? m_last_equations_states : m_before_last_equation_states;
+
+            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, equation_states[n]);
             auto output_buffer = eq.get_output_buffer();
             auto output_ids = eq.get_output_ids();
             assert(output_buffer.size() == output_ids.size());
