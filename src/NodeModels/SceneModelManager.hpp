@@ -4,11 +4,13 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/Observer.hpp"
 #include <variant>
+#include <stack>
 
 namespace node
 {
 
 class BlockClassesManager;
+class SceneModelManager;
 
 struct LeafNodeMovedReport
 {
@@ -39,6 +41,7 @@ struct NetModificationReport
 enum class SceneModificationType
 {
 	BlockAdded,
+	BlockAddedWithConnections,
 	BlockRemoved,
 	BlockMoved,
 	NetUpdated,
@@ -46,14 +49,19 @@ enum class SceneModificationType
 	BlockPropertiesAndSocketsModified,
 };
 
+struct BlockAddWithConnectionsReport
+{
+	model::BlockModelConstRef block;
+	std::span<const model::SocketNodeConnection> connections;
+};
+
 struct SceneModification
 {
 	using type_t = SceneModificationType;
-	using data_t = std::variant<model::BlockModelConstRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport, std::reference_wrapper<NetModificationReport>>;
+	using data_t = std::variant<model::BlockModelConstRef, model::BlockId, model::NetModelRef, LeafNodeMovedReport, std::reference_wrapper<NetModificationReport>, BlockAddWithConnectionsReport>;
 	SceneModificationType type;
 	data_t data;
 };
-
 
 struct NetModificationRequest
 {
@@ -113,6 +121,24 @@ struct NetModificationRequest
 	std::vector<SocketConnectionRequest> added_connections;
 };
 
+class ModelAction
+{
+public:
+	bool Undo(SceneModelManager& manager) { return DoUndo(manager); }
+	bool Redo(SceneModelManager& manager) { return DoRedo(manager);  }
+
+	ModelAction() = default;
+	virtual ~ModelAction() = default;
+	ModelAction(const ModelAction&) = default;
+	ModelAction(ModelAction&&) = default;
+	ModelAction& operator=(const ModelAction&) = default;
+	ModelAction& operator=(ModelAction&&) = default;
+protected:
+	virtual bool DoUndo(SceneModelManager& manager) = 0;
+	virtual bool DoRedo(SceneModelManager& manager) = 0;
+
+};
+
 class SceneModelManager : public MultiPublisher<SceneModification>
 {
 public:
@@ -127,12 +153,20 @@ public:
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
 	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);
 
-	void AddNewNet(model::NetModel&& net);
 	void UpdateNet(NetModificationRequest& update_request);
 	model::NodeSceneModel& GetModel() { return *m_scene; }
 	const model::NodeSceneModel& GetModel() const { return *m_scene; }
+
+	bool CanUndo() const { return m_undo_stack.size(); }
+	bool CanRedo() const { return m_redo_stack.size(); }
+	void Undo();
+	void Redo();
+	void PushAction(std::unique_ptr<ModelAction> action);
+
 private:
 	std::shared_ptr<model::NodeSceneModel> m_scene;
+	std::stack<std::unique_ptr<ModelAction>> m_undo_stack;
+	std::stack<std::unique_ptr<ModelAction>> m_redo_stack;
 };
 
 }

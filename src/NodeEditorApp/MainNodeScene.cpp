@@ -134,7 +134,13 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     toolbar->AddSeparator();
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U", 
+        [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return !this->CanUndo(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", 
+        [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return !this->CanRedo(); }));
+    toolbar->AddSeparator();
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", 
+        [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
         [this]() { return this->m_sim_mgr.IsSimulationRunning(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); }, 
@@ -368,6 +374,38 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     {
         OpenPropertiesDialog(block);
     }
+}
+
+void node::MainNodeScene::OnUndo()
+{
+    SDL_Log("Undoed!");
+    if (!m_graphicsObjectsManager->GetSceneModel()->CanUndo())
+    {
+        assert(false);
+        return;
+    }
+    m_graphicsObjectsManager->GetSceneModel()->Undo();
+}
+
+void node::MainNodeScene::OnRedo()
+{
+    SDL_Log("Redoed!");
+    if (!m_graphicsObjectsManager->GetSceneModel()->CanRedo())
+    {
+        assert(false);
+        return;
+    }
+    m_graphicsObjectsManager->GetSceneModel()->Redo();
+}
+
+bool node::MainNodeScene::CanUndo()
+{
+    return m_graphicsObjectsManager->GetSceneModel()->CanUndo();
+}
+
+bool node::MainNodeScene::CanRedo()
+{
+    return m_graphicsObjectsManager->GetSceneModel()->CanRedo();
 }
 
 node::MainNodeScene::MainNodeScene(SDL_Rect rect, node::Application* parent)

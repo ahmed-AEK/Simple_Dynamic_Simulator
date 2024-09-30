@@ -21,7 +21,7 @@ public:
 	const std::string& GetName() const noexcept { return m_name; }
 	void Draw(SDL_Renderer* renderer) override;
 protected:
-	virtual bool IsActive() { return false; }
+	virtual bool IsDisabled() { return false; }
 	void OnMouseOut() override final;
 	void OnMouseIn() override final;
 	virtual void OnButonClicked();
@@ -71,7 +71,7 @@ public:
 		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return false; });
 	void OnButonClicked() override;
 protected:
-	bool IsActive() override { return m_isActive(); }
+	bool IsDisabled() override { return m_isActive(); }
 private:
 	std::function<void()> m_action;
 	std::function<bool()> m_isActive;

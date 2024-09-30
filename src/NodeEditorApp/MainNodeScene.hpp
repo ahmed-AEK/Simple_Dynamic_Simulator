@@ -60,9 +60,15 @@ private:
 
     void InitializeTools();
     void InitializeSidePanel(node::GraphicsScene* gScene);
+    
     void OpenPropertiesDialog();
     void OpenPropertiesDialog(BlockObject& object);
     void OpenBlockDialog(BlockObject& block);
+
+    void OnUndo();
+    void OnRedo();
+    bool CanUndo();
+    bool CanRedo();
 
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::shared_ptr<GraphicsObjectsManager> m_graphicsObjectsManager;

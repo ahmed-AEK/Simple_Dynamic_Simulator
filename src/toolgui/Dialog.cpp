@@ -101,7 +101,7 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 
 	if (std::holds_alternative<TitleDrag>(m_dragData))
 	{
-		auto& drag_data = std::get<TitleDrag>(m_dragData);
+		const auto& drag_data = std::get<TitleDrag>(m_dragData);
 		int x_distance = current_mouse_point.x - drag_data.drag_mouse_start_position.x;
 		int y_distance = current_mouse_point.y - drag_data.drag_mouse_start_position.y;
 		SDL_Rect new_rect{ drag_data.drag_edge_start_position.x + x_distance, drag_data.drag_edge_start_position.y + y_distance , GetRect().w, GetRect().h };
@@ -127,7 +127,7 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 	}
 	if (std::holds_alternative<ResizeDrag>(m_dragData))
 	{
-		auto& drag_data = std::get<ResizeDrag>(m_dragData);
+		const auto& drag_data = std::get<ResizeDrag>(m_dragData);
 		SDL_Rect old_Rect = GetRect();
 		SDL_Rect new_Rect = old_Rect;
 		switch (drag_data.mode)

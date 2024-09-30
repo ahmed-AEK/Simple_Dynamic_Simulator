@@ -99,7 +99,10 @@ struct std::hash<node::model::SocketUniqueId>
 {
 	std::size_t operator()(const node::model::SocketUniqueId& k) const
 	{
-		return k.block_id.value ^ k.socket_id.value;
+		size_t hash = 23;
+		hash = hash * 31 + k.block_id.value;
+		hash = hash * 31 + k.socket_id.value;
+		return hash;
 	}
 };
 

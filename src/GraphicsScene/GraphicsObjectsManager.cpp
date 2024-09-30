@@ -57,6 +57,35 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         GetScene()->AddSelection(ptr->GetFocusHandlePtr());
         break;
     }
+    case SceneModification::type_t::BlockAddedWithConnections:
+    {
+        auto& report = std::get<BlockAddWithConnectionsReport>(e.data);
+        auto& model_ref = report.block;
+        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, std::move(styler));
+        auto* ptr = obj.get();
+        GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
+        m_blocks.emplace(model_ref.get().GetId(), ptr);
+        for (auto& conn : report.connections)
+        {
+            auto socket_optional = ptr->GetSocketById(conn.socketId.socket_id);
+            assert(socket_optional);
+            if (!socket_optional)
+            {
+                continue;
+            }
+            auto node_it = m_net_nodes.find(conn.NodeId);
+            assert(node_it != m_net_nodes.end());
+            if (node_it == m_net_nodes.end())
+            {
+                continue;
+            }
+            node_it->second->SetConnectedSocket(&(socket_optional->get()));
+        }
+        GetScene()->ClearCurrentSelection();
+        GetScene()->AddSelection(ptr->GetFocusHandlePtr());
+        break;
+    }
     case SceneModificationType::BlockRemoved:
     {
         auto model_id = std::get<model::BlockId>(e.data);

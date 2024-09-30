@@ -19,7 +19,7 @@ public:
 	void OnButonClicked() override;
 	void SetActive(bool value = true) { b_active = value; }
 protected:
-	bool IsActive() override { return b_active; }
+	bool IsDisabled() override { return b_active; }
 private:
 	ScopeDisplayToolsManager& m_manager;
 	bool b_active = false;

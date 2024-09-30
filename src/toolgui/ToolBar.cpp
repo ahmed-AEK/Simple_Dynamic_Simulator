@@ -170,7 +170,7 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 		SDL_Color color_outer = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255 };
 		const int radius = 10;
 		SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color color_inner = IsActive() ? SDL_Color{230, 230, 230, 255} : inactive_color;
+		SDL_Color color_inner = IsDisabled() ? SDL_Color{230, 230, 230, 255} : inactive_color;
 		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner, 
 			*m_painter_outer, *m_painter_inner);
 	}

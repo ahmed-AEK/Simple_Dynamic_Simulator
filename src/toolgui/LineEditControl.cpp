@@ -44,7 +44,6 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(const SDL_Point& current_mouse_p
 	}
 
 	int click_pos_x = current_mouse_point.x - GetRect().x - 1;
-	size_t new_cursor_pos = m_cursor_position;
 	int extent = 0;
 	int count = 0;
 	if (TTF_MeasureText(m_painter.GetFont(), m_value.c_str(), click_pos_x, &extent, &count))
@@ -52,7 +51,7 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(const SDL_Point& current_mouse_p
 		// failed for some reason
 		return MI::ClickEvent::CLICKED;
 	}
-	new_cursor_pos = count;
+	size_t new_cursor_pos = count;
 
 	if (count && static_cast<size_t>(count) < m_value.size())
 	{

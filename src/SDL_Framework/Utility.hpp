@@ -42,8 +42,13 @@ class RoundRectPainter
 public:
     RoundRectPainter() {}
 
-    RoundRectPainter(const RoundRectPainter&) noexcept {}
-    RoundRectPainter& operator=(const RoundRectPainter&) noexcept { return *this;}
+    RoundRectPainter(const RoundRectPainter& other) noexcept
+        :stored_color{other.stored_color}, stored_radius{other.stored_radius} {}
+    RoundRectPainter& operator=(const RoundRectPainter& other) noexcept { 
+        stored_color = other.stored_color;
+        stored_radius = other.stored_radius;
+        return *this;
+    }
 
     RoundRectPainter(RoundRectPainter&& other) noexcept = default;
     RoundRectPainter& operator=(RoundRectPainter&& other) noexcept = default;
