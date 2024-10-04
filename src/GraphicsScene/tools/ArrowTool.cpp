@@ -10,11 +10,21 @@
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
 #include "GraphicsLogic/VSegmentDragLogic.hpp"
-
+#include "BlockResizeObject.hpp"
 
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 {
     node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
+
+    if (!current_hover || current_hover->GetObjectType() != ObjectType::interactive)
+    {
+        if (m_current_block_resize_object)
+        {
+            GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
+            m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
+        }
+    }
+
     if (current_hover)
     {
         // selection code
@@ -38,6 +48,20 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
                 m_last_clicked_block = current_hover->GetFocusHandlePtr();
             }
             auto* block_obj = static_cast<BlockObject*>(current_hover);
+
+            if (m_current_block_resize_object)
+            {
+                GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
+                m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
+            }
+
+            auto resizer = block_obj->CreateResizeHandles();
+            if (resizer)
+            {
+                m_current_block_resize_object = resizer->GetMIHandlePtr();
+                GetScene()->AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
+            }
+
             auto obj_rect = current_hover->GetSpaceRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, 
                 *block_obj, GetScene(), GetObjectsManager());
@@ -139,5 +163,14 @@ bool node::ArrowTool::InternalSelectObject(GraphicsObject* object)
     {
         scene->ClearCurrentSelection();
         return false;
+    }
+}
+
+void node::ArrowTool::OnExit()
+{
+    if (auto resizer = m_current_block_resize_object.GetObjectPtr())
+    {
+        GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
+        m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
     }
 }

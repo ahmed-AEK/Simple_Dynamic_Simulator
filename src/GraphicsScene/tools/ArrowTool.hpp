@@ -22,9 +22,12 @@ public:
 	MI::ClickEvent OnLMBUp(const model::Point& p) override;
 	void OnMouseMove(const model::Point& p) override;
 	bool InternalSelectObject(GraphicsObject* object);
+	void OnExit() override; // when tool is changed
 private:
 	int64_t m_last_click_point = 0;
 	HandlePtr<GraphicsObject> m_last_clicked_block = nullptr;
 	bool b_second_click_in_progress = false;
+	
+	HandlePtr<GraphicsObject> m_current_block_resize_object;
 };
 }

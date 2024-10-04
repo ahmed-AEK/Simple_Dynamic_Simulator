@@ -57,6 +57,7 @@ public:
     static constexpr int BlockLayer = 100;
     static constexpr int SegmentLayer = 200;
     static constexpr int NetNodeLayer = 300;
+    static constexpr int InteractiveLayer = 400;
 
     GraphicsScene(const SDL_Rect& rect, node::Scene* parent);
     ~GraphicsScene() override;

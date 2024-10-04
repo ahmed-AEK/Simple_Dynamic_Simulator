@@ -30,6 +30,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 
 currently only the solver has full test coverage, the GUI has no tests, but it works.
 
+testing is done using ctest, just run `ctest .` in the appropriate build directory.
 ### supported platforms
 - Windows on MSVC
 - Linux using GCC
@@ -50,4 +51,6 @@ then you need to manually copy the `assets` folder to the folder containing the 
 
 License
 -----------
-MIT license (@ 2024 ahmed-AEK)
+GPL-3.0 license (@ 2024 ahmed-AEK)
+
+This prevents re-packaging and selling the software, but it can still use commercial proprietary plugins.

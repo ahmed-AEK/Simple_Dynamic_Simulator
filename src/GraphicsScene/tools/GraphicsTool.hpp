@@ -22,7 +22,7 @@ public:
 	virtual void OnMouseEnter(const model::Point& p) { UNUSED_PARAM(p); }
 	virtual void OnMouseLeave(const model::Point& p) { UNUSED_PARAM(p); }
 	virtual void OnDraw(SDL_Renderer* renderer) { UNUSED_PARAM(renderer); }
-	virtual void OnStart() {}; // when tool just started
+	virtual void OnStart() {}; // when tool just changed
 	virtual void OnExit() {}; // when tool is changed
 	virtual void OnCancel() {}; // when escape is pressed
 protected:

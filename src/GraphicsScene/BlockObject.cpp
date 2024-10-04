@@ -10,6 +10,7 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsScene/GraphicsScene.hpp"
+#include "GraphicsScene/BlockResizeObject.hpp"
 
 std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {
@@ -119,9 +120,32 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
     }
 }
 
+std::unique_ptr<node::BlockResizeObject> node::BlockObject::CreateResizeHandles()
+{
+    model::Rect resizer_rect = GetSpaceRect();
+    resizer_rect.x -= 5;
+    resizer_rect.y -= 5;
+    resizer_rect.w += 10;
+    resizer_rect.h += 10;
+
+    auto resizer = std::make_unique<BlockResizeObject>(GetMIHandlePtr(), resizer_rect, GetScene());
+    m_resizer = resizer->GetMIHandlePtr();
+    return resizer;
+}
+
+void node::BlockObject::HideResizeHandles()
+{
+    m_resizer = nullptr;
+}
+
+
 void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
 {
     GraphicsObject::OnSetSpaceRect(rect);
+    if (m_resizer)
+    {
+        m_resizer->SetSpaceOrigin({ rect.x - 5, rect.y - 5 });
+    }
     RePositionSockets();
 }
 
@@ -138,10 +162,9 @@ void node::BlockObject::RePositionSockets()
 
 node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::Point& point)
 {
-    node::GraphicsObject* hover = nullptr;
     for (auto&& sock : m_sockets)
     {
-        hover = sock->GetInteractableAtPoint(point);
+        node::GraphicsObject* hover = sock->GetInteractableAtPoint(point);
         if (hover)
         {
             return hover;

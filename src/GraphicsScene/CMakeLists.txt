@@ -29,6 +29,7 @@ GraphicsLogic/NetNodeDeleteLogic.cpp    GraphicsLogic/NetNodeDeleteLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp
+BlockResizeObject.hpp BlockResizeObject.cpp
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")

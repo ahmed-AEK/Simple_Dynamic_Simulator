@@ -16,6 +16,7 @@ namespace model
     class BlockModel;
 }
 class BlockStyler;
+class BlockResizeObject;
 
 class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
@@ -35,6 +36,8 @@ public:
     void UpdateStyler(const model::BlockModel& model);
     const BlockStyler& GetStyler() const { return *m_styler; }
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
+    std::unique_ptr<BlockResizeObject> CreateResizeHandles();
+    void HideResizeHandles();
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
     void OnSetSpaceRect(const model::Rect& rect) override;
@@ -46,6 +49,7 @@ private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;
     std::unique_ptr<BlockStyler> m_styler;
+    HandlePtr<GraphicsObject> m_resizer;
 };
 
 };
