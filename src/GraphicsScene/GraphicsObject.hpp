@@ -27,19 +27,20 @@ enum class ObjectType
     OBJECTTYPE_COUNT
 };
 
-class IGraphicsScene;
+class GraphicsScene;
 
 class GraphicsObject;
 using GraphicsObjectMouseInteractable = MI::MouseInteractable<GraphicsObject, model::Rect, model::Point>;
+class SpaceScreenTransformer;
 
 class GRAPHICSSCENE_API GraphicsObject: protected GraphicsObjectMouseInteractable
 {
     friend GraphicsObjectMouseInteractable;
 public:
-    GraphicsObject(model::Rect sceneRect, ObjectType type, IGraphicsScene* scene);
+    GraphicsObject(model::Rect sceneRect, ObjectType type, GraphicsScene* scene = nullptr);
     virtual ~GraphicsObject();
 
-    virtual void Draw(SDL_Renderer* renderer) = 0;
+    virtual void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) = 0;
 
     ObjectType GetObjectType() const { return m_obj_type; };
 
@@ -49,10 +50,12 @@ public:
     void SetSpaceOrigin(const model::Point& p);
     virtual void UpdateRect();
 
-    void setScene(IGraphicsScene* scene);
     node::HandlePtr<GraphicsObject> GetFocusHandlePtr();
-    IGraphicsScene* GetScene() const { return m_pScene; }
+    GraphicsScene* GetScene() const { return m_pScene; }
+    void SetScene(GraphicsScene* scene);
 
+    void SetSelected(bool value);
+    bool IsSelected() const { return b_selected; }
     bool isSelectable() const { return b_selectable; }
     bool isDraggable() const { return b_draggable; }
     bool isAligned() const { return b_aligned; }
@@ -71,14 +74,17 @@ protected:
     virtual GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
     virtual void OnSetSpaceRect(const model::Rect& rect);
     virtual void OnUpdateRect();
+    virtual void OnSelectChange() {}
+    virtual void OnSceneChange() {}
 
     bool b_selectable = true;
     bool b_draggable = true;
     bool b_aligned = true;
     bool b_isVisible = true;
 private:
+    bool b_selected = false;
     ObjectType m_obj_type;
-    IGraphicsScene* m_pScene;
+    GraphicsScene* m_pScene;
     node::HandleOwnigPtr<GraphicsObject> m_focusHandle = node::HandleAllocator<GraphicsObject>::CreateHandle(this); 
 };
 

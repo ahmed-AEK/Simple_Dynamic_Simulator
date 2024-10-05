@@ -1,35 +1,25 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "GraphicsScene/BlockObject.hpp"
-#include "GraphicsScene/IGraphicsScene.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
 #include <utility>
 
-class GraphicsSceneMock: public node::IGraphicsScene {
-public:
-	MOCK_METHOD(node::SpaceScreenTransformer&, GetSpaceScreenTransformer, (), (const,override));
-	MOCK_METHOD(void, InvalidateRect, (), (override));
-	MOCK_METHOD(bool, IsObjectSelected, (const node::GraphicsObject&), (const, override));
-};
 
 using ::testing::ReturnRef;
 using ::testing::Return;
 
 TEST(testBlockObject, testCreate)
 {
-	GraphicsSceneMock mockScene;
-
-	node::BlockObject block(&mockScene);
+	node::BlockObject block{};
 
 	auto ScreenRect = block.GetSpaceRect();
 	EXPECT_EQ(ScreenRect.x, 100);
 	EXPECT_EQ(ScreenRect.y, 100);
 	EXPECT_EQ(ScreenRect.w, 100);
 	EXPECT_EQ(ScreenRect.h, 100);
-
 }
 
 TEST(testBlockObject, testAddSocket)

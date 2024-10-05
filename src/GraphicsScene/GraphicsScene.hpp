@@ -3,7 +3,6 @@
 #include "GraphicsScene/GraphicsScene_exports.h"
 #include "toolgui/Widget.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include "GraphicsScene/IGraphicsScene.hpp"
 #include <vector>
 #include <span>
 #include "GraphicsScene/tools/GraphicsTool.hpp"
@@ -22,7 +21,6 @@ namespace logic
 class BlockObject;
 class BlockSocketObject;
 class GraphicsObject;
-class IGraphicsSceneController;
 class Scene;
 class BlockStyler;
 
@@ -43,7 +41,7 @@ struct BlockObjectDropped
     const SDL_Point& p;
 };
 
-class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::IGraphicsScene, public node::SinglePublisher<BlockObjectDropped>
+class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::SinglePublisher<BlockObjectDropped>
 {
 public:
     enum class CAPTURE_MODE
@@ -74,15 +72,14 @@ public:
 
     void SetSpaceRect(const model::Rect& rect);
     const model::Rect& GetSpaceRect() const noexcept;
-    void InvalidateRect() override;
 
     std::span<const HandlePtr<GraphicsObject>> GetCurrentSelection() const;
     std::span<HandlePtr<GraphicsObject>> GetCurrentSelection();
     void AddSelection(HandlePtr<GraphicsObject> handle);
-    bool IsObjectSelected(const GraphicsObject& obj) const override;
+    bool IsObjectSelected(const GraphicsObject& obj) const;
     void ClearCurrentSelection();
 
-    const SpaceScreenTransformer& GetSpaceScreenTransformer() const override;
+    const SpaceScreenTransformer& GetSpaceScreenTransformer() const;
     model::Point QuantizePoint(const model::Point& p);
 
     void Draw(SDL_Renderer* renderer) override;

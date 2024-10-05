@@ -10,7 +10,6 @@ namespace node {
 struct NetObject;
 class NetSegment;
 class NetNode;
-class IGraphicsScene;
 class BlockSocketObject;
 
 
@@ -18,8 +17,8 @@ constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
-	explicit NetNode(const model::Point& center, IGraphicsScene* scene = nullptr);
-	virtual void Draw(SDL_Renderer* renderer) override;
+	explicit NetNode(const model::Point& center, GraphicsScene* scene = nullptr);
+	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 	const model::Point& getCenter() noexcept { return m_centerPoint; }
 	void setSegment(NetSegment* segment, model::ConnectedSegmentSide side);
 	NetSegment* getSegment(model::ConnectedSegmentSide side)
@@ -56,8 +55,8 @@ class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
 	explicit NetSegment(const model::NetSegmentOrientation& orientation,
-	NetNode* startNode = nullptr, NetNode* endNode = nullptr, IGraphicsScene* scene = nullptr);
-	virtual void Draw(SDL_Renderer* renderer) override;
+	NetNode* startNode = nullptr, NetNode* endNode = nullptr, GraphicsScene* scene = nullptr);
+	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 	NetNode* getStartNode() noexcept { return m_startNode; }
 	NetNode* getEndNode() noexcept { return m_endNode; }
 	void Connect(NetNode* start, NetNode* end, const model::NetSegmentOrientation& orientation);

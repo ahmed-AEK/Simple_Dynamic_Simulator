@@ -6,6 +6,7 @@
 namespace node
 {
 class BlockObject;
+class BlockResizeObject;
 
 struct BlockDoubleClickedEvent
 {
@@ -24,6 +25,8 @@ public:
 	bool InternalSelectObject(GraphicsObject* object);
 	void OnExit() override; // when tool is changed
 private:
+	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block);
+
 	int64_t m_last_click_point = 0;
 	HandlePtr<GraphicsObject> m_last_clicked_block = nullptr;
 	bool b_second_click_in_progress = false;

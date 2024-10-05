@@ -1,13 +1,12 @@
 #include "NetObject.hpp"
 #include "BlockSocketObject.hpp"
 #include "BlockObject.hpp"
-#include "IGraphicsScene.hpp"
 #include <cmath>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
 #include <algorithm>
 
-node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, node::IGraphicsScene* scene)
+node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, node::GraphicsScene* scene)
 	: GraphicsObject({0,0,0,0}, ObjectType::netSegment, scene),
 	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation)
 {
@@ -20,11 +19,10 @@ node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, Ne
 	
 }
 
-void node::NetSegment::Draw(SDL_Renderer* renderer)
+void node::NetSegment::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-	assert(GetScene());
-	SDL_Rect ScreenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+	SDL_Rect ScreenRect = transformer.SpaceToScreenRect(GetSpaceRect());
 	SDL_RenderFillRect(renderer, &ScreenRect);
 }
 
@@ -92,18 +90,17 @@ void node::NetSegment::CalcRect()
 	}
 }
 
-node::NetNode::NetNode(const model::Point& center, IGraphicsScene* scene)
+node::NetNode::NetNode(const model::Point& center, GraphicsScene* scene)
 	: GraphicsObject({center.x - m_width/2, center.y - m_height/2, m_width, m_height}, ObjectType::netNode, scene), m_centerPoint(center)
 {
 	b_draggable = false;
 	b_aligned = false;
 }
 
-void node::NetNode::Draw(SDL_Renderer* renderer)
+void node::NetNode::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	assert(GetScene());
-	SDL_Rect screenRect = GetScene()->GetSpaceScreenTransformer().SpaceToScreenRect(GetSpaceRect());
+	SDL_Rect screenRect = transformer.SpaceToScreenRect(GetSpaceRect());
 	SDL_RenderFillRect(renderer, &screenRect);
 }
 

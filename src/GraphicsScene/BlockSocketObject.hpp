@@ -14,7 +14,7 @@ class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
 	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt, 
-		model::Point center_in_block = {0,0}, IGraphicsScene* parentScene = nullptr, BlockObject* parentBlock = nullptr);
+		model::Point center_in_block = {0,0}, GraphicsScene* parentScene = nullptr, BlockObject* parentBlock = nullptr);
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
@@ -34,7 +34,7 @@ public:
 
 	model::BlockSocketModel::SocketType GetSocketType() const { return m_socktType; }
 	void SetSocketType(model::BlockSocketModel::SocketType type) { m_socktType = type; }
-	void Draw(SDL_Renderer* renderer) override;
+	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 
 	static constexpr int nodeLength = 15;
 protected:

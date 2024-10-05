@@ -2,7 +2,6 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
-#include "IGraphicsScene.hpp"
 #include <algorithm>
 #include <iterator>
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
@@ -12,7 +11,7 @@
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsScene/BlockResizeObject.hpp"
 
-std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
+std::unique_ptr<node::BlockObject> node::BlockObject::Create(GraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {
     auto ptr = std::make_unique<BlockObject>(scene, model.GetBounds(), std::move(styler), model.GetId());
     for (const auto& socket : model.GetSockets())
@@ -24,7 +23,7 @@ std::unique_ptr<node::BlockObject> node::BlockObject::Create(IGraphicsScene* sce
     return ptr;
 }
 
-node::BlockObject::BlockObject(IGraphicsScene* scene, const model::Rect& rect,
+node::BlockObject::BlockObject(GraphicsScene* scene, const model::Rect& rect,
     std::unique_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id)
     :GraphicsObject{rect, ObjectType::block, scene}, m_id{model_id}, m_styler{std::move(styler)}
 {
@@ -34,23 +33,10 @@ node::BlockObject::~BlockObject()
 {
 }
 
-void node::BlockObject::Draw(SDL_Renderer* renderer)
+void node::BlockObject::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
-    assert(GetScene());
-
-    if (!GetScene()->IsObjectSelected(*this))
-    {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    }
-    else
-    {
-        SDL_SetRenderDrawColor(renderer, 235, 128, 52, 255);
-    }
-    
-
-    auto&& transformer = GetScene()->GetSpaceScreenTransformer();
     assert(m_styler);
-    auto selected = GetScene()->IsObjectSelected(*this);
+    auto selected = IsSelected();
     m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, selected);
     for (const auto& socket : m_sockets)
     {
@@ -62,6 +48,15 @@ void node::BlockObject::Draw(SDL_Renderer* renderer)
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
 {
     return GraphicsObject::OnLMBDown(current_mouse_point);
+}
+
+void node::BlockObject::OnSceneChange()
+{
+    auto&& scene = GetScene();
+    for (auto&& socket : m_sockets)
+    {
+        socket->SetScene(scene);
+    }
 }
 
 void node::BlockObject::AddSocket(std::unique_ptr<BlockSocketObject> socket)
@@ -120,17 +115,9 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
     }
 }
 
-std::unique_ptr<node::BlockResizeObject> node::BlockObject::CreateResizeHandles()
+void node::BlockObject::SetResizeHandles(BlockResizeObject& resize_object)
 {
-    model::Rect resizer_rect = GetSpaceRect();
-    resizer_rect.x -= 5;
-    resizer_rect.y -= 5;
-    resizer_rect.w += 10;
-    resizer_rect.h += 10;
-
-    auto resizer = std::make_unique<BlockResizeObject>(GetMIHandlePtr(), resizer_rect, GetScene());
-    m_resizer = resizer->GetMIHandlePtr();
-    return resizer;
+    m_resizer = resize_object.GetMIHandlePtr();
 }
 
 void node::BlockObject::HideResizeHandles()
@@ -144,7 +131,7 @@ void node::BlockObject::OnSetSpaceRect(const model::Rect& rect)
     GraphicsObject::OnSetSpaceRect(rect);
     if (m_resizer)
     {
-        m_resizer->SetSpaceOrigin({ rect.x - 5, rect.y - 5 });
+        m_resizer->SetSpaceRect(BlockResizeObject::RectForBlockRect(rect));
     }
     RePositionSockets();
 }

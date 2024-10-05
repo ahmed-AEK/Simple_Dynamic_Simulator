@@ -8,6 +8,8 @@ node::logic::BlockDragLogic::BlockDragLogic(model::Point startPointMouseSpace,
     :GraphicsLogic(scene, manager), m_startPointMouseSpace{ startPointMouseSpace }, 
     m_startObjectEdge{ startObjectEdge }, m_block{ block.GetMIHandlePtr()}
 {
+    assert(scene);
+    assert(manager);
 }
 
 void node::logic::BlockDragLogic::OnMouseMove(const model::Point& current_mouse_point)

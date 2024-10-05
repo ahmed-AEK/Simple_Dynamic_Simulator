@@ -12,6 +12,7 @@
 #include "GraphicsLogic/VSegmentDragLogic.hpp"
 #include "BlockResizeObject.hpp"
 
+
 MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
 {
     node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
@@ -55,7 +56,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
                 m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
             }
 
-            auto resizer = block_obj->CreateResizeHandles();
+            auto resizer = CreateResizeObject(*block_obj);
             if (resizer)
             {
                 m_current_block_resize_object = resizer->GetMIHandlePtr();
@@ -105,6 +106,11 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
             {
                 GetScene()->SetGraphicsLogic(std::move(ptr));
             }
+            break;
+        }
+        case ObjectType::interactive:
+        {
+            return current_hover->LMBDown(p);
             break;
         }
         default: break;
@@ -173,4 +179,13 @@ void node::ArrowTool::OnExit()
         GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
         m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
     }
+}
+
+std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(BlockObject& block)
+{
+    model::Rect resizer_rect = BlockResizeObject::RectForBlockRect(block.GetSpaceRect());
+
+    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), GetObjectsManager(), resizer_rect, GetScene());
+    block.SetResizeHandles(*resizer);
+    return resizer;
 }

@@ -21,13 +21,13 @@ class BlockResizeObject;
 class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
 public:
-    static std::unique_ptr<BlockObject> Create(IGraphicsScene* scene, const model::BlockModel& model,
+    static std::unique_ptr<BlockObject> Create(GraphicsScene* scene, const model::BlockModel& model,
         std::unique_ptr<BlockStyler> styler = nullptr);
 
-    explicit BlockObject(IGraphicsScene* scene, const model::Rect& rect = {100,100,100,100}, 
+    explicit BlockObject(GraphicsScene* scene = nullptr, const model::Rect& rect = {100,100,100,100}, 
         std::unique_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt);
     ~BlockObject() override;
-    void Draw(SDL_Renderer* renderer) override;
+    void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 
     std::optional<model::BlockId> GetModelId();
     const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
@@ -36,7 +36,7 @@ public:
     void UpdateStyler(const model::BlockModel& model);
     const BlockStyler& GetStyler() const { return *m_styler; }
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
-    std::unique_ptr<BlockResizeObject> CreateResizeHandles();
+    void SetResizeHandles(BlockResizeObject& resize_object);
     void HideResizeHandles();
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
@@ -45,6 +45,9 @@ protected:
     GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
     void OnUpdateRect() override;
     MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
+
+    void OnSceneChange() override;
+
 private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;

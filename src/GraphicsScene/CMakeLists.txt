@@ -8,7 +8,6 @@ BlockSocketObject.cpp BlockSocketObject.hpp
 NetObject.cpp NetObject.hpp
 
 GraphicsScene_exports.h
-IGraphicsScene.hpp
 
 tools/GraphicsTool.hpp
 tools/ArrowTool.hpp    tools/ArrowTool.cpp
@@ -26,6 +25,7 @@ GraphicsLogic/VSegmentDragLogic.cpp     GraphicsLogic/VSegmentDragLogic.hpp
 GraphicsLogic/SegmentDeleteLogic.cpp    GraphicsLogic/SegmentDeleteLogic.hpp
 GraphicsLogic/BlockDeleteLogic.cpp      GraphicsLogic/BlockDeleteLogic.hpp
 GraphicsLogic/NetNodeDeleteLogic.cpp    GraphicsLogic/NetNodeDeleteLogic.hpp
+GraphicsLogic/BlockResizeLogic.cpp      GraphicsLogic/BlockResizeLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp

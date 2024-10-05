@@ -117,6 +117,25 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         }
         break;
     }
+    case SceneModificationType::BlockResized:
+    {
+        auto&& block_ref = std::get<model::BlockModelConstRef>(e.data).get();
+        auto model_id = block_ref.GetId();
+        auto new_bounds = block_ref.GetBounds();
+        auto it = m_blocks.find(model_id);
+        if (it != m_blocks.end())
+        {
+            for (auto&& socket : it->second->GetSockets())
+            {
+                assert(socket->GetId());
+                auto&& block_socket = block_ref.GetSocketById(*socket->GetId());
+                socket->SetCenterInBlock(block_socket->get().GetPosition());
+            }
+
+            it->second->SetSpaceRect(new_bounds);
+        }
+        break;
+    }
     case SceneModificationType::BlockPropertiesModified:
     {
         auto model = std::get<model::BlockModelConstRef>(e.data);

@@ -26,13 +26,16 @@ node::GraphicsScene::~GraphicsScene()
 
 void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order)
 {
-    obj->SetSpaceOrigin(
-        obj->isAligned() ? QuantizePoint({obj->GetSpaceRect().x, obj->GetSpaceRect().y}):
-    model::Point{obj->GetSpaceRect().x, obj->GetSpaceRect().y}
-    );
+    GraphicsObject* object = obj.get();
     ObjectSlot slot = {std::move(obj), z_order};
     auto iter = std::lower_bound(m_objects.begin(), m_objects.end(), slot, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order;} );
     m_objects.insert(iter, std::move(slot));
+    object->SetScene(this);
+    object->SetSelected(false);
+    object->SetSpaceOrigin(
+        object->isAligned() ? QuantizePoint({ object->GetSpaceRect().x, object->GetSpaceRect().y }) :
+        model::Point{ object->GetSpaceRect().x, object->GetSpaceRect().y }
+    );
 }
 
 
@@ -63,7 +66,7 @@ void node::GraphicsScene::Draw(SDL_Renderer *renderer)
         SDL_Rect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
         if (object.m_ptr->IsVisible() && SDL_HasIntersection(&screen_rect, &obj_rect))
         {
-            object.m_ptr->Draw(renderer);
+            object.m_ptr->Draw(renderer, GetSpaceScreenTransformer());
         }
     }
 }
@@ -225,15 +228,20 @@ const node::model::Rect& node::GraphicsScene::GetSpaceRect() const noexcept
 
 std::span<const node::HandlePtr<node::GraphicsObject>> node::GraphicsScene::GetCurrentSelection() const
 {
-    return this->m_current_selection;
+    return m_current_selection;
 }
 std::span<node::HandlePtr<node::GraphicsObject>> node::GraphicsScene::GetCurrentSelection()
 {
-    return this->m_current_selection;
+    return m_current_selection;
 }
 
 void node::GraphicsScene::AddSelection(HandlePtr<GraphicsObject> handle)
 {
+    if (handle->IsSelected())
+    {
+        return;
+    }
+    handle->SetSelected(true);
     this->m_current_selection.push_back(handle);
 }
 
@@ -242,15 +250,12 @@ bool node::GraphicsScene::IsObjectSelected(const GraphicsObject& obj) const
     const node::GraphicsObject* obj_ptr = &obj;
     auto iter = std::find_if(m_current_selection.begin(), m_current_selection.end(),
         [obj_ptr](const node::HandlePtr<node::GraphicsObject>& c_ptr) ->bool {
-            if (c_ptr.isAlive())
+            if (c_ptr.GetObjectPtr() == obj_ptr)
             {
-                if (c_ptr.GetObjectPtr() == obj_ptr)
-                {
-                    return true;
-                }
+                return true;
             }
             return false;
-            });
+        });
     if (iter != m_current_selection.end())
     {
         return true;
@@ -260,6 +265,13 @@ bool node::GraphicsScene::IsObjectSelected(const GraphicsObject& obj) const
 
 void node::GraphicsScene::ClearCurrentSelection()
 {
+    for (auto&& item : m_current_selection)
+    {
+        if (item)
+        {
+            item->SetSelected(false);
+        }
+    }
     this->m_current_selection.clear();
 }
 
@@ -328,11 +340,6 @@ void node::GraphicsScene::UpdateObjectsRect()
     {
         obj.m_ptr->UpdateRect();
     }
-}
-
-void node::GraphicsScene::InvalidateRect()
-{
-    Widget::InvalidateRect();
 }
 
 void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic> logic)
