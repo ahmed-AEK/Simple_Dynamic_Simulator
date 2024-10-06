@@ -135,12 +135,15 @@ struct MoveBlockAction : public ModelAction
 
 struct ResizeBlockAction : public ModelAction
 {
-	ResizeBlockAction(model::Rect dst_rect, model::BlockId id, std::vector<model::BlockSocketModel> new_sockets_positions)
-		:dst_rect{ dst_rect }, id{ id }, new_sockets_positions{ new_sockets_positions } {}
+	ResizeBlockAction(model::Rect dst_rect, model::BlockId id, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> new_sockets_positions)
+		:dst_rect{ dst_rect }, id{ id }, new_orientation{ new_orientation }, 
+		new_sockets_positions{new_sockets_positions} {}
 	model::Rect src_rect{};
 	std::vector<model::BlockSocketModel> old_sockets_positions;
 	const model::Rect dst_rect;
 	const model::BlockId id;
+	const model::BlockOrientation new_orientation;
+	model::BlockOrientation old_orientation = model::BlockOrientation::LeftToRight;
 	const std::vector<model::BlockSocketModel> new_sockets_positions;
 
 	bool DoUndo(SceneModelManager& manager) override
@@ -149,6 +152,7 @@ struct ResizeBlockAction : public ModelAction
 		assert(block);
 		if (block)
 		{
+			block->get().SetOrientation(old_orientation);
 			block->get().SetBounds(src_rect);
 			for (auto&& socket : block->get().GetSockets())
 			{
@@ -181,7 +185,9 @@ struct ResizeBlockAction : public ModelAction
 		if (block)
 		{
 			src_rect = block->get().GetBounds();
+			old_orientation = block->get().GetOrienation();
 
+			block->get().SetOrientation(new_orientation);
 			block->get().SetBounds(dst_rect);
 			for (auto&& socket : block->get().GetSockets())
 			{
@@ -272,16 +278,10 @@ struct RemoveBlockAction : public ModelAction
 
 	bool DoUndo(SceneModelManager& manager) override
 	{
-		model::id_int max_id = 0;
-		for (auto&& it_block : manager.GetModel().GetBlocks())
-		{
-			max_id = std::max(max_id, it_block.GetId().value);
-		}
-		model::BlockId block_id{ max_id + 1 };
 		assert(stored_block);
 		manager.GetModel().AddBlock(model::BlockModel{ *stored_block });
 
-		auto block_ref = manager.GetModel().GetBlockById(block_id);
+		auto block_ref = manager.GetModel().GetBlockById(stored_block->GetId());
 		assert(block_ref);
 		if (!block_ref)
 		{
@@ -1101,9 +1101,9 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, std::vector<model::BlockSocketModel> socket_positions)
+void node::SceneModelManager::ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions)
 {
-	auto action = std::make_unique<ResizeBlockAction>(new_rect, id, std::move(socket_positions));
+	auto action = std::make_unique<ResizeBlockAction>(new_rect, id, new_orientation, std::move(socket_positions));
 	PushAction(std::move(action));
 }
 

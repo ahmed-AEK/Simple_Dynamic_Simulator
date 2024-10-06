@@ -33,7 +33,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     for (auto&& block : m_sceneModel->GetBlocks())
     {
         auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block);
-        styler->PositionSockets(block.GetSockets(), block.GetBounds());
+        styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, std::move(styler));
         auto ptr = obj.get();
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
@@ -131,7 +131,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                 auto&& block_socket = block_ref.GetSocketById(*socket->GetId());
                 socket->SetCenterInBlock(block_socket->get().GetPosition());
             }
-
+            it->second->SetOrientation(block_ref.GetOrienation());
             it->second->SetSpaceRect(new_bounds);
         }
         break;

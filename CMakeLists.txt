@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO
 
-project(dummy_nodeEditor)
+project(DynamicSim)
 
 set(CMAKE_CXX_STANDARD 20)
 

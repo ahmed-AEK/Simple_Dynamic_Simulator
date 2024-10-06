@@ -25,7 +25,8 @@ public:
         std::unique_ptr<BlockStyler> styler = nullptr);
 
     explicit BlockObject(GraphicsScene* scene = nullptr, const model::Rect& rect = {100,100,100,100}, 
-        std::unique_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt);
+        std::unique_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt, 
+        model::BlockOrientation orientation = model::BlockOrientation::LeftToRight);
     ~BlockObject() override;
     void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 
@@ -38,6 +39,10 @@ public:
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
     void SetResizeHandles(BlockResizeObject& resize_object);
     void HideResizeHandles();
+
+    void SetOrientation(model::BlockOrientation orientation) { m_orientation = orientation; }
+    model::BlockOrientation GetOrienation() const { return m_orientation; }
+
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
     void OnSetSpaceRect(const model::Rect& rect) override;
@@ -48,11 +53,13 @@ protected:
 
     void OnSceneChange() override;
 
+
 private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;
     std::unique_ptr<BlockStyler> m_styler;
     HandlePtr<GraphicsObject> m_resizer;
+    model::BlockOrientation m_orientation;
 };
 
 };

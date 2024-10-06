@@ -141,13 +141,13 @@ void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDro
     m_dragDropDrawObject->model.SetPosition(point);
     bounds = m_dragDropDrawObject->model.GetBounds();
     m_dragDropDrawObject->styler->DrawBlockOutline(renderer, bounds, 
-        m_spaceScreenTransformer, true);
+        m_spaceScreenTransformer, m_dragDropDrawObject->model.GetOrienation(), true);
     for (const auto& socket : m_dragDropDrawObject->model.GetSockets())
     {
         m_dragDropDrawObject->styler->DrawBlockSocket(renderer, socket.GetPosition() + model::Point{point}, 
             m_spaceScreenTransformer, socket.GetType());
     }
-    m_dragDropDrawObject->styler->DrawBlockDetails(renderer, bounds, m_spaceScreenTransformer, true);
+    m_dragDropDrawObject->styler->DrawBlockDetails(renderer, bounds, m_spaceScreenTransformer, m_dragDropDrawObject->model.GetOrienation(), true);
 }
 
 void node::GraphicsScene::OnDropEnter(const DragDropObject& object)

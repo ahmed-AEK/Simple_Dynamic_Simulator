@@ -19,8 +19,11 @@ protected:
 	MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
 
 private:
+	model::Rect GetInnerRect();
 	HandlePtr<GraphicsObject> m_parent_block;
 	GraphicsObjectsManager* m_manager;
+
+	static constexpr int corner_width = 15;
 };
 
 }

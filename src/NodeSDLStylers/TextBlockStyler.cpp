@@ -19,7 +19,8 @@ node::TextBlockStyler::TextBlockStyler(std::string name, TTF_Font* font)
 	m_textPainter.SetText(std::move(name));
 }
 
-void node::TextBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, bool selected)
+void node::TextBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, 
+	model::BlockOrientation orientation, bool selected)
 {
 	SDL_Color Black{ 50,50,50,255 };
 	SDL_Rect screen_rect = transformer.SpaceToScreenRect(bounds);
@@ -27,6 +28,7 @@ void node::TextBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model
 	SDL_Point text_start{ screen_rect.x + screen_rect.w / 2 - rect.w / 2, screen_rect.y + screen_rect.h / 2 - rect.h / 2};
 	m_textPainter.Draw(renderer, text_start, Black);
 	UNUSED_PARAM(selected);
+	UNUSED_PARAM(orientation);
 }
 
 void node::TextBlockStyler::SetText(std::string text)

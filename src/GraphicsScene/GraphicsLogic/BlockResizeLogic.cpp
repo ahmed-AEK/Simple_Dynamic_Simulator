@@ -24,7 +24,7 @@ static void SetBlockToRect(node::BlockObject& block, const node::model::Rect& ne
 {
 	using namespace node;
 	auto&& styler = block.GetStyler();
-	styler.PositionSockets(temp_sockets, new_rect);
+	styler.PositionSockets(temp_sockets, new_rect, block.GetOrienation());
 	for (auto&& socket : temp_sockets)
 	{
 		auto sock = block.GetSocketById(socket.GetId());
@@ -184,9 +184,10 @@ MI::ClickEvent node::logic::BlockResizeLogic::OnLMBUp(const model::Point& curren
 
 	auto id = *block.GetModelId();
 	auto new_sockets = m_temp_sockets;
+	auto orientation = block.GetOrienation();
 	CleanUp();
 
-	GetObjectsManager()->GetSceneModel()->ResizeBlockById(id, new_rect, new_sockets);
+	GetObjectsManager()->GetSceneModel()->ResizeBlockById(id, new_rect, orientation, new_sockets);
 
 	return MI::ClickEvent::CAPTURE_END;
 }

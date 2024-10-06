@@ -13,7 +13,7 @@
 
 std::unique_ptr<node::BlockObject> node::BlockObject::Create(GraphicsScene* scene, const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {
-    auto ptr = std::make_unique<BlockObject>(scene, model.GetBounds(), std::move(styler), model.GetId());
+    auto ptr = std::make_unique<BlockObject>(scene, model.GetBounds(), std::move(styler), model.GetId(), model.GetOrienation());
     for (const auto& socket : model.GetSockets())
     {
         auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(), 
@@ -24,25 +24,29 @@ std::unique_ptr<node::BlockObject> node::BlockObject::Create(GraphicsScene* scen
 }
 
 node::BlockObject::BlockObject(GraphicsScene* scene, const model::Rect& rect,
-    std::unique_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id)
-    :GraphicsObject{rect, ObjectType::block, scene}, m_id{model_id}, m_styler{std::move(styler)}
+    std::unique_ptr<BlockStyler> styler, std::optional<model::BlockId> model_id, model::BlockOrientation orientation)
+    :GraphicsObject{ rect, ObjectType::block, scene }, m_id{ model_id }, m_styler{ std::move(styler) }, m_orientation{ orientation }
 {
 }
 
 node::BlockObject::~BlockObject()
 {
+    if (m_resizer)
+    {
+        m_resizer->SetVisible(false);
+    }
 }
 
 void node::BlockObject::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
     assert(m_styler);
     auto selected = IsSelected();
-    m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, selected);
+    m_styler->DrawBlockOutline(renderer, GetSpaceRect(), transformer, GetOrienation(), selected);
     for (const auto& socket : m_sockets)
     {
         m_styler->DrawBlockSocket(renderer, socket->GetCenterInSpace(), transformer, socket->GetSocketType());
     }
-    m_styler->DrawBlockDetails(renderer, GetSpaceRect(), transformer, selected);
+    m_styler->DrawBlockDetails(renderer, GetSpaceRect(), transformer, GetOrienation(), selected);
 }
 
 MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)

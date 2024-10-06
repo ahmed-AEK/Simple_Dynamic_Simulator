@@ -26,6 +26,7 @@ GraphicsLogic/SegmentDeleteLogic.cpp    GraphicsLogic/SegmentDeleteLogic.hpp
 GraphicsLogic/BlockDeleteLogic.cpp      GraphicsLogic/BlockDeleteLogic.hpp
 GraphicsLogic/NetNodeDeleteLogic.cpp    GraphicsLogic/NetNodeDeleteLogic.hpp
 GraphicsLogic/BlockResizeLogic.cpp      GraphicsLogic/BlockResizeLogic.hpp
+GraphicsLogic/BlockRotateLogic.cpp      GraphicsLogic/BlockRotateLogic.hpp
 ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp

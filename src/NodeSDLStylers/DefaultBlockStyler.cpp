@@ -2,8 +2,10 @@
 #include <algorithm>
 #include "SDL_Framework/Utility.hpp"
 
-void node::DefaultBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, bool selected)
+void node::DefaultBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, 
+	model::BlockOrientation orientation, bool selected)
 {
+	UNUSED_PARAM(orientation);
 	SDL_Rect screenRect = transformer.SpaceToScreenRect(bounds);
 	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
 	SDL_Color inner_color{ 220,220,220,255 };

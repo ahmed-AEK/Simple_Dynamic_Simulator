@@ -162,7 +162,7 @@ void node::BlockPropertiesDialog::OnOk()
 				assert(it != block_registry.end());
 				if (it != block_registry.end())
 				{
-					it->second->GetStyler().PositionSockets(new_sockets, block->get().GetBounds());
+					it->second->GetStyler().PositionSockets(new_sockets, block->get().GetBounds(), block->get().GetOrienation());
 				}
 			}
 		}

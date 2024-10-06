@@ -49,7 +49,7 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, block);
 
 	assert(styler);
-	styler->PositionSockets(block.GetSockets(), block.GetBounds());
+	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
 	m_elements.push_back(
 		std::make_unique<PalleteElement>(PalleteElement{

@@ -150,7 +150,7 @@ public:
 	void AddNewBlock(model::BlockModel&& block);
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
-	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, std::vector<model::BlockSocketModel> socket_positions);
+	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions);
 
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
 	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);

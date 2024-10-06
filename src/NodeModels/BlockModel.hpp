@@ -78,11 +78,19 @@ struct BlockStyleProperties
 	std::unordered_map<std::string, std::string> properties;
 };
 
+enum class BlockOrientation
+{
+	LeftToRight,
+	TopToBottom,
+	RightToLeft,
+	BottomToTop,
+};
+
 class BlockModel
 {
 public:
-	explicit BlockModel(const BlockId& id, const Rect& bounds = {})
-		:m_bounds{ bounds }, m_Id{ id } {}
+	explicit BlockModel(const BlockId& id, const Rect& bounds = {}, BlockOrientation orientaion = BlockOrientation::LeftToRight)
+		:m_bounds{ bounds }, m_Id{ id }, m_orientation{orientaion} {}
 
 	void SetPosition(const Point& origin) { 
 		m_bounds.x = origin.x;
@@ -136,6 +144,10 @@ public:
 
 	void SetStylerProperties(BlockStyleProperties properties) { m_stylerProperties = std::move(properties); }
 	const BlockStyleProperties& GetStylerProperties() const { return m_stylerProperties; }
+
+	void SetOrientation(BlockOrientation orientation) { m_orientation = orientation; }
+	BlockOrientation GetOrienation() const { return m_orientation; }
+
 private:
 	Rect m_bounds;
 	std::vector<BlockSocketModel> m_sockets;
@@ -144,6 +156,7 @@ private:
 	std::string m_block_class;
 	BlockStyleProperties m_stylerProperties;
 	BlockId m_Id;
+	BlockOrientation m_orientation;
 };
 
 using BlockModelRef = std::reference_wrapper<BlockModel>;
