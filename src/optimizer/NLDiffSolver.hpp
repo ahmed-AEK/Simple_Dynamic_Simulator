@@ -39,11 +39,13 @@ public:
 	std::vector<ObserverData> GetObserversData();
 	StepResult Step(FlatMap& state);
 private:
-	void UpdateSources(FlatMap& state, const double t);
+	void ApplySources(FlatMap& state, const double t);
+	void UpdateSources(const double t);
 	double m_last_oberver_time = 0;
 	std::vector<SourceEq> m_sources;
 	DiffSolver m_diffSolver;
 	NLGraphSolver m_NLSolver;
 	std::vector<ObserverSlot> m_observers;
+	std::vector<double> m_source_event_times;
 };
 }

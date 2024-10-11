@@ -81,14 +81,29 @@ opt::StepResult opt::DiffSolver_impl::Step(opt::FlatMap& state)
 
     if (m_last_dt > m_max_step)
     {
+        // correct for max step size
         m_last_dt = m_max_step;
     }
+
+    if (m_next_event_time && (m_current_time + m_last_dt > *m_next_event_time))
+    {
+        // correct for next event time
+        m_last_dt = *m_next_event_time - m_current_time;
+    }
+
+    double last_dt_saved = m_last_dt;
 
     while (result != boost::numeric::odeint::controlled_step_result::success)
     {
         result = m_stepper.try_step(diffsystem, m_current_x, m_current_time, m_last_dt);
     }
     LoadDatatoMap(m_current_x, state);
+
+    if (m_next_event_time && ((*m_next_event_time - m_current_time) / last_dt_saved) < 1e-4)
+    {
+        // to avoid floating point errors, if time to next event is within 0.01% of the dt, then we jump to it
+        m_current_time = *m_next_event_time;
+    }
 
     if (m_current_time >= m_end_time)
     {
@@ -158,6 +173,11 @@ void opt::DiffSolver_impl::SetMaxStep(double step_size)
     m_max_step = step_size;
 }
 
+void opt::DiffSolver_impl::SetNextEventTime(std::optional<double> t)
+{
+    m_next_event_time = t;
+}
+
 opt::DiffSolver::DiffSolver()
     :m_impl(std::make_unique<DiffSolver_impl>())
 {
@@ -222,6 +242,11 @@ void opt::DiffSolver::ApplyPostProcessor(opt::FlatMap& state, const double t)
 void opt::DiffSolver::SetMaxStep(double step_size)
 {
     m_impl->SetMaxStep(step_size);
+}
+
+void opt::DiffSolver::SetNextEventTime(std::optional<double> t)
+{
+    m_impl->SetNextEventTime(t);
 }
 
 

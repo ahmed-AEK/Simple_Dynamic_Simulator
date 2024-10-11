@@ -4,6 +4,7 @@
 #include "toolgui/NodeMacros.h"
 #include "SourceEq.hpp"
 #include "Observer.hpp"
+#include <algorithm>
 
 namespace opt
 {
@@ -18,14 +19,14 @@ opt::NLDiffSolver::NLDiffSolver()
 {
 	auto preprocessor = [this](auto& state, const double time)
 		{
-			this->UpdateSources(state, time);
+			this->ApplySources(state, time);
 			m_NLSolver.Solve(state, time);
 		};
 	m_diffSolver.SetPreprocessor(std::move(preprocessor));
 
 	auto postprocessor = [this](auto& state, const double time)
 		{
-			this->UpdateSources(state, time);
+			this->ApplySources(state, time);
 			m_NLSolver.Solve(state, time);
 			m_NLSolver.UpdateState(state, time);
 		};
@@ -84,7 +85,7 @@ void opt::NLDiffSolver::Initialize(double start_time, double end_time)
 
 void opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
 {
-	UpdateSources(state, GetCurrentTime());
+	ApplySources(state, GetCurrentTime());
 	m_NLSolver.Solve(state, GetCurrentTime());
 	m_NLSolver.UpdateState(state, GetCurrentTime());
 	NotifyObservers(state, GetCurrentTime());
@@ -118,9 +119,27 @@ std::vector<opt::ObserverData> opt::NLDiffSolver::GetObserversData()
 
 opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 {
+	std::optional<double> next_event;
+	UpdateSources(GetCurrentTime());
+	if (m_source_event_times.size())
+	{
+		next_event = m_source_event_times[0];
+	}
+	
+	m_diffSolver.SetNextEventTime(next_event);
+
 	const auto result = m_diffSolver.Step(state);
 	m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
-	if (GetCurrentTime() - m_last_oberver_time > 1e-4)
+	if (next_event && GetCurrentTime() <= *next_event)
+	{
+		// event happened, notify before and after the update
+		NotifyObservers(state, GetCurrentTime());
+		UpdateSources(GetCurrentTime());
+		m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
+		NotifyObservers(state, GetCurrentTime());
+		m_last_oberver_time = GetCurrentTime();
+	}
+	else if (GetCurrentTime() - m_last_oberver_time > 1e-4)
 	{
 		NotifyObservers(state, GetCurrentTime());
 		m_last_oberver_time = GetCurrentTime();
@@ -136,7 +155,7 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 	return result;
 }
 
-void opt::NLDiffSolver::UpdateSources(FlatMap& state, const double t)
+void opt::NLDiffSolver::ApplySources(FlatMap& state, const double t)
 {
 	for (auto& source : m_sources)
 	{
@@ -150,4 +169,27 @@ void opt::NLDiffSolver::UpdateSources(FlatMap& state, const double t)
 			state.modify(output_ids[i], result);
 		}
 	}
+}
+
+void opt::NLDiffSolver::UpdateSources(const double t)
+{
+	m_source_event_times.clear();
+	for (auto& source : m_sources)
+	{
+		auto&& event_ref = source.GetEvent();
+		if (!event_ref)
+		{
+			continue;
+		}
+
+		if(event_ref->t <= t)
+		{
+			event_ref->set = true;
+		}
+		else
+		{
+			m_source_event_times.push_back(event_ref->t);
+		}
+	}
+	std::sort(m_source_event_times.begin(), m_source_event_times.end());
 }

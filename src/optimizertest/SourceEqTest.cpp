@@ -7,7 +7,7 @@ TEST(testSourceEq, testApply)
 {
 	std::array<double, 3> output_vals { 1, 2, 3 };
 	opt::SourceEq eq({ 0, 1, 2, 3 },
-		opt::SourceEq::SourceFunctor{ [&](auto outputs, const auto& t)
+		opt::SourceEq::SourceFunctor{ [&](auto outputs, const auto& t, opt::SourceEq&)
 		{
 			outputs[0] = output_vals[0];
 			outputs[1] = output_vals[1];

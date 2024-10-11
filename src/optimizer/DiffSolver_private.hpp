@@ -34,6 +34,7 @@ public:
     void ApplyPreprocessor(opt::FlatMap& state, const double t);
     void ApplyPostProcessor(opt::FlatMap& state, const double t);
     void SetMaxStep(double step_size);
+    void SetNextEventTime(std::optional<double> t);
 protected:
     void LoadDatatoMap(std::span<const double> x, FlatMap& state);
     void LoadMaptoVec(FlatMap& state, std::vector<double>& target);
@@ -56,5 +57,6 @@ private:
     controlled_stepper::time_type m_max_step = 0.1;
     std::function<void(opt::FlatMap&, const double&)> m_preprocessor;
     std::function<void(opt::FlatMap&, const double&)> m_postprocessor;
+    std::optional<double> m_next_event_time;
 };
 }

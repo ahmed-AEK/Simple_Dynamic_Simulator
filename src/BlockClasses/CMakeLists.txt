@@ -15,6 +15,7 @@ AddSimpleClass.cpp AddSimpleClass.hpp
 MultiplyBlockClass.cpp MultiplyBlockClass.hpp
 SineSourceClass.hpp SineSourceClass.cpp
 BlockDialog.hpp BlockDialog.cpp
+StepSourceClass.hpp StepSourceClass.cpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

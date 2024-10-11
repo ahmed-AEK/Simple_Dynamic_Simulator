@@ -29,6 +29,7 @@
 #include "BlockClasses/AddSimpleClass.hpp"
 #include "BlockClasses/MultiplyBlockClass.hpp"
 #include "BlockClasses/SineSourceClass.hpp"
+#include "BlockClasses/StepSourceClass.hpp"
 
 #include "BlockClasses/BlockDialog.hpp"
 
@@ -256,6 +257,19 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     };
     pallete_provider->AddElement(std::move(sine_block));
 
+    auto step_block = BlockTemplate{
+    "Step",
+    "Step",
+    "Text",
+    std::vector<model::BlockProperty>{
+        node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
+        node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
+        node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
+    },
+    model::BlockStyleProperties{{{TextBlockStyler::key_text, "Step"}}}
+    };
+    pallete_provider->AddElement(std::move(step_block));
+
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
         std::move(pallete_provider), this));
     SetSidePanel(std::move(sidePanel));
@@ -444,6 +458,7 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<AddSimpleBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<MultiplyBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<SineSourceClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<StepSourceClass>());
 
     InitializeSidePanel(gScene.get());
 

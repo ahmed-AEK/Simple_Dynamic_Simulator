@@ -183,8 +183,8 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
 
 TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
 {
-    auto s1 = opt::SourceEq{ {0} ,[](std::span<double> out, const double& t) { out[0] = std::sin(2 * std::numbers::pi * t); } };
-    auto s2 = opt::SourceEq{ {1} ,[](std::span<double> out, const double& t) { out[0] = std::sin(2 * std::numbers::pi * t); } };
+    auto s1 = opt::SourceEq{ {0} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
+    auto s2 = opt::SourceEq{ {1} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
     auto mul = opt::NLEquation{ {0,1}, {2}, [](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; } };
     auto diff = opt::NLStatefulEquation{
         {2},
@@ -234,4 +234,56 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
     }
 
     EXPECT_NEAR(10, solver.GetCurrentTime(), 1e-3);
+}
+
+TEST(testNLDiffSolver, test_SourceEvent)
+{
+    bool event1_set = false;
+    double event1_time = 0;
+    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double& t, opt::SourceEq& eq) { 
+        if (!event1_set)
+        {
+            if (eq.GetEvent() && eq.GetEvent()->set)
+            {
+                event1_set = true;
+                event1_time = t;
+            }
+        }
+        out[0] = 0; } };
+    s1.GetEvent() = opt::SourceEq::SourceEvent{ 0.2,false };
+
+    bool event2_set = false;
+    double event2_time = 0;
+    auto s2 = opt::SourceEq{ {1} ,[&](std::span<double> out, const double& t, opt::SourceEq& eq) {
+        if (!event2_set)
+        {
+            if (eq.GetEvent() && eq.GetEvent()->set)
+            {
+                event2_set = true;
+                event2_time = t;
+            }
+        }
+        out[0] = 0; } };
+    s2.GetEvent() = opt::SourceEq::SourceEvent{ 0.201,false };
+
+    opt::NLDiffSolver solver;
+    solver.AddSource(std::move(s1));
+    solver.AddSource(std::move(s2));
+
+    opt::FlatMap state(2);
+    double current_time = 0;
+
+    solver.Initialize(0, 0.5);
+    solver.SetMaxStep(0.01);
+    solver.CalculateInitialConditions(state);
+    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    {
+        EXPECT_GT(solver.GetCurrentTime(), current_time);
+        current_time = solver.GetCurrentTime();
+    }
+
+    EXPECT_EQ(event1_set, true);
+    EXPECT_NEAR(event1_time, 0.2, 1e-5);
+    EXPECT_EQ(event2_set, true);
+    EXPECT_NEAR(event2_time, 0.201, 1e-5);
 }

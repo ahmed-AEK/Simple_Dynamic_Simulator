@@ -7,6 +7,6 @@ opt::SourceEq::SourceEq(std::pmr::vector<int64_t> output_ids, SourceFunctor func
 
 void opt::SourceEq::Apply(const double& t)
 {
-	m_functor(m_output_buffer, t);
+	m_functor(m_output_buffer, t, *this);
 }
 

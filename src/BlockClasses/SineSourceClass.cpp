@@ -76,7 +76,7 @@ node::BlockClass::GetFunctorResult node::SineSourceClass::GetFunctor(const std::
 	double freq_rad = std::get<double>(properties[1].prop) * 2 * std::numbers::pi;
 	return opt::SourceEq{
 		{0},
-		[phase_rad, freq_rad](std::span<double> out, const double& t)
+		[phase_rad, freq_rad](std::span<double> out, const double& t, opt::SourceEq&)
 		{
 			out[0] = std::sin(t* freq_rad + phase_rad);
 		}

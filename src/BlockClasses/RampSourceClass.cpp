@@ -69,7 +69,7 @@ node::BlockClass::GetFunctorResult node::RampSourceClass::GetFunctor(const std::
 	double value = std::get<double>(properties[0].prop);
 	return opt::SourceEq{
 		{0},
-		[value](std::span<double> out, const double& t)
+		[value](std::span<double> out, const double& t, opt::SourceEq&)
 		{
 			out[0] = value * t;
 		}
