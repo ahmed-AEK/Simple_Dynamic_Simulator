@@ -28,7 +28,6 @@ TEST(testEquation, testAllocator)
 	opt::Equation eq({ { 0, 1, 2 }, &resource }, { { 3 }, &resource }, &resource);
 
 	std::vector<double> inputs{ 1,2,3 };
-	std::vector<double> outputs{ 0 };
 	auto input_buffer = eq.get_input_buffer();
 	for (size_t i = 0; i < inputs.size(); i++)
 	{

@@ -430,7 +430,7 @@ struct ModifyBlockPropertiesAndSocketsAction : public ModelAction
 		block->get().ReserveSockets(new_sockets.size());
 		for (auto&& socket : new_sockets)
 		{
-			block->get().AddSocket(std::move(socket));
+			block->get().AddSocket(socket);
 		}
 		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
 
@@ -500,7 +500,6 @@ struct UpdateNetAction : public ModelAction
 			{
 				return false;
 			}
-			auto node_id = connection.NodeId;
 			auto socket = block->get().GetSocketById(connection.socketId.socket_id);
 			assert(socket);
 			socket->get().SetConnectedNetNode(std::nullopt);
@@ -757,7 +756,7 @@ struct UpdateNetAction : public ModelAction
 			{
 				return false;
 			}
-			StoredSegment stored_segment{ *deleted_segment };
+			StoredSegment stored_segment{ *deleted_segment , {}, {}};
 
 			{
 				auto node_id = deleted_segment->get().m_firstNodeId;
@@ -850,7 +849,7 @@ struct UpdateNetAction : public ModelAction
 				return false;
 			}
 
-			StoredSegmentUpdate segment_update{ updated_segment->get().GetId(), model::NetNodeId{0}, model::NetNodeId{0} };
+			StoredSegmentUpdate segment_update{ updated_segment->get().GetId(), model::NetNodeId{0}, model::NetNodeId{0} , {}, {}};
 			{
 				// disconnect from old node
 				auto node_id = updated_segment->get().m_firstNodeId;

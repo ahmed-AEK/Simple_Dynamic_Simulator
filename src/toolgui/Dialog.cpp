@@ -331,11 +331,16 @@ void node::Dialog::ResizeToFitChildren()
 	SDL_Point min_size = CalculateMinSize();
 	int current_width = GetRect().w;
 	int current_height = GetRect().h;
-	if (current_width < min_size.x || current_height << min_size.y)
+	m_excess_height = std::max(min_size.y, current_height) - min_size.y;
+	if (current_width < min_size.x || current_height < min_size.y)
 	{
 		SetRect({ GetRect().x, GetRect().y, std::max(min_size.x, current_width), std::max(min_size.y, current_height) });
 	}
-	m_excess_height = GetRect().h - min_size.y;
+	else
+	{
+		RepositionControls();
+		RepositionButtons();
+	}
 }
 
 void node::Dialog::DrawTitle(SDL_Renderer* renderer, const SDL_Point& start )

@@ -6,6 +6,7 @@
 #include "toolgui/ToolBar.hpp"
 #include <charconv>
 #include <cstring>
+#include "boost/container/static_vector.hpp"
 
 namespace node
 {
@@ -666,6 +667,109 @@ static void DrawLineAA(SDL_Surface* surface, SDL_FPoint start, SDL_FPoint end, c
 }
 
 
+static constexpr std::optional<std::array<SDL_FPoint, 2>> clipPointsToScreen(const SDL_FPoint& p1, const SDL_FPoint& p2, const SDL_Rect& extents)
+{
+	enum class PointSide
+	{
+		inside,
+		left,
+		right,
+		top,
+		bottom,
+	};
+
+	auto SideFinder = [&](const SDL_FPoint& p) -> PointSide
+		{
+			if (p.x < extents.x)
+			{
+				return PointSide::left;
+			}
+			if (p.x > extents.x + extents.w)
+			{
+				return PointSide::right;
+			}
+			if (p.y < extents.y)
+			{
+				return PointSide::top;
+			}
+			if (p.y > extents.y + extents.h)
+			{
+				return PointSide::bottom;
+			}
+			return PointSide::inside;
+		};
+	auto p1_side = SideFinder(p1);
+	auto p2_side = SideFinder(p2);
+
+	if (p1_side != PointSide::inside && p1_side == p2_side)
+	{
+		return std::nullopt;
+	}
+	if (p1_side == PointSide::inside && p2_side == PointSide::inside)
+	{
+		return std::optional<std::array<SDL_FPoint, 2>>({ p1, p2 });
+	}
+	std::array<SDL_FPoint, 2> returned_points{ p1, p2 };
+	double dydx = (p2.y - p1.y) / (p2.x - p1.x);
+	double dxdy = (p2.x - p1.x) / (p2.y - p1.y);
+	auto clipper = [&](const auto& p, auto& target)
+		{
+			boost::container::static_vector<std::pair<SDL_FPoint, double>,4> intersections;
+			// intersect y = 0
+			{
+				double x_intercept = p.x + dxdy * (-p.y);
+				if (x_intercept > 0 && x_intercept < extents.w)
+				{
+					double distance = (p.x - x_intercept) * (p.x - x_intercept) + p.y * p.y;
+					intersections.push_back({ SDL_FPoint{ static_cast<float>(x_intercept), 0 }, distance });
+				}
+			}
+			// intersect y = h
+			{
+				double x_intercept = p.x + dxdy * (extents.h - p.y);
+				if (x_intercept > 0 && x_intercept < extents.w)
+				{
+					double distance = (p.x - x_intercept) * (p.x - x_intercept) + (p.y - extents.h) * (p.y - extents.h);
+					intersections.push_back({ SDL_FPoint{ static_cast<float>(x_intercept), static_cast<float>(extents.h) }, distance });
+				}
+			}
+			// intersect x = 0
+			{
+				double y_intercept = p.y + dydx * (-p.x);
+				if (y_intercept > 0 && y_intercept < extents.h)
+				{
+					double distance = (p.x) * (p.x) + (p.y - y_intercept) * (p.y - y_intercept);
+					intersections.push_back({ SDL_FPoint{ 0, static_cast<float>(y_intercept) }, distance });
+				}
+			}
+			// intersect x = w
+			{
+				double y_intercept = p.y + dydx * (extents.w - p.x);
+				if (y_intercept > 0 && y_intercept < extents.h)
+				{
+					double distance = (p.x - extents.w) * (p.x - extents.w) + (p.y - y_intercept) * (p.y - y_intercept);
+					intersections.push_back({ SDL_FPoint{ static_cast<float>(extents.w), static_cast<float>(y_intercept) }, distance });
+				}
+			}
+
+			if (intersections.size())
+			{
+				// return closest point
+				std::sort(intersections.begin(), intersections.end(), [](const auto& px, const auto& py) {return std::get<1>(px) < std::get<1>(py); });
+				target = std::get<0>(intersections[0]);
+			}
+		};
+	if (p1_side != PointSide::inside)
+	{
+		clipper(p1, returned_points[0]);
+	}
+	if (p2_side != PointSide::inside)
+	{
+		clipper(p2, returned_points[1]);
+	}
+	return returned_points;	
+}
+
 void node::PlotWidget::ReDrawSurface()
 {
 	std::vector<SDL_FPoint> points;
@@ -682,12 +786,15 @@ void node::PlotWidget::ReDrawSurface()
 		return;
 	}
 	SDL_Color color{ 30,120,180,255 };
+	SDL_Rect surface_extents{ 0,0,m_data_surface->w, m_data_surface->h };
 	for (size_t i = 1; i < points.size(); i++)
 	{
-		DrawLineAA(m_data_surface.get(), points[i - 1], points[i], color);
+		auto line_extents = clipPointsToScreen(points[i - 1], points[i], surface_extents);
+		if (line_extents)
+		{
+			DrawLineAA(m_data_surface.get(), (*line_extents)[0], (*line_extents)[1], color);
+		}
 	}
-
-
 }
 
 void node::PlotWidget::DrawData(SDL_Renderer* renderer)

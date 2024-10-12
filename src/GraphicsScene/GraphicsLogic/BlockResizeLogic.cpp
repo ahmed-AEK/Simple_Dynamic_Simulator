@@ -196,7 +196,7 @@ void node::logic::BlockResizeLogic::CleanUp()
 {
 	if (auto ptr = m_block.GetObjectPtr())
 	{
-		auto&& block = static_cast<BlockObject&>(*m_block.GetObjectPtr());
+		auto&& block = static_cast<BlockObject&>(*ptr);
 		SetBlockToRect(block, m_initial_rect, m_temp_sockets);
 	}
 

@@ -174,9 +174,9 @@ bool node::ArrowTool::InternalSelectObject(GraphicsObject* object)
 
 void node::ArrowTool::OnExit()
 {
-    if (auto resizer = m_current_block_resize_object.GetObjectPtr())
+    if (const auto* resizer = m_current_block_resize_object.GetObjectPtr())
     {
-        GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
+        GetScene()->PopObject(resizer);
         m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
     }
 }

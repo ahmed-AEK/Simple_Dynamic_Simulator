@@ -100,6 +100,6 @@ node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::
 		}
 	};
 	eq.GetEvent() = opt::SourceEq::SourceEvent{step_time, false};
-	return std::move(eq);
+	return eq;
 }
 
