@@ -68,10 +68,10 @@ class ToolBarCommandButton : public ToolBarButton
 {
 public:
 	ToolBarCommandButton(const SDL_Rect& rect, Scene* parent,
-		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return false; });
+		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return true; });
 	void OnButonClicked() override;
 protected:
-	bool IsDisabled() override { return m_isActive(); }
+	bool IsDisabled() override { return !m_isActive(); }
 private:
 	std::function<void()> m_action;
 	std::function<bool()> m_isActive;

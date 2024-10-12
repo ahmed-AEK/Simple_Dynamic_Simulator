@@ -24,6 +24,10 @@ namespace node
     {
     public:
         Scene(SDL_Rect rect, Application* parent);
+        
+        Scene(Scene&&) = delete;
+        Scene& operator=(Scene&&) = delete;
+
         void Draw(SDL_Renderer* renderer);
         void SetRect(const SDL_Rect& rect);
         SDL_Rect GetRect() const { return m_rect; }
@@ -34,6 +38,8 @@ namespace node
         void BumpDialogToTop(const node::Dialog* dialog);
         std::unique_ptr<node::Dialog> PopDialog(const node::Dialog* dialog);
 
+        void SetModalDialog(std::unique_ptr<node::Dialog> dialog);
+        
         virtual void OnInit() {};
         virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}
         virtual void LMBDown(const SDL_Point& p) {OnLMBDown(p);}
@@ -81,6 +87,7 @@ namespace node
 
     private:
         std::vector<std::unique_ptr<Dialog>> m_dialogs;
+        std::unique_ptr<Dialog> m_modal_dialog;
 
         node::HandlePtr<node::Widget> m_current_mouse_hover;
         node::HandlePtr<node::Widget> m_current_keyboar_focus;

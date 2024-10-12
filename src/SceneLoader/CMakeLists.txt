@@ -14,4 +14,5 @@ target_include_directories(SceneLoader PUBLIC "..")
 
 target_link_libraries(SceneLoader PUBLIC 
                         SQLiteCpp
+				NodeModels
                         )

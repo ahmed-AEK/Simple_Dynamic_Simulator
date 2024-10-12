@@ -11,6 +11,112 @@ template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 
+std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty::from_string(BlockPropertyType type, std::string_view str)
+{
+	switch (type)
+	{
+		using enum model::BlockPropertyType;
+	case Integer:
+	{
+		int64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case UnsignedInteger:
+	{
+		uint64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case FloatNumber:
+	{
+		double new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case Boolean:
+	{
+		int64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return static_cast<bool>(new_value);
+	}
+	case String:
+	{
+		return std::string{ str };
+	}
+	}
+	return std::nullopt;
+}
+
+std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty::from_string(BlockPropertyType type, std::string&& str)
+{
+	switch (type)
+	{
+		using enum model::BlockPropertyType;
+	case Integer:
+	{
+		int64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case UnsignedInteger:
+	{
+		uint64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case FloatNumber:
+	{
+		double new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return new_value;
+	}
+	case Boolean:
+	{
+		int64_t new_value = 0;
+		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
+		{
+			return std::nullopt;
+		}
+		return static_cast<bool>(new_value);
+	}
+	case String:
+	{
+		return std::move(str);
+	}
+	}
+	return std::nullopt;
+}
+
 std::string node::model::BlockProperty::to_string() const
 {
 	return std::visit(overloaded{

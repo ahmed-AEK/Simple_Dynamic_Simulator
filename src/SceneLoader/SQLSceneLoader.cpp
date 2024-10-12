@@ -33,7 +33,10 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     x INTEGER NOT NULL, 
                     y INTEGER NOT NULL, 
                     w INTEGER NOT NULL, 
-                    h INTEGER NOT NULL);)");
+                    h INTEGER NOT NULL,
+                    orientation INTEGER NOT NULL,
+                    class_name TEXT NOT NULL,
+                    styler_name TEXT NOT NULL);)");
 
         m_db.exec(R"(CREATE TABLE sockets (
                     id INTEGER NOT NULL,
@@ -43,6 +46,23 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     type INTEGER NOT NULL,
                     connected_node_id INTEGER,
                     PRIMARY KEY (id, parentid)
+                    FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
+
+        m_db.exec(R"(CREATE TABLE blockProperties (
+                    id INTEGER NOT NULL,
+                    parentid INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    type INTEGER NOT NULL,
+                    value TEXT NOT NULL,
+                    PRIMARY KEY (id, parentid),
+                    FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
+
+        m_db.exec(R"(CREATE TABLE blockStylerProperties (
+                    id INTEGER NOT NULL,
+                    parentid INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    PRIMARY KEY (id, parentid),
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
 
         SQLNodeLoader nodeLoader{ m_dbname, m_db };
@@ -60,7 +80,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
     }
 }
 
-std::shared_ptr<node::loader::NodeLoader> node::loader::SQLSceneLoader::GetNodeLoader()
+std::shared_ptr<node::loader::NodeLoader> node::loader::SQLSceneLoader::GetBlockLoader()
 {
     return m_nodeLoader;
 }

@@ -9,6 +9,7 @@ SimulatorRunner.hpp SimulatorRunner.cpp
 BlockPropertiesDialog.hpp BlockPropertiesDialog.cpp
 SimulationSettingsDialog.hpp SimulationSettingsDialog.cpp
 SimulationManager.hpp SimulationManager.cpp
+NewSceneDialog.hpp NewSceneDialog.cpp
 )
 
 target_include_directories(DynamicSimulator PRIVATE ".")

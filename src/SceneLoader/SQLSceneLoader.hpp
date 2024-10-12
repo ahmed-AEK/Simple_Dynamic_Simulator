@@ -16,7 +16,7 @@ public:
 
 	std::optional<node::model::NodeSceneModel> Load() override;
 	bool Save(const node::model::NodeSceneModel& scene) override;
-	std::shared_ptr<NodeLoader> GetNodeLoader() override;
+	std::shared_ptr<NodeLoader> GetBlockLoader() override;
 	std::shared_ptr<NetLoader> GetNetLoader() override;
 
 private:

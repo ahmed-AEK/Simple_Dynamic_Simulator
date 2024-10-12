@@ -14,7 +14,7 @@ class SceneLoader
 public:
 	virtual std::optional<node::model::NodeSceneModel> Load() = 0;
 	virtual bool Save(const node::model::NodeSceneModel& scene) = 0;
-	virtual std::shared_ptr<NodeLoader> GetNodeLoader() = 0;
+	virtual std::shared_ptr<NodeLoader> GetBlockLoader() = 0;
 	virtual std::shared_ptr<NetLoader> GetNetLoader() = 0;
 
 	virtual ~SceneLoader() = default;

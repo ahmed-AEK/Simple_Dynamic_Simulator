@@ -65,12 +65,13 @@ struct BlockProperty
 	using property_t = std::variant<std::string, double, int64_t, uint64_t, bool>;
 	BlockProperty(std::string name, BlockPropertyType type, property_t prop)
 		:name{ name }, type{ type }, prop{ prop } {}
-
 	std::string name;
 	BlockPropertyType type;
 	property_t prop;
 
 	std::string to_string() const;
+	static std::optional<property_t> from_string(BlockPropertyType type, std::string_view str);
+	static std::optional<property_t> from_string(BlockPropertyType type, std::string&& str);
 };
 
 struct BlockStyleProperties

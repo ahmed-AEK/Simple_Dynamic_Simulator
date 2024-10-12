@@ -40,6 +40,10 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
         auto&& widget = *it;
         widget->Draw(renderer);
     }
+    if (m_modal_dialog)
+    {
+        m_modal_dialog->Draw(renderer);
+    }
     if (m_pContextMenu)
     {
         m_pContextMenu->Draw(renderer);
@@ -163,6 +167,11 @@ node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
             return interactable;
         }
     }
+    if (m_modal_dialog)
+    {
+        node::Widget* current_hover = m_modal_dialog->GetInteractableAtPoint(p);
+        return current_hover;
+    }
     for (auto it = m_dialogs.rbegin(); it != m_dialogs.rend(); it++)
     {
         auto&& widget = *it;
@@ -225,6 +234,26 @@ std::unique_ptr<node::Dialog> node::Scene::PopDialog(const node::Dialog* dialog)
     return nullptr;
 }
 
+void node::Scene::SetModalDialog(std::unique_ptr<node::Dialog> dialog)
+{
+    m_modal_dialog = std::move(dialog);
+    if (m_dragObject)
+    {
+        if (m_current_mouse_hover && m_current_mouse_hover->IsDropTarget())
+        {
+            m_current_mouse_hover->DropExit(*m_dragObject);
+        }
+        m_dragObject = std::nullopt;
+    }
+    if (m_current_mouse_hover)
+    {
+        m_current_mouse_hover->MouseOut();
+    }
+    m_current_mouse_hover = nullptr;
+    m_current_keyboar_focus = nullptr;
+    m_pContextMenu = nullptr;
+}
+
 void node::Scene::SetRect(const SDL_Rect& rect)
 {
     OnSetRect(rect);
@@ -253,37 +282,41 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
         m_gScene->SetRect(scene_rect);
     }
 
-    double x_ratio = static_cast<double>(rect.w)/m_rect_base.w;
-    double y_ratio = static_cast<double>(rect.h)/m_rect_base.h;
+    auto dialog_resizer = [&](Dialog& dialog)
+        {
+            if (Dialog::ScreenResizeStrategy::FixedPosition != dialog.GetResizeStrategy())
+            {
+                return;
+            }
+            SDL_Rect modified_rect = dialog.GetRect();
+            SDL_Rect title_rect = dialog.GetTitleBarRect();
+            if (modified_rect.x + modified_rect.w > rect.w)
+            {
+                modified_rect.x = rect.w - modified_rect.w;
+            }
+            if (modified_rect.x < 0)
+            {
+                modified_rect.x = 0;
+            }
+            if (modified_rect.y + title_rect.h > rect.h)
+            {
+                modified_rect.y = rect.h - title_rect.h;
+            }
+            if (modified_rect.y < 0)
+            {
+                modified_rect.y = 0;
+            }
+            dialog.SetRect(modified_rect);
+        };
+
     for (auto& dialog: m_dialogs)
     {
-        UNUSED_PARAM(dialog);
-        UNUSED_PARAM(x_ratio);
-        UNUSED_PARAM(y_ratio);
-        
-        if (Dialog::ScreenResizeStrategy::FixedPosition != dialog->GetResizeStrategy())
-        {
-            continue;
-        }
-        SDL_Rect modified_rect = dialog->GetRect();
-        SDL_Rect title_rect = dialog->GetTitleBarRect();
-        if (modified_rect.x + modified_rect.w > rect.w)
-        {
-            modified_rect.x = rect.w - modified_rect.w;
-        }
-        if (modified_rect.x < 0)
-        {
-            modified_rect.x = 0;
-        }
-        if (modified_rect.y + title_rect.h > rect.h)
-        {
-            modified_rect.y = rect.h - title_rect.h;
-        }
-        if (modified_rect.y < 0)
-        {
-            modified_rect.y = 0;
-        }
-        dialog->SetRect(modified_rect);
+        assert(dialog);
+        dialog_resizer(*dialog);
+    }
+    if (m_modal_dialog)
+    {
+        dialog_resizer(*m_modal_dialog);
     }
 }
 

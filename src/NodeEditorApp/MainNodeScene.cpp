@@ -44,6 +44,7 @@
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
 #include "NodeEditorApp/SimulationSettingsDialog.hpp"
+#include "NodeEditorApp/NewSceneDialog.hpp"
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
@@ -103,6 +104,38 @@ void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* hand
     }
 }
 
+void node::MainNodeScene::NewScene()
+{
+    SDL_Log("new Scene confirmed!");
+    // remember to save scene here
+
+    m_scene_path = std::nullopt;
+    auto sceneModel = std::make_shared<model::NodeSceneModel>();
+    m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
+}
+
+void node::MainNodeScene::LoadScene(std::string name)
+{
+    SDL_Log("load Scene: %s", name.c_str());
+    m_scene_path = std::move(name);
+}
+
+void node::MainNodeScene::SaveScene()
+{
+    assert(m_scene_path);
+    if (!m_scene_path)
+    {
+        return;
+    }
+    SDL_Log("scene Saved to %s", m_scene_path->c_str());
+}
+
+void node::MainNodeScene::SaveScene(std::string name)
+{
+    SDL_Log("scene Saved to %s", name.c_str());
+    m_scene_path = std::move(name);
+}
+
 namespace
 {
 struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public node::SingleObserver<node::BlockDoubleClickedEvent>
@@ -121,6 +154,11 @@ struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public no
 void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
+    
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "N", [this]() {SDL_Log("New!"); this->NewScenePressed(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "L", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); }));
+    toolbar->AddSeparator();
     m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
     {
         auto arrow_tool = std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get());
@@ -136,16 +174,16 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
     toolbar->AddSeparator();
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U", 
-        [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return !this->CanUndo(); }));
+        [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", 
-        [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return !this->CanRedo(); }));
+        [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); }));
     toolbar->AddSeparator();
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", 
         [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
-        [this]() { return this->m_sim_mgr.IsSimulationRunning(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); }, 
         [this]() { return !this->m_sim_mgr.IsSimulationRunning(); }));
+    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); }, 
+        [this]() { return this->m_sim_mgr.IsSimulationRunning(); }));
     toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); }));
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
@@ -388,6 +426,26 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     {
         OpenPropertiesDialog(block);
     }
+}
+
+void node::MainNodeScene::NewScenePressed()
+{
+    SetModalDialog(std::make_unique<NewSceneDialog>(SDL_Rect{ 100,100,0,0 }, this));
+}
+
+void node::MainNodeScene::LoadSceneButtonPressed()
+{
+    SetModalDialog(std::make_unique<LoadSceneDialog>(SDL_Rect{ 100,100,0,0 }, this));
+}
+
+void node::MainNodeScene::SaveSceneButtonPressed()
+{
+    if (m_scene_path)
+    {
+        SaveScene();
+        return;
+    }
+    SetModalDialog(std::make_unique<SaveSceneDialog>(SDL_Rect{ 100,100,0,0 }, this));
 }
 
 void node::MainNodeScene::OnUndo()

@@ -40,64 +40,12 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, parent);
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
-			{ 
-				switch (old_prop.type)
-				{
-					using enum model::BlockPropertyType;
-				case Integer:
-				{
-					int64_t new_value = 0;
-					auto res = std::from_chars(value.data(), value.data() + value.size(), new_value);
-					if (res.ec != std::errc{} || res.ptr != value.data()+value.size())
-					{
-						return std::nullopt;
-					}
-					auto new_prop = old_prop;
-					new_prop.prop = new_value;
-					return new_prop;
-				}
-				case UnsignedInteger:
-				{
-					uint64_t new_value = 0;
-					auto res = std::from_chars(value.data(), value.data() + value.size(), new_value);
-					if (res.ec != std::errc{} || res.ptr != value.data() + value.size())
-					{
-						return std::nullopt;
-					}
-					auto new_prop = old_prop;
-					new_prop.prop = new_value;
-					return new_prop;
-				}	
-				case FloatNumber:
-				{
-					double new_value = 0;
-					auto res = std::from_chars(value.data(), value.data() + value.size(), new_value);
-					if (res.ec != std::errc{} || res.ptr != value.data() + value.size())
-					{
-						return std::nullopt;
-					}
-					auto new_prop = old_prop;
-					new_prop.prop = new_value;
-					return new_prop;
-				}
-				case Boolean:
-				{
-					int64_t new_value = 0;
-					auto res = std::from_chars(value.data(), value.data() + value.size(), new_value);
-					if (res.ec != std::errc{} || res.ptr != value.data() + value.size())
-					{
-						return std::nullopt;
-					}
-					auto new_prop = old_prop;
-					new_prop.prop = new_value != 0;
-					return new_prop;
-				}
-				case String:
+			{
+				if (auto prop = model::BlockProperty::from_string(old_prop.type, value))
 				{
 					auto new_prop = old_prop;
-					new_prop.prop = value;
+					new_prop.prop = std::move(*prop);
 					return new_prop;
-				}
 				}
 				return std::nullopt;
 			} 

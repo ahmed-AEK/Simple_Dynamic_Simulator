@@ -235,7 +235,7 @@ node::ToolBarCommandButton::ToolBarCommandButton(const SDL_Rect& rect, Scene* pa
 
 void node::ToolBarCommandButton::OnButonClicked()
 {
-	if (!m_isActive())
+	if (m_isActive())
 	{
 		m_action();
 	}

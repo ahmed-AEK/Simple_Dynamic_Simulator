@@ -49,6 +49,10 @@ public:
 
     void DeleteEventReceiver(const NodeSceneEventReceiver* handler);
     void AddEventReceiver(std::unique_ptr<NodeSceneEventReceiver> handler) { m_event_receivers.push_back(std::move(handler)); }
+    void NewScene();
+    void LoadScene(std::string name);
+    void SaveScene();
+    void SaveScene(std::string name);
 protected:
     virtual bool OnRMBUp(const SDL_Point& p) override;
     NodeGraphicsScene* m_graphicsScene = nullptr;
@@ -64,6 +68,9 @@ private:
     void OpenPropertiesDialog();
     void OpenPropertiesDialog(BlockObject& object);
     void OpenBlockDialog(BlockObject& block);
+    void NewScenePressed();
+    void LoadSceneButtonPressed();
+    void SaveSceneButtonPressed();
 
     void OnUndo();
     void OnRedo();
@@ -81,6 +88,7 @@ private:
 
     HandlePtr<Widget> m_settings_dialog;
 
+    std::optional<std::string> m_scene_path;
 };
 
 }
