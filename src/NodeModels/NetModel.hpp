@@ -41,7 +41,6 @@ public:
 	NetNodeId m_firstNodeId;
 	NetNodeId m_secondNodeId;
 	NetSegmentOrientation m_orientation;
-
 };
 
 struct SocketNodeConnection

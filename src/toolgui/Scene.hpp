@@ -37,6 +37,7 @@ namespace node
         void AddNormalDialog(std::unique_ptr<node::Dialog> dialog);
         void BumpDialogToTop(const node::Dialog* dialog);
         std::unique_ptr<node::Dialog> PopDialog(const node::Dialog* dialog);
+        void CloseAllDialogs();
 
         void SetModalDialog(std::unique_ptr<node::Dialog> dialog);
         

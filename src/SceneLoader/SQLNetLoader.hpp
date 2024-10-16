@@ -15,6 +15,7 @@ public:
 
 	// NetNode Functions
 	bool AddNetNode(const node::model::NetNodeModel& node) override;
+	std::vector<node::model::NetNodeModel> GetNetNodes() override;
 	bool DeleteNetNode(const node::model::id_int node_id) override;
 	bool UpdateNetNodePosition(
 		const node::model::id_int node_id,
@@ -28,8 +29,9 @@ public:
 	node::model::id_int GetNextNetNodeId() override;
 
 	// NetSegment Functions
-	virtual bool AddNetSegment(
-		const node::model::NetSegmentModel& segment);
+	bool AddNetSegment(
+		const node::model::NetSegmentModel& segment) override;
+	std::vector<node::model::NetSegmentModel> GetNetSegments() override;
 	virtual bool DeleteNetSegment(const node::model::id_int id);
 	virtual bool UpdateNetSegment(
 		const node::model::NetSegmentModel& segment);
@@ -37,24 +39,13 @@ public:
 		const node::model::id_int id);
 	virtual node::model::id_int GetNextSegmentId();
 
-	// Net Functions
-	virtual bool AddNet(const node::model::NetModel& net);
-	virtual bool DeleteNet(const node::model::id_int id);
-	virtual std::optional<node::model::NetModel> GetNet(
-		const node::model::id_int id);
-	virtual bool SetNetName(const node::model::id_int id,
-		std::string_view name);
-	virtual bool AddNodeToNet(const node::model::id_int net_id,
-		const node::model::id_int node_id);
-	virtual bool RemoveNodeFromNet(const node::model::id_int net_id,
-		const node::model::id_int node_id);
-	virtual bool AddSegmentToNet(const node::model::id_int net_id,
-		const node::model::id_int segment_id);
-	virtual bool RemoveSegmentFromNet(const node::model::id_int net_id,
-		const node::model::id_int segment_id);
-	virtual node::model::id_int GetNextNetId();
-
+	bool AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection) override;
+	std::vector<model::SocketNodeConnection> GetSocketNodeConnections() override;
 private:
+	std::optional<node::model::NetNodeModel> GetNode_internal(SQLite::Statement& query);
+	std::optional<node::model::NetSegmentModel> GetSegment_internal(SQLite::Statement& query);
+	std::optional<node::model::SocketNodeConnection> GetConnection_internal(SQLite::Statement& query);
+
 	std::string m_dbname;
 	SQLite::Database& m_db;
 };

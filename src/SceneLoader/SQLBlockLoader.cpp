@@ -1,8 +1,9 @@
-#include "SQLNodeLoader.hpp"
+#include "SQLBlockLoader.hpp"
 #include "toolgui/NodeMacros.h"
 #include <algorithm>
+#include <utility>
 
-bool node::loader::SQLNodeLoader::AddBlock(const node::model::BlockModel& block)
+bool node::loader::SQLBlockLoader::AddBlock(const node::model::BlockModel& block)
 {
 	{
 		SQLite::Statement query{ m_db, "INSERT INTO blocks VALUES (?,?,?,?,?,?,?,?)" };
@@ -46,7 +47,7 @@ bool node::loader::SQLNodeLoader::AddBlock(const node::model::BlockModel& block)
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::DeleteBlockAndSockets(const node::model::BlockId& node_id)
+bool node::loader::SQLBlockLoader::DeleteBlockAndSockets(const node::model::BlockId& node_id)
 {
 	{
 		SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE parentid = ?" };
@@ -60,7 +61,7 @@ bool node::loader::SQLNodeLoader::DeleteBlockAndSockets(const node::model::Block
 }
 
 std::optional<node::model::BlockModel>
-node::loader::SQLNodeLoader::GetBlock(const node::model::BlockId& block_id)
+node::loader::SQLBlockLoader::GetBlock(const node::model::BlockId& block_id)
 {
 	using namespace node::model;
 	SQLite::Statement query{ m_db, "SELECT * FROM blocks WHERE id = ?" };
@@ -76,7 +77,7 @@ node::loader::SQLNodeLoader::GetBlock(const node::model::BlockId& block_id)
 }
 
 
-bool node::loader::SQLNodeLoader::UpdateBlockPosition(const node::model::BlockId& node_id,
+bool node::loader::SQLBlockLoader::UpdateBlockPosition(const node::model::BlockId& node_id,
 	const node::model::Point& position)
 {
 	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ? WHERE id = ?" };
@@ -87,7 +88,7 @@ bool node::loader::SQLNodeLoader::UpdateBlockPosition(const node::model::BlockId
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::UpdateBlockBounds(const node::model::BlockId& node_id,
+bool node::loader::SQLBlockLoader::UpdateBlockBounds(const node::model::BlockId& node_id,
 	const node::model::Rect& bounds)
 {
 	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
@@ -100,7 +101,7 @@ bool node::loader::SQLNodeLoader::UpdateBlockBounds(const node::model::BlockId& 
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::AddStylerProperty(const node::model::BlockId& block_id, const std::string& name, const std::string& value, int32_t property_id)
+bool node::loader::SQLBlockLoader::AddStylerProperty(const node::model::BlockId& block_id, const std::string& name, const std::string& value, int32_t property_id)
 {
 	SQLite::Statement query{ m_db, "INSERT INTO blockStylerProperties VALUES (?,?,?,?)" };
 	query.bind(1, property_id);
@@ -111,7 +112,7 @@ bool node::loader::SQLNodeLoader::AddStylerProperty(const node::model::BlockId& 
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::AddProperty(const node::model::BlockId& block_id, const model::BlockProperty& property, int32_t property_id)
+bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block_id, const model::BlockProperty& property, int32_t property_id)
 {
 	SQLite::Statement query{ m_db, "INSERT INTO blockProperties VALUES (?,?,?,?,?)" };
 	query.bind(1, property_id);
@@ -124,7 +125,7 @@ bool node::loader::SQLNodeLoader::AddProperty(const node::model::BlockId& block_
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel& socket,
+bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel& socket,
 	const node::model::BlockId& block_id)
 {
 	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?,?)" };
@@ -145,7 +146,7 @@ bool node::loader::SQLNodeLoader::AddSocket(const node::model::BlockSocketModel&
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::SocketUniqueId& socket_id)
+bool node::loader::SQLBlockLoader::DeleteSocket(const node::model::SocketUniqueId& socket_id)
 {
 	SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE id = ? AND parentid = ?" };
 	query.bind(1, socket_id.socket_id.value);
@@ -154,7 +155,7 @@ bool node::loader::SQLNodeLoader::DeleteSocket(const node::model::SocketUniqueId
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
+bool node::loader::SQLBlockLoader::UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 	const node::model::Point& position)
 {
 	SQLite::Statement query{ m_db, "UPDATE sockets SET x = ?, y = ? WHERE id = ? AND parentid = ?" };
@@ -166,7 +167,7 @@ bool node::loader::SQLNodeLoader::UpdateSocketPosition(const node::model::Socket
 	return true;
 }
 
-node::model::BlockId node::loader::SQLNodeLoader::GetNextBlockId()
+node::model::BlockId node::loader::SQLBlockLoader::GetNextBlockId()
 {
 	SQLite::Statement query{ m_db, "SELECT MAX(id) FROM blocks" };
 	auto result = query.executeStep();
@@ -175,24 +176,24 @@ node::model::BlockId node::loader::SQLNodeLoader::GetNextBlockId()
 	return model::BlockId{ static_cast<node::model::id_int>(query.getColumn(0)) + 1 };
 }
 
-std::vector<node::model::BlockModel> node::loader::SQLNodeLoader::GetBlocks()
+std::vector<node::model::BlockModel> node::loader::SQLBlockLoader::GetBlocks()
 {
 	using namespace node::model;
 
-	std::vector<BlockModel> nodes;
+	std::vector<BlockModel> blocks;
 	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
 	while (query.executeStep())
 	{
 		if (auto block = GetBlock_internal(query))
 		{
-			nodes.push_back(std::move(*block));
+			blocks.push_back(std::move(*block));
 		}
 	}
-	return nodes;
+	return blocks;
 }
 
 void
-node::loader::SQLNodeLoader::LoadSocketsForBlock(node::model::BlockModel& block)
+node::loader::SQLBlockLoader::LoadSocketsForBlock(node::model::BlockModel& block)
 {
 	using namespace node::model;
 	SQLite::Statement querySocket{ m_db, "SELECT * FROM sockets WHERE parentid = ?" };
@@ -204,12 +205,18 @@ node::loader::SQLNodeLoader::LoadSocketsForBlock(node::model::BlockModel& block)
 		Point socketOrigin{ querySocket.getColumn(2), querySocket.getColumn(3) };
 		BlockSocketModel::SocketType type =
 			static_cast<node::model::BlockSocketModel::SocketType>(
-				static_cast<int>(querySocket.getColumn(5)));
-		block.AddSocket(node::model::BlockSocketModel{ type, model::SocketId{socket_id}, socketOrigin });
+				static_cast<int>(querySocket.getColumn(4)));
+		node::model::BlockSocketModel socket{ type, model::SocketId{socket_id}, socketOrigin };
+		auto connected_node_column = querySocket.getColumn(5);
+		if (!connected_node_column.isNull())
+		{
+			socket.SetConnectedNetNode(NetNodeId{ static_cast<id_int>(connected_node_column) });
+		}
+		block.AddSocket(std::move(socket));
 	}
 }
 
-bool node::loader::SQLNodeLoader::LoadPropertiesForBlock(node::model::BlockModel& block)
+bool node::loader::SQLBlockLoader::LoadPropertiesForBlock(node::model::BlockModel& block)
 {
 	struct BlockPropertyHolder
 	{
@@ -227,7 +234,7 @@ bool node::loader::SQLNodeLoader::LoadPropertiesForBlock(node::model::BlockModel
 		int32_t holder_id = propertyquery.getColumn(0);
 		std::string name{ propertyquery.getColumn(2).getText()};
 		int type_int{ propertyquery.getColumn(3) };
-		assert(type_int < std::variant_size_v<BlockProperty::property_t>);
+		assert(static_cast<size_t>(type_int) < std::variant_size_v<BlockProperty::property_t>);
 		std::string property{ propertyquery.getColumn(4).getText()};
 		auto type = static_cast<BlockPropertyType>(type_int);
 		auto prop = BlockProperty::from_string(type, std::move(property));
@@ -245,7 +252,7 @@ bool node::loader::SQLNodeLoader::LoadPropertiesForBlock(node::model::BlockModel
 	return true;
 }
 
-bool node::loader::SQLNodeLoader::LoadStylerProperties(node::model::BlockModel& block)
+bool node::loader::SQLBlockLoader::LoadStylerProperties(node::model::BlockModel& block)
 {
 	using namespace node::model;
 
@@ -262,7 +269,7 @@ bool node::loader::SQLNodeLoader::LoadStylerProperties(node::model::BlockModel& 
 	return true;
 }
 
-std::optional<node::model::BlockModel> node::loader::SQLNodeLoader::GetBlock_internal(SQLite::Statement& query)
+std::optional<node::model::BlockModel> node::loader::SQLBlockLoader::GetBlock_internal(SQLite::Statement& query)
 {
 	using namespace node::model;
 

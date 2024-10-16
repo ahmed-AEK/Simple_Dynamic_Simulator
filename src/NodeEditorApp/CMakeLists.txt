@@ -16,6 +16,6 @@ target_include_directories(DynamicSimulator PRIVATE ".")
 target_include_directories(DynamicSimulator INTERFACE "..")
 
 target_link_libraries(DynamicSimulator PRIVATE 
-SDL2::SDL2main toolgui GraphicsScene BlockPallete BlockClasses)
+SDL2::SDL2main toolgui GraphicsScene BlockPallete BlockClasses SceneLoader)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

@@ -32,10 +32,6 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
     m_objects.insert(iter, std::move(slot));
     object->SetScene(this);
     object->SetSelected(false);
-    object->SetSpaceOrigin(
-        object->isAligned() ? QuantizePoint({ object->GetSpaceRect().x, object->GetSpaceRect().y }) :
-        model::Point{ object->GetSpaceRect().x, object->GetSpaceRect().y }
-    );
 }
 
 

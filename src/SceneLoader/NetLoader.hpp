@@ -11,6 +11,7 @@ class NetLoader
 public:
 	// NetNode Functions
 	virtual bool AddNetNode(const node::model::NetNodeModel& node) = 0;
+	virtual std::vector<node::model::NetNodeModel> GetNetNodes() = 0;
 	virtual bool DeleteNetNode(const node::model::id_int node_id) = 0;
 	virtual bool UpdateNetNodePosition(
 		const node::model::id_int node_id, 
@@ -26,6 +27,7 @@ public:
 	// NetSegment Functions
 	virtual bool AddNetSegment(
 		const node::model::NetSegmentModel& segment) = 0;
+	virtual std::vector<node::model::NetSegmentModel> GetNetSegments() = 0;
 	virtual bool DeleteNetSegment(const node::model::id_int id) = 0;
 	virtual bool UpdateNetSegment(
 		const node::model::NetSegmentModel& segment) = 0;
@@ -33,22 +35,8 @@ public:
 		const node::model::id_int id) = 0;
 	virtual node::model::id_int GetNextSegmentId() = 0;
 
-	// Net Functions
-	virtual bool AddNet(const node::model::NetModel& net) = 0;
-	virtual bool DeleteNet(const node::model::id_int id) = 0;
-	virtual std::optional<node::model::NetModel> GetNet(
-		const node::model::id_int id) = 0;
-	virtual bool SetNetName(const node::model::id_int id, 
-		std::string_view name) = 0;
-	virtual bool AddNodeToNet(const node::model::id_int net_id,
-		const node::model::id_int node_id) = 0;
-	virtual bool RemoveNodeFromNet(const node::model::id_int net_id,
-		const node::model::id_int node_id) = 0;
-	virtual bool AddSegmentToNet(const node::model::id_int net_id,
-		const node::model::id_int segment_id) = 0;
-	virtual bool RemoveSegmentFromNet(const node::model::id_int net_id,
-		const node::model::id_int segment_id) = 0;
-	virtual node::model::id_int GetNextNetId() = 0;
+	virtual bool AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection) = 0;
+	virtual std::vector<model::SocketNodeConnection> GetSocketNodeConnections() = 0;
 
 	// virtual destructor
 	virtual ~NetLoader() = default;

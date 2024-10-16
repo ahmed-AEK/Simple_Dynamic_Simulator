@@ -2,17 +2,17 @@
 
 #include <memory>
 
-#include "SceneLoader/NodeLoader.hpp"
+#include "SceneLoader/BlockLoader.hpp"
 #include "NodeModels/BlockModel.hpp"
 #include "SQLiteCpp/Database.h"
 
 namespace node::loader
 {
 
-class SQLNodeLoader : public NodeLoader
+class SQLBlockLoader : public BlockLoader
 {
 public:
-	SQLNodeLoader(std::string dbname, SQLite::Database& db)
+	SQLBlockLoader(std::string dbname, SQLite::Database& db)
 		: m_dbname{ dbname }, m_db{ db } {}
 	bool AddBlock(const node::model::BlockModel& block) override;
 	bool DeleteBlockAndSockets(const node::model::BlockId& block_id) override;

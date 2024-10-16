@@ -1,18 +1,32 @@
 #include "SQLSceneLoader.hpp"
 #include "toolgui/NodeMacros.h"
-#include "SQLNodeLoader.hpp"
+#include "SQLBlockLoader.hpp"
 #include "SQLNetLoader.hpp"
 #include <iostream>
 
 std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
 {
     std::optional<node::model::NodeSceneModel> scene{ std::in_place };
-    SQLNodeLoader nodeLoader{ m_dbname, m_db };
+    SQLBlockLoader nodeLoader{ m_dbname, m_db };
     auto blocks = nodeLoader.GetBlocks();
     scene->ReserveBlocks(blocks.size());
     for (auto&& block : blocks)
     {
         scene->AddBlock(std::move(block));
+    }
+
+    SQLNetLoader netLoader{ m_dbname, m_db };
+    for (auto&& net_node : netLoader.GetNetNodes())
+    {
+        scene->AddNetNode(std::move(net_node));
+    }
+    for (auto&& net_segment : netLoader.GetNetSegments())
+    {
+        scene->AddNetSegment(std::move(net_segment));
+    }
+    for (auto&& socket_connection : netLoader.GetSocketNodeConnections())
+    {
+        scene->AddSocketNodeConnection(std::move(socket_connection));
     }
     return scene;
 }
@@ -20,9 +34,13 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
 bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene)
 {
     try {
-
         m_db.exec("DROP TABLE IF EXISTS blocks");
         m_db.exec("DROP TABLE IF EXISTS sockets");
+        m_db.exec("DROP TABLE IF EXISTS blockProperties");
+        m_db.exec("DROP TABLE IF EXISTS blockStylerProperties");
+        m_db.exec("DROP TABLE IF EXISTS NetNodes");
+        m_db.exec("DROP TABLE IF EXISTS NetSegments");
+        m_db.exec("DROP TABLE IF EXISTS SocketNodeConnections");
         m_db.exec("DROP TABLE IF EXISTS version");
 
         m_db.exec("CREATE TABLE version ( major INTEGER PRIMARY KEY, minor INTEGER )");
@@ -65,12 +83,46 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     PRIMARY KEY (id, parentid),
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
 
-        SQLNodeLoader nodeLoader{ m_dbname, m_db };
-        for (const auto& node : scene.GetBlocks())
+        m_db.exec(R"(CREATE TABLE NetNodes (
+                    id INTEGER PRIMARY KEY,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    north_segment INTEGER,
+                    south_segment INTEGER,
+                    west_segment INTEGER, 
+                    east_segment INTEGER );)");
+
+        m_db.exec(R"(CREATE TABLE NetSegments (
+                    id INTEGER PRIMARY KEY,
+                    first_segment INTEGER NOT NULL,
+                    second_segment INTEGER NOT NULL,
+                    orientation INTEGER NOT NULL );)");
+
+        m_db.exec(R"(CREATE TABLE SocketNodeConnections (
+                    socket_id INTEGER NOT NULL,
+                    block_id INTEGER NOT NULL,
+                    node_id INTEGER NOT NULL,
+                    PRIMARY KEY (socket_id, block_id, node_id) );)");
+
+        SQLBlockLoader nodeLoader{ m_dbname, m_db };
+        for (const auto& block : scene.GetBlocks())
         {
-            nodeLoader.AddBlock(node);
+            nodeLoader.AddBlock(block);
         }
-        UNUSED_PARAM(scene);
+
+        SQLNetLoader netLoader{ m_dbname, m_db };
+        for (const auto& net_node : scene.GetNetNodes())
+        {
+            netLoader.AddNetNode(net_node);
+        }
+        for (const auto& net_segment : scene.GetNetSegments())
+        {
+            netLoader.AddNetSegment(net_segment);
+        }
+        for (const auto& connection : scene.GetSocketConnections())
+        {
+            netLoader.AddSocketNodeConnection(connection);
+        }
         return true;
     }
     catch (std::exception& e)
@@ -80,7 +132,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
     }
 }
 
-std::shared_ptr<node::loader::NodeLoader> node::loader::SQLSceneLoader::GetBlockLoader()
+std::shared_ptr<node::loader::BlockLoader> node::loader::SQLSceneLoader::GetBlockLoader()
 {
     return m_nodeLoader;
 }

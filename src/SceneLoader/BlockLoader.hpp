@@ -6,7 +6,7 @@ namespace node::loader
 {
 
 
-class NodeLoader
+class BlockLoader
 {
 public:
 	virtual bool AddBlock(const node::model::BlockModel& block) = 0;
@@ -28,12 +28,12 @@ public:
 	virtual node::model::BlockId GetNextBlockId() = 0;
 	virtual std::vector<node::model::BlockModel> GetBlocks() = 0;
 
-	virtual ~NodeLoader() = default;
-	NodeLoader() = default;
-	NodeLoader(NodeLoader&&) = default;
-	NodeLoader(const NodeLoader&) = default;
-	NodeLoader& operator=(NodeLoader&&) = default;
-	NodeLoader& operator=(const NodeLoader&) = default;
+	virtual ~BlockLoader() = default;
+	BlockLoader() = default;
+	BlockLoader(BlockLoader&&) = default;
+	BlockLoader(const BlockLoader&) = default;
+	BlockLoader& operator=(BlockLoader&&) = default;
+	BlockLoader& operator=(const BlockLoader&) = default;
 };
 
 }

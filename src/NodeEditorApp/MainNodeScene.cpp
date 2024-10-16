@@ -46,6 +46,8 @@
 #include "NodeEditorApp/SimulationSettingsDialog.hpp"
 #include "NodeEditorApp/NewSceneDialog.hpp"
 
+#include "SceneLoader/SceneLoader.hpp"
+
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
     assert(manager);
@@ -109,31 +111,44 @@ void node::MainNodeScene::NewScene()
     SDL_Log("new Scene confirmed!");
     // remember to save scene here
 
-    m_scene_path = std::nullopt;
+    m_db_connector = std::nullopt;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
+    CloseAllDialogs();
     m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
 }
 
 void node::MainNodeScene::LoadScene(std::string name)
 {
     SDL_Log("load Scene: %s", name.c_str());
-    m_scene_path = std::move(name);
+    DBConnector connector{ std::move(name), nullptr };
+    connector.connector = node::loader::MakeSqlLoader(connector.db_path);
+    if (auto new_scene = connector.connector->Load())
+    {
+        auto scene = std::make_shared<model::NodeSceneModel>(std::move(*new_scene));
+        CloseAllDialogs();
+        m_db_connector = std::move(connector);
+        m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(scene)));
+    }
 }
 
 void node::MainNodeScene::SaveScene()
 {
-    assert(m_scene_path);
-    if (!m_scene_path)
+    assert(m_db_connector);
+    if (!m_db_connector)
     {
         return;
     }
-    SDL_Log("scene Saved to %s", m_scene_path->c_str());
+    SDL_Log("scene Saved to %s", m_db_connector->db_path.c_str());
+    m_db_connector->connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel());
 }
 
 void node::MainNodeScene::SaveScene(std::string name)
 {
     SDL_Log("scene Saved to %s", name.c_str());
-    m_scene_path = std::move(name);
+    DBConnector connector{ std::move(name), nullptr };
+    connector.connector = node::loader::MakeSqlLoader(connector.db_path);
+    m_db_connector = std::move(connector);
+    m_db_connector->connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel());
 }
 
 namespace
@@ -440,7 +455,7 @@ void node::MainNodeScene::LoadSceneButtonPressed()
 
 void node::MainNodeScene::SaveSceneButtonPressed()
 {
-    if (m_scene_path)
+    if (m_db_connector)
     {
         SaveScene();
         return;

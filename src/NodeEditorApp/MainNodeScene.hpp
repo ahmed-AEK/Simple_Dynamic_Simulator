@@ -15,6 +15,11 @@ class BlockClassesManager;
 class BlockObject;
 class BlockStylerFactory;
 
+namespace loader
+{
+    class SceneLoader;
+}
+
 class NodeSceneEventReceiver
 {
 public:
@@ -35,6 +40,12 @@ struct DialogSlot
 {
     HandlePtr<Widget> dialog;
     DialogType type;
+};
+
+struct DBConnector
+{
+    std::string db_path;
+    std::unique_ptr<node::loader::SceneLoader> connector;
 };
 
 class MainNodeScene: public node::Scene
@@ -88,7 +99,7 @@ private:
 
     HandlePtr<Widget> m_settings_dialog;
 
-    std::optional<std::string> m_scene_path;
+    std::optional<DBConnector> m_db_connector;
 };
 
 }

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 
 add_executable(SceneLoadertest
 SQLSceneLoadertest.cpp
-SQLNodeLoadertest.cpp
+SQLBlockLoadertest.cpp
+SQLNetLoadertest.cpp
 )
 
 target_link_libraries(SceneLoadertest PRIVATE GTest::gtest_main GTest::gmock_main SceneLoader)

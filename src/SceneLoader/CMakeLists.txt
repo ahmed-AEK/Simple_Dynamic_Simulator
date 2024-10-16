@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.11)
 
 add_library(SceneLoader 
 SceneLoader.hpp
+SceneLoader.cpp
 SQLSceneLoader.hpp SQLSceneLoader.cpp
-NodeLoader.hpp
-SQLNodeLoader.hpp SQLNodeLoader.cpp
+BlockLoader.hpp
+SQLBlockLoader.hpp SQLBlockLoader.cpp
 NetLoader.hpp
 SQLNetLoader.hpp SQLNetLoader.cpp
 )

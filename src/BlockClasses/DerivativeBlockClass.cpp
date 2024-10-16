@@ -61,9 +61,9 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 		{1},
 		opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::FatAny& old_state) ->opt::FatAny
 		{
-			if (old_state.contains<std::array<double, 3>>())
+			if (old_state.contains<std::array<double, 2>>())
 			{
-				const auto& arr = old_state.get<const std::array<double, 3>>();
+				const auto& arr = old_state.get<const std::array<double, 2>>();
 				out[0] = (in[0] - arr[1]) / (t - arr[0]);
 			}
 			else
@@ -71,7 +71,7 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 				out[0] = 0;
 			}
 
-			return opt::FatAny{ std::array<double, 3>{ t,in[0], out[0] }};
+			return opt::FatAny{ std::array<double, 2>{ t,in[0] }};
 		}}
 	};
 }

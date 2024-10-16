@@ -234,6 +234,16 @@ std::unique_ptr<node::Dialog> node::Scene::PopDialog(const node::Dialog* dialog)
     return nullptr;
 }
 
+void node::Scene::CloseAllDialogs()
+{
+    while (m_dialogs.size())
+    {
+        const auto* ptr = m_dialogs[0].get();
+        PopDialog(ptr);
+    }
+    SetModalDialog(nullptr);
+}
+
 void node::Scene::SetModalDialog(std::unique_ptr<node::Dialog> dialog)
 {
     m_modal_dialog = std::move(dialog);

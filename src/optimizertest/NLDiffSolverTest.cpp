@@ -191,24 +191,17 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
         {3},
         opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::FatAny& old_state) ->opt::FatAny
         {
-            if (old_state.contains<std::array<double, 3>>())
+            if (old_state.contains<std::array<double, 2>>())
             {
-                auto& arr = old_state.get<std::array<double, 3>>();
-                if (arr[0] == t)
-                {
-                    out[0] = arr[2];
-                }
-                else
-                {
-                    out[0] = (in[0] - arr[1]) / (t - arr[0]);
-                }
+                const auto& arr = old_state.get<const std::array<double, 2>>();
+                out[0] = (in[0] - arr[1]) / (t - arr[0]);
             }
             else
             {
                 out[0] = 0;
             }
 
-            return opt::FatAny{ std::array<double, 3>{ t,in[0], out[0] }};
+            return opt::FatAny{ std::array<double, 2>{ t,in[0] }};
         }}
     };
 

@@ -44,8 +44,12 @@ public:
 		GetNetSegmentById(const NetSegmentId& id);
 	std::span<NetSegmentModel>
 		GetNetSegments() { return m_segments; }
+	std::span<const NetSegmentModel>
+		GetNetSegments() const { return m_segments; }
 
 	std::span<model::SocketNodeConnection> GetSocketConnections() { return m_SocketConnections; }
+	std::span<const model::SocketNodeConnection> GetSocketConnections() const { return m_SocketConnections; }
+
 	void AddSocketNodeConnection(const model::SocketNodeConnection& connection) {
 		m_SocketConnections.push_back(connection);
 	}

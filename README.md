@@ -12,9 +12,10 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - Display simulation result on Scope block
 - Block pallete to add blocks
 - customized block shapes
+- persistent storing and loading blocks (experimental)
+- undo/redo
 
 ### Not Implemented yet:
-- persistent storing and loading blocks
 - ability to add user defined blocks
 - scripting engine
 - more blocks, saving output to disk, etc..

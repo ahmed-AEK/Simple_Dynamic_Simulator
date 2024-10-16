@@ -39,6 +39,50 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
         GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(block.GetId(), ptr);
     }
+    for (const auto& net_node : m_sceneModel->GetModel().GetNetNodes())
+    {
+        auto node = std::make_unique<node::NetNode>(net_node.GetPosition(), GetScene());
+        node->SetId(net_node.GetId());
+        m_net_nodes.emplace(net_node.GetId(), node.get());
+        GetScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
+    }
+    for (const auto& net_segment : m_sceneModel->GetModel().GetNetSegments())
+    {
+        auto it_node1 = m_net_nodes.find(net_segment.m_firstNodeId);
+        auto it_node2 = m_net_nodes.find(net_segment.m_secondNodeId);
+        assert(it_node1 != m_net_nodes.end());
+        assert(it_node2 != m_net_nodes.end());
+        if (it_node1 == m_net_nodes.end() || it_node2 == m_net_nodes.end())
+        {
+            SDL_Log("broken scene!");
+            return;
+        }
+        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, GetScene());
+
+        segment_obj->SetId(net_segment.GetId());
+        m_net_segments.emplace(net_segment.GetId(), segment_obj.get());
+        GetScene()->AddObject(std::move(segment_obj), GraphicsScene::SegmentLayer);
+    }
+    for (const auto& socket_connection : m_sceneModel->GetModel().GetSocketConnections())
+    {
+        auto it_block = m_blocks.find(socket_connection.socketId.block_id);
+        assert(it_block != m_blocks.end());
+        auto it_node = m_net_nodes.find(socket_connection.NodeId);
+        assert(it_node != m_net_nodes.end());
+        if (it_block == m_blocks.end() || it_node == m_net_nodes.end())
+        {
+            SDL_Log("broken scene conn!");
+            return;
+        }
+        auto&& socket = it_block->second->GetSocketById(socket_connection.socketId.socket_id);
+        assert(socket);
+        if (!socket)
+        {
+            SDL_Log("broken scene socket!");
+            return;
+        }
+        socket->get().SetConnectedNode(it_node->second);
+    }
 }
 
 void node::GraphicsObjectsManager::OnNotify(SceneModification& e)

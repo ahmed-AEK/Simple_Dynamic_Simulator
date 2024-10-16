@@ -714,14 +714,17 @@ static constexpr std::optional<std::array<SDL_FPoint, 2>> clipPointsToScreen(con
 	double dxdy = (p2.x - p1.x) / (p2.y - p1.y);
 	auto clipper = [&](const auto& p, auto& target)
 		{
-			boost::container::static_vector<std::pair<SDL_FPoint, double>,4> intersections;
+			// boost static vector fails on gcc MinSizeRel
+			std::array<std::pair<SDL_FPoint, double>,4> intersections;
+			size_t intersection_size = 0;
 			// intersect y = 0
 			{
 				double x_intercept = p.x + dxdy * (-p.y);
 				if (x_intercept > 0 && x_intercept < extents.w)
 				{
 					double distance = (p.x - x_intercept) * (p.x - x_intercept) + p.y * p.y;
-					intersections.push_back({ SDL_FPoint{ static_cast<float>(x_intercept), 0 }, distance });
+					intersections[intersection_size] = { SDL_FPoint{ static_cast<float>(x_intercept), 0 }, distance };
+					intersection_size++;
 				}
 			}
 			// intersect y = h
@@ -730,7 +733,8 @@ static constexpr std::optional<std::array<SDL_FPoint, 2>> clipPointsToScreen(con
 				if (x_intercept > 0 && x_intercept < extents.w)
 				{
 					double distance = (p.x - x_intercept) * (p.x - x_intercept) + (p.y - extents.h) * (p.y - extents.h);
-					intersections.push_back({ SDL_FPoint{ static_cast<float>(x_intercept), static_cast<float>(extents.h) }, distance });
+					intersections[intersection_size] = { SDL_FPoint{ static_cast<float>(x_intercept), static_cast<float>(extents.h) }, distance };
+					intersection_size++;
 				}
 			}
 			// intersect x = 0
@@ -739,7 +743,8 @@ static constexpr std::optional<std::array<SDL_FPoint, 2>> clipPointsToScreen(con
 				if (y_intercept > 0 && y_intercept < extents.h)
 				{
 					double distance = (p.x) * (p.x) + (p.y - y_intercept) * (p.y - y_intercept);
-					intersections.push_back({ SDL_FPoint{ 0, static_cast<float>(y_intercept) }, distance });
+					intersections[intersection_size] = { SDL_FPoint{ 0, static_cast<float>(y_intercept) }, distance };
+					intersection_size++;
 				}
 			}
 			// intersect x = w
@@ -748,14 +753,15 @@ static constexpr std::optional<std::array<SDL_FPoint, 2>> clipPointsToScreen(con
 				if (y_intercept > 0 && y_intercept < extents.h)
 				{
 					double distance = (p.x - extents.w) * (p.x - extents.w) + (p.y - y_intercept) * (p.y - y_intercept);
-					intersections.push_back({ SDL_FPoint{ static_cast<float>(extents.w), static_cast<float>(y_intercept) }, distance });
+					intersections[intersection_size] = { SDL_FPoint{ static_cast<float>(extents.w), static_cast<float>(y_intercept) }, distance };
+					intersection_size++;
 				}
 			}
 
-			if (intersections.size())
+			if (intersection_size)
 			{
 				// return closest point
-				std::sort(intersections.begin(), intersections.end(), [](const auto& px, const auto& py) {return std::get<1>(px) < std::get<1>(py); });
+				std::sort(intersections.begin(), intersections.begin() + intersection_size, [](const auto& px, const auto& py) {return std::get<1>(px) < std::get<1>(py); });
 				target = std::get<0>(intersections[0]);
 			}
 		};

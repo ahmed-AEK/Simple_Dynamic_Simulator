@@ -1,7 +1,7 @@
 //#pragma warning( push , 0)
 #include "gtest/gtest.h"
 //#pragma warning( pop ) 
-#include "SceneLoader/SQLNodeLoader.hpp"
+#include "SceneLoader/SQLBlockLoader.hpp"
 #include "SceneLoader/SQLSceneLoader.hpp"
 
 using namespace node::loader;
@@ -208,4 +208,86 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties2)
 	EXPECT_EQ(loaded_properties.properties.find(property_name)->second, property_value);
 	ASSERT_TRUE(loaded_properties.properties.contains(property2_name));
 	EXPECT_EQ(loaded_properties.properties.find(property2_name)->second, property2_value);
+}
+
+
+TEST(testBlockLoader, testSaveLoadBlockSockets)
+{
+	NodeSceneModel scene;
+	BlockId block_id{ 1 };
+	Rect block_rect{ 1,1,10,10 };
+	BlockModel original_block{ block_id, block_rect };
+	auto socket_type = BlockSocketModel::SocketType::input;
+	auto socket_id = SocketId{ 2 };
+	Point socket_pos{ 5,5 };
+	NetNodeId connected_node{ 4 };
+	BlockSocketModel socket1{ socket_type, socket_id, socket_pos, connected_node };
+	original_block.AddSocket(socket1);
+	scene.AddBlock(BlockModel{ original_block });
+
+	SQLSceneLoader loader(":memory:");
+
+	auto result = loader.Save(scene);
+
+	ASSERT_TRUE(result);
+
+	auto loaded_scene = loader.Load();
+	ASSERT_TRUE(loaded_scene.has_value());
+	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
+	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
+
+	ASSERT_TRUE(loaded_block_opt);
+	auto&& loaded_block = loaded_block_opt->get();
+	ASSERT_EQ(loaded_block.GetSockets().size(), 1);
+
+	auto&& loaded_socket = loaded_block.GetSockets()[0];
+	EXPECT_EQ(loaded_socket.GetId(), socket_id);
+	EXPECT_EQ(loaded_socket.GetPosition(), socket_pos);
+	EXPECT_EQ(loaded_socket.GetType(), socket_type);
+	ASSERT_TRUE(loaded_socket.GetConnectedNetNode());
+	ASSERT_EQ(*loaded_socket.GetConnectedNetNode(), connected_node);
+}
+
+TEST(testBlockLoader, testSaveLoadBlockSockets2)
+{
+	NodeSceneModel scene;
+	BlockId block_id{ 1 };
+	Rect block_rect{ 1,1,10,10 };
+	BlockModel original_block{ block_id, block_rect };
+	auto socket_type = BlockSocketModel::SocketType::output;
+	auto socket_id = SocketId{ 3 };
+	Point socket_pos{ 5,5 };
+	BlockSocketModel socket1{ socket_type, socket_id, socket_pos };
+	original_block.AddSocket(socket1);
+	auto socket_type2 = BlockSocketModel::SocketType::input;
+	auto socket_id2 = SocketId{ 0 };
+	Point socket_pos2{ 6,6 };
+	BlockSocketModel socket2{ socket_type2, socket_id2, socket_pos2 };
+	original_block.AddSocket(socket2);
+	scene.AddBlock(BlockModel{ original_block });
+
+	SQLSceneLoader loader(":memory:");
+
+	auto result = loader.Save(scene);
+
+	ASSERT_TRUE(result);
+
+	auto loaded_scene = loader.Load();
+	ASSERT_TRUE(loaded_scene.has_value());
+	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
+	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
+
+	ASSERT_TRUE(loaded_block_opt);
+	auto&& loaded_block = loaded_block_opt->get();
+	ASSERT_EQ(loaded_block.GetSockets().size(), 2);
+
+	auto&& loaded_socket = loaded_block.GetSockets()[0];
+	EXPECT_EQ(loaded_socket.GetId(), socket_id);
+	EXPECT_EQ(loaded_socket.GetPosition(), socket_pos);
+	EXPECT_EQ(loaded_socket.GetType(), socket_type);
+
+	auto&& loaded_socket2 = loaded_block.GetSockets()[1];
+	EXPECT_EQ(loaded_socket2.GetId(), socket_id2);
+	EXPECT_EQ(loaded_socket2.GetPosition(), socket_pos2);
+	EXPECT_EQ(loaded_socket2.GetType(), socket_type2);
 }
