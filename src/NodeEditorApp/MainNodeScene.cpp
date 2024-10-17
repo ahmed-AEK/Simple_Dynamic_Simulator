@@ -595,7 +595,7 @@ void node::MainNodeScene::OnSettingsClicked()
     if (!m_settings_dialog.isAlive())
     {
         auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
-            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,400,400 }, this);
+            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,0,0 }, this);
         m_settings_dialog = dialog->GetMIHandlePtr();
         AddNormalDialog(std::move(dialog));
     }
