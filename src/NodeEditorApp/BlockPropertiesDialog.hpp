@@ -1,7 +1,6 @@
 #pragma once
 
 #include "toolgui/Dialog.hpp"
-#include "toolgui/LineEditControl.hpp"
 
 class SDLFont;
 

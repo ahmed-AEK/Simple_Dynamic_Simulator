@@ -1,6 +1,7 @@
 #include "NodeEditorApp.hpp"
 #include "NodeEditorApp/MainNodeScene.hpp"
 #include "NodeEditorApp/NodeGraphicsScene.hpp"
+#include "GraphicsScene/ToolsManager.hpp"
 
 namespace node
 {

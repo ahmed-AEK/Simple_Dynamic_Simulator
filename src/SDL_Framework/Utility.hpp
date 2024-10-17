@@ -21,7 +21,7 @@ class DroppableTexture
 {
 public:
     DroppableTexture() {}
-
+    DroppableTexture(SDLTexture&& texture);
     DroppableTexture(DroppableTexture&& other) noexcept;
     DroppableTexture& operator=(DroppableTexture&& other) noexcept;
 
@@ -34,7 +34,6 @@ public:
     operator bool() const { return m_stored_texture != nullptr; }
 private:
     SDLTexture m_stored_texture{ nullptr };
-
 };
 
 class RoundRectPainter
@@ -42,23 +41,18 @@ class RoundRectPainter
 public:
     RoundRectPainter() {}
 
-    RoundRectPainter(const RoundRectPainter& other) noexcept
-        :stored_color{other.stored_color}, stored_radius{other.stored_radius} {}
-    RoundRectPainter& operator=(const RoundRectPainter& other) noexcept { 
-        stored_color = other.stored_color;
-        stored_radius = other.stored_radius;
-        return *this;
-    }
+    RoundRectPainter(const RoundRectPainter& other) = default;
+    RoundRectPainter& operator=(const RoundRectPainter& other) = default;
 
-    RoundRectPainter(RoundRectPainter&& other) noexcept = default;
-    RoundRectPainter& operator=(RoundRectPainter&& other) noexcept = default;
+    RoundRectPainter(RoundRectPainter&& other) = default;
+    RoundRectPainter& operator=(RoundRectPainter&& other) = default;
 
     void Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color);
 
 private:
     void ReCreateArcTexture(SDL_Renderer* renderer);
 
-    DroppableTexture m_arc_texture;
+    std::shared_ptr<DroppableTexture> m_arc_texture;
     SDL_Color stored_color{ 0,0,0,0 };
     int stored_radius{ 0 };
 };

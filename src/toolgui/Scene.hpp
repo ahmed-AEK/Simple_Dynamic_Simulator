@@ -19,7 +19,9 @@ namespace node
     class SidePanel;
     class ToolBar;
     class Dialog;
+    class ToolTipWidget;
 
+    
     class TOOLGUI_API Scene
     {
     public:
@@ -51,6 +53,9 @@ namespace node
 
         void InvalidateRect();
         void Start();
+
+        void ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip);
+        void HideToolTip(Widget* widget);
 
         void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_Point& p);
         void DestroyContextMenu();
@@ -87,6 +92,7 @@ namespace node
         SDL_Rect m_rect;
 
     private:
+        std::unique_ptr<ToolTipWidget> m_tooltip;
         std::vector<std::unique_ptr<Dialog>> m_dialogs;
         std::unique_ptr<Dialog> m_modal_dialog;
 

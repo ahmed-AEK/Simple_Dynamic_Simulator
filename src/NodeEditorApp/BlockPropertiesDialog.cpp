@@ -20,6 +20,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 
 	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), parent));
 	auto class_ptr = m_classesManager->GetBlockClassByName(block.GetClass());
+	assert(class_ptr);
 	if (class_ptr)
 	{
 		auto font = parent->GetApp()->getFont(FontType::Label).get();
@@ -73,48 +74,56 @@ void node::BlockPropertiesDialog::OnOk()
 		}
 	}
 
+	auto block = m_scene_manager->GetSceneModel()->GetModel().GetBlockById(m_block_id);
+	if (!block)
+	{
+		Dialog::OnOk();
+		SDL_Log("Update Failed!");
+		return;
+	}
+	auto block_class = m_classesManager->GetBlockClassByName(block->get().GetClass());
+	if (!block_class)
+	{
+		Dialog::OnOk();
+		SDL_Log("Update Failed!");
+		return;
+	}
+
 	bool renew_sockets = false;
 	std::vector<model::BlockSocketModel> new_sockets;
-	auto block = m_scene_manager->GetSceneModel()->GetModel().GetBlockById(m_block_id);
-	if (block)
+	auto new_sockets_type = block_class->CalculateSockets(new_properties);
+	auto old_sockets = block->get().GetSockets();
+	if (new_sockets_type.size() != old_sockets.size())
 	{
-		auto block_class = m_classesManager->GetBlockClassByName(block->get().GetClass());
-		if (block_class)
+		renew_sockets = true;
+	}
+	else
+	{
+		for (size_t i = 0; i < new_sockets_type.size(); i++)
 		{
-			auto new_sockets_type = block_class->CalculateSockets(new_properties);
-			auto old_sockets = block->get().GetSockets();
-			if (new_sockets_type.size() != old_sockets.size())
+			if (new_sockets_type[i] != old_sockets[i].GetType())
 			{
 				renew_sockets = true;
-			}
-			else
-			{
-				for (size_t i = 0; i < new_sockets_type.size(); i++)
-				{
-					if (new_sockets_type[i] != old_sockets[i].GetType())
-					{
-						renew_sockets = true;
-						break;
-					}
-				}
-			}
-			if (renew_sockets)
-			{
-				new_sockets.reserve(new_sockets_type.size());
-				for (size_t i = 0; i < new_sockets_type.size(); i++)
-				{
-					new_sockets.push_back(model::BlockSocketModel{ new_sockets_type[i],model::SocketId{static_cast<model::id_int>(i)} });
-				}
-				auto&& block_registry = m_scene_manager->getBlocksRegistry();
-				auto it = block_registry.find(m_block_id);
-				assert(it != block_registry.end());
-				if (it != block_registry.end())
-				{
-					it->second->GetStyler().PositionSockets(new_sockets, block->get().GetBounds(), block->get().GetOrienation());
-				}
+				break;
 			}
 		}
 	}
+	if (renew_sockets)
+	{
+		new_sockets.reserve(new_sockets_type.size());
+		for (size_t i = 0; i < new_sockets_type.size(); i++)
+		{
+			new_sockets.push_back(model::BlockSocketModel{ new_sockets_type[i],model::SocketId{static_cast<model::id_int>(i)} });
+		}
+		auto&& block_registry = m_scene_manager->getBlocksRegistry();
+		auto it = block_registry.find(m_block_id);
+		assert(it != block_registry.end());
+		if (it != block_registry.end())
+		{
+			it->second->GetStyler().PositionSockets(new_sockets, block->get().GetBounds(), block->get().GetOrienation());
+		}
+	}
+	
 	auto model_manager = m_scene_manager->GetSceneModel();
 	auto block_id = m_block_id;
 	Dialog::OnOk();

@@ -2,6 +2,7 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 #include "SDL_Framework/Utility.hpp"
+#include "ToolTipWidget.hpp"
 
 node::ToolBar::ToolBar(const SDL_Rect& rect, Scene* parent)
 	:Widget(rect, parent)
@@ -161,6 +162,7 @@ node::ToolBarButton::ToolBarButton(const SDL_Rect& rect, Scene* parent, std::str
 
 node::ToolBarButton::~ToolBarButton()
 {
+	HideToolTip();
 }
 
 void node::ToolBarButton::Draw(SDL_Renderer* renderer)
@@ -181,28 +183,75 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 	inner_rect.y += thickness;
 	inner_rect.w -= 2 * thickness;
 	inner_rect.h -= 2 * thickness;
-	if (!m_name_texture)
+	auto text_drawer = [&]() 
+		{
+			if (!m_text_painter)
+			{
+				m_text_painter = TextPainter{ GetScene()->GetApp()->getFont().get() };
+				if (m_name.size())
+				{
+					m_text_painter->SetText(std::string{ m_name[0] });
+				}
+			}
+
+			SDL_Color Black = { 50, 50, 50, 255 };
+			SDL_Rect text_rect = m_text_painter->GetRect(renderer, Black);
+			text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
+			text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;
+			m_text_painter->Draw(renderer, SDL_Point{ text_rect.x, text_rect.y }, Black);
+		};
+	if (!m_svg_painter)
 	{
-		SDL_Color Black = { 50, 50, 50, 255 };
-		auto surface = SDLSurface{ TTF_RenderText_Blended(GetScene()->GetApp()->getFont().get(), m_name.c_str(), Black)};
-		m_name_texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, surface.get()) };
+		text_drawer();
 	}
-	SDL_Rect text_rect{};
-	SDL_QueryTexture(m_name_texture.get(), NULL, NULL, &text_rect.w, &text_rect.h);
-	text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
-	text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;
-	SDL_RenderCopy(renderer, m_name_texture.get(), NULL, &text_rect);
+	else
+	{
+		// draw the svg
+		m_svg_painter->SetSize(inner_rect.w - 8, inner_rect.h - 8);
+		if (!m_svg_painter->Draw(renderer, inner_rect.x + 4, inner_rect.y + 4))
+		{
+			m_svg_painter = std::nullopt;
+			text_drawer();
+		}
+	}
+}
+
+void node::ToolBarButton::SetSVGPath(std::string path)
+{
+	m_svg_painter = SVGRasterizer{ path , 0, 0};
+	m_text_painter = std::nullopt;
+}
+
+void node::ToolBarButton::SetDescription(std::string description)
+{
+	m_description = description;
 }
 
 void node::ToolBarButton::OnMouseOut()
 {
 	b_hovered = false;
 	b_held_down = false;
+	HideToolTip();
+	if (m_updateTaskId)
+	{
+		GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+		m_updateTaskId = 0;
+	}
 }
 
 void node::ToolBarButton::OnMouseIn()
 {
 	b_hovered = true;
+	m_last_action_time = SDL_GetTicks64();
+	if (!m_updateTaskId && m_description.size())
+	{
+		m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() {this->InternalUpdateToolTip(); }));
+	}
+}
+
+void node::ToolBarButton::OnMouseMove(const SDL_Point& current_point)
+{
+	m_last_mouse_pos = current_point;
 }
 
 void node::ToolBarButton::OnButonClicked()
@@ -225,6 +274,30 @@ MI::ClickEvent node::ToolBarButton::OnLMBUp(const SDL_Point& current_mouse_point
 	}
 	b_held_down = false;
 	return MI::ClickEvent::CLICKED;
+}
+
+
+void node::ToolBarButton::InternalUpdateToolTip()
+{
+	uint64_t current_time = SDL_GetTicks64();
+	if (current_time - m_last_action_time > 500 && m_updateTaskId)
+	{
+		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetScene()->GetApp()->getFont().get(), m_description, SDL_Rect{ m_last_mouse_pos.x, m_last_mouse_pos.y, 1,1 }, GetScene());
+		m_toolTipWidget = toolTipWidget->GetMIHandlePtr();
+		GetScene()->ShowToolTip(std::move(toolTipWidget));
+		GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+		m_updateTaskId = 0;
+	}
+}
+
+void node::ToolBarButton::HideToolTip()
+{
+	auto* scene = GetScene();
+	if (scene && m_toolTipWidget)
+	{
+		scene->HideToolTip(m_toolTipWidget.GetObjectPtr());
+		m_toolTipWidget = nullptr;
+	}
 }
 
 node::ToolBarCommandButton::ToolBarCommandButton(const SDL_Rect& rect, Scene* parent, 

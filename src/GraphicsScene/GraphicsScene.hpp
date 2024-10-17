@@ -7,7 +7,7 @@
 #include <span>
 #include "GraphicsScene/tools/GraphicsTool.hpp"
 #include <optional>
-#include "NodeModels/SceneModelManager.hpp"
+#include "NodeModels/Observer.hpp"
 
 namespace node
 {

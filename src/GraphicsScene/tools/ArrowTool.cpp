@@ -140,7 +140,7 @@ MI::ClickEvent node::ArrowTool::OnLMBUp(const model::Point& p)
     {
         BlockDoubleClickedEvent e{ static_cast<BlockObject*>(current_hover) };
         Notify(e);
-        return MI::ClickEvent::CLICKED;
+        return MI::ClickEvent::CAPTURE_END;
     }
 
     UNUSED_PARAM(p);

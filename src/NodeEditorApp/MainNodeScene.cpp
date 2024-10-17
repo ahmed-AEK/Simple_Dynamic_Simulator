@@ -18,6 +18,7 @@
 #include "GraphicsScene/tools/NetTool.hpp"
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "GraphicsScene/ToolsManager.hpp"
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
@@ -169,10 +170,24 @@ struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public no
 void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
-    
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "N", [this]() {SDL_Log("New!"); this->NewScenePressed(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "L", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); }));
+    {
+        auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
+        new_btn->SetSVGPath("./assets/new_file.svg");
+        new_btn->SetDescription("New");
+        toolbar->AddButton(std::move(new_btn));
+    }
+    {
+        auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
+        load_btn->SetSVGPath("./assets/load_file.svg");
+        load_btn->SetDescription("Load");
+        toolbar->AddButton(std::move(load_btn));
+    }
+    {
+        auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
+        save_btn->SetDescription("Save");
+        save_btn->SetSVGPath("./assets/save_file.svg");
+        toolbar->AddButton(std::move(save_btn));
+    }
     toolbar->AddSeparator();
     m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
     {
@@ -184,22 +199,68 @@ void node::MainNodeScene::InitializeTools()
     }
     m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
     m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
-    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager));
-    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager));
-    toolbar->AddButton(std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager));
+    {
+        auto arrow_btn = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager);
+        arrow_btn->SetDescription("Arrow Tool");
+        arrow_btn->SetSVGPath("./assets/arrow.svg");
+        toolbar->AddButton(std::move(arrow_btn));
+    }
+    {
+        auto net_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager);
+        net_tool->SetDescription("Net Tool");
+        net_tool->SetSVGPath("./assets/net_tool.svg");
+        toolbar->AddButton(std::move(net_tool));        
+    }
+    {
+        auto delete_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager);
+        delete_tool->SetDescription("Delete Tool");
+        delete_tool->SetSVGPath("./assets/delete_tool.svg");
+        toolbar->AddButton(std::move(delete_tool));
+    }
     toolbar->AddSeparator();
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U", 
-        [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", 
-        [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); }));
+    {
+        auto undo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U",
+            [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
+        undo_btn->SetDescription("Undo");
+        undo_btn->SetSVGPath("./assets/undo.svg");
+        toolbar->AddButton(std::move(undo_btn));
+    }
+    {
+        auto redo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R",
+            [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
+        redo_btn->SetDescription("Redo");
+        redo_btn->SetSVGPath("./assets/redo.svg");
+        toolbar->AddButton(std::move(redo_btn));
+    }
+
     toolbar->AddSeparator();
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P", 
-        [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); }, 
-        [this]() { return !this->m_sim_mgr.IsSimulationRunning(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); }, 
-        [this]() { return this->m_sim_mgr.IsSimulationRunning(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); }));
+    {
+        auto prop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P",
+            [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); });
+        prop_btn->SetDescription("Properties");
+        prop_btn->SetSVGPath("./assets/properties.svg");
+        toolbar->AddButton(std::move(prop_btn));
+    }
+    {
+        auto run_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
+            [this]() { return !this->m_sim_mgr.IsSimulationRunning(); });
+        run_btn->SetDescription("Run Simulation");
+        run_btn->SetSVGPath("./assets/run.svg");
+        toolbar->AddButton(std::move(run_btn));
+    }
+    {
+        auto stop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
+            [this]() { return this->m_sim_mgr.IsSimulationRunning(); });
+        stop_btn->SetDescription("Stop Simulation");
+        stop_btn->SetSVGPath("./assets/stop_sim.svg");
+        toolbar->AddButton(std::move(stop_btn));
+    }
+    {
+        auto settings_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
+        settings_btn->SetDescription("Settings");
+        settings_btn->SetSVGPath("./assets/settings.svg");
+        toolbar->AddButton(std::move(settings_btn));
+    }
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
 }
@@ -595,7 +656,7 @@ void node::MainNodeScene::OnSettingsClicked()
     if (!m_settings_dialog.isAlive())
     {
         auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
-            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,400,400 }, this);
+            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,0,0 }, this);
         m_settings_dialog = dialog->GetMIHandlePtr();
         AddNormalDialog(std::move(dialog));
     }

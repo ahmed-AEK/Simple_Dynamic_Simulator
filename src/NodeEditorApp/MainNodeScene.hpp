@@ -1,8 +1,6 @@
 #pragma once
 
 #include "toolgui/Scene.hpp"
-#include "GraphicsScene/ToolsManager.hpp"
-#include "SimulatorRunner.hpp"
 #include "NodeEditorApp/SimulationManager.hpp"
 
 namespace node
@@ -10,10 +8,12 @@ namespace node
 class MainNodeScene;
 class Application;
 class NodeGraphicsScene;
+class GraphicsScene;
 class GraphicsObjectsManager;
 class BlockClassesManager;
 class BlockObject;
 class BlockStylerFactory;
+class ToolsManager;
 
 namespace loader
 {

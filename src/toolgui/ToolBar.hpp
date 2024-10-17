@@ -5,6 +5,7 @@
 #include <variant>
 #include <functional>
 #include "SDL_Framework/Utility.hpp"
+#include "SDL_Framework/SVGRasterizer.hpp"
 
 namespace node
 {
@@ -20,20 +21,32 @@ public:
 	~ToolBarButton() override;
 	const std::string& GetName() const noexcept { return m_name; }
 	void Draw(SDL_Renderer* renderer) override;
+	void SetSVGPath(std::string path);
+	void SetDescription(std::string description);
 protected:
 	virtual bool IsDisabled() { return false; }
 	void OnMouseOut() override final;
 	void OnMouseIn() override final;
+	void OnMouseMove(const SDL_Point& current_point) override;
 	virtual void OnButonClicked();
 	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override final;
 	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override final;
-
+private:
+	void InternalUpdateToolTip();
+	void HideToolTip();
 	bool b_hovered = false;
 	bool b_held_down = false;
 	std::string m_name{};
-	SDLTexture m_name_texture;
+	std::optional<TextPainter> m_text_painter;
+	std::optional<SVGRasterizer> m_svg_painter;
 	std::unique_ptr<RoundRectPainter> m_painter_outer;
 	std::unique_ptr<RoundRectPainter> m_painter_inner;
+	uint64_t m_last_action_time = 0;
+	int64_t m_updateTaskId = 0;
+	SDL_Point m_last_mouse_pos;
+	std::string m_description;
+	
+	HandlePtr<Widget> m_toolTipWidget;
 };
 
 class ToolBar: public Widget

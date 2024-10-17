@@ -6,6 +6,87 @@
 #include <cassert>
 #include <utility>
 
+
+
+template <typename Key, typename Value>
+class CacheStore
+{
+    struct ValueStore
+    {
+        std::weak_ptr<Value> ptr;
+        Value val;
+    };
+    struct Deleter
+    {
+        std::unordered_map<Key, ValueStore>& map_ref;
+        Key key;
+        void operator()(Value*)
+        {
+            map_ref.erase(key);
+        }
+    };
+public:
+    CacheStore() = default;
+    CacheStore(const CacheStore&) = delete;
+    CacheStore& operator=(const CacheStore&) = delete;
+
+    template <typename K, typename U>
+    std::shared_ptr<Value> AddItem(K&& key, U&& value)
+    {
+
+        std::shared_ptr<Value> result_obj;
+        auto result = m_stored_values.emplace(key, ValueStore{ std::weak_ptr<Value>{}, std::forward<U>(value) });
+        if (!result.second)
+        {
+            result_obj = result.first->second.ptr.lock();
+            return result_obj;
+        }
+        result_obj = std::shared_ptr<Value>{ &(result.first->second.val), Deleter{m_stored_values, key} };
+        result.first->second.ptr = result_obj;
+        return result_obj;
+    }
+    template <typename U>
+    std::shared_ptr<Value> GetItem(U&& key)
+    {
+        auto it = m_stored_values.find(std::forward<U>(key));
+        if (it != m_stored_values.end())
+        {
+            return it->second.ptr.lock();
+        }
+        return nullptr;
+    }
+private:
+    std::unordered_map<Key, ValueStore> m_stored_values;
+};
+
+static bool operator==(const SDL_Color& r1, const SDL_Color& r2)
+{
+    return r1.r == r2.r && r1.g == r2.g && r1.b == r2.b;
+}
+
+struct RoundRectSpec
+{
+    SDL_Color color;
+    int radius;
+    bool operator==(const RoundRectSpec&) const = default;
+};
+
+template <>
+struct std::hash<RoundRectSpec>
+{
+    std::size_t operator()(const RoundRectSpec& k) const
+    {
+        size_t hash = 23;
+        hash = hash * 31 + k.color.r;
+        hash = hash * 31 + k.color.g;
+        hash = hash * 31 + k.color.b;
+        hash = hash * 31 + k.radius;
+        return hash;
+    }
+};
+
+CacheStore<RoundRectSpec, DroppableTexture> g_roundrect_store;
+
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color)
 {
     DrawRoundRect(renderer, rect, radius, color);
@@ -53,14 +134,10 @@ void textures::ResetAllTextures()
 
 void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color)
 {
-    if (!m_arc_texture.GetTexture() || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
+    if (!m_arc_texture || !m_arc_texture->GetTexture() || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
     {
         stored_color = color;
         stored_radius = radius;
-        if (m_arc_texture.GetTexture())
-        {
-            m_arc_texture.DropTexture();
-        }
         ReCreateArcTexture(renderer);
     }
     {
@@ -78,36 +155,52 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
     {
         // draw lower right corner
         SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y + rect.h - radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper right corner
         SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper left corner
         SDL_Rect trgt{ rect.x, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
     }
     {
         // draw lower left corner
         SDL_Rect trgt{ rect.x, rect.y + rect.h - stored_radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture.GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
     }
 }
 
 void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
 {
-    SDL_Texture* old_texture = SDL_GetRenderTarget(renderer);
-    SDLTexture stored_arc_texture{ SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, stored_radius, stored_radius) };
-    m_arc_texture.SetTexture(std::move(stored_arc_texture));
-    SDL_SetTextureBlendMode(m_arc_texture.GetTexture(), SDL_BLENDMODE_BLEND);
-    SDL_SetRenderTarget(renderer, m_arc_texture.GetTexture());
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
-    SDL_RenderClear(renderer); // clear renderer
-    DrawFilledArcAA3(renderer, stored_radius - 1, stored_color);
-    SDL_SetRenderTarget(renderer, old_texture);
+    RoundRectSpec spec{ stored_color,stored_radius };
+    if (auto ptr = g_roundrect_store.GetItem(spec))
+    {
+        m_arc_texture = std::move(ptr);
+    }
+    else
+    {
+        m_arc_texture = g_roundrect_store.AddItem(spec, DroppableTexture{});
+    }
+
+    if (!m_arc_texture->GetTexture())
+    {
+        SDL_Texture* old_texture = SDL_GetRenderTarget(renderer);
+        {
+            SDLTexture stored_arc_texture{ SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, stored_radius, stored_radius) };
+            m_arc_texture->SetTexture(std::move(stored_arc_texture));
+        }
+
+        SDL_SetTextureBlendMode(m_arc_texture->GetTexture(), SDL_BLENDMODE_BLEND);
+        SDL_SetRenderTarget(renderer, m_arc_texture->GetTexture());
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
+        SDL_RenderClear(renderer); // clear renderer
+        DrawFilledArcAA3(renderer, stored_radius - 1, stored_color);
+        SDL_SetRenderTarget(renderer, old_texture);
+    }
 }
 
 void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
@@ -299,6 +392,11 @@ void TextPainter::SetFont(TTF_Font* font)
 {
     m_font = font;
     m_text_texture.DropTexture();
+}
+
+DroppableTexture::DroppableTexture(SDLTexture&& texture)
+{
+    SetTexture(std::move(texture));
 }
 
 DroppableTexture::DroppableTexture(DroppableTexture&& other) noexcept

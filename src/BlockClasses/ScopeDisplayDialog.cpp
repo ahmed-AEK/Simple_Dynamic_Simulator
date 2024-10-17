@@ -250,7 +250,7 @@ void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 
 void node::ScopeDisplayToolButton::OnButonClicked()
 {
-	m_manager.ChangeTool(m_name);
+	m_manager.ChangeTool(GetName());
 }
 
 node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)

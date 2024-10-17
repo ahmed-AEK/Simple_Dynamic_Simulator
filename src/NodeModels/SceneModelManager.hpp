@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NodeModels/NodeScene.hpp"
-#include "NodeModels/BlockModel.hpp"
 #include "NodeModels/Observer.hpp"
 #include <variant>
 #include <stack>
