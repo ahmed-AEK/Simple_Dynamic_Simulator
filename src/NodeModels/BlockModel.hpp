@@ -163,5 +163,4 @@ private:
 using BlockModelRef = std::reference_wrapper<BlockModel>;
 using BlockModelConstRef = std::reference_wrapper<const BlockModel>;
 
-
 }

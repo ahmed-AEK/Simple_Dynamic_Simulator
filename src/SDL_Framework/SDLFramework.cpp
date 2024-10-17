@@ -24,7 +24,6 @@ namespace SDL
     SDLFramework::SDLFramework() 
     : m_SDL_init_done(false), m_SDL_TTF_init_done(false), m_SDL_Image_init_done(false)
     {
-
     }
 
     bool SDLFramework::Init(uint32_t flags)

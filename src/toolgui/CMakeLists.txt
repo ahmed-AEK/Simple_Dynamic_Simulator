@@ -17,6 +17,7 @@ Dialog.hpp Dialog.cpp
 MessageBox.hpp MessageBox.cpp
 LineEditControl.hpp LineEditControl.cpp
 DialogControls.hpp DialogControls.cpp
+ToolTipWidget.hpp ToolTipWidget.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

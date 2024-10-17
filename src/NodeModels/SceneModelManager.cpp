@@ -1,7 +1,6 @@
 #include "SceneModelManager.hpp"
 #include <iterator>
 
-
 static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, const node::model::Point& point,
 	node::model::NodeSceneModel& model)
 {
@@ -87,48 +86,50 @@ struct MoveBlockAction : public ModelAction
 	{
 		auto block = manager.GetModel().GetBlockById(id);
 		assert(block);
-		if (block)
+		if (!block)
 		{
-			block->get().SetPosition(src_point);
-			for (auto&& socket : block->get().GetSockets())
-			{
-				const auto& connected_node = socket.GetConnectedNetNode();
-				if (connected_node)
-				{
-					MoveNodeAndConnectedNodes(*connected_node, 
-						{ src_point.x + socket.GetPosition().x, src_point.y + socket.GetPosition().y}, manager.GetModel());
-				}
-			}
-			manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
-		
-			return true;
+			return false;
 		}
-		return false;
+
+		block->get().SetPosition(src_point);
+		for (auto&& socket : block->get().GetSockets())
+		{
+			const auto& connected_node = socket.GetConnectedNetNode();
+			if (connected_node)
+			{
+				MoveNodeAndConnectedNodes(*connected_node, 
+					{ src_point.x + socket.GetPosition().x, src_point.y + socket.GetPosition().y}, manager.GetModel());
+			}
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
+		
+		return true;
 	}
 
 	bool DoRedo(SceneModelManager& manager) override
 	{
 		auto block = manager.GetModel().GetBlockById(id);
 		assert(block);
-		if (block)
+		if (!block)
 		{
-			src_point = block->get().GetPosition();
-
-			block->get().SetPosition(dst_point);
-			for (auto&& socket : block->get().GetSockets())
-			{
-				const auto& connected_node = socket.GetConnectedNetNode();
-				auto&& socket_pos = socket.GetPosition();
-				if (connected_node)
-				{
-					MoveNodeAndConnectedNodes(*connected_node, 
-						{ dst_point.x + socket_pos.x, dst_point.y + socket_pos.y }, manager.GetModel());
-				}
-			}
-			manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
-			return true;
+			return false;
 		}
-		return false;
+
+		src_point = block->get().GetPosition();
+
+		block->get().SetPosition(dst_point);
+		for (auto&& socket : block->get().GetSockets())
+		{
+			const auto& connected_node = socket.GetConnectedNetNode();
+			auto&& socket_pos = socket.GetPosition();
+			if (connected_node)
+			{
+				MoveNodeAndConnectedNodes(*connected_node, 
+					{ dst_point.x + socket_pos.x, dst_point.y + socket_pos.y }, manager.GetModel());
+			}
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
+		return true;
 	}
 
 };
@@ -150,68 +151,70 @@ struct ResizeBlockAction : public ModelAction
 	{
 		auto block = manager.GetModel().GetBlockById(id);
 		assert(block);
-		if (block)
+		if (!block)
 		{
-			block->get().SetOrientation(old_orientation);
-			block->get().SetBounds(src_rect);
-			for (auto&& socket : block->get().GetSockets())
-			{
-				auto old_socket_it = std::find_if(old_sockets_positions.begin(), old_sockets_positions.end(), 
-					[&](const model::BlockSocketModel& old_socket) {return old_socket.GetId() == socket.GetId(); });
-				assert(old_socket_it != old_sockets_positions.end());
-				if (old_socket_it == old_sockets_positions.end())
-				{
-					return false;
-				}
-				const auto& connected_node = socket.GetConnectedNetNode();
-				auto&& old_socket_pos = old_socket_it->GetPosition();
-				socket.SetPosition(old_socket_pos);
-				if (connected_node)
-				{
-					MoveNodeAndConnectedNodes(*connected_node,
-						{ dst_rect.x + old_socket_pos.x, dst_rect.y + old_socket_pos.y }, manager.GetModel());
-				}
-			}
-			manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
-			return true;
+			return false;
 		}
-		return false;
+
+		block->get().SetOrientation(old_orientation);
+		block->get().SetBounds(src_rect);
+		for (auto&& socket : block->get().GetSockets())
+		{
+			auto old_socket_it = std::find_if(old_sockets_positions.begin(), old_sockets_positions.end(), 
+				[&](const model::BlockSocketModel& old_socket) {return old_socket.GetId() == socket.GetId(); });
+			assert(old_socket_it != old_sockets_positions.end());
+			if (old_socket_it == old_sockets_positions.end())
+			{
+				return false;
+			}
+			const auto& connected_node = socket.GetConnectedNetNode();
+			auto&& old_socket_pos = old_socket_it->GetPosition();
+			socket.SetPosition(old_socket_pos);
+			if (connected_node)
+			{
+				MoveNodeAndConnectedNodes(*connected_node,
+					{ dst_rect.x + old_socket_pos.x, dst_rect.y + old_socket_pos.y }, manager.GetModel());
+			}
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
+		return true;
 	}
 
 	bool DoRedo(SceneModelManager& manager) override
 	{
 		auto block = manager.GetModel().GetBlockById(id);
 		assert(block);
-		if (block)
+		if (!block)
 		{
-			src_rect = block->get().GetBounds();
-			old_orientation = block->get().GetOrienation();
-
-			block->get().SetOrientation(new_orientation);
-			block->get().SetBounds(dst_rect);
-			for (auto&& socket : block->get().GetSockets())
-			{
-				auto new_socket_it = std::find_if(new_sockets_positions.begin(), new_sockets_positions.end(), [&](const model::BlockSocketModel& new_socket) {return new_socket.GetId() == socket.GetId(); });
-				assert(new_socket_it != new_sockets_positions.end());
-				if (new_socket_it == new_sockets_positions.end())
-				{
-					return false;
-				}
-				const auto& connected_node = socket.GetConnectedNetNode();
-				auto&& old_socket_pos = socket.GetPosition();
-				old_sockets_positions.push_back(model::BlockSocketModel{ socket.GetType(), socket.GetId(), old_socket_pos});
-				auto&& new_socket_pos = new_socket_it->GetPosition();
-				socket.SetPosition(new_socket_pos);
-				if (connected_node)
-				{
-					MoveNodeAndConnectedNodes(*connected_node,
-						{ dst_rect.x + new_socket_pos.x, dst_rect.y + new_socket_pos.y }, manager.GetModel());
-				}
-			}
-			manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
-			return true;
+			return false;
 		}
-		return false;
+
+		src_rect = block->get().GetBounds();
+		old_orientation = block->get().GetOrienation();
+
+		block->get().SetOrientation(new_orientation);
+		block->get().SetBounds(dst_rect);
+		for (auto&& socket : block->get().GetSockets())
+		{
+			auto new_socket_it = std::find_if(new_sockets_positions.begin(), new_sockets_positions.end(), [&](const model::BlockSocketModel& new_socket) {return new_socket.GetId() == socket.GetId(); });
+			assert(new_socket_it != new_sockets_positions.end());
+			if (new_socket_it == new_sockets_positions.end())
+			{
+				return false;
+			}
+			const auto& connected_node = socket.GetConnectedNetNode();
+			auto&& old_socket_pos = socket.GetPosition();
+			old_sockets_positions.push_back(model::BlockSocketModel{ socket.GetType(), socket.GetId(), old_socket_pos});
+			auto&& new_socket_pos = new_socket_it->GetPosition();
+			socket.SetPosition(new_socket_pos);
+			if (connected_node)
+			{
+				MoveNodeAndConnectedNodes(*connected_node,
+					{ dst_rect.x + new_socket_pos.x, dst_rect.y + new_socket_pos.y }, manager.GetModel());
+			}
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
+		return true;
 	}
 
 };
@@ -234,14 +237,14 @@ struct AddBlockAction : public ModelAction
 
 		auto block_ref = manager.GetModel().GetBlockById(*stored_id);
 		assert(block_ref);
-		if (block_ref)
+		if (!block_ref)
 		{
-			manager.GetModel().RemoveBlockById(*stored_id);
-			manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{*stored_id} });
-
-			return true;
+			return false;
 		}
-		return false;
+		manager.GetModel().RemoveBlockById(*stored_id);
+		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{*stored_id} });
+
+		return true;
 	}
 
 	bool DoRedo(SceneModelManager& manager) override
@@ -301,24 +304,25 @@ struct RemoveBlockAction : public ModelAction
 	{
 		auto block = manager.GetModel().GetBlockById(id);
 		assert(block);
-		if (block)
+		if (!block)
 		{
-			stored_connections.clear();
-			for (const auto& socket : block->get().GetSockets())
-			{
-				auto connected_node = socket.GetConnectedNetNode();
-				if (connected_node)
-				{
-					stored_connections.push_back(*manager.GetModel().GetSocketConnectionForNode(*connected_node));
-					manager.GetModel().RemoveSocketConnectionForSocket({ socket.GetId(), block->get().GetId() });
-				}
-			}
-			stored_block = block;
-			manager.GetModel().RemoveBlockById(id);
-			manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
-			return true;
+			return false;
 		}
-		return false;
+
+		stored_connections.clear();
+		for (const auto& socket : block->get().GetSockets())
+		{
+			auto connected_node = socket.GetConnectedNetNode();
+			if (connected_node)
+			{
+				stored_connections.push_back(*manager.GetModel().GetSocketConnectionForNode(*connected_node));
+				manager.GetModel().RemoveSocketConnectionForSocket({ socket.GetId(), block->get().GetId() });
+			}
+		}
+		stored_block = block;
+		manager.GetModel().RemoveBlockById(id);
+		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
+		return true;
 	}
 };
 

@@ -36,6 +36,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(NLopt REQUIRED)
+find_package(lunasvg REQUIRED)
 
 add_subdirectory(src/SDL_Framework)
 add_subdirectory(src/toolgui)

@@ -9,6 +9,7 @@
 #include "SidePanel.hpp"
 #include "ToolBar.hpp"
 #include "Dialog.hpp"
+#include "ToolTipWidget.hpp"
 
 void node::Scene::Draw(SDL_Renderer* renderer)
 {
@@ -43,6 +44,10 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     if (m_modal_dialog)
     {
         m_modal_dialog->Draw(renderer);
+    }
+    if (m_tooltip)
+    {
+        m_tooltip->Draw(renderer);
     }
     if (m_pContextMenu)
     {
@@ -272,6 +277,19 @@ void node::Scene::SetRect(const SDL_Rect& rect)
 void node::Scene::Start()
 {
     OnStart();
+}
+
+void node::Scene::ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip)
+{
+    m_tooltip = std::move(tooltip);
+}
+
+void node::Scene::HideToolTip(Widget* widget)
+{
+    if (m_tooltip.get() == widget)
+    {
+        m_tooltip.reset();
+    }
 }
 
 void node::Scene::OnSetRect(const SDL_Rect& rect)

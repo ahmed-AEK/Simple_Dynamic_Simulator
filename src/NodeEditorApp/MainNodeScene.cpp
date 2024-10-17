@@ -18,6 +18,7 @@
 #include "GraphicsScene/tools/NetTool.hpp"
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "GraphicsScene/ToolsManager.hpp"
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
@@ -169,10 +170,24 @@ struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public no
 void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
-    
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "N", [this]() {SDL_Log("New!"); this->NewScenePressed(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "L", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); }));
-    toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); }));
+    {
+        auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "N", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
+        new_btn->SetSVGPath("./assets/new_file.svg");
+        new_btn->SetDescription("New");
+        toolbar->AddButton(std::move(new_btn));
+    }
+    {
+        auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "L", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
+        load_btn->SetSVGPath("./assets/load_file.svg");
+        load_btn->SetDescription("Load");
+        toolbar->AddButton(std::move(load_btn));
+    }
+    {
+        auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
+        save_btn->SetDescription("Save");
+        save_btn->SetSVGPath("./assets/save_file.svg");
+        toolbar->AddButton(std::move(save_btn));
+    }
     toolbar->AddSeparator();
     m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
     {
@@ -595,7 +610,7 @@ void node::MainNodeScene::OnSettingsClicked()
     if (!m_settings_dialog.isAlive())
     {
         auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
-            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,400,400 }, this);
+            m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,0,0 }, this);
         m_settings_dialog = dialog->GetMIHandlePtr();
         AddNormalDialog(std::move(dialog));
     }

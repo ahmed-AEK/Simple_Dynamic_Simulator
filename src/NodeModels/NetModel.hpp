@@ -1,7 +1,8 @@
 #pragma once
 
 #include "NodeModels/Utils.hpp"
-#include "NodeModels/BlockModel.hpp"
+#include "NodeModels/IdTypes.hpp"
+
 #include <vector>
 #include <string>
 #include <optional>

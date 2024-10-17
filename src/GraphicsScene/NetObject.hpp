@@ -4,6 +4,7 @@
 #include "NodeModels/NetModel.hpp"
 #include <vector>
 #include <variant>
+#include <cassert>
 
 namespace node {
 
