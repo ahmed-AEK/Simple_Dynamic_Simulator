@@ -32,6 +32,25 @@ void node::SVGRasterizer::SetSize(int width, int height)
 	m_height = height;
 }
 
+std::optional<SDL_FPoint> node::SVGRasterizer::GetSVGSize() const
+{
+    auto document = lunasvg::Document::loadFromFile(m_path);
+    if (!document)
+    {
+        return std::nullopt;
+    }
+    return SDL_FPoint{ document->width(), document->height() };
+}
+
+void node::SVGRasterizer::SetSVGPath(std::string path)
+{
+    if (path != m_path)
+    {
+        m_path = path;
+        m_texture.DropTexture();
+    }
+}
+
 
 static SDL_Point scaleWithFixedAspectRatio(float width, float height, int desired_width, int desired_height)
 {

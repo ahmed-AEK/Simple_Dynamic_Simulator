@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GraphicsScene/GraphicsObject.hpp"
+#include "SDL_Framework/SVGRasterizer.hpp"
 
 namespace node
 {
@@ -22,7 +23,7 @@ private:
 	model::Rect GetInnerRect();
 	HandlePtr<GraphicsObject> m_parent_block;
 	GraphicsObjectsManager* m_manager;
-
+	SVGRasterizer m_rotate_rasterizer;
 	static constexpr int corner_width = 15;
 };
 

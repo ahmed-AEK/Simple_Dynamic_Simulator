@@ -70,15 +70,15 @@ namespace node
         }
 
         // load Font
-        m_appFonts[0] = TTFFont{TTF_OpenFont("./assets/FreeSans.ttf", 24)};
+        m_appFonts[0] = TTFFont{TTF_OpenFont("./assets/Roboto-Regular.ttf", 24)};
         if (!m_appFonts[0])
         {
-            SDL_Log("Failed to load Font \"./assets/FreeSans.ttf\"");
+            SDL_Log("Failed to load Font \"./assets/Roboto-Regular.ttf\"");
         }
-        m_appFonts[1] = TTFFont{ TTF_OpenFont("./assets/FreeSans.ttf", 16) };
+        m_appFonts[1] = TTFFont{ TTF_OpenFont("./assets/Roboto-Regular.ttf", 16) };
         if (!m_appFonts[1])
         {
-            SDL_Log("Failed to load Font \"./assets/FreeSans.ttf\"");
+            SDL_Log("Failed to load Font \"./assets/Roboto-Regular.ttf\"");
         }
 
         b_running = true;

@@ -41,6 +41,7 @@
 #include "NodeSDLStylers/TextBlockStyler.hpp"
 #include "NodeSDLStylers/GainBlockStyler.hpp"
 #include "NodeSDLStylers/PropertyPrintStyler.hpp"
+#include "NodeSDLStylers/SVGBlockStyler.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
@@ -59,8 +60,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{3}, model::Rect{ 400,10,100,100 }};
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
         model.SetClass("Ramp");
-        model.SetStyler("Text");
-        model.SetStylerProperties(model::BlockStyleProperties{ {{TextBlockStyler::key_text, "R"}} });
+        model.SetStyler("SVG Styler");
+        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/ramp.svg"}} });
         model.GetProperties().push_back(model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -80,8 +81,8 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.SetClass("Scope Display");
-        model.SetStyler("Text");
-        model.SetStylerProperties(model::BlockStyleProperties{ {{TextBlockStyler::key_text, "S"}} });
+        model.SetStyler("SVG Styler");
+        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/scope.svg"}} });
         model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
@@ -301,18 +302,18 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto integrate_block = BlockTemplate{
         "Integration",
         "Integration",
-        "Text",
+        "SVG Styler",
         std::vector<model::BlockProperty>{},
-        model::BlockStyleProperties{{{TextBlockStyler::key_text, "I"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/integral.svg"}}}
     };
     pallete_provider->AddElement(std::move(integrate_block));
 
     auto deriv_block = BlockTemplate{
     "Derivative",
     "Derivative",
-    "Text",
+    "SVG Styler",
     std::vector<model::BlockProperty>{},
-    model::BlockStyleProperties{{{TextBlockStyler::key_text, "D"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/derivative.svg"}}}
     };
     pallete_provider->AddElement(std::move(deriv_block));
 
@@ -330,22 +331,22 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto ramp_block = BlockTemplate{
         "Ramp",
         "Ramp",
-        "Text",
+        "SVG Styler",
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
         },
-        model::BlockStyleProperties{{{TextBlockStyler::key_text, "R"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/ramp.svg"}}}
     };
     pallete_provider->AddElement(std::move(ramp_block));
 
     auto scope_block = BlockTemplate{
         "Scope",
         "Scope Display",
-        "Text",
+        "SVG Styler",
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
         },
-        model::BlockStyleProperties{{{TextBlockStyler::key_text, "S"}}} 
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/scope.svg"}}}
     };
     pallete_provider->AddElement(std::move(scope_block));
 
@@ -362,25 +363,25 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     auto sine_block = BlockTemplate{
     "Sine",
     "Sine",
-    "Text",
+    "SVG Styler",
     std::vector<model::BlockProperty>{
         model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
         model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
     },
-    model::BlockStyleProperties{{{TextBlockStyler::key_text, "Sin"}}}
+    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/sine.svg"}}}
     };
     pallete_provider->AddElement(std::move(sine_block));
 
     auto step_block = BlockTemplate{
     "Step",
     "Step",
-    "Text",
+    "SVG Styler",
     std::vector<model::BlockProperty>{
         node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
         node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
         node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
     },
-    model::BlockStyleProperties{{{TextBlockStyler::key_text, "Step"}}}
+    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/step.svg"}}}
     };
     pallete_provider->AddElement(std::move(step_block));
 
@@ -575,7 +576,8 @@ void node::MainNodeScene::OnInit()
         { return std::make_unique<GainBlockStyler>(model, font); });
     m_blockStylerFactory->AddStyler("Property Printer", [font = this->GetApp()->getFont().get()](const model::BlockModel& model)
         { return PropertyPrintStyler::Create(model, font); });
-
+    m_blockStylerFactory->AddStyler("SVG Styler", [](const model::BlockModel& model)
+        { return std::make_unique<SVGBlockStyler>(model); });
 
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
     m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());

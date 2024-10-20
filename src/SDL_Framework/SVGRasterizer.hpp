@@ -12,6 +12,8 @@ public:
 	SVGRasterizer(std::string path, int width, int height);
 	bool Draw(SDL_Renderer* renderer, int x, int y);
 	void SetSize(int width, int height);
+	std::optional<SDL_FPoint>  GetSVGSize() const;
+	void SetSVGPath(std::string path);
 private:
 	bool ReCreateTexture(SDL_Renderer* renderer);
 
@@ -19,7 +21,7 @@ private:
 	DroppableTexture m_texture;
 	int m_width;
 	int m_height;
-	SDL_Point m_actual_size;
+	SDL_Point m_actual_size{};
 };
 
 }

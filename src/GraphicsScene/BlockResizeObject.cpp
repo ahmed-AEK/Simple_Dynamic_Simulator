@@ -8,14 +8,14 @@ node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& r
 {
 	model::Rect resizer_rect = rect;
 	resizer_rect.x -= 5;
-	resizer_rect.y -= 35;
+	resizer_rect.y -= 41;
 	resizer_rect.w += 10;
-	resizer_rect.h += 10 + 30;
+	resizer_rect.h += 10 + 36;
 	return resizer_rect;
 }
 
 node::BlockResizeObject::BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, model::Rect sceneRect, GraphicsScene* scene)
-	:GraphicsObject{sceneRect, ObjectType::interactive, scene}, m_parent_block{parent_block}, m_manager{manager}
+	:GraphicsObject{sceneRect, ObjectType::interactive, scene}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"./assets/redo.svg",0,0}
 {
 	b_aligned = false;
 }
@@ -45,11 +45,25 @@ void node::BlockResizeObject::Draw(SDL_Renderer* renderer, const SpaceScreenTran
 	SDL_RenderFillRect(renderer, &rect4);
 
 	model::Rect rotate_button = GetSpaceRect();
-	rotate_button.h = 30;
-	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 15;
-	rotate_button.w = 30;
+	rotate_button.h = 36;
+	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
+	rotate_button.w = 36;
 	SDL_Rect rotate_btn_screen = transformer.SpaceToScreenRect(rotate_button);
 	SDL_RenderFillRect(renderer, &rotate_btn_screen);
+
+	rotate_btn_screen.x += 2;
+	rotate_btn_screen.y += 2;
+	rotate_btn_screen.w -= 4;
+	rotate_btn_screen.h -= 4;
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	SDL_RenderFillRect(renderer, &rotate_btn_screen);
+
+	rotate_btn_screen.x += 1;
+	rotate_btn_screen.y += 1;
+	rotate_btn_screen.w -= 2;
+	rotate_btn_screen.h -= 2;
+	m_rotate_rasterizer.SetSize(rotate_btn_screen.w, rotate_btn_screen.h);
+	m_rotate_rasterizer.Draw(renderer, rotate_btn_screen.x, rotate_btn_screen.y);
 	
 }
 
@@ -90,9 +104,9 @@ node::GraphicsObject* node::BlockResizeObject::OnGetInteractableAtPoint(const mo
 	}
 
 	model::Rect rotate_button = GetSpaceRect();
-	rotate_button.h = 30;
-	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 15;
-	rotate_button.w = 30;
+	rotate_button.h = 36;
+	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
+	rotate_button.w = 36;
 	SDL_Rect rotate_button_sdl{ node::ToSDLRect(rotate_button) };
 	if (SDL_PointInRect(&point_sdl, &rotate_button_sdl))
 	{
@@ -148,9 +162,9 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(const model::Point& current_mo
 	}
 
 	model::Rect rotate_button = GetSpaceRect();
-	rotate_button.h = 30;
-	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 15;
-	rotate_button.w = 30;
+	rotate_button.h = 36;
+	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
+	rotate_button.w = 36;
 	SDL_Rect rotate_button_sdl{ node::ToSDLRect(rotate_button) };
 	if (SDL_PointInRect(&point_sdl, &rotate_button_sdl))
 	{
@@ -180,8 +194,8 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(const model::Point& current_mo
 node::model::Rect node::BlockResizeObject::GetInnerRect()
 {
 	model::Rect draw_area = GetSpaceRect();
-	draw_area.y += 30;
-	draw_area.h -= 30;
+	draw_area.y += 36;
+	draw_area.h -= 36;
 	return draw_area;
 }
 

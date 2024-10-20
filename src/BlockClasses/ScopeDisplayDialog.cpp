@@ -263,13 +263,22 @@ node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 
 		auto toolbar = std::make_unique<ToolBar>(rect, parent);
 		
-		toolbar->AddButton(std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,ToolBarButton::width, ToolBarButton::height }, parent,
-			"R", [plot_ptr = plot.get()]() {plot_ptr->ResetZoom(); }));
+		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,ToolBarButton::width, ToolBarButton::height }, parent,
+			"Reset", [plot_ptr = plot.get()]() {plot_ptr->ResetZoom(); });
+		reset_btn->SetSVGPath("./assets/expand.svg");
+		reset_btn->SetDescription("Reset Zoom");
+		toolbar->AddButton(std::move(reset_btn));
 		toolbar->AddSeparator();
 
 		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{0,0, ToolBarButton::width, ToolBarButton::height}, parent, "A", m_tools_manager);
+		A_btn->SetSVGPath("./assets/arrow.svg");
+		A_btn->SetDescription("Arrow Tool");
 		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, parent, "M", m_tools_manager);
+		M_btn->SetSVGPath("./assets/move.svg");
+		M_btn->SetDescription("Move Tool");
 		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, parent, "Z", m_tools_manager);
+		Z_btn->SetSVGPath("./assets/zoom.svg");
+		Z_btn->SetDescription("Zoom Tool");
 
 		m_tools_manager.AddButton(*A_btn);
 		m_tools_manager.AddButton(*M_btn);
