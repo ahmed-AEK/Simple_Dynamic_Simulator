@@ -1,5 +1,5 @@
 #include "SVGRasterizer.hpp"
-
+#include "AssetsManager/AssetsManager.hpp"
 #include "lunasvg.h"
 
 node::SVGRasterizer::SVGRasterizer(std::string path, int width, int height)
@@ -66,7 +66,14 @@ static SDL_Point scaleWithFixedAspectRatio(float width, float height, int desire
 
 bool node::SVGRasterizer::ReCreateTexture(SDL_Renderer* renderer)
 {
-    auto document = lunasvg::Document::loadFromFile(m_path);
+    AssetsManager assets_manager;
+    auto resource = assets_manager.GetResource(m_path);
+    if (!resource)
+    {
+        return false;
+    }
+
+    auto document = lunasvg::Document::loadFromData(reinterpret_cast<const char*>(resource->data()), resource->size());
     if (document == nullptr)
     {
         SDL_Log("Failed to load SVG! : %s", m_path.c_str());

@@ -15,7 +15,7 @@ node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& r
 }
 
 node::BlockResizeObject::BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, model::Rect sceneRect, GraphicsScene* scene)
-	:GraphicsObject{sceneRect, ObjectType::interactive, scene}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"./assets/redo.svg",0,0}
+	:GraphicsObject{sceneRect, ObjectType::interactive, scene}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
 {
 	b_aligned = false;
 }

@@ -38,6 +38,7 @@ find_package(SDL2_image REQUIRED)
 find_package(NLopt REQUIRED)
 find_package(lunasvg REQUIRED)
 
+add_subdirectory(src/AssetsManager)
 add_subdirectory(src/SDL_Framework)
 add_subdirectory(src/toolgui)
 add_subdirectory(src/NodeModels)

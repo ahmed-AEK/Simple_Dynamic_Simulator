@@ -61,7 +61,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
         model.SetClass("Ramp");
         model.SetStyler("SVG Styler");
-        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/ramp.svg"}} });
+        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}} });
         model.GetProperties().push_back(model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 });
         sceneModel->AddBlock(std::move(model));
     }
@@ -82,7 +82,7 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.SetClass("Scope Display");
         model.SetStyler("SVG Styler");
-        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/scope.svg"}} });
+        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}} });
         model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
         sceneModel->AddBlock(std::move(model));
     }
@@ -173,20 +173,20 @@ void node::MainNodeScene::InitializeTools()
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
     {
         auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
-        new_btn->SetSVGPath("./assets/new_file.svg");
+        new_btn->SetSVGPath("assets/new_file.svg");
         new_btn->SetDescription("New");
         toolbar->AddButton(std::move(new_btn));
     }
     {
         auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
-        load_btn->SetSVGPath("./assets/load_file.svg");
+        load_btn->SetSVGPath("assets/load_file.svg");
         load_btn->SetDescription("Load");
         toolbar->AddButton(std::move(load_btn));
     }
     {
         auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
         save_btn->SetDescription("Save");
-        save_btn->SetSVGPath("./assets/save_file.svg");
+        save_btn->SetSVGPath("assets/save_file.svg");
         toolbar->AddButton(std::move(save_btn));
     }
     toolbar->AddSeparator();
@@ -203,19 +203,19 @@ void node::MainNodeScene::InitializeTools()
     {
         auto arrow_btn = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager);
         arrow_btn->SetDescription("Arrow Tool");
-        arrow_btn->SetSVGPath("./assets/arrow.svg");
+        arrow_btn->SetSVGPath("assets/arrow.svg");
         toolbar->AddButton(std::move(arrow_btn));
     }
     {
         auto net_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager);
         net_tool->SetDescription("Net Tool");
-        net_tool->SetSVGPath("./assets/net_tool.svg");
+        net_tool->SetSVGPath("assets/net_tool.svg");
         toolbar->AddButton(std::move(net_tool));        
     }
     {
         auto delete_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager);
         delete_tool->SetDescription("Delete Tool");
-        delete_tool->SetSVGPath("./assets/delete_tool.svg");
+        delete_tool->SetSVGPath("assets/delete_tool.svg");
         toolbar->AddButton(std::move(delete_tool));
     }
     toolbar->AddSeparator();
@@ -223,14 +223,14 @@ void node::MainNodeScene::InitializeTools()
         auto undo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U",
             [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
         undo_btn->SetDescription("Undo");
-        undo_btn->SetSVGPath("./assets/undo.svg");
+        undo_btn->SetSVGPath("assets/undo.svg");
         toolbar->AddButton(std::move(undo_btn));
     }
     {
         auto redo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R",
             [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
         redo_btn->SetDescription("Redo");
-        redo_btn->SetSVGPath("./assets/redo.svg");
+        redo_btn->SetSVGPath("assets/redo.svg");
         toolbar->AddButton(std::move(redo_btn));
     }
 
@@ -239,27 +239,27 @@ void node::MainNodeScene::InitializeTools()
         auto prop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P",
             [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); });
         prop_btn->SetDescription("Properties");
-        prop_btn->SetSVGPath("./assets/properties.svg");
+        prop_btn->SetSVGPath("assets/properties.svg");
         toolbar->AddButton(std::move(prop_btn));
     }
     {
         auto run_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
             [this]() { return !this->m_sim_mgr.IsSimulationRunning(); });
         run_btn->SetDescription("Run Simulation");
-        run_btn->SetSVGPath("./assets/run.svg");
+        run_btn->SetSVGPath("assets/run.svg");
         toolbar->AddButton(std::move(run_btn));
     }
     {
         auto stop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
             [this]() { return this->m_sim_mgr.IsSimulationRunning(); });
         stop_btn->SetDescription("Stop Simulation");
-        stop_btn->SetSVGPath("./assets/stop_sim.svg");
+        stop_btn->SetSVGPath("assets/stop_sim.svg");
         toolbar->AddButton(std::move(stop_btn));
     }
     {
         auto settings_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
         settings_btn->SetDescription("Settings");
-        settings_btn->SetSVGPath("./assets/settings.svg");
+        settings_btn->SetSVGPath("assets/settings.svg");
         toolbar->AddButton(std::move(settings_btn));
     }
     SetToolBar(std::move(toolbar));
@@ -304,7 +304,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         "Integration",
         "SVG Styler",
         std::vector<model::BlockProperty>{},
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/integral.svg"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/integral.svg"}}}
     };
     pallete_provider->AddElement(std::move(integrate_block));
 
@@ -313,7 +313,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     "Derivative",
     "SVG Styler",
     std::vector<model::BlockProperty>{},
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/derivative.svg"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/derivative.svg"}}}
     };
     pallete_provider->AddElement(std::move(deriv_block));
 
@@ -335,7 +335,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
         },
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/ramp.svg"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}}}
     };
     pallete_provider->AddElement(std::move(ramp_block));
 
@@ -346,7 +346,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         std::vector<model::BlockProperty>{
         model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
         },
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/scope.svg"}}}
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}}}
     };
     pallete_provider->AddElement(std::move(scope_block));
 
@@ -368,7 +368,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
         model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
     },
-    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/sine.svg"}}}
+    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
     };
     pallete_provider->AddElement(std::move(sine_block));
 
@@ -381,7 +381,7 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
         node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
     },
-    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "./assets/step.svg"}}}
+    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
     };
     pallete_provider->AddElement(std::move(step_block));
 

@@ -34,7 +34,7 @@
        style="font-size:32px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"><tspan
          x="307.85742"
          y="107.61059"
-         id="tspan1">d</tspan></text>
+         id="tspan3">d</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,-6.8678848,-8.64489)"
@@ -42,9 +42,9 @@
        style="font-size:32px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect4);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"><tspan
          x="40.296875"
          y="102.52855"
-         id="tspan2">dt</tspan></text>
+         id="tspan4">dt</tspan></text>
     <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
        d="M 1.440815,10.758085 H 14.504204"
        id="path5" />
   </g>

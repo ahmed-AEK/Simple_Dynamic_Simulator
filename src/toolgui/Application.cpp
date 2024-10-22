@@ -7,6 +7,8 @@
 #include "SDL_Framework/Utility.hpp"
 #include "Widget.hpp"
 
+#include "AssetsManager/AssetsManager.hpp"
+
 static int resizingEventWatcher(void* data, SDL_Event* event) {
     if (event->type == SDL_WINDOWEVENT &&
         event->window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -70,15 +72,25 @@ namespace node
         }
 
         // load Font
-        m_appFonts[0] = TTFFont{TTF_OpenFont("./assets/Roboto-Regular.ttf", 24)};
+        AssetsManager manager;
+        const char* font_path = "assets/Roboto-Regular.ttf";
+        auto font_resource = manager.GetResource(font_path);
+        if (!font_resource)
+        {
+            SDL_Log("failed to load font resource %s", font_path);
+            return -1;
+        }
+        auto font_ops1 = SDL_RWFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
+        m_appFonts[0] = TTFFont{TTF_OpenFontRW(font_ops1, 1, 24)};
         if (!m_appFonts[0])
         {
-            SDL_Log("Failed to load Font \"./assets/Roboto-Regular.ttf\"");
+            SDL_Log("Failed to load Font %s", font_path);
         }
-        m_appFonts[1] = TTFFont{ TTF_OpenFont("./assets/Roboto-Regular.ttf", 16) };
+        auto font_ops2 = SDL_RWFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
+        m_appFonts[1] = TTFFont{ TTF_OpenFontRW(font_ops2, 1, 16) };
         if (!m_appFonts[1])
         {
-            SDL_Log("Failed to load Font \"./assets/Roboto-Regular.ttf\"");
+            SDL_Log("Failed to load Font %s", font_path);
         }
 
         b_running = true;
