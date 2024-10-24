@@ -345,6 +345,11 @@ bool node::SimulatorRunner::IsEnded()
 	return m_ended.test();
 }
 
+bool node::SimulatorRunner::IsStopped()
+{
+	return m_stopped.test();
+}
+
 using ErrorsVariant = std::variant<node::SimulationEvent::NetFloatingError, node::SimulationEvent::OutputSocketsConflict, node::SimulationEvent::FloatingInput>;
 using ValidationResult = std::optional<ErrorsVariant>;
 

@@ -49,6 +49,7 @@
 #include "NodeEditorApp/NewSceneDialog.hpp"
 
 #include "SceneLoader/SceneLoader.hpp"
+#include <filesystem>
 
 static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 {
@@ -111,6 +112,13 @@ void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* hand
 void node::MainNodeScene::NewScene()
 {
     SDL_Log("new Scene confirmed!");
+
+    if (m_sim_mgr.IsSimulationRunning())
+    {
+        m_sim_mgr.StopSimulator();
+    }
+    m_sim_mgr.ClearLastSimulationReults();
+
     // remember to save scene here
 
     m_db_connector = std::nullopt;
@@ -122,6 +130,13 @@ void node::MainNodeScene::NewScene()
 void node::MainNodeScene::LoadScene(std::string name)
 {
     SDL_Log("load Scene: %s", name.c_str());
+
+    if (m_sim_mgr.IsSimulationRunning())
+    {
+        m_sim_mgr.StopSimulator();
+    }
+    m_sim_mgr.ClearLastSimulationReults();
+
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
     if (auto new_scene = connector.connector->Load())
@@ -130,6 +145,21 @@ void node::MainNodeScene::LoadScene(std::string name)
         CloseAllDialogs();
         m_db_connector = std::move(connector);
         m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(scene)));
+    }
+    else
+    {
+        std::string error_message;
+        if (std::filesystem::is_regular_file(connector.db_path))
+        {
+            error_message = "Could not load file: " + connector.db_path;            
+        }
+        else
+        {
+            error_message = "File doesn't exist: " + connector.db_path;
+        }
+        auto dialog = std::make_unique<OkCancelModalDialog>("Load Failed!", std::vector<std::string>{ std::move(error_message) },
+            SDL_Rect{ 100,100,0,0 }, this, true);
+        SetModalDialog(std::move(dialog));
     }
 }
 
@@ -149,8 +179,31 @@ void node::MainNodeScene::SaveScene(std::string name)
     SDL_Log("scene Saved to %s", name.c_str());
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
-    m_db_connector = std::move(connector);
-    m_db_connector->connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel());
+    if (connector.connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel()))
+    {
+        m_db_connector = std::move(connector);
+    }
+    else
+    {
+        auto dialog = std::make_unique<OkCancelModalDialog>("Save Failed!", std::vector<std::string>{ "Failed to write to File: "+ connector.db_path,
+        "File may be innaccessible or is an invalid format or read only!"},
+            SDL_Rect{ 100,100,0,0 }, this, true);
+        SetModalDialog(std::move(dialog));
+    }
+}
+
+void node::MainNodeScene::MaybeSaveScene(std::string name)
+{
+    SDL_Log("scene Maybe Saved to %s", name.c_str());
+    if (std::filesystem::is_regular_file(name))
+    {
+        auto dialog = std::make_unique<ConfirmOverwriteSaveSceneDialog>(std::move(name), SDL_Rect{ 100,100,0,0 }, this);
+        SetModalDialog(std::move(dialog));
+    }
+    else
+    {
+        SaveScene(std::move(name));
+    }
 }
 
 namespace

@@ -43,6 +43,7 @@ public:
 
 	const std::vector<BlockResult>& GetLastSimulationResults() const { return m_last_simulation_result; }
 	void SetSimulationEndCallback(std::function<void(const SimulationEvent&)> end_callback);
+	void ClearLastSimulationReults();
 private:
 	void OnSimulationEnd(SimulationEvent& evt);
 

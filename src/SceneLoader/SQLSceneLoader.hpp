@@ -11,10 +11,7 @@ namespace node::loader
 class SQLSceneLoader: public SceneLoader
 {
 public:
-	explicit SQLSceneLoader(std::string dbname)
-		: m_dbname{ dbname }, m_db{ dbname , SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE } {
-		m_db.exec("PRAGMA synchronous = OFF;");
-	}
+	explicit SQLSceneLoader(std::string dbname);
 
 	std::optional<node::model::NodeSceneModel> Load() override;
 	bool Save(const node::model::NodeSceneModel& scene) override;
@@ -23,11 +20,7 @@ public:
 
 private:
 	std::string m_dbname;
-	SQLite::Database m_db;
-	std::shared_ptr<SQLBlockLoader> m_nodeLoader = { 
-		std::make_shared<SQLBlockLoader>(m_dbname, m_db) };
-	std::shared_ptr<SQLNetLoader> m_netLoader = { 
-		std::make_shared<SQLNetLoader>(m_dbname, m_db) };
+	std::optional<SQLite::Database> m_db;
 };
 
 

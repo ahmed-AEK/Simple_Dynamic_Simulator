@@ -78,6 +78,7 @@ public:
 	void Run();
 	void Stop();
 	bool IsEnded();
+	bool IsStopped();
 private:
 	void RunImpl();
 	SimulationEvent DoSimulation();

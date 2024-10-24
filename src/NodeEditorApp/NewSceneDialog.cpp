@@ -6,13 +6,33 @@
 #include "boost/algorithm/string.hpp"
 
 
-node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::string content, const SDL_Rect& rect, MainNodeScene* parent)
+node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<std::string> content, const SDL_Rect& rect, MainNodeScene* parent, bool hide_cancel)
 	:Dialog{ std::move(title), rect, parent }
 {
 	assert(parent);
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), parent));
+	auto* font = parent->GetApp()->getFont().get();
+	int max_width = 100;
+	int total_height = 0;
+	int width = 100;
+	int height = 30;
+	for (auto&& line : content)
+	{
+		int result = TTF_SizeText(font, line.c_str(), &width, &height);
+		if (result)
+		{
+			SDL_Log("Failed to measure font extent");
+		}
+		max_width = std::max(width, max_width);
+		total_height += height;
+	}
+	total_height += content.size() ? static_cast<int>(DialogLabel::LinesMargin * content.size() - 1) : 0;
+
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, SDL_Rect{ 0,0,width,total_height }, font, parent));
 	AddButton("Ok", [this] {this->TriggerOk(); });
-	AddButton("Cancel", [this] {this->TriggerClose(); });
+	if (!hide_cancel)
+	{
+		AddButton("Cancel", [this] {this->TriggerClose(); });
+	}
 }
 
 void node::OkCancelModalDialog::OnOk()
@@ -30,8 +50,8 @@ void node::OkCancelModalDialog::OnClose()
 }
 
 
-node::SingleEntryDialog::SingleEntryDialog(std::string title, std::string content, std::string initial_value, const SDL_Rect& rect, MainNodeScene* parent)
-	:OkCancelModalDialog{std::move(title), std::move(content), rect, parent}
+node::SingleEntryDialog::SingleEntryDialog(std::string title, std::vector<std::string> content, std::string initial_value, const SDL_Rect& rect, MainNodeScene* parent)
+	:OkCancelModalDialog{ std::move(title), std::move(content), rect, parent }
 {
 	assert(parent);
 	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), SDL_Rect{0,0,500, 35}, parent);
@@ -59,7 +79,7 @@ std::string node::SingleEntryDialog::GetValue()
 }
 
 node::LoadSceneDialog::LoadSceneDialog(const SDL_Rect& rect, MainNodeScene* parent)
-	:SingleEntryDialog{ "Load Scene", "Please enter the loaded Scene name:", "loaded_scene.blks", rect, parent }
+	:SingleEntryDialog{ "Load Scene", {"Loaded Scene name:"}, "saved_scene.blks", rect, parent }
 {
 }
 
@@ -74,12 +94,11 @@ void node::LoadSceneDialog::OnOk()
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
 	SingleEntryDialog::OnOk();
-	scene->SetModalDialog(nullptr);
 	scene->LoadScene(std::move(data));
 }
 
 node::NewSceneDialog::NewSceneDialog(const SDL_Rect& rect, MainNodeScene* parent)
-	:OkCancelModalDialog{"Create New Scene", "create a new scene ?", rect, parent}
+	:OkCancelModalDialog{ "Create New Scene", {"Create a new scene ?","Unsaved work will be lost!"}, rect, parent }
 {
 }
 
@@ -88,12 +107,11 @@ void node::NewSceneDialog::OnOk()
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
 	OkCancelModalDialog::OnOk();
-	scene->SetModalDialog(nullptr);
 	scene->NewScene();
 }
 
 node::SaveSceneDialog::SaveSceneDialog(const SDL_Rect& rect, MainNodeScene* parent)
-	:SingleEntryDialog{ "Save Scene", "Please enter the saved Scene name:", "saved_scene.blks", rect, parent }
+	:SingleEntryDialog{ "Save Scene", {"Saved Scene name:"}, "saved_scene.blks", rect, parent }
 {
 }
 
@@ -108,6 +126,18 @@ void node::SaveSceneDialog::OnOk()
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
 	SingleEntryDialog::OnOk();
-	scene->SetModalDialog(nullptr);
-	scene->SaveScene(std::move(data));
+	scene->MaybeSaveScene(std::move(data));
+}
+
+node::ConfirmOverwriteSaveSceneDialog::ConfirmOverwriteSaveSceneDialog(std::string name, const SDL_Rect& rect, MainNodeScene* parent)
+	: OkCancelModalDialog{ "Overwrite File!", {"File already exists!", "Overwrite file : " + name}, rect, parent }, m_name{ std::move(name) }
+{
+}
+
+void node::ConfirmOverwriteSaveSceneDialog::OnOk()
+{
+	std::string name = std::move(m_name);
+	auto* scene = static_cast<MainNodeScene*>(GetScene());
+	OkCancelModalDialog::OnOk();
+	scene->SaveScene(std::move(name));
 }

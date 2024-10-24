@@ -55,7 +55,6 @@ void node::SimulationManager::CheckSimulatorEnded()
         {
             assert(false); // simulation ended but no result !!
         }
-
     }
 }
 
@@ -64,8 +63,19 @@ void node::SimulationManager::SetSimulationEndCallback(std::function<void(const 
     m_end_callback = std::move(end_callback);
 }
 
+void node::SimulationManager::ClearLastSimulationReults()
+{
+    m_last_simulation_result.clear();
+}
+
 void node::SimulationManager::OnSimulationEnd(SimulationEvent& evt)
 {
+    if (m_current_running_simulator && m_current_running_simulator->IsStopped())
+    {
+        SDL_Log("Stopped!");
+        m_current_running_simulator = nullptr;
+        return;
+    }
     std::visit(overloaded{
         [](SimulationEvent::NetFloatingError&)
         {

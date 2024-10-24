@@ -64,6 +64,7 @@ public:
     void LoadScene(std::string name);
     void SaveScene();
     void SaveScene(std::string name);
+    void MaybeSaveScene(std::string name);
 protected:
     virtual bool OnRMBUp(const SDL_Point& p) override;
     NodeGraphicsScene* m_graphicsScene = nullptr;

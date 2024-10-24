@@ -10,7 +10,7 @@ class PropertyEditControl;
 class OkCancelModalDialog : public Dialog
 {
 public:
-	OkCancelModalDialog(std::string title, std::string content, const SDL_Rect& rect, MainNodeScene* parent);
+	OkCancelModalDialog(std::string title, std::vector<std::string> content, const SDL_Rect& rect, MainNodeScene* parent, bool hide_cancel = false);
 protected:
 	void OnOk() override;
 	void OnClose() override;
@@ -21,7 +21,7 @@ private:
 class SingleEntryDialog: public OkCancelModalDialog
 {
 public:
-	SingleEntryDialog(std::string title, std::string content, std::string initial_value, const SDL_Rect& rect, MainNodeScene* parent);
+	SingleEntryDialog(std::string title, std::vector<std::string> content, std::string initial_value, const SDL_Rect& rect, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 	void OnClose() override;
@@ -52,6 +52,16 @@ public:
 	SaveSceneDialog(const SDL_Rect& rect, MainNodeScene* parent);
 protected:
 	void OnOk() override;
+};
+
+class ConfirmOverwriteSaveSceneDialog : public OkCancelModalDialog
+{
+public:
+	ConfirmOverwriteSaveSceneDialog(std::string name,const SDL_Rect& rect, MainNodeScene* parent);
+protected:
+	void OnOk() override;
+private:
+	std::string m_name;
 };
 
 }
