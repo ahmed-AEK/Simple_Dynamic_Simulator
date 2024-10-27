@@ -14,9 +14,8 @@ namespace node
 class ScopeDisplayToolButton : public ToolBarButton
 {
 public:
-	ScopeDisplayToolButton(const SDL_Rect& rect, Scene* parent,
-		std::string name, ScopeDisplayToolsManager& manager)
-		:ToolBarButton(rect, parent, std::move(name)), m_manager{ manager } {}
+	ScopeDisplayToolButton(const SDL_Rect& rect, ToolBar* parent,
+		std::string name, ScopeDisplayToolsManager& manager);
 	void OnButonClicked() override;
 	void SetActive(bool value = true) { b_active = value; }
 protected:
@@ -248,6 +247,11 @@ void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 	m_plot_widget = widget.GetMIHandlePtr();
 }
 
+node::ScopeDisplayToolButton::ScopeDisplayToolButton(const SDL_Rect& rect, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
+	:ToolBarButton(rect, parent, std::move(name)), m_manager{ manager } 
+{
+}
+
 void node::ScopeDisplayToolButton::OnButonClicked()
 {
 	m_manager.ChangeTool(GetName());
@@ -256,27 +260,27 @@ void node::ScopeDisplayToolButton::OnButonClicked()
 node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
 	:BlockDialog{"Scope Display", rect, parent}
 {	
-	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,400,200}, parent);
+	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,400,200}, this);
 	m_tools_manager.SetWidget(*plot);
 	{
 		SetResizeable(true);
 
-		auto toolbar = std::make_unique<ToolBar>(rect, parent);
+		auto toolbar = std::make_unique<ToolBar>(rect, this);
 		
-		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,ToolBarButton::width, ToolBarButton::height }, parent,
+		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,ToolBarButton::width, ToolBarButton::height }, toolbar.get(),
 			"Reset", [plot_ptr = plot.get()]() {plot_ptr->ResetZoom(); });
 		reset_btn->SetSVGPath("assets/expand.svg");
 		reset_btn->SetDescription("Reset Zoom");
 		toolbar->AddButton(std::move(reset_btn));
 		toolbar->AddSeparator();
 
-		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{0,0, ToolBarButton::width, ToolBarButton::height}, parent, "A", m_tools_manager);
+		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{0,0, ToolBarButton::width, ToolBarButton::height}, toolbar.get(), "A", m_tools_manager);
 		A_btn->SetSVGPath("assets/arrow.svg");
 		A_btn->SetDescription("Arrow Tool");
-		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, parent, "M", m_tools_manager);
+		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "M", m_tools_manager);
 		M_btn->SetSVGPath("assets/move.svg");
 		M_btn->SetDescription("Move Tool");
-		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, parent, "Z", m_tools_manager);
+		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "Z", m_tools_manager);
 		Z_btn->SetSVGPath("assets/zoom.svg");
 		Z_btn->SetDescription("Zoom Tool");
 
@@ -326,7 +330,7 @@ void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
 	}
 }
 
-node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Scene* parent)
+node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Dialog* parent)
 	:DialogControl{rect,parent}, m_font{font}, m_current_point_painter{font}
 {
 	SetSizingMode(DialogControl::SizingMode::expanding);
@@ -420,8 +424,9 @@ SDL_Rect node::PlotWidget::GetDrawingRect()
 	return GetInnerRect();
 }
 
-void node::PlotWidget::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::PlotWidget::OnMouseMove(MouseHoverEvent& e)
 {
+	SDL_Point current_mouse_point{e.point()};
 	SDL_Rect inner_rect = GetInnerRect();
 	if (SDL_PointInRect(&current_mouse_point, &inner_rect))
 	{
@@ -445,26 +450,28 @@ void node::PlotWidget::OnMouseMove(const SDL_Point& current_mouse_point)
 	}
 	else
 	{
-		DialogControl::OnMouseMove(current_mouse_point);
+		DialogControl::OnMouseMove(e);
 	}
 }
 
-MI::ClickEvent node::PlotWidget::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::PlotWidget::OnLMBDown(MouseButtonEvent& e)
 {
 	if (m_tool)
 	{
+		SDL_Point current_mouse_point{ e.point()};
 		return m_tool->LMBDown(current_mouse_point);
 	}
-	return DialogControl::OnLMBDown(current_mouse_point);
+	return DialogControl::OnLMBDown(e);
 }
 
-MI::ClickEvent node::PlotWidget::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::PlotWidget::OnLMBUp(MouseButtonEvent& e)
 {
 	if (m_tool)
 	{
+		SDL_Point current_mouse_point{ e.point()};
 		return m_tool->LMBUp(current_mouse_point);
 	}
-	return DialogControl::OnLMBUp(current_mouse_point);
+	return DialogControl::OnLMBUp(e);
 }
 
 void node::PlotWidget::OnMouseOut()

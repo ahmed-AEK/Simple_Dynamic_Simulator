@@ -6,17 +6,18 @@
 
 namespace node
 {
+class Dialog;
 
 class DialogButton : public Widget
 {
 public:
-	DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Scene* scene);
+	DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Widget* scene);
 	void Draw(SDL_Renderer* renderer) override;
 
 protected:
 	void OnMouseOut() override;
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 private:
 	std::string m_text;
 	std::function<void()> m_onClick;
@@ -32,7 +33,7 @@ public:
 		expanding,
 	};
 
-	DialogControl(const SDL_Rect& rect, Scene* parent);
+	DialogControl(const SDL_Rect& rect, Dialog* parent);
 	SDL_Rect GetSizeHint() const { return m_size_hint; }
 	void SetSizeHint(const SDL_Rect& rect) { m_size_hint = rect; }
 	SizingMode GetSizingMode() const { return m_sizingMode; }
@@ -47,7 +48,7 @@ class ToolBar;
 class Dialog : public Widget
 {
 public:
-	enum class ScreenResizeStrategy
+	enum class ScreenResizeStrategy: unsigned char
 	{
 		FixedPosition,
 		Center,
@@ -64,15 +65,24 @@ public:
 
 	void AddControl(std::unique_ptr<DialogControl> control, int position = -1);
 	void AddButton(std::string title, std::function<void()> callback);
+
 	void TriggerClose() { OnClose(); }
 	void TriggerOk() { OnOk(); }
+	
 	SDL_Rect GetTitleBarRect() const;
+	
 	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
+	
 	void SetResizeable(bool value = true) { m_resizable = value; }
+	
+	Scene* GetScene() const { return m_scene; }
+	void SetScene(Scene* scene) { m_scene = scene; }
+
+	Widget* GetFocusable() override;
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	void OnMouseMove(MouseHoverEvent& e) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 	void OnMouseOut() override;
 	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
 	void OnSetRect(const SDL_Rect& rect) override;
@@ -122,6 +132,7 @@ private:
 
 	DragData m_dragData;
 	std::string m_title;
+	Scene* m_scene;
 	size_t m_var_height_elements = 0;
 	bool b_being_closed = false;
 	bool b_mouse_on_close = false;

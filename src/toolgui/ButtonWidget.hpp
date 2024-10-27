@@ -10,10 +10,10 @@ namespace node
     class ButtonWidget: public Widget
     {
     public:
-        ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Scene* parent);
+        ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Widget* parent);
         void Draw(SDL_Renderer* renderer) override;
     protected:
-        virtual MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
+        virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
     private:
         constexpr static int w_margin = 5;
         constexpr static int h_margin = 5;

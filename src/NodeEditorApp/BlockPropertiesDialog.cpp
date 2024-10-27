@@ -18,7 +18,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 	assert(m_scene_manager);
 	assert(m_classesManager);
 
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), parent));
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), this));
 	auto class_ptr = m_classesManager->GetBlockClassByName(block.GetClass());
 	assert(class_ptr);
 	if (class_ptr)
@@ -27,18 +27,18 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font, 500);
 		const int line_height = TTF_FontHeight(font);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
-		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_Rect{ 0,0,500, line_height * static_cast<int>(lines.size()) + lines_gap }, font, parent));
+		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_Rect{ 0,0,500, line_height * static_cast<int>(lines.size()) + lines_gap }, font, this));
 	}
 
 	if (block.GetProperties().size())
 	{
-		AddControl(std::make_unique<SeparatorControl>(SDL_Rect{ 0,0,500, 2 }, parent));
+		AddControl(std::make_unique<SeparatorControl>(SDL_Rect{ 0,0,500, 2 }, this));
 	}
 
 	for (const auto& property : block.GetProperties())
 	{
 		std::string initial_value = property.to_string();
-		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, parent);
+		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, this);
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
 			{

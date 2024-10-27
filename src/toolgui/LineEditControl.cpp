@@ -2,8 +2,8 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 
-node::LineEditControl::LineEditControl(std::string initial_value, const SDL_Rect& rect, Scene* parent)
-	:Widget{ rect,parent }, m_value{ std::move(initial_value) }, m_painter{ GetScene()->GetApp()->getFont().get() }, m_cursor_position{m_value.size()}
+node::LineEditControl::LineEditControl(std::string initial_value, const SDL_Rect& rect, Widget* parent)
+	:Widget{ rect,parent }, m_value{ std::move(initial_value) }, m_painter{ parent ? parent->GetApp()->getFont().get() : nullptr }, m_cursor_position{m_value.size()}
 {
 	SetFocusable(true);
 	m_painter.SetText(m_value);
@@ -35,14 +35,14 @@ void node::LineEditControl::Draw(SDL_Renderer* renderer)
 	}
 }
 
-MI::ClickEvent node::LineEditControl::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 {
 	if (!m_value.size())
 	{
 		// edit empty, nothing to do
 		return MI::ClickEvent::CLICKED;
 	}
-
+	SDL_Point current_mouse_point{ e.point() };
 	int click_pos_x = current_mouse_point.x - GetRect().x - 1;
 	int extent = 0;
 	int count = 0;
@@ -75,8 +75,9 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(const SDL_Point& current_mouse_p
 	return MI::ClickEvent::CLICKED;
 }
 
-void node::LineEditControl::OnKeyPress(int32_t key)
+void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 {
+	int key = e.e.keysym.scancode;
 	if (key == SDL_SCANCODE_BACKSPACE)
 	{
 		SDL_Log("BackSpace");
@@ -147,8 +148,9 @@ void node::LineEditControl::ReCalculateCursorPixelPosition()
 	}
 }
 
-void node::LineEditControl::OnChar(int key)
+void node::LineEditControl::OnChar(TextInputEvent& e)
 {
+	int key = e.e.text[0];
 	SDL_Log("%d", key);
 	if (key < 128 && key >= 0)
 	{

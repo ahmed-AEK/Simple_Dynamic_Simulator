@@ -56,7 +56,7 @@ private:
 class PlotWidget : public DialogControl
 {
 public:
-	PlotWidget(TTF_Font* font, const SDL_Rect& rect, Scene* parent);
+	PlotWidget(TTF_Font* font, const SDL_Rect& rect, Dialog* parent);
 	void Draw(SDL_Renderer* renderer) override;
 	void SetData(XYSeries data);
 	void ResetZoom();
@@ -65,9 +65,9 @@ public:
 	void SetExtend(const SDL_FRect& rect);
 	SDL_Rect GetDrawingRect();
 protected:
-	void OnMouseMove(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override;
+	void OnMouseMove(MouseHoverEvent& e) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 	void OnMouseOut() override;
 private:
 	void DrawAxes(SDL_Renderer* renderer);

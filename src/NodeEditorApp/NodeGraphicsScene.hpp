@@ -12,8 +12,8 @@ namespace node
         int GetDotSpacing() const { return m_dotspace; }
         virtual void Draw(SDL_Renderer* renderer) override;
     protected:
-        virtual MI::ClickEvent OnRMBUp(const SDL_Point& p) override;
-        virtual void OnMouseMove(const SDL_Point& p) override;
+        virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
+        virtual void OnMouseMove(MouseHoverEvent& e) override;
         void DrawDots(SDL_Renderer* renderer) const;
         void DrawCurrentInsertMode(SDL_Renderer* renderer) const;
     private:

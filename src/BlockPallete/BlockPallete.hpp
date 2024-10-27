@@ -11,7 +11,7 @@ namespace node
 	{
 	public:
 		BlockPallete(const SDL_Rect& rect,
-			std::shared_ptr<PalleteProvider> provider, Scene* parent);
+			std::shared_ptr<PalleteProvider> provider, Widget* parent);
 		
 		void Draw(SDL_Renderer* renderer) override;
 		std::shared_ptr<PalleteProvider> GetProvider() const { return m_palleteProvider; }
@@ -24,7 +24,7 @@ namespace node
 		static constexpr int ElementWidth = 100;
 	protected:
 		bool OnScroll(const double amount, const SDL_Point& p) override;
-		virtual MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+		virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 
 	private:
 		SDL_Rect DrawPanelBorder(SDL_Renderer* renderer);

@@ -10,7 +10,7 @@ class ToolsManager;
 class ToolButton : public ToolBarButton
 {
 public:
-	ToolButton(const SDL_Rect& rect, Scene* parent, 
+	ToolButton(const SDL_Rect& rect, ToolBar* parent,
 		std::string name = {}, std::weak_ptr<ToolsManager> manager = {});
 	void OnButonClicked() override;
 	void SetActive(bool value = true) { b_active = value; }

@@ -17,7 +17,7 @@ public:
 	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
 protected:
 	GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
-	MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 
 private:
 	model::Rect GetInnerRect();

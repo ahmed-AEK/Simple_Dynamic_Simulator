@@ -4,7 +4,7 @@
 #include "toolgui/ContextMenu.hpp"
 #include "toolgui/Application.hpp"
 
-node::ButtonWidget::ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Scene* parent)
+node::ButtonWidget::ButtonWidget(const SDL_Rect& rect, std::string label, std::function<void(void)> action, node::Widget* parent)
 : Widget(rect, parent), m_label(std::move(label)), m_action(std::move(action))
 {
 }
@@ -14,7 +14,7 @@ void node::ButtonWidget::Draw(SDL_Renderer* renderer)
     if (!m_textSurface)
     {
         SDL_Color Black = { 50, 50, 50, 255 };
-        m_textSurface = SDLSurface{ TTF_RenderText_Solid(GetScene()->GetApp()->getFont().get(), m_label.c_str(), Black)};
+        m_textSurface = SDLSurface{ TTF_RenderText_Solid(GetApp()->getFont().get(), m_label.c_str(), Black)};
         m_textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, m_textSurface.get()) };
     }
     SDL_SetRenderDrawColor(renderer, 0,0,0,0);
@@ -33,10 +33,10 @@ void node::ButtonWidget::Draw(SDL_Renderer* renderer)
     SDL_RenderCopy(renderer, m_textTexture.get(), NULL, &text_rect);
 }
 
-MI::ClickEvent node::ButtonWidget::OnLMBUp(const SDL_Point& p)
+MI::ClickEvent node::ButtonWidget::OnLMBUp(MouseButtonEvent& e)
 {
     SDL_Log("Button Pressed!");
-    Widget::OnLMBUp(p);
+    Widget::OnLMBUp(e);
     m_action();
     return MI::ClickEvent::CLICKED;
 }

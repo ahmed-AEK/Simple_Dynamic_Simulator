@@ -49,33 +49,63 @@ void MouseInteractable<T, Rect, Point>::MouseIn()
 }
 
 template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::MouseMove(const Point& current_mouse_point)
+void MouseInteractable<T, Rect, Point>::MouseMove(MouseHoverEvent& e)
 {
-    this->OnMouseMove(current_mouse_point);
+    this->OnMouseMove(e);
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(const Point& current_mouse_point)
+void MouseInteractable<T, Rect, Point>::MouseMove(MouseHoverEvent&& e)
 {
-    return this->OnLMBDown(current_mouse_point);
+    this->OnMouseMove(e);
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(MouseButtonEvent& e)
 {
-    return this->OnRMBDown(current_mouse_point);
+    return this->OnLMBDown(e);
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(MouseButtonEvent&& e)
 {
-    return this->OnRMBUp(current_mouse_point);
+    return this->OnLMBDown(e);
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(MouseButtonEvent& e)
 {
-    return this->OnLMBUp(current_mouse_point);
+    return this->OnRMBDown(e);
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(MouseButtonEvent&& e)
+{
+    return this->OnRMBDown(e);
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(MouseButtonEvent& e)
+{
+    return this->OnRMBUp(e);
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(MouseButtonEvent&& e)
+{
+    return this->OnRMBUp(e);
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(MouseButtonEvent& e)
+{
+    return this->OnLMBUp(e);
+}
+
+template <typename T, typename Rect, typename Point>
+ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(MouseButtonEvent&& e)
+{
+    return this->OnLMBUp(e);
 }
 
 template <typename T, typename Rect, typename Point>
@@ -95,36 +125,36 @@ void MouseInteractable<T, Rect, Point>::OnMouseIn()
 }
 
 template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::OnMouseMove(const Point& current_mouse_point)
+void MouseInteractable<T, Rect, Point>::OnMouseMove(MouseHoverEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnLMBDown(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::OnLMBDown(MouseButtonEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnRMBDown(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::OnRMBDown(MouseButtonEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnLMBUp(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::OnLMBUp(MouseButtonEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 
 template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnRMBUp(const Point& current_mouse_point)
+ClickEvent MouseInteractable<T, Rect, Point>::OnRMBUp(MouseButtonEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 

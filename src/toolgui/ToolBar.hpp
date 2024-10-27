@@ -10,6 +10,8 @@
 namespace node
 {
 
+class ToolBar;
+
 class ToolBarButton : public Widget
 {
 public:
@@ -17,20 +19,25 @@ public:
 	static constexpr int height = 40;
 	static constexpr int Hmargin = 10;
 
-	ToolBarButton(const SDL_Rect& rect, Scene* parent, std::string name = {});
+	ToolBarButton(const SDL_Rect& rect, ToolBar* parent, std::string name = {});
 	~ToolBarButton() override;
 	const std::string& GetName() const noexcept { return m_name; }
 	void Draw(SDL_Renderer* renderer) override;
 	void SetSVGPath(std::string path);
 	void SetDescription(std::string description);
+	ToolBar* GetToolBar()
+	{
+		return m_parent_toolbar;
+	}
+	void SetToolBar(ToolBar* toolbar);
 protected:
 	virtual bool IsDisabled() { return false; }
 	void OnMouseOut() override final;
 	void OnMouseIn() override final;
-	void OnMouseMove(const SDL_Point& current_point) override;
+	void OnMouseMove(MouseHoverEvent& e) override;
 	virtual void OnButonClicked();
-	MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override final;
-	MI::ClickEvent OnLMBUp(const SDL_Point& current_mouse_point) override final;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override final;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override final;
 private:
 	void InternalUpdateToolTip();
 	void HideToolTip();
@@ -45,6 +52,7 @@ private:
 	int64_t m_updateTaskId = 0;
 	SDL_Point m_last_mouse_pos;
 	std::string m_description;
+	ToolBar* m_parent_toolbar;
 	
 	HandlePtr<Widget> m_toolTipWidget;
 };
@@ -54,7 +62,7 @@ class ToolBar: public Widget
 public:
 	static constexpr int height = 50;
 
-	ToolBar(const SDL_Rect& rect, Scene* parent);
+	ToolBar(const SDL_Rect& rect, Widget* parent);
 	~ToolBar() override;
 	void AddButton(std::unique_ptr<ToolBarButton> button, int position = -1);
 	void AddSeparator(int position = -1);
@@ -80,7 +88,7 @@ private:
 class ToolBarCommandButton : public ToolBarButton
 {
 public:
-	ToolBarCommandButton(const SDL_Rect& rect, Scene* parent,
+	ToolBarCommandButton(const SDL_Rect& rect, ToolBar* parent,
 		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return true; });
 	void OnButonClicked() override;
 protected:

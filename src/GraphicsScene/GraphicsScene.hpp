@@ -68,6 +68,8 @@ public:
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
     void ClearAllObjects();
 
+    void BumpObjectInLayer(node::GraphicsObject* obj);
+
     void UpdateObjectsRect();
 
     void SetSpaceRect(const model::Rect& rect);
@@ -98,9 +100,9 @@ public:
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 protected:
     void OnSetRect(const SDL_Rect& rect) override;
-    void OnMouseMove(const SDL_Point& p) override;
-    MI::ClickEvent OnLMBDown(const SDL_Point& p) override;
-    MI::ClickEvent OnLMBUp(const SDL_Point& p) override;
+    void OnMouseMove(MouseHoverEvent& e) override;
+    MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+    MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
     bool OnScroll(const double amount, const SDL_Point& p) override;
 
     void OnDropObject(DragDropObject& object, const SDL_Point& p) override;

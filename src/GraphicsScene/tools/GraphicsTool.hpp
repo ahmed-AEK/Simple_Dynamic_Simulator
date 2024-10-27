@@ -10,17 +10,29 @@ class GraphicsObjectsManager;
 class GraphicsTool
 {
 public:
+
+	struct MouseHoverEvent
+	{
+		model::Point point;
+	};
+
+	struct MouseButtonEvent
+	{
+		model::Point point;
+		bool double_click = false;
+	};
+
 	explicit GraphicsTool(GraphicsScene* scene, GraphicsObjectsManager* manager) 
 		: m_scene{ scene }, m_objects_manager{ manager } {}
 	~GraphicsTool() = default;
 	GraphicsScene* GetScene() const { return m_scene; }
 	GraphicsObjectsManager* GetObjectsManager() const { return m_objects_manager; }
 	bool IsCapturingMouse() const noexcept { return m_capturing_mouse; }
-	virtual MI::ClickEvent OnLMBDown(const model::Point& p) { UNUSED_PARAM(p); return MI::ClickEvent::NONE; }
-	virtual MI::ClickEvent OnLMBUp(const model::Point& p) { UNUSED_PARAM(p); return MI::ClickEvent::NONE; }
-	virtual void OnMouseMove(const model::Point& p) { UNUSED_PARAM(p); }
-	virtual void OnMouseEnter(const model::Point& p) { UNUSED_PARAM(p); }
-	virtual void OnMouseLeave(const model::Point& p) { UNUSED_PARAM(p); }
+	virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e) { UNUSED_PARAM(e); return MI::ClickEvent::NONE; }
+	virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e) { UNUSED_PARAM(e); return MI::ClickEvent::NONE; }
+	virtual void OnMouseMove(MouseHoverEvent& p) { UNUSED_PARAM(p); }
+	virtual void OnMouseEnter(MouseHoverEvent& p) { UNUSED_PARAM(p); }
+	virtual void OnMouseLeave(MouseHoverEvent& p) { UNUSED_PARAM(p); }
 	virtual void OnDraw(SDL_Renderer* renderer) { UNUSED_PARAM(renderer); }
 	virtual void OnStart() {}; // when tool just changed
 	virtual void OnExit() {}; // when tool is changed

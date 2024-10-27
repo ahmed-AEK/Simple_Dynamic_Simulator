@@ -4,7 +4,7 @@
 #include "SDL_Framework/Utility.hpp"
 #include "ToolTipWidget.hpp"
 
-node::ToolBar::ToolBar(const SDL_Rect& rect, Scene* parent)
+node::ToolBar::ToolBar(const SDL_Rect& rect, Widget* parent)
 	:Widget(rect, parent)
 {
 
@@ -153,10 +153,11 @@ void node::ToolBar::RepositionButtons()
 }
 
 
-node::ToolBarButton::ToolBarButton(const SDL_Rect& rect, Scene* parent, std::string name)
+node::ToolBarButton::ToolBarButton(const SDL_Rect& rect, ToolBar* parent, std::string name)
 	:Widget(rect, parent), m_name{std::move(name)}, 
 	m_painter_outer{std::make_unique<RoundRectPainter>()},
-	m_painter_inner{ std::make_unique<RoundRectPainter>() }
+	m_painter_inner{ std::make_unique<RoundRectPainter>() },
+	m_parent_toolbar{parent}
 {
 }
 
@@ -187,7 +188,7 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 		{
 			if (!m_text_painter)
 			{
-				m_text_painter = TextPainter{ GetScene()->GetApp()->getFont().get() };
+				m_text_painter = TextPainter{ GetApp()->getFont().get() };
 				if (m_name.size())
 				{
 					m_text_painter->SetText(std::string{ m_name[0] });
@@ -227,6 +228,12 @@ void node::ToolBarButton::SetDescription(std::string description)
 	m_description = description;
 }
 
+void node::ToolBarButton::SetToolBar(ToolBar* toolbar)
+{
+	m_parent_toolbar = toolbar;
+	SetParent(toolbar);
+}
+
 void node::ToolBarButton::OnMouseOut()
 {
 	b_hovered = false;
@@ -234,7 +241,7 @@ void node::ToolBarButton::OnMouseOut()
 	HideToolTip();
 	if (m_updateTaskId)
 	{
-		GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+		GetApp()->RemoveUpdateTask(m_updateTaskId);
 		m_updateTaskId = 0;
 	}
 }
@@ -245,29 +252,29 @@ void node::ToolBarButton::OnMouseIn()
 	m_last_action_time = SDL_GetTicks64();
 	if (!m_updateTaskId && m_description.size())
 	{
-		m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() {this->InternalUpdateToolTip(); }));
+		m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() {this->InternalUpdateToolTip(); }));
 	}
 }
 
-void node::ToolBarButton::OnMouseMove(const SDL_Point& current_point)
+void node::ToolBarButton::OnMouseMove(MouseHoverEvent& e)
 {
-	m_last_mouse_pos = current_point;
+	m_last_mouse_pos = e.point();
 }
 
 void node::ToolBarButton::OnButonClicked()
 {
 }
 
-MI::ClickEvent node::ToolBarButton::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::ToolBarButton::OnLMBDown(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	UNUSED_PARAM(e);
 	b_held_down = true;
 	return MI::ClickEvent::CLICKED;
 }
 
-MI::ClickEvent node::ToolBarButton::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::ToolBarButton::OnLMBUp(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	UNUSED_PARAM(e);
 	if (b_held_down)
 	{
 		OnButonClicked();
@@ -282,17 +289,17 @@ void node::ToolBarButton::InternalUpdateToolTip()
 	uint64_t current_time = SDL_GetTicks64();
 	if (current_time - m_last_action_time > 500 && m_updateTaskId)
 	{
-		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetScene()->GetApp()->getFont().get(), m_description, SDL_Rect{ m_last_mouse_pos.x, m_last_mouse_pos.y, 1,1 }, GetScene());
+		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetApp()->getFont().get(), m_description, SDL_Rect{ m_last_mouse_pos.x, m_last_mouse_pos.y, 1,1 }, this);
 		m_toolTipWidget = toolTipWidget->GetMIHandlePtr();
-		GetScene()->ShowToolTip(std::move(toolTipWidget));
-		GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+		GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget));
+		GetApp()->RemoveUpdateTask(m_updateTaskId);
 		m_updateTaskId = 0;
 	}
 }
 
 void node::ToolBarButton::HideToolTip()
 {
-	auto* scene = GetScene();
+	auto* scene = GetApp()->GetScene();
 	if (scene && m_toolTipWidget)
 	{
 		scene->HideToolTip(m_toolTipWidget.GetObjectPtr());
@@ -300,7 +307,7 @@ void node::ToolBarButton::HideToolTip()
 	}
 }
 
-node::ToolBarCommandButton::ToolBarCommandButton(const SDL_Rect& rect, Scene* parent, 
+node::ToolBarCommandButton::ToolBarCommandButton(const SDL_Rect& rect, ToolBar* parent, 
 	std::string name, std::function<void()> func, std::function<bool()> Active)
 	:ToolBarButton{rect, parent, name}, m_action{std::move(func)}, m_isActive{Active}
 {

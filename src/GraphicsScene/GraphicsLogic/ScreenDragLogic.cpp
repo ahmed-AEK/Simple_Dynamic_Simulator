@@ -26,7 +26,6 @@ void node::logic::ScreenDragLogic::OnMouseMove(const model::Point& current_mouse
         space_rect.h
         });
     scene->UpdateObjectsRect();
-    scene->InvalidateRect();
 }
 
 void node::logic::ScreenDragLogic::OnCancel()
@@ -41,7 +40,6 @@ void node::logic::ScreenDragLogic::OnCancel()
         space_rect.h
         });
     scene->UpdateObjectsRect();
-    scene->InvalidateRect();
 }
 
 

@@ -225,62 +225,62 @@ void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(SDL_Rect{ 0,0,0,0 }, this);
     {
-        auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
+        auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
         new_btn->SetSVGPath("assets/new_file.svg");
         new_btn->SetDescription("New");
         toolbar->AddButton(std::move(new_btn));
     }
     {
-        auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
+        auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
         load_btn->SetSVGPath("assets/load_file.svg");
         load_btn->SetDescription("Load");
         toolbar->AddButton(std::move(load_btn));
     }
     {
-        auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
+        auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
         save_btn->SetDescription("Save");
         save_btn->SetSVGPath("assets/save_file.svg");
         toolbar->AddButton(std::move(save_btn));
     }
     toolbar->AddSeparator();
-    m_toolsManager = std::make_shared<ToolsManager>(m_graphicsScene, toolbar.get());
+    m_toolsManager = std::make_shared<ToolsManager>(m_centerWidget, toolbar.get());
     {
-        auto arrow_tool = std::make_shared<ArrowTool>(m_graphicsScene, m_graphicsObjectsManager.get());
+        auto arrow_tool = std::make_shared<ArrowTool>(m_centerWidget, m_graphicsObjectsManager.get());
         auto receiver = std::make_unique<DoubleClickEventReceiver>(*this, [this](BlockObject& block) {this->OpenBlockDialog(block); } );
         arrow_tool->Attach(*receiver);
         AddEventReceiver(std::move(receiver));
         m_toolsManager->AddTool("A", std::move(arrow_tool));
     }
-    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
-    m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_graphicsScene, m_graphicsObjectsManager.get()));
+    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_centerWidget, m_graphicsObjectsManager.get()));
+    m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_centerWidget, m_graphicsObjectsManager.get()));
     {
-        auto arrow_btn = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "A", m_toolsManager);
+        auto arrow_btn = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "A", m_toolsManager);
         arrow_btn->SetDescription("Arrow Tool");
         arrow_btn->SetSVGPath("assets/arrow.svg");
         toolbar->AddButton(std::move(arrow_btn));
     }
     {
-        auto net_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "N", m_toolsManager);
+        auto net_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "N", m_toolsManager);
         net_tool->SetDescription("Net Tool");
         net_tool->SetSVGPath("assets/net_tool.svg");
         toolbar->AddButton(std::move(net_tool));        
     }
     {
-        auto delete_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, this, "D", m_toolsManager);
+        auto delete_tool = std::make_unique<ToolButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "D", m_toolsManager);
         delete_tool->SetDescription("Delete Tool");
         delete_tool->SetSVGPath("assets/delete_tool.svg");
         toolbar->AddButton(std::move(delete_tool));
     }
     toolbar->AddSeparator();
     {
-        auto undo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "U",
+        auto undo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "U",
             [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
         undo_btn->SetDescription("Undo");
         undo_btn->SetSVGPath("assets/undo.svg");
         toolbar->AddButton(std::move(undo_btn));
     }
     {
-        auto redo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R",
+        auto redo_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "R",
             [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
         redo_btn->SetDescription("Redo");
         redo_btn->SetSVGPath("assets/redo.svg");
@@ -289,28 +289,28 @@ void node::MainNodeScene::InitializeTools()
 
     toolbar->AddSeparator();
     {
-        auto prop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "P",
+        auto prop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "P",
             [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); });
         prop_btn->SetDescription("Properties");
         prop_btn->SetSVGPath("assets/properties.svg");
         toolbar->AddButton(std::move(prop_btn));
     }
     {
-        auto run_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
+        auto run_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
             [this]() { return !this->m_sim_mgr.IsSimulationRunning(); });
         run_btn->SetDescription("Run Simulation");
         run_btn->SetSVGPath("assets/run.svg");
         toolbar->AddButton(std::move(run_btn));
     }
     {
-        auto stop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
+        auto stop_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
             [this]() { return this->m_sim_mgr.IsSimulationRunning(); });
         stop_btn->SetDescription("Stop Simulation");
         stop_btn->SetSVGPath("assets/stop_sim.svg");
         toolbar->AddButton(std::move(stop_btn));
     }
     {
-        auto settings_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, this, "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
+        auto settings_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,40,40 }, toolbar.get(), "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
         settings_btn->SetDescription("Settings");
         settings_btn->SetSVGPath("assets/settings.svg");
         toolbar->AddButton(std::move(settings_btn));
@@ -439,13 +439,13 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
     pallete_provider->AddElement(std::move(step_block));
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_Rect{ 0,0,200,200 },
-        std::move(pallete_provider), this));
+        std::move(pallete_provider), sidePanel.get()));
     SetSidePanel(std::move(sidePanel));
 }
 
 void node::MainNodeScene::OpenPropertiesDialog()
 {
-    auto&& selection = m_graphicsScene->GetCurrentSelection();
+    auto&& selection = m_centerWidget->GetCurrentSelection();
     if (selection.size() != 1)
     {
         SDL_Log("More than one object selected!");
@@ -494,7 +494,9 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     assert(m_classesManager);
     auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_Rect{ 100,100,0,0 }, this);
     m_objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
+    auto dialog_ptr = dialog.get();
     AddNormalDialog(std::move(dialog));
+    SetFocus(dialog_ptr);
 }
 
 void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
@@ -549,7 +551,9 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         if (dialog)
         {
             m_objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
+            auto dialog_ptr = dialog.get();
             AddNormalDialog(std::move(dialog));
+            SetFocus(dialog_ptr);
         }
     }
     else
@@ -633,9 +637,9 @@ void node::MainNodeScene::OnInit()
         { return std::make_unique<SVGBlockStyler>(model); });
 
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(m_rect, this);
-    m_graphicsScene = static_cast<NodeGraphicsScene*>(gScene.get());
+    m_centerWidget = static_cast<NodeGraphicsScene*>(gScene.get());
     m_graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
-    m_graphicsScene->Attach(*m_graphicsObjectsManager);
+    m_centerWidget->Attach(*m_graphicsObjectsManager);
 
     m_classesManager = std::make_shared<BlockClassesManager>();
     m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
@@ -655,7 +659,7 @@ void node::MainNodeScene::OnInit()
 
     AddInitialNodes_forScene(m_graphicsObjectsManager.get());
 
-    SetgScene(std::move(gScene));
+    SetCenterWidget(std::move(gScene));
 }
 
 node::MainNodeScene::~MainNodeScene() = default;
@@ -713,7 +717,9 @@ void node::MainNodeScene::OnSettingsClicked()
         auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
             m_sim_mgr.GetSimulationSettings(), SDL_Rect{ 100,100,0,0 }, this);
         m_settings_dialog = dialog->GetMIHandlePtr();
+        auto dialog_ptr = dialog.get();
         AddNormalDialog(std::move(dialog));
+        SetFocus(dialog_ptr);
     }
     else
     {
@@ -724,14 +730,14 @@ void node::MainNodeScene::OnSettingsClicked()
     }
 }
 
-bool node::MainNodeScene::OnRMBUp(const SDL_Point& p)
+MI::ClickEvent node::MainNodeScene::OnRMBUp(MouseButtonEvent& e)
 {
-    if (Scene::OnRMBUp(p))
+    if (Scene::OnRMBUp(e) != MI::ClickEvent::NONE)
     {
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
     //std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(this);
     //this->ShowContextMenu(std::move(menu), {p.x, p.y});
-    return true;
+    return MI::ClickEvent::NONE;
 }
 

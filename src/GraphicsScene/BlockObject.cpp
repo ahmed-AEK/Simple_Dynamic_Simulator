@@ -49,9 +49,9 @@ void node::BlockObject::Draw(SDL_Renderer* renderer, const SpaceScreenTransforme
     m_styler->DrawBlockDetails(renderer, GetSpaceRect(), transformer, GetOrienation(), selected);
 }
 
-MI::ClickEvent node::BlockObject::OnLMBDown(const model::Point& current_mouse_point)
+MI::ClickEvent node::BlockObject::OnLMBDown(MouseButtonEvent& e)
 {
-    return GraphicsObject::OnLMBDown(current_mouse_point);
+    return GraphicsObject::OnLMBDown(e);
 }
 
 void node::BlockObject::OnSceneChange()

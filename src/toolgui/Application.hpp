@@ -65,6 +65,7 @@ public:
     void DoUpdateTasks();
     int64_t AddUpdateTask(UpdateTask task);
     void RemoveUpdateTask(int64_t task_id);
+    Scene* GetScene() { return m_scene.get(); }
 
 protected:
     virtual void OnInit() {};
@@ -79,7 +80,6 @@ protected:
     virtual void OnSetScene(std::unique_ptr<Scene>& scene);
     bool virtual HandleEvent(SDL_Event& e);
     SDL_Point convert_to_renderer_coordinates(int x, int y);
-    Scene* GetScene() { return m_scene.get(); }
 private:
     void HandleInputs();
     std::string m_title;

@@ -11,8 +11,8 @@ class DeleteTool: public GraphicsTool
 {
 public:
 	using GraphicsTool::GraphicsTool;
-	MI::ClickEvent OnLMBDown(const model::Point& p) override;
-	MI::ClickEvent OnLMBUp(const model::Point& p) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 private:
 };
 }

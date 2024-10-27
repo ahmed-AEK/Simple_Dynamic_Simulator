@@ -5,7 +5,8 @@
 #include "ToolBar.hpp"
 
 node::Dialog::Dialog(std::string title, const SDL_Rect& rect, Scene* parent)
-	:Widget{ rect, parent }, m_title_painter{parent->GetApp()->getFont().get()}, m_title{ std::move(title) }
+	:Widget{ rect, parent }, m_title_painter{parent->GetApp()->getFont().get()}, m_title{ std::move(title) },
+	m_scene{parent}
 {
 	assert(parent);
 	m_title_painter.SetText(m_title);
@@ -72,7 +73,7 @@ void node::Dialog::AddControl(std::unique_ptr<DialogControl> control, int positi
 
 void node::Dialog::AddButton(std::string title, std::function<void()> callback)
 {
-	m_buttons.push_back(std::make_unique<DialogButton>(std::move(title), std::move(callback), SDL_Rect{ 0,0,80,ButtonHeight }, GetScene()));
+	m_buttons.push_back(std::make_unique<DialogButton>(std::move(title), std::move(callback), SDL_Rect{ 0,0,80,ButtonHeight }, this));
 	ResizeToFitChildren();
 }
 
@@ -86,9 +87,22 @@ void node::Dialog::OnOk()
 	GetScene()->PopDialog(this);
 }
 
-void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
+node::Widget* node::Dialog::GetFocusable()
+{
+	for (auto&& control : m_controls)
+	{
+		if (auto focusable = control->GetFocusable())
+		{
+			return focusable;
+		}
+	}
+	return nullptr;
+}
+
+void node::Dialog::OnMouseMove(MouseHoverEvent& e)
 {
 	const auto& X_rect = GetXButtonRect();
+	SDL_Point current_mouse_point{ e.point() };
 	if (SDL_PointInRect(&current_mouse_point, &X_rect))
 	{
 		b_mouse_on_close = true;
@@ -106,17 +120,17 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 		int y_distance = current_mouse_point.y - drag_data.drag_mouse_start_position.y;
 		SDL_Rect new_rect{ drag_data.drag_edge_start_position.x + x_distance, drag_data.drag_edge_start_position.y + y_distance , GetRect().w, GetRect().h };
 		SDL_Rect title_rect = GetTitleBarRect();
-		if (new_rect.x + new_rect.w > GetScene()->GetRect().w)
+		if (new_rect.x + new_rect.w > GetParent()->GetRect().w)
 		{
-			new_rect.x = GetScene()->GetRect().w - new_rect.w;
+			new_rect.x = GetParent()->GetRect().w - new_rect.w;
 		}
 		if (new_rect.x < 0)
 		{
 			new_rect.x = 0;
 		}
-		if (new_rect.y + title_rect.h > GetScene()->GetRect().h)
+		if (new_rect.y + title_rect.h > GetParent()->GetRect().h)
 		{
-			new_rect.y = GetScene()->GetRect().h - title_rect.h;
+			new_rect.y = GetParent()->GetRect().h - title_rect.h;
 		}
 		if (new_rect.y < 0)
 		{
@@ -153,13 +167,14 @@ void node::Dialog::OnMouseMove(const SDL_Point& current_mouse_point)
 	}
 }
 
-MI::ClickEvent node::Dialog::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::Dialog::OnLMBDown(MouseButtonEvent& e)
 {
 	if (GetScene())
 	{
 		GetScene()->BumpDialogToTop(this);
 	}
 
+	SDL_Point current_mouse_point{ e.point() };
 	const auto& X_btn_rect = GetXButtonRect();
 	if (SDL_PointInRect(&current_mouse_point, &X_btn_rect))
 	{
@@ -208,9 +223,9 @@ MI::ClickEvent node::Dialog::OnLMBDown(const SDL_Point& current_mouse_point)
 	return MI::ClickEvent::NONE;
 }
 
-MI::ClickEvent node::Dialog::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::Dialog::OnLMBUp(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	SDL_Point current_mouse_point{ e.point() };
 	if (b_being_closed)
 	{
 		const auto& X_rect = GetXButtonRect();
@@ -478,7 +493,7 @@ SDL_Point node::Dialog::CalculateMinSize() const
 	return { min_width, min_height };
 }
 
-node::DialogButton::DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Scene* scene)
+node::DialogButton::DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Widget* scene)
 	:Widget{rect, scene}, m_text{text}, m_onClick{OnClick}
 {
 }
@@ -503,7 +518,7 @@ void node::DialogButton::Draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &inner_rect);
 
 	SDL_Color Black = { 50, 50, 50, 255 };
-	auto textSurface = SDLSurface{ TTF_RenderText_Blended(GetScene()->GetApp()->getFont().get(), m_text.c_str(), Black) };
+	auto textSurface = SDLSurface{ TTF_RenderText_Blended(GetApp()->getFont().get(), m_text.c_str(), Black) };
 	auto textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
 
 	SDL_Rect text_rect{};
@@ -518,16 +533,16 @@ void node::DialogButton::OnMouseOut()
 	b_being_clicked = false;
 }
 
-MI::ClickEvent node::DialogButton::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::DialogButton::OnLMBDown(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	UNUSED_PARAM(e);
 	b_being_clicked = true;
 	return MI::ClickEvent::CLICKED;
 }
 
-MI::ClickEvent node::DialogButton::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::DialogButton::OnLMBUp(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	UNUSED_PARAM(e);
 	if (b_being_clicked)
 	{
 		m_onClick();
@@ -536,7 +551,7 @@ MI::ClickEvent node::DialogButton::OnLMBUp(const SDL_Point& current_mouse_point)
 	return MI::ClickEvent::NONE;
 }
 
-node::DialogControl::DialogControl(const SDL_Rect& rect, Scene* parent)
+node::DialogControl::DialogControl(const SDL_Rect& rect, Dialog* parent)
 	:Widget{ rect, parent }, m_size_hint{ rect }
 {
 }

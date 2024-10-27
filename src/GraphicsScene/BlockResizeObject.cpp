@@ -116,9 +116,8 @@ node::GraphicsObject* node::BlockResizeObject::OnGetInteractableAtPoint(const mo
 	return nullptr;
 }
 
-MI::ClickEvent node::BlockResizeObject::OnLMBDown(const model::Point& current_mouse_point)
+MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
 	if (!m_parent_block)
 	{
 		return MI::ClickEvent::NONE;
@@ -135,7 +134,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(const model::Point& current_mo
 	bool rotate = false;
 
 	model::Rect rect = GetInnerRect();
-	SDL_Point point_sdl{ current_mouse_point.x, current_mouse_point.y };
+	SDL_Point point_sdl{ e.point.x, e.point.y };
 
 	SDL_Rect rect1{ rect.x, rect.y, corner_width, corner_width };
 	if (SDL_PointInRect(&point_sdl, &rect1))
@@ -173,7 +172,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(const model::Point& current_mo
 
 	if (side)
 	{
-		auto logic_obj = std::make_unique<logic::BlockResizeLogic>(static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), *this, current_mouse_point, *side, scene, m_manager);
+		auto logic_obj = std::make_unique<logic::BlockResizeLogic>(static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
 		SDL_Log("Clicked On Resize Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;

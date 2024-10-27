@@ -76,7 +76,7 @@ void node::Scene::SetToolBar(std::unique_ptr<ToolBar> toolbar)
     m_toolbar = std::move(toolbar);
 }
 
-void node::Scene::SetgScene(std::unique_ptr<Widget> scene)
+void node::Scene::SetCenterWidget(std::unique_ptr<Widget> scene)
 {
     m_gScene = std::move(scene);
 }
@@ -106,11 +106,41 @@ void node::Scene::CancelCurrentLogic()
     }
 }
 
-void node::Scene::OnMouseMove(const SDL_Point& p)
+node::Application* node::Scene::GetApp() const
 {
+    return p_parent;
+}
+
+void node::Scene::SetFocus(Widget* widget)
+{
+    Widget* focusable = nullptr;
+    if (widget)
+    {
+        focusable = widget->GetFocusable();
+    }
+    // change fous if needed
+    Widget* current_focus = m_current_keyboar_focus.GetObjectPtr();
+    if (current_focus != focusable)
+    {
+        if (current_focus)
+        {
+            m_current_keyboar_focus.GetObjectPtr()->SetFocused(false);
+            m_current_keyboar_focus = nullptr;
+        }
+        if (focusable)
+        {
+            m_current_keyboar_focus = focusable->GetMIHandlePtr();
+            focusable->SetFocused(true);
+        }
+    }
+}
+
+void node::Scene::OnMouseMove(MouseHoverEvent& e)
+{
+    SDL_Point p{ e.point() };
     if (!b_mouseCaptured)
     {
-        node::Widget* current_hover = this->GetInteractableAt(p);
+        node::Widget* current_hover = this->OnGetInteractableAtPoint(p);
         node::Widget* old_hover = nullptr;
         if (m_current_mouse_hover.isAlive())
         {
@@ -157,13 +187,13 @@ void node::Scene::OnMouseMove(const SDL_Point& p)
             }
             else
             {
-                object->MouseMove({ p.x, p.y });
+                object->MouseMove(e);
             }
         }
     }
 }
 
-node::Widget* node::Scene::GetInteractableAt(const SDL_Point& p) const
+node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_Point& p) const
 {
     if (m_pContextMenu)
     {
@@ -223,6 +253,8 @@ void node::Scene::BumpDialogToTop(const node::Dialog* dialog)
         auto dialog_ptr = std::move(*it);
         m_dialogs.erase(it);
         m_dialogs.push_back(std::move(dialog_ptr));
+        auto ptr = m_dialogs.back().get();
+        SetFocus(ptr);
     }
 }
 
@@ -267,6 +299,7 @@ void node::Scene::SetModalDialog(std::unique_ptr<node::Dialog> dialog)
     m_current_mouse_hover = nullptr;
     m_current_keyboar_focus = nullptr;
     m_pContextMenu = nullptr;
+    SetFocus(m_modal_dialog.get());
 }
 
 void node::Scene::SetRect(const SDL_Rect& rect)
@@ -348,8 +381,9 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
     }
 }
 
-bool node::Scene::OnLMBDown(const SDL_Point& p)
+MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -357,26 +391,18 @@ bool node::Scene::OnLMBDown(const SDL_Point& p)
     }
     else
     {
-        current_hover = this->GetInteractableAt(p);
+        current_hover = this->OnGetInteractableAtPoint(p);
     }
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
     }
-    if (m_current_keyboar_focus.GetObjectPtr() && m_current_keyboar_focus.GetObjectPtr() != current_hover)
-    {
-        m_current_keyboar_focus.GetObjectPtr()->SetFocused(false);
-        m_current_keyboar_focus = nullptr;
-    }
+
+    SetFocus(current_hover);
+
     if (current_hover)
     {
-        if (current_hover->IsFocusable())
-        {
-            m_current_keyboar_focus = current_hover->GetMIHandlePtr();
-            current_hover->SetFocused(true);
-        }
-
-        auto result = current_hover->LMBDown(p);
+        auto result = current_hover->LMBDown(e);
         switch (result)
         {
             using enum MI::ClickEvent;
@@ -399,16 +425,17 @@ bool node::Scene::OnLMBDown(const SDL_Point& p)
                 break;
             }
         }
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
     else
     {
-        return false;
+        return MI::ClickEvent::NONE;
     }
 }
 
-bool node::Scene::OnRMBDown(const SDL_Point& p)
+MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -416,7 +443,7 @@ bool node::Scene::OnRMBDown(const SDL_Point& p)
     }
     else
     {
-        current_hover = this->GetInteractableAt(p);
+        current_hover = this->OnGetInteractableAtPoint(p);
     }
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
@@ -424,7 +451,7 @@ bool node::Scene::OnRMBDown(const SDL_Point& p)
     }
     if (current_hover)
     {
-        auto result = current_hover->RMBDown(p);
+        auto result = current_hover->RMBDown(e);
         switch (result)
         {
             using enum MI::ClickEvent;
@@ -447,16 +474,17 @@ bool node::Scene::OnRMBDown(const SDL_Point& p)
                 break;
             }
         }
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
     else
     {
-        return false;
+        return MI::ClickEvent::NONE;
     }
 }
 
-bool node::Scene::OnRMBUp(const SDL_Point& p)
+MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -464,7 +492,7 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
     }
     else
     {
-        current_hover = this->GetInteractableAt(p);
+        current_hover = this->OnGetInteractableAtPoint(p);
     }
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
@@ -472,7 +500,7 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
     }
     if (current_hover)
     {
-        auto result = current_hover->RMBUp(p);
+        auto result = current_hover->RMBUp(e);
         switch (result)
         {
             using enum MI::ClickEvent;
@@ -495,16 +523,17 @@ bool node::Scene::OnRMBUp(const SDL_Point& p)
                 break;
             }
         }
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
     else
     {
-        return false;
+        return MI::ClickEvent::NONE;
     }
 }
 
-bool node::Scene::OnLMBUp(const SDL_Point& p)
+MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -512,7 +541,7 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
     }
     else
     {
-        current_hover = this->GetInteractableAt(p);
+        current_hover = this->OnGetInteractableAtPoint(p);
     }
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
@@ -527,12 +556,12 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
             widget->DropObject(*m_dragObject, p);
         }
         m_dragObject = std::nullopt;
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
 
     if (current_hover)
     {
-        auto result = current_hover->LMBUp(p);
+        auto result = current_hover->LMBUp(e);
         switch (result)
         {
             using enum MI::ClickEvent;
@@ -555,15 +584,15 @@ bool node::Scene::OnLMBUp(const SDL_Point& p)
                 break;
             }
         }
-        return true;
+        return MI::ClickEvent::CLICKED;
     }
     else
     {
-        return false;
+        return MI::ClickEvent::NONE;
     }
 }
 
-bool node::Scene::OnScroll(const double amount, SDL_Point p)
+bool node::Scene::OnScroll(const double amount, const SDL_Point& p)
 {
     if (m_current_mouse_hover.isAlive())
     {
@@ -572,24 +601,24 @@ bool node::Scene::OnScroll(const double amount, SDL_Point p)
     return false;
 }
 
-void node::Scene::OnKeyPress(int32_t key)
+void node::Scene::OnSendKeyPress(KeyboardEvent& e)
 {
     if (m_current_keyboar_focus)
     {
-        m_current_keyboar_focus->KeyPress(key);
+        m_current_keyboar_focus->KeyPress(e);
     }
 }
 
-void node::Scene::OnChar(int32_t key)
+void node::Scene::OnSendChar(TextInputEvent& e)
 {
     if (m_current_keyboar_focus)
     {
-        m_current_keyboar_focus->CharPress(key);
+        m_current_keyboar_focus->CharPress(e);
     }
 }
 
 node::Scene::Scene(SDL_Rect rect, Application* parent)
-:p_parent(parent), m_rect_base(rect), m_rect(rect)
+    :Widget{rect, nullptr}, p_parent(parent), m_rect_base(rect), m_rect(rect)
 {
 
 }

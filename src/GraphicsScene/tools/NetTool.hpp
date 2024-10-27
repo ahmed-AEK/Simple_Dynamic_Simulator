@@ -9,7 +9,7 @@ class NetTool : public GraphicsTool
 {
 public:
 	using GraphicsTool::GraphicsTool;
-	MI::ClickEvent OnLMBDown(const model::Point & p) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 private:
 };
 

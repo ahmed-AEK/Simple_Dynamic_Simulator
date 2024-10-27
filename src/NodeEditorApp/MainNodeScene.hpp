@@ -53,7 +53,7 @@ class MainNodeScene: public node::Scene
 public:
     MainNodeScene(SDL_Rect rect, node::Application* parent);
     void OnInit() override;
-    NodeGraphicsScene* GetNodeScene() { return m_graphicsScene; }
+    NodeGraphicsScene* GetCenterWidget() { return m_centerWidget; }
     ~MainNodeScene() override;
     ToolsManager* GetToolsManager() const { return m_toolsManager.get(); }
     void CheckSimulatorEnded();
@@ -66,8 +66,8 @@ public:
     void SaveScene(std::string name);
     void MaybeSaveScene(std::string name);
 protected:
-    virtual bool OnRMBUp(const SDL_Point& p) override;
-    NodeGraphicsScene* m_graphicsScene = nullptr;
+    virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
+    NodeGraphicsScene* m_centerWidget = nullptr;
 private:
     void RunSimulator();
     void OnSimulationEnd(const SimulationEvent& event);

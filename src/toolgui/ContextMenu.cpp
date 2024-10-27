@@ -2,13 +2,14 @@
 #include "toolgui/ContextMenu.hpp"
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/Scene.hpp"
+#include "Application.hpp"
 
-node::ContextMenu::ContextMenu(node::Scene* parent)
-: Widget({0,0,0,0},parent), m_font(TTFFont(TTF_OpenFont("assets/FreeSans.ttf", 24)))
+node::ContextMenu::ContextMenu(node::Widget* parent, TTF_Font* font)
+: Widget({0,0,0,0},parent), m_font{font}
 {
-    SDL_assert(m_font.get());
+    SDL_assert(m_font);
     int other;
-    TTF_SizeText(m_font.get(), "A", &other, &m_element_height);
+    TTF_SizeText(m_font, "A", &other, &m_element_height);
     
 }
 
@@ -34,7 +35,7 @@ void node::ContextMenu::Draw(SDL_Renderer* renderer)
         if (iter == m_fonts.end())
         {
             SDL_Color Black = {0,0,0,255};
-            SDLSurface surface = SDLSurface(TTF_RenderText_Solid(m_font.get(), key.c_str(), Black));
+            SDLSurface surface = SDLSurface(TTF_RenderText_Blended(m_font, key.c_str(), Black));
             iter = m_fonts.insert(std::make_pair(key,std::move(surface))).first;
         }
         SDLTexture tex = SDLTexture(SDL_CreateTextureFromSurface(renderer, iter->second.get()));
@@ -47,20 +48,22 @@ void node::ContextMenu::Draw(SDL_Renderer* renderer)
     
 }
 
-void node::ContextMenu::OnMouseMove(const SDL_Point& current_mouse_point)
+void node::ContextMenu::OnMouseMove(MouseHoverEvent& e)
 {
-    UNUSED_PARAM(current_mouse_point);
+    UNUSED_PARAM(e);
 }
 
-MI::ClickEvent node::ContextMenu::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::ContextMenu::OnLMBDown(MouseButtonEvent& e)
 {
+    SDL_Point current_mouse_point{ e.point() };
     int clicked_item = (current_mouse_point.y - GetRect().y) / m_element_height;
     element_being_clicked = clicked_item;
     return MI::ClickEvent::NONE;
 }
 
-MI::ClickEvent node::ContextMenu::OnLMBUp(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::ContextMenu::OnLMBUp(MouseButtonEvent& e)
 {
+    SDL_Point current_mouse_point{ e.point() };
     int clicked_item = (current_mouse_point.y - GetRect().y) / m_element_height;
     if (clicked_item != element_being_clicked)
     {
@@ -80,7 +83,7 @@ MI::ClickEvent node::ContextMenu::OnLMBUp(const SDL_Point& current_mouse_point)
     }
     if (handled)
     {
-        GetScene()->DestroyContextMenu();
+        GetApp()->GetScene()->DestroyContextMenu();
         return MI::ClickEvent::CLICKED;
     }
     return MI::ClickEvent::NONE;

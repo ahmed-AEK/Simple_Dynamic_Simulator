@@ -15,7 +15,6 @@ node::GraphicsObject::~GraphicsObject() = default;
 
 void node::GraphicsObject::InvalidateRect()
 {
-    this->m_pScene->InvalidateRect();
 }
 
 void node::GraphicsObject::SetSpaceOrigin(const model::Point& p)

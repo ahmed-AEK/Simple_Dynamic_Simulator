@@ -1,6 +1,6 @@
 #include "ToolTipWidget.hpp"
 
-node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text, const SDL_Rect& rect, Scene* parent)
+node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text, const SDL_Rect& rect, Widget* parent)
     : Widget{ rect,parent }, m_painter{ font }
 {
     m_painter.SetText(std::move(text));

@@ -12,26 +12,56 @@ namespace node
     class Widget;
 }
 
+namespace MI
+{
+    template<>
+    struct MouseHoverEvent<node::Widget>
+    {
+        const SDL_MouseMotionEvent& e;
+        SDL_Point point()
+        {
+            return { e.x,e.y };
+        }
+    };
+
+    template<>
+    struct MouseButtonEvent<node::Widget>
+    {
+        const SDL_MouseButtonEvent& e;
+        SDL_Point point()
+        {
+            return { e.x,e.y };
+        }
+    };
+}
+
 extern template class MI::MouseInteractable<node::Widget, SDL_Rect, SDL_Point>;
 
 namespace node
 {
     class Scene;
-
+    class Application;
     class Widget;
+
+    struct TextInputEvent
+    {
+        SDL_TextInputEvent e;
+    };
+    struct KeyboardEvent
+    {
+        SDL_KeyboardEvent e;
+    };
     using WidgetMouseInteractable = MI::MouseInteractable<Widget, SDL_Rect, SDL_Point>;
     class TOOLGUI_API Widget : public WidgetMouseInteractable
     {
     public:
-        Widget(const SDL_Rect& rect, Scene* parent);
+        Widget(const SDL_Rect& rect, Widget* parent);
         void SetRect(const SDL_Rect& rect);
         const SDL_Rect& GetRect() const noexcept { return WidgetMouseInteractable::GetRectImpl(); }
         virtual void Draw(SDL_Renderer* renderer) = 0;
         virtual ~Widget();
         const SDL_Rect& GetBaseRect() noexcept;
         void SetBaseRect(const SDL_Rect& rect) noexcept;
-        void InvalidateRect();
-        node::Scene* GetScene() const noexcept;
         bool Scroll(const double amount, const SDL_Point& p) {return OnScroll(amount, p);}
         
         bool IsDropTarget() const { return m_isDropTarget; }
@@ -51,8 +81,10 @@ namespace node
             OnDrawDropObject(renderer, object, p);
         }
 
-        void CharPress(int32_t key) { OnChar(key); }
-        void KeyPress(int32_t key) { OnKeyPress(key); }
+        void CharPress(TextInputEvent& e) { OnChar(e); }
+        void CharPress(TextInputEvent&& e) { OnChar(e); }
+        void KeyPress(KeyboardEvent& e) { OnKeyPress(e); }
+        void KeyPress(KeyboardEvent&& e) { OnKeyPress(e); }
         void SetFocusable(bool value = true) { b_focusable = value; }
         bool IsFocusable() const { return b_focusable; }
         void SetFocused(bool value = true) { 
@@ -66,9 +98,13 @@ namespace node
                 OnKeyboardFocusOut();
             }
         }
+        virtual Widget* GetFocusable();
+        virtual Application* GetApp() const;
+        Widget* GetParent() const { return m_parent; }
+        void SetParent(Widget* parent) { m_parent = parent; }
     protected:
-        virtual void OnChar(int32_t key) { UNUSED_PARAM(key); } // a or A, etc..
-        virtual void OnKeyPress(int32_t key) { UNUSED_PARAM(key); } // SDLK_BACKSPACE and SDLK_RETURN, left and right
+        virtual void OnChar(TextInputEvent& e) { UNUSED_PARAM(e); } // a or A, etc..
+        virtual void OnKeyPress(KeyboardEvent& e) { UNUSED_PARAM(e); } // SDLK_BACKSPACE and SDLK_RETURN, left and right
         virtual void OnKeyboardFocusIn() {}
         virtual void OnKeyboardFocusOut() {}
 
@@ -94,7 +130,7 @@ namespace node
         virtual bool OnScroll(const double amount, const SDL_Point& p);
         Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
     private:
-        node::Scene* p_parent;
+        Widget* m_parent;
         SDL_Rect m_rect_base;
         bool m_isDropTarget = false;
         bool b_focusable = false;

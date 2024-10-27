@@ -13,7 +13,7 @@
 #include "BlockResizeObject.hpp"
 
 
-MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
+MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
 {
     node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
 
@@ -35,19 +35,19 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         {
         case ObjectType::block:
         {
-            auto current_time = SDL_GetTicks64();
-            if (m_last_clicked_block.GetObjectPtr() == current_hover && (current_time - m_last_click_point) < 500)
+            if (e.double_click && m_last_clicked_block.GetObjectPtr() == current_hover)
             {
-                b_second_click_in_progress = true;
                 SDL_Log("Double Click Started!");
+                BlockDoubleClickedEvent ev{ static_cast<BlockObject*>(current_hover) };
+                Notify(ev);
                 return MI::ClickEvent::CLICKED;
             }
             else
             {
-                b_second_click_in_progress = false;
-                m_last_click_point = current_time;
+                GetScene()->BumpObjectInLayer(current_hover);
                 m_last_clicked_block = current_hover->GetFocusHandlePtr();
             }
+
             auto* block_obj = static_cast<BlockObject*>(current_hover);
 
             if (m_current_block_resize_object)
@@ -64,7 +64,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
             }
 
             auto obj_rect = current_hover->GetSpaceRect();
-            auto drag_logic = std::make_unique<logic::BlockDragLogic>(p, model::Point{ obj_rect.x, obj_rect.y }, 
+            auto drag_logic = std::make_unique<logic::BlockDragLogic>(e.point, model::Point{ obj_rect.x, obj_rect.y }, 
                 *block_obj, GetScene(), GetObjectsManager());
             GetScene()->SetGraphicsLogic(std::move(drag_logic));
             return MI::ClickEvent::CLICKED;
@@ -72,6 +72,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         case ObjectType::socket:
         {
             auto* socket = static_cast<BlockSocketObject*>(current_hover);
+            GetScene()->BumpObjectInLayer(socket->GetParentBlock());
             if (!socket->GetConnectedNode())
             {
                 auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, GetScene(), GetObjectsManager());
@@ -101,8 +102,9 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         case ObjectType::netSegment:
         {
             auto* segment = static_cast<NetSegment*>(current_hover);
+            GetScene()->BumpObjectInLayer(current_hover);
             if (auto ptr = logic::VSegmentDragLogic::Create(*segment->getStartNode(),
-                *segment->getEndNode(), *segment, p, GetScene(), GetObjectsManager()))
+                *segment->getEndNode(), *segment, e.point, GetScene(), GetObjectsManager()))
             {
                 GetScene()->SetGraphicsLogic(std::move(ptr));
             }
@@ -110,7 +112,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         }
         case ObjectType::interactive:
         {
-            return current_hover->LMBDown(p);
+            return current_hover->LMBDown({ e.point });
             break;
         }
         default: break;
@@ -122,7 +124,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
         GraphicsScene* scene = GetScene();
         assert(scene);
         scene->ClearCurrentSelection();
-        auto startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(p);
+        auto startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(e.point);
         auto&& space_rect = scene->GetSpaceRect();
         auto startEdgeSpace = model::Point{ space_rect.x, space_rect.y};
         auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene(), GetObjectsManager());
@@ -132,24 +134,15 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(const model::Point& p)
     return MI::ClickEvent::NONE;
 }
 
-MI::ClickEvent node::ArrowTool::OnLMBUp(const model::Point& p)
+MI::ClickEvent node::ArrowTool::OnLMBUp(MouseButtonEvent& e)
 {
-    node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
-    auto current_time = SDL_GetTicks64();
-    if (b_second_click_in_progress && current_hover == m_last_clicked_block.GetObjectPtr() && (current_time - m_last_click_point) < 1000)
-    {
-        BlockDoubleClickedEvent e{ static_cast<BlockObject*>(current_hover) };
-        Notify(e);
-        return MI::ClickEvent::CAPTURE_END;
-    }
-
-    UNUSED_PARAM(p);
+    UNUSED_PARAM(e);
 	return MI::ClickEvent::NONE;
 }
 
-void node::ArrowTool::OnMouseMove(const model::Point& p)
+void node::ArrowTool::OnMouseMove(MouseHoverEvent& e)
 {
-    UNUSED_PARAM(p);
+    UNUSED_PARAM(e);
 }
 
 bool node::ArrowTool::InternalSelectObject(GraphicsObject* object)

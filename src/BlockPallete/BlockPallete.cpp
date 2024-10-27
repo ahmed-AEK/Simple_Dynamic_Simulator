@@ -15,7 +15,7 @@ namespace PalleteData {
 }
 
 node::BlockPallete::BlockPallete(const SDL_Rect& rect,
-	std::shared_ptr<PalleteProvider> provider, Scene* parent)
+	std::shared_ptr<PalleteProvider> provider, Widget* parent)
 	: Widget(rect, parent), m_palleteProvider{provider}
 {
 }
@@ -59,8 +59,9 @@ bool node::BlockPallete::OnScroll(const double amount, const SDL_Point& p)
 	return true;
 }
 
-MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::BlockPallete::OnLMBDown(MouseButtonEvent& e)
 {
+	SDL_Point current_mouse_point{ e.point() };
 	SDL_Rect inner_area = GetRect();
 	inner_area.x += 7;
 	inner_area.y += 7;
@@ -83,7 +84,7 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(const SDL_Point& current_mouse_poin
 	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
 
 	auto&& selected_element = pallete_elements[selected_item_index];
-	GetScene()->StartDragObject(DragDropObject{ selected_element->block_template,
+	GetApp()->GetScene()->StartDragObject(DragDropObject{ selected_element->block_template,
 		model::BlockModel{selected_element->block},
 		std::shared_ptr<BlockStyler>{m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), 
 			selected_element->block)}
@@ -181,7 +182,7 @@ void node::BlockPallete::DrawElementText(SDL_Renderer* renderer,
 {
 	if (!element.text_painter->GetFont())
 	{
-		element.text_painter->SetFont(GetScene()->GetApp()->getFont().get());
+		element.text_painter->SetFont(GetApp()->getFont().get());
 		element.text_painter->SetText(element.block_template);
 	}
 

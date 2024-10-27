@@ -10,13 +10,13 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(std::function<void(cons
 {
 	assert(parent);
 
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{"Simulation Time"}, SDL_Rect{0,0,100,30}, parent->GetApp()->getFont().get(), parent));
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{"Simulation Time"}, SDL_Rect{0,0,100,30}, parent->GetApp()->getFont().get(), this));
 
 	{
 		char buffer[25]{};
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.t_start);
 		std::string initial_value{ buffer };
-		auto ptr = std::make_unique<PropertyEditControl>("Start Time", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, parent);
+		auto ptr = std::make_unique<PropertyEditControl>("Start Time", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, this);
 		m_t_start_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}
@@ -24,7 +24,7 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(std::function<void(cons
 		char buffer[25]{};
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.t_end);
 		std::string initial_value{ buffer };
-		auto ptr = std::make_unique<PropertyEditControl>("End Time", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, parent);
+		auto ptr = std::make_unique<PropertyEditControl>("End Time", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, this);
 		m_t_end_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}
@@ -32,7 +32,7 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(std::function<void(cons
 		char buffer[25]{};
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.max_step);
 		std::string initial_value{ buffer };
-		auto ptr = std::make_unique<PropertyEditControl>("Max Step", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, parent);
+		auto ptr = std::make_unique<PropertyEditControl>("Max Step", 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, this);
 		m_max_step_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}

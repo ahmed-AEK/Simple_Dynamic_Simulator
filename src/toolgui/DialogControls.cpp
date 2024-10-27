@@ -40,7 +40,7 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 	return lines;
 }
 
-node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, TTF_Font* font, Scene* parent)
+node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, TTF_Font* font, Dialog* parent)
 	:DialogControl{ rect, parent }, m_lines{ std::move(lines) }, m_font{ font }
 {
 	assert(m_font);
@@ -77,15 +77,24 @@ void node::DialogLabel::Draw(SDL_Renderer* renderer)
 
 }
 
-node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_Rect& rect, Scene* parent)
+node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_Rect& rect, Dialog* parent)
 	:DialogControl{ rect, parent },
 	m_edit{ std::move(initial_value), {rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h}, parent },
 	m_name{ std::move(name) },
-	m_painter{ GetScene()->GetApp()->getFont().get() },
+	m_painter{ GetApp()->getFont().get() },
 	m_name_width{ name_width }
 {
 	m_painter.SetText(m_name);
 	assert(parent);
+}
+
+node::Widget* node::PropertyEditControl::GetFocusable()
+{
+	if (m_edit.IsFocusable())
+	{
+		return &m_edit;
+	}
+	return nullptr;
 }
 
 void node::PropertyEditControl::Draw(SDL_Renderer* renderer)

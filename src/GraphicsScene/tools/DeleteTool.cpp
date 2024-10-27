@@ -7,10 +7,10 @@
 #include "GraphicsLogic/SegmentDeleteLogic.hpp"
 #include "GraphicsLogic/NetNodeDeleteLogic.hpp"
 
-MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
+MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e)
 {
 	GetScene()->ClearCurrentSelection();
-	auto* obj = GetScene()->GetObjectAt(p);
+	auto* obj = GetScene()->GetObjectAt(e.point);
 	if (!obj)
 	{
 		return MI::ClickEvent::NONE;
@@ -38,8 +38,8 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(const model::Point& p)
 	return MI::ClickEvent::CLICKED;
 }
 
-MI::ClickEvent node::DeleteTool::OnLMBUp(const model::Point& p)
+MI::ClickEvent node::DeleteTool::OnLMBUp(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(p);
+	UNUSED_PARAM(e);
 	return MI::ClickEvent::NONE;
 }

@@ -173,7 +173,7 @@ namespace node
                         SDL_SCANCODE_LEFT == e.key.keysym.scancode || 
                         SDL_SCANCODE_RIGHT == e.key.keysym.scancode)
                     {
-                        m_scene->KeyPress(e.key.keysym.scancode);
+                        m_scene->SendKeyPress({ e.key });
                         return true;
                     }
                     break;
@@ -181,10 +181,7 @@ namespace node
                 case SDL_TEXTINPUT:
                 {
                     std::string_view sv{ e.text.text };
-                    for (auto&& letter : sv)
-                    {
-                        m_scene->CharPress(letter);
-                    }
+                    m_scene->SendCharPress({ e.text });
                     return true;
                 }
                 case SDL_WINDOWEVENT:
@@ -254,23 +251,23 @@ namespace node
     }
     void Application::HandleLMBDown(SDL_Event& e)
     {
-        m_scene->LMBDown({e.button.x,e.button.y});
+        m_scene->LMBDown({ e.button });
     }
     void Application::HandleRMBDown(SDL_Event& e)
     {
-        m_scene->RMBDown({e.button.x,e.button.y});
+        m_scene->RMBDown({ e.button });
     }
     void Application::HandleLMBUp(SDL_Event& e)
     {
-        m_scene->LMBUp({e.button.x,e.button.y});
+        m_scene->LMBUp({ e.button });
     }
     void Application::HandleRMBUp(SDL_Event& e)
     {
-        m_scene->RMBUp({e.button.x,e.button.y});
+        m_scene->RMBUp({ e.button });
     }
     void Application::HandleMouseMotion(SDL_Event& e)
     {
-        m_scene->MouseMove({e.button.x,e.button.y});
+        m_scene->MouseMove({ e.motion });
     }
     void Application::HandleMouseScroll(SDL_Event& e)
     {

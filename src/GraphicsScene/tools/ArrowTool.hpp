@@ -19,18 +19,15 @@ class ArrowTool: public GraphicsTool, public SinglePublisher<BlockDoubleClickedE
 {
 public:
 	using GraphicsTool::GraphicsTool;
-	MI::ClickEvent OnLMBDown(const model::Point& p) override;
-	MI::ClickEvent OnLMBUp(const model::Point& p) override;
-	void OnMouseMove(const model::Point& p) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
+	void OnMouseMove(MouseHoverEvent& e) override;
 	bool InternalSelectObject(GraphicsObject* object);
 	void OnExit() override; // when tool is changed
 private:
 	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block);
 
-	int64_t m_last_click_point = 0;
 	HandlePtr<GraphicsObject> m_last_clicked_block = nullptr;
-	bool b_second_click_in_progress = false;
-	
 	HandlePtr<GraphicsObject> m_current_block_resize_object;
 };
 }

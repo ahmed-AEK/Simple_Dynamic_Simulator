@@ -53,6 +53,24 @@ void node::GraphicsScene::ClearAllObjects()
     m_objects.clear();
 }
 
+void node::GraphicsScene::BumpObjectInLayer(node::GraphicsObject* obj)
+{
+    if (m_objects.size() < 2)
+    {
+        return;
+    }
+
+    auto it = std::find_if(m_objects.begin(), m_objects.end(), [&](const ObjectSlot& slot) { return slot.m_ptr.get() == obj; });
+    if (it != m_objects.end())
+    {
+        auto iter2 = std::lower_bound(m_objects.begin(), m_objects.end(), *it, [](const auto& obj1, const auto& obj2) {return obj1.z_order > obj2.z_order; });
+        if (iter2 != m_objects.end())
+        {
+            std::swap(*it, *iter2);
+        }
+    }
+}
+
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)
 {
     SDL_Rect screen_rect = ToSDLRect(GetSpaceRect());
@@ -158,8 +176,9 @@ void node::GraphicsScene::OnDropExit(const DragDropObject& object)
 }
 
 
-void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
+void node::GraphicsScene::OnMouseMove(MouseHoverEvent& e)
 {
+    SDL_Point p{ e.point() };
     m_current_mouse_position = p;
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
@@ -176,25 +195,29 @@ void node::GraphicsScene::OnMouseMove(const SDL_Point& p)
     
     if (m_tool)
     {
-        m_tool->OnMouseMove(point);
+        GraphicsTool::MouseHoverEvent ev{ point };
+        m_tool->OnMouseMove(ev);
     }
 }
 
-MI::ClickEvent node::GraphicsScene::OnLMBDown(const SDL_Point& p)
+MI::ClickEvent node::GraphicsScene::OnLMBDown(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
 
     assert(m_graphicsLogic == nullptr);
     if (m_tool)
     {
-        return m_tool->OnLMBDown(point);
+        GraphicsTool::MouseButtonEvent ev{ point, e.e.clicks == 2 };
+        return m_tool->OnLMBDown(ev);
     }
     return MI::ClickEvent::NONE;
 
 }
 
-MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
+MI::ClickEvent node::GraphicsScene::OnLMBUp(MouseButtonEvent& e)
 {
+    SDL_Point p{ e.point() };
     auto&& transformer = GetSpaceScreenTransformer();
     model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
@@ -207,7 +230,8 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(const SDL_Point& p)
 
     if (m_tool)
     {
-        return m_tool->OnLMBUp(SpacePoint);
+        GraphicsTool::MouseButtonEvent ev{ SpacePoint, e.e.clicks == 2};
+        return m_tool->OnLMBUp(ev);
     }
     return MI::ClickEvent::NONE;
 }
@@ -326,7 +350,6 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
     new_rect.y = new_rect.y + old_position.y - new_position.y;
     SetSpaceRect(new_rect);
     UpdateObjectsRect();
-    InvalidateRect();
     return true;
 }
 
@@ -366,7 +389,8 @@ void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
     m_tool = std::move(ptr);
     m_tool->OnStart();
 
-    m_tool->OnMouseEnter(m_spaceScreenTransformer.ScreenToSpacePoint(m_current_mouse_position));
+    GraphicsTool::MouseHoverEvent e{ m_spaceScreenTransformer.ScreenToSpacePoint(m_current_mouse_position) };
+    m_tool->OnMouseEnter(e);
     
 }
 

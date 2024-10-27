@@ -33,7 +33,6 @@ void node::logic::BlockDragLogic::OnMouseMove(const model::Point& current_mouse_
         }));
     
     GetScene()->UpdateObjectsRect();
-    GetScene()->InvalidateRect();
 }
 
 void node::logic::BlockDragLogic::OnCancel()

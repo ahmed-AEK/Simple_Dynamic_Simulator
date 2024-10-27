@@ -19,7 +19,7 @@ namespace node
 			right,
 		};
 
-		SidePanel(PanelSide side, const SDL_Rect& rect, Scene* parent);
+		SidePanel(PanelSide side, const SDL_Rect& rect, Widget* parent);
 
 		void Expand() noexcept;
 		void Retract() noexcept;
@@ -34,7 +34,7 @@ namespace node
 
 	protected:
 		Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
-		MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override;
+		MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 
 	private:
 
@@ -83,9 +83,9 @@ namespace node
 		}
 
 	protected:
-		MI::ClickEvent OnLMBDown(const SDL_Point& current_mouse_point) override
+		MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override
 		{
-			UNUSED_PARAM(current_mouse_point);
+			UNUSED_PARAM(e);
 			SDL_Log("Clicked!");
 			return MI::ClickEvent::CLICKED;
 		}

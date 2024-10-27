@@ -27,14 +27,14 @@ namespace node
                 {
                 case SDLK_RCTRL:
                 case SDLK_LCTRL:
-                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetNodeScene())
+                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetCenterWidget())
                     {
                         GetScene()->GetToolsManager()->SetTemporaryTool("N");
                     }
                     return true;
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
-                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetNodeScene())
+                    if (e.key.repeat == 0 && GetScene() && GetScene()->GetCenterWidget())
                     {
                         GetScene()->GetToolsManager()->SetTemporaryTool("D");
                     }
@@ -44,9 +44,9 @@ namespace node
                     {
                         GetScene()->CancelCurrentLogic();
                     }
-                    if (GetScene() && GetScene()->GetNodeScene())
+                    if (GetScene() && GetScene()->GetCenterWidget())
                     {
-                        GetScene()->GetNodeScene()->CancelCurrentLogic();
+                        GetScene()->GetCenterWidget()->CancelCurrentLogic();
                     }
                     return true;
                 }
@@ -58,14 +58,14 @@ namespace node
                 {
                 case SDLK_RCTRL:
                 case SDLK_LCTRL:
-                    if (GetScene() && GetScene()->GetNodeScene())
+                    if (GetScene() && GetScene()->GetCenterWidget())
                     {
                         GetScene()->GetToolsManager()->RemoveTemporaryTool("N");
                     }
                     return true;
                 case SDLK_RSHIFT:
                 case SDLK_LSHIFT:
-                    if (GetScene() && GetScene()->GetNodeScene())
+                    if (GetScene() && GetScene()->GetCenterWidget())
                     {
                         GetScene()->GetToolsManager()->RemoveTemporaryTool("D");
                     }

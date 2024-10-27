@@ -4,6 +4,7 @@
 
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/toolgui_exports.h"
+#include "toolgui/Widget.hpp"
 #include <vector>
 #include <memory>
 #include "toolgui/NodeMacros.h"
@@ -14,7 +15,6 @@ namespace node
 {
 
     class Application;
-    class Widget;
     class ContextMenu;
     class SidePanel;
     class ToolBar;
@@ -22,7 +22,7 @@ namespace node
     class ToolTipWidget;
 
     
-    class TOOLGUI_API Scene
+    class TOOLGUI_API Scene: public Widget
     {
     public:
         Scene(SDL_Rect rect, Application* parent);
@@ -44,12 +44,6 @@ namespace node
         void SetModalDialog(std::unique_ptr<node::Dialog> dialog);
         
         virtual void OnInit() {};
-        virtual void MouseMove(const SDL_Point& p) {OnMouseMove(p);}
-        virtual void LMBDown(const SDL_Point& p) {OnLMBDown(p);}
-        virtual void RMBDown(const SDL_Point& p) {OnRMBDown(p);}
-        virtual void LMBUp(const SDL_Point& p) {OnLMBUp(p);}
-        virtual void RMBUp(const SDL_Point& p) {OnRMBUp(p);}
-        virtual void Scroll(const double amount, SDL_Point p) {OnScroll(amount, p);}
 
         void InvalidateRect();
         void Start();
@@ -62,30 +56,36 @@ namespace node
 
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
-        void SetgScene(std::unique_ptr<Widget> scene);
+        void SetCenterWidget(std::unique_ptr<Widget> scene);
 
         void StartDragObject(DragDropObject object);
         void CancelCurrentLogic();
 
-        void KeyPress(int32_t key) { OnKeyPress(key); }
-        void CharPress(int32_t key) { OnChar(key); }
+        void SendKeyPress(KeyboardEvent& e) { OnSendKeyPress(e); }
+        void SendKeyPress(KeyboardEvent&& e) { OnSendKeyPress(e); }
+        void SendCharPress(TextInputEvent& e) { OnSendChar(e); }
+        void SendCharPress(TextInputEvent&& e) { OnSendChar(e); }
+
+        Application* GetApp() const override;
+
+        void SetFocus(Widget* widget);
     protected:
         virtual void OnStart() {};
 
         virtual void OnSetRect(const SDL_Rect& rect);
         virtual void OnDraw(SDL_Renderer* renderer);
 
-        virtual void OnMouseMove(const SDL_Point& p);
-        virtual bool OnLMBDown(const SDL_Point& p);
-        virtual bool OnRMBDown(const SDL_Point& p);
-        virtual bool OnLMBUp(const SDL_Point& p);
-        virtual bool OnRMBUp(const SDL_Point& p);
-        virtual bool OnScroll(const double amount, SDL_Point p);
+        void OnMouseMove(MouseHoverEvent& e) override;
+        MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+        MI::ClickEvent OnRMBDown(MouseButtonEvent& e) override;
+        MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
+        MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
+        bool OnScroll(const double amount, const SDL_Point& p) override;
 
-        virtual void OnKeyPress(int32_t key);
-        virtual void OnChar(int32_t key);
+        virtual void OnSendKeyPress(KeyboardEvent& e);
+        virtual void OnSendChar(TextInputEvent& e);
 
-        virtual node::Widget* GetInteractableAt(const SDL_Point& p) const;
+        node::Widget* OnGetInteractableAtPoint(const SDL_Point& p) const;
         std::unique_ptr<node::ContextMenu> m_pContextMenu;
         Application* p_parent;
         SDL_Rect m_rect_base;

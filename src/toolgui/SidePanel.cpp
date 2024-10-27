@@ -5,7 +5,7 @@
 
 static double easeOut(double val) { return 2 * val - val * val; }
 
-node::SidePanel::SidePanel(PanelSide side, const SDL_Rect& rect, Scene* parent)
+node::SidePanel::SidePanel(PanelSide side, const SDL_Rect& rect, Widget* parent)
 	: Widget(rect, parent), m_side(side)
 {
 	RepositionWidget();
@@ -19,7 +19,7 @@ void node::SidePanel::Expand() noexcept
 	}
 	m_last_action_time = SDL_GetTicks64();
 	m_state = PanelState::openning;
-	m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
+	m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
 
 void node::SidePanel::Retract() noexcept
@@ -30,7 +30,7 @@ void node::SidePanel::Retract() noexcept
 	}
 	m_last_action_time = SDL_GetTicks64();
 	m_state = PanelState::closing;
-	m_updateTaskId = GetScene()->GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
+	m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
 
 void node::SidePanel::SetWidget(std::unique_ptr<Widget> widget)
@@ -65,9 +65,9 @@ void node::SidePanel::Draw(SDL_Renderer* renderer)
 
 }
 
-MI::ClickEvent node::SidePanel::OnLMBDown(const SDL_Point& current_mouse_point)
+MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
 {
-	UNUSED_PARAM(current_mouse_point);
+	SDL_Point current_mouse_point{ e.point() };
 	SDL_Rect knobRect = GetKnobRect();
 	if (!SDL_PointInRect(&current_mouse_point, &knobRect)) { return MI::ClickEvent::NONE; }
 	switch (m_state)
@@ -145,7 +145,7 @@ void node::SidePanel::UpdatePanelMotion()
 		{
 			m_expand_percent = 1;
 			m_state = PanelState::open;
-			GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+			GetApp()->RemoveUpdateTask(m_updateTaskId);
 			m_updateTaskId = 0;
 		}
 		RepositionWidget();
@@ -159,7 +159,7 @@ void node::SidePanel::UpdatePanelMotion()
 		{
 			m_expand_percent = 0;
 			m_state = PanelState::closed;
-			GetScene()->GetApp()->RemoveUpdateTask(m_updateTaskId);
+			GetApp()->RemoveUpdateTask(m_updateTaskId);
 			m_updateTaskId = 0;
 		}
 		RepositionWidget();

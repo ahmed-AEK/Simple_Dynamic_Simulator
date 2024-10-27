@@ -49,7 +49,7 @@ protected:
     virtual void RePositionSockets();
     GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
     void OnUpdateRect() override;
-    MI::ClickEvent OnLMBDown(const model::Point& current_mouse_point) override;
+    MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 
     void OnSceneChange() override;
 

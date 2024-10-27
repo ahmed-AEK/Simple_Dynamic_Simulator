@@ -27,7 +27,7 @@ node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<st
 	}
 	total_height += content.size() ? static_cast<int>(DialogLabel::LinesMargin * content.size() - 1) : 0;
 
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, SDL_Rect{ 0,0,width,total_height }, font, parent));
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, SDL_Rect{ 0,0,width,total_height }, font, this));
 	AddButton("Ok", [this] {this->TriggerOk(); });
 	if (!hide_cancel)
 	{
@@ -54,7 +54,7 @@ node::SingleEntryDialog::SingleEntryDialog(std::string title, std::vector<std::s
 	:OkCancelModalDialog{ std::move(title), std::move(content), rect, parent }
 {
 	assert(parent);
-	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), SDL_Rect{0,0,500, 35}, parent);
+	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), SDL_Rect{0,0,500, 35}, this);
 	m_edit = edit.get();
 	AddControl(std::move(edit));
 }

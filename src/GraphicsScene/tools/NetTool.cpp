@@ -5,12 +5,12 @@
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
 
-MI::ClickEvent node::NetTool::OnLMBDown(const model::Point& p)
+MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e)
 {
     using namespace node::model;
 
 	GetScene()->ClearCurrentSelection();
-	auto* obj = GetScene()->GetObjectAt(p);
+	auto* obj = GetScene()->GetObjectAt(e.point);
 	if (!obj)
 	{
 		return MI::ClickEvent::NONE;
@@ -37,7 +37,7 @@ MI::ClickEvent node::NetTool::OnLMBDown(const model::Point& p)
         auto* segment = static_cast<NetSegment*>(obj);
         if (segment->GetOrientation() == NetSegmentOrientation::vertical)
         {
-            auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, p, GetScene(), GetObjectsManager());
+            auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, GetScene(), GetObjectsManager());
             if (new_logic)
             {
                 GetScene()->SetGraphicsLogic(std::move(new_logic));

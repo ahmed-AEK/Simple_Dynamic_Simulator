@@ -4,6 +4,7 @@
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
+#include "toolgui/Application.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(SDL_Rect rect, node::Scene* parent)
     : node::GraphicsScene{ rect, parent }
@@ -71,21 +72,22 @@ void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const
 
     SDL_RenderCopy(renderer, Message.get(), NULL, &Message_rect);
 }
-MI::ClickEvent node::NodeGraphicsScene::OnRMBUp(const SDL_Point& p)
+MI::ClickEvent node::NodeGraphicsScene::OnRMBUp(MouseButtonEvent& e)
 {
-    MI::ClickEvent ret =  GraphicsScene::OnRMBUp(p);
+    MI::ClickEvent ret =  GraphicsScene::OnRMBUp(e);
     if (ret != MI::ClickEvent::NONE)
     {
         return ret;
     }
-    std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(GetScene());
-    GetScene()->ShowContextMenu(std::move(menu), {p.x, p.y});
+    std::unique_ptr<node::ContextMenu> menu = std::make_unique<node::ExampleContextMenu>(GetApp()->GetScene(), GetApp()->getFont().get());
+    GetApp()->GetScene()->ShowContextMenu(std::move(menu), e.point());
     return MI::ClickEvent::CLICKED;
 }
 
-void node::NodeGraphicsScene::OnMouseMove(const SDL_Point& p)
+void node::NodeGraphicsScene::OnMouseMove(MouseHoverEvent& e)
 {
-    node::GraphicsScene::OnMouseMove(p);
+    node::GraphicsScene::OnMouseMove(e);
+    SDL_Point p{ e.point() };
     auto&& transformer = GetSpaceScreenTransformer();
     m_current_hover_point = transformer.ScreenToSpacePoint(p);
     m_screen_hover_point = p;

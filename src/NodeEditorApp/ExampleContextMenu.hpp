@@ -7,6 +7,6 @@ namespace node
     class ExampleContextMenu: public node::ContextMenu
     {
     public:
-        explicit ExampleContextMenu(node::Scene* parent);
+        explicit ExampleContextMenu(node::Widget* parent, TTF_Font* font);
     };
 }

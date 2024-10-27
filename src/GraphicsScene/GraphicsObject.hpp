@@ -14,6 +14,22 @@ namespace node
 
 extern template class MI::MouseInteractable<node::GraphicsObject, node::model::Rect, node::model::Point>;
 
+
+namespace MI
+{
+    template<>
+    struct MouseHoverEvent<node::GraphicsObject>
+    {
+        node::model::Point point;
+    };
+
+    template<>
+    struct MouseButtonEvent<node::GraphicsObject>
+    {
+        node::model::Point point;
+    };
+}
+
 namespace node
 {
 
@@ -30,6 +46,7 @@ enum class ObjectType
 class GraphicsScene;
 
 class GraphicsObject;
+
 using GraphicsObjectMouseInteractable = MI::MouseInteractable<GraphicsObject, model::Rect, model::Point>;
 class SpaceScreenTransformer;
 
