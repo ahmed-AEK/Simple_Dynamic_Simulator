@@ -10,10 +10,10 @@
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 
-node::GraphicsScene::GraphicsScene(const SDL_Rect& rect, node::Scene* parent)
+node::GraphicsScene::GraphicsScene(const SDL_FRect& rect, node::Scene* parent)
 :Widget(rect, parent), 
-m_spaceRect_base{0, 0, 1000, 1000 * rect.h/rect.w}, 
-m_spaceRect{0, 0, 200, 200 * rect.h/rect.w},
+m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * rect.h/rect.w)}, 
+m_spaceRect{0, 0, 200, static_cast<int>(200 * rect.h/rect.w)},
 m_spaceScreenTransformer(GetRect(), m_spaceRect)
 {
     SetDropTarget(true);
@@ -73,12 +73,12 @@ void node::GraphicsScene::BumpObjectInLayer(node::GraphicsObject* obj)
 
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)
 {
-    SDL_Rect screen_rect = ToSDLRect(GetSpaceRect());
+    SDL_FRect screen_rect = ToSDLRect(GetSpaceRect());
     for (auto&& it = m_objects.rbegin(); it != m_objects.rend(); it++)
     {
         auto&& object = *it;
-        SDL_Rect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
-        if (object.m_ptr->IsVisible() && SDL_HasIntersection(&screen_rect, &obj_rect))
+        SDL_FRect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
+        if (object.m_ptr->IsVisible() && SDL_HasRectIntersectionFloat(&screen_rect, &obj_rect))
         {
             object.m_ptr->Draw(renderer, GetSpaceScreenTransformer());
         }
@@ -118,18 +118,18 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
 {
     for (auto& object : m_objects)
     {
-        SDL_Rect object_space_rect = { object.m_ptr->GetSpaceRect().x, object.m_ptr->GetSpaceRect().y,
-            object.m_ptr->GetSpaceRect().w, object.m_ptr->GetSpaceRect().h };
-        SDL_Point space_point_sdl = ToSDLPoint(space_point);
-        if (ObjectType::block == object.m_ptr->GetObjectType() && SDL_PointInRect(&space_point_sdl, &object_space_rect))
+        SDL_FRect object_space_rect = ToFRect({ object.m_ptr->GetSpaceRect().x, object.m_ptr->GetSpaceRect().y,
+            object.m_ptr->GetSpaceRect().w, object.m_ptr->GetSpaceRect().h });
+        SDL_FPoint space_point_sdl = ToSDLPoint(space_point);
+        if (ObjectType::block == object.m_ptr->GetObjectType() && SDL_PointInRectFloat(&space_point_sdl, &object_space_rect))
         {
             
             node::BlockObject* node_pointer = static_cast<node::BlockObject*>(object.m_ptr.get());
             auto&& range = node_pointer->GetSockets();
             auto it = std::find_if(range.begin(), range.end(), 
                 [=](const auto& socket_ptr) { 
-                SDL_Rect socket_rect_sdl = ToSDLRect(socket_ptr->GetSpaceRect());
-                return SDL_PointInRect(&space_point_sdl, &socket_rect_sdl); 
+                SDL_FRect socket_rect_sdl = ToSDLRect(socket_ptr->GetSpaceRect());
+                return SDL_PointInRectFloat(&space_point_sdl, &socket_rect_sdl); 
                 });
             if (it != range.end())
             {
@@ -140,13 +140,13 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
     return nullptr;
 }
 
-void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_Point& p)
+void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_FPoint& p)
 {
     Notify(BlockObjectDropped{ object, p });
     m_dragDropDrawObject = std::nullopt;
 }
 
-void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDropObject& object, const SDL_Point& p)
+void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDropObject& object, const SDL_FPoint& p)
 {
     UNUSED_PARAM(object);
     model::Rect bounds = m_dragDropDrawObject->model.GetBounds();
@@ -178,7 +178,7 @@ void node::GraphicsScene::OnDropExit(const DragDropObject& object)
 
 void node::GraphicsScene::OnMouseMove(MouseHoverEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     m_current_mouse_position = p;
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
@@ -202,7 +202,7 @@ void node::GraphicsScene::OnMouseMove(MouseHoverEvent& e)
 
 MI::ClickEvent node::GraphicsScene::OnLMBDown(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     model::Point point = m_spaceScreenTransformer.ScreenToSpacePoint(p);
 
     assert(m_graphicsLogic == nullptr);
@@ -217,7 +217,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBDown(MouseButtonEvent& e)
 
 MI::ClickEvent node::GraphicsScene::OnLMBUp(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     auto&& transformer = GetSpaceScreenTransformer();
     model::Point SpacePoint = transformer.ScreenToSpacePoint(p);
     if (m_graphicsLogic)
@@ -296,7 +296,7 @@ void node::GraphicsScene::ClearCurrentSelection()
 }
 
 
-bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
+bool node::GraphicsScene::OnScroll(const double amount, const SDL_FPoint& p)
 {
 
     // 1. save old pointer position
@@ -337,7 +337,7 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_Point& p)
         return false;
     }
     model::Rect new_rect = GetSpaceRect();
-    SDL_Rect rect_base = GetBaseRect();
+    SDL_FRect rect_base = GetBaseRect();
     double x_ratio = static_cast<double>(GetRect().w) / rect_base.w;
     double y_ratio = static_cast<double>(GetRect().h) / rect_base.h;
     new_rect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
@@ -394,10 +394,10 @@ void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
     
 }
 
-void node::GraphicsScene::OnSetRect(const SDL_Rect& rect)
+void node::GraphicsScene::OnSetRect(const SDL_FRect& rect)
 {
     Widget::OnSetRect(rect);
-    SDL_Rect rect_base = GetBaseRect();
+    SDL_FRect rect_base = GetBaseRect();
     double x_ratio = static_cast<double>(rect.w)/ rect_base.w;
     double y_ratio = static_cast<double>(rect.h)/ rect_base.h;
     m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);

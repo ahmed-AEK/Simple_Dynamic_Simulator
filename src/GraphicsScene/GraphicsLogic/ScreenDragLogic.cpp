@@ -2,7 +2,7 @@
 #include <cassert>
 #include "GraphicsScene.hpp"
 
-node::logic::ScreenDragLogic::ScreenDragLogic(SDL_Point startPointScreen, 
+node::logic::ScreenDragLogic::ScreenDragLogic(SDL_FPoint startPointScreen, 
     node::model::Point startEdgeSpace, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager}, m_startPointScreen{startPointScreen}, m_startEdgeSpace{startEdgeSpace}
 {
@@ -13,7 +13,7 @@ void node::logic::ScreenDragLogic::OnMouseMove(const model::Point& current_mouse
     GraphicsScene* scene = GetScene();
     assert(scene);
     auto&& transformer = scene->GetSpaceScreenTransformer();
-    SDL_Point point = transformer.SpaceToScreenPoint(current_mouse_point);
+    SDL_FPoint point = transformer.SpaceToScreenPoint(current_mouse_point);
     const auto current_position_difference_space_vector = transformer.ScreenToSpaceVector({
     point.x - m_startPointScreen.x, point.y - m_startPointScreen.y
         });

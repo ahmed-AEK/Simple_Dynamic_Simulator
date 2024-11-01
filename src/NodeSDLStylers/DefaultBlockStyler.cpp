@@ -6,18 +6,18 @@ void node::DefaultBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const mo
 	model::BlockOrientation orientation, bool selected)
 {
 	UNUSED_PARAM(orientation);
-	SDL_Rect screenRect = transformer.SpaceToScreenRect(bounds);
+	SDL_FRect screenRect = transformer.SpaceToScreenRect(bounds);
 	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
 	SDL_Color inner_color{ 220,220,220,255 };
 
-	ThickFilledRoundRect(renderer, screenRect, screenRect.w / 10, 2, outer_color, inner_color,
+	ThickFilledRoundRect(renderer, screenRect, static_cast<int>(screenRect.w / 10), 2, outer_color, inner_color,
 		m_outer_painter, m_inner_painter);
 }
 
 void node::DefaultBlockStyler::DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center, const SpaceScreenTransformer& transformer,
 	const model::BlockSocketModel::SocketType& type)
 {
-	SDL_Point socket_length = transformer.SpaceToScreenVector({ SocketLength, SocketLength });
+	SDL_FPoint socket_length = transformer.SpaceToScreenVector({ SocketLength, SocketLength });
 	switch (type)
 	{
 	case model::BlockSocketModel::SocketType::input:
@@ -37,8 +37,8 @@ void node::DefaultBlockStyler::DrawBlockSocket(SDL_Renderer* renderer, const mod
 		break;
 	}
 	}
-	SDL_Point socket_pos = transformer.SpaceToScreenPoint(center);
-	SDL_Rect draw_area = { socket_pos.x - socket_length.x / 2, socket_pos.y - socket_length.y / 2,
+	SDL_FPoint socket_pos = transformer.SpaceToScreenPoint(center);
+	SDL_FRect draw_area = { socket_pos.x - socket_length.x / 2, socket_pos.y - socket_length.y / 2,
 	socket_length.x, socket_length.y };
 	SDL_RenderFillRect(renderer, &draw_area);
 }

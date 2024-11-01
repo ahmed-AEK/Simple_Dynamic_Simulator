@@ -10,12 +10,12 @@ namespace node
     class TOOLGUI_API DragableWidget: public Widget
     {
     public:
-        DragableWidget(const SDL_Rect& sceneRect, node::Widget* parent);
+        DragableWidget(const SDL_FRect& sceneRect, node::Widget* parent);
     protected:
         virtual void OnMouseMove(MouseHoverEvent& e) override;
         virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
         virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
-        SDL_Point m_dragStartPoint{ 0,0 };
+        SDL_FPoint m_dragStartPoint{ 0,0 };
         bool b_dragging = false;
 
     }; 

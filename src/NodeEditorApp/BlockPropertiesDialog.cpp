@@ -11,34 +11,35 @@
 #include "toolgui/DialogControls.hpp"
 
 node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& block, std::shared_ptr<GraphicsObjectsManager> SceneModel, 
-	std::shared_ptr<BlockClassesManager> manager, const SDL_Rect& rect, Scene* parent)
+	std::shared_ptr<BlockClassesManager> manager, const SDL_FRect& rect, Scene* parent)
 	:Dialog{"Block Properties", rect, parent}, m_scene_manager{std::move(SceneModel)}, m_classesManager{std::move(manager)}, m_block_id{block.GetId()}
 {
 	assert(parent);
 	assert(m_scene_manager);
 	assert(m_classesManager);
-
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_Rect{ 0,0,100,30 }, parent->GetApp()->getFont().get(), this));
+	TTF_Font* font_title = GetApp()->getFont().get();
+	int font_height = TTF_GetFontHeight(font_title);
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_FRect{ 0.0f,0.0f,100.0f,static_cast<float>(font_height) }, font_title, this));
 	auto class_ptr = m_classesManager->GetBlockClassByName(block.GetClass());
 	assert(class_ptr);
 	if (class_ptr)
 	{
 		auto font = parent->GetApp()->getFont(FontType::Label).get();
 		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font, 500);
-		const int line_height = TTF_FontHeight(font);
+		const int line_height = TTF_GetFontHeight(font);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
-		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_Rect{ 0,0,500, line_height * static_cast<int>(lines.size()) + lines_gap }, font, this));
+		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_FRect{ 0.0f,0.0f,500.0f, static_cast<float>(line_height * static_cast<int>(lines.size()) + lines_gap) }, font, this));
 	}
 
 	if (block.GetProperties().size())
 	{
-		AddControl(std::make_unique<SeparatorControl>(SDL_Rect{ 0,0,500, 2 }, this));
+		AddControl(std::make_unique<SeparatorControl>(SDL_FRect{ 0.0f,0.0f,500.0f, 2.0f }, this));
 	}
 
 	for (const auto& property : block.GetProperties())
 	{
 		std::string initial_value = property.to_string();
-		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_Rect{ 0,0,500, 35 }, this);
+		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_FRect{ 0.0f,0.0f,500.0f, static_cast<float>(font_height + 5) }, this);
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
 			{

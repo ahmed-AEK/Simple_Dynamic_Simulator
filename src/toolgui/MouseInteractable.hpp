@@ -24,9 +24,9 @@ MouseInteractable<T, Rect, Point>& MouseInteractable<T, Rect, Point>::operator=(
 template <typename T, typename Rect, typename Point>
 T* MouseInteractable<T, Rect, Point>::GetInteractableAtPoint(const Point& point)
 {
-    SDL_Point SDLpoint{ point.x, point.y };
-    SDL_Rect SDLrect{ m_rect.x, m_rect.y, m_rect.w, m_rect.h };
-    if (SDL_PointInRect(&SDLpoint, &SDLrect))
+    SDL_FPoint SDLpoint{ static_cast<float>(point.x), static_cast<float>(point.y) };
+    SDL_FRect SDLrect{ static_cast<float>(m_rect.x), static_cast<float>(m_rect.y), static_cast<float>(m_rect.w), static_cast<float>(m_rect.h) };
+    if (SDL_PointInRectFloat(&SDLpoint, &SDLrect))
     {
         return this->OnGetInteractableAtPoint(point);
     }

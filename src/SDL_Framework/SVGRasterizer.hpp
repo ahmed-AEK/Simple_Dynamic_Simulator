@@ -10,7 +10,7 @@ class SVGRasterizer
 {
 public:
 	SVGRasterizer(std::string path, int width, int height);
-	bool Draw(SDL_Renderer* renderer, int x, int y);
+	bool Draw(SDL_Renderer* renderer, float x, float y);
 	void SetSize(int width, int height);
 	std::optional<SDL_FPoint>  GetSVGSize() const;
 	void SetSVGPath(std::string path);

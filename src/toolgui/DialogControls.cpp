@@ -8,10 +8,9 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 	std::string_view sv{ str };
 	while (sv.size())
 	{
-		int captured_letters = 0;
+		size_t captured_letters = 0;
 		int extent = 0;
-		int result = TTF_MeasureUTF8(font, sv.data(), width, &extent, &captured_letters);
-		if (result)
+		if (!TTF_MeasureString(font, sv.data(), sv.size(), width, &extent, &captured_letters))
 		{
 			SDL_Log("Failed to measure font extent");
 			return lines;
@@ -40,7 +39,7 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 	return lines;
 }
 
-node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_Rect& rect, TTF_Font* font, Dialog* parent)
+node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_FRect& rect, TTF_Font* font, Dialog* parent)
 	:DialogControl{ rect, parent }, m_lines{ std::move(lines) }, m_font{ font }
 {
 	assert(m_font);
@@ -60,7 +59,7 @@ void node::DialogLabel::Draw(SDL_Renderer* renderer)
 			m_painters.emplace_back(m_font);
 		}
 	}
-	int font_height = TTF_FontHeight(m_font);
+	int font_height = TTF_GetFontHeight(m_font);
 	assert(m_lines.size() == m_painters.size());
 	for (size_t i = 0; i < m_lines.size(); i++)
 	{
@@ -70,14 +69,14 @@ void node::DialogLabel::Draw(SDL_Renderer* renderer)
 		SDL_Color Black = { 50, 50, 50, 255 };
 		painter.SetText(line);
 
-		SDL_Point text_start{ GetRect().x, GetRect().y + y };
+		SDL_FPoint text_start{ GetRect().x, GetRect().y + y };
 		painter.Draw(renderer, text_start, Black);
 		y += font_height + LinesMargin;
 	}
 
 }
 
-node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_Rect& rect, Dialog* parent)
+node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_FRect& rect, Dialog* parent)
 	:DialogControl{ rect, parent },
 	m_edit{ std::move(initial_value), {rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h}, parent },
 	m_name{ std::move(name) },
@@ -85,41 +84,39 @@ node::PropertyEditControl::PropertyEditControl(std::string name, int name_width,
 	m_name_width{ name_width }
 {
 	m_painter.SetText(m_name);
+	SetFocusProxy(&m_edit);
 	assert(parent);
-}
-
-node::Widget* node::PropertyEditControl::GetFocusable()
-{
-	if (m_edit.IsFocusable())
-	{
-		return &m_edit;
-	}
-	return nullptr;
 }
 
 void node::PropertyEditControl::Draw(SDL_Renderer* renderer)
 {
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		SDL_Point text_start{ GetRect().x, GetRect().y };
+		SDL_FPoint text_start{ GetRect().x, GetRect().y };
 		m_painter.Draw(renderer, text_start, Black);
 	}
 	m_edit.Draw(renderer);
 }
 
-void node::PropertyEditControl::OnSetRect(const SDL_Rect& rect)
+void node::PropertyEditControl::OnSetRect(const SDL_FRect& rect)
 {
 	DialogControl::OnSetRect(rect);
 	m_edit.SetRect({ rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h });
 }
 
-node::Widget* node::PropertyEditControl::OnGetInteractableAtPoint(const SDL_Point& point)
+node::Widget* node::PropertyEditControl::OnGetInteractableAtPoint(const SDL_FPoint& point)
 {
 	if (auto ptr = m_edit.GetInteractableAtPoint(point))
 	{
 		return ptr;
 	}
 	return this;
+}
+
+MI::ClickEvent node::PropertyEditControl::OnLMBDown(MouseButtonEvent& e)
+{
+	UNUSED_PARAM(e);
+	return MI::ClickEvent::CLICKED;
 }
 
 void node::SeparatorControl::Draw(SDL_Renderer* renderer)

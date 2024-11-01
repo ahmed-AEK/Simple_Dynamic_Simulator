@@ -181,7 +181,7 @@ MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mou
 	if (!std::visit(AnchorAlive{}, m_start_anchor))
 	{
 		DeleteAllOwnedObjects();
-		return MI::ClickEvent::NONE;
+		return MI::ClickEvent::CAPTURE_END;
 	}
 
 	assert(GetObjectsManager());
@@ -189,7 +189,7 @@ MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mou
 	DeleteAllOwnedObjects();
 
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::CAPTURE_END;
 }
 
 void node::logic::NewNetLogic::OnCancel()
@@ -366,7 +366,7 @@ node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Poin
 		auto it = std::find_if(sockets.begin(), sockets.end(), [&](const auto& socket)
 			{
 				auto socket_rect = ToSDLRect(socket->GetSpaceRect());
-				if (SDL_PointInRect(&current_mouse_point_SDL, &socket_rect))
+				if (SDL_PointInRectFloat(&current_mouse_point_SDL, &socket_rect))
 				{
 					return true;
 				}

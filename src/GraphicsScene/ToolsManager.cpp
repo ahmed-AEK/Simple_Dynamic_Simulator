@@ -45,7 +45,7 @@ void node::ToolsManager::ChangeTool(const std::string& tool_name)
 
 void node::ToolsManager::SetTemporaryTool(const std::string& tool_name)
 {
-	if (tool_name == m_current_tool)
+	if (tool_name == m_current_tool || tool_name == m_current_temporary_tool)
 	{
 		return;
 	}

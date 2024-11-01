@@ -9,9 +9,8 @@
 
 #include "AssetsManager/AssetsManager.hpp"
 
-static int resizingEventWatcher(void* data, SDL_Event* event) {
-    if (event->type == SDL_WINDOWEVENT &&
-        event->window.event == SDL_WINDOWEVENT_RESIZED) {
+static bool resizingEventWatcher(void* data, SDL_Event* event) {
+    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         const SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
         if (win == static_cast<SDL_Window*>(data)) {
             textures::ResetAllTextures();
@@ -32,82 +31,13 @@ namespace node
 
     int Application::Run()
     {
-
-        if (!m_framework.Init(SDL_INIT_VIDEO))
-        {
-            assert(false);
-            return -1;
-        }
-
-#if defined linux && SDL_VERSION_ATLEAST(2, 0, 8)
-        // Disable compositor bypass
-        if(!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
-        {
-            SDL_Log("SDL can not disable compositor bypass!");
-            assert(false);
-            return -1;
-        }
-#endif
-        SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
-        // Create window
-        m_window.reset(SDL_CreateWindow(m_title.c_str(),
-                                            SDL_WINDOWPOS_UNDEFINED,
-                                            SDL_WINDOWPOS_UNDEFINED,
-                                            m_width, m_height,
-                                            SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE));
-        if(!m_window)
-        {
-            SDL_Log("Window could not be created!");
-            std::cout << "SDL_Error: " << SDL_GetError() << std::endl;
-            assert(false);
-            return -1;
-        }
-
-        // Create renderer
-        if (!m_renderer.Init(m_window.get()))
-        {
-            SDL_Log("Failed to initialize Renderer.");
-            assert(false);
-            return -1;
-        }
-
-        // load Font
-        AssetsManager manager;
-        const char* font_path = "assets/Roboto-Regular.ttf";
-        auto font_resource = manager.GetResource(font_path);
-        if (!font_resource)
-        {
-            SDL_Log("failed to load font resource %s", font_path);
-            return -1;
-        }
-        auto font_ops1 = SDL_RWFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
-        m_appFonts[0] = TTFFont{TTF_OpenFontRW(font_ops1, 1, 24)};
-        if (!m_appFonts[0])
-        {
-            SDL_Log("Failed to load Font %s", font_path);
-        }
-        auto font_ops2 = SDL_RWFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
-        m_appFonts[1] = TTFFont{ TTF_OpenFontRW(font_ops2, 1, 16) };
-        if (!m_appFonts[1])
-        {
-            SDL_Log("Failed to load Font %s", font_path);
-        }
-
-        b_running = true;
-
-        SDL_AddEventWatch(resizingEventWatcher, m_window.get());
-
-        this->OnRun();
+        Initialize();
+        
         // Event loop
         while(b_running)
         {
             this->HandleInputs();
-            SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
-            SDL_RenderClear(m_renderer);
-            SDL_assert(m_scene);
-            m_scene->Draw(m_renderer);
-            // Update screen
-            SDL_RenderPresent(m_renderer);
+            Update();
         }
         return 0;
     }
@@ -122,12 +52,12 @@ namespace node
             // User requests quit
             switch(e.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                 {
                     b_running = false;
                     return true;
                 }
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 {
                     if (SDL_BUTTON_LEFT == e.button.button)
                     {
@@ -141,7 +71,7 @@ namespace node
                     }
                     break;
                 }
-                case SDL_MOUSEBUTTONUP:
+                case SDL_EVENT_MOUSE_BUTTON_UP:
                 {
                     if (SDL_BUTTON_LEFT == e.button.button)
                     {
@@ -155,48 +85,55 @@ namespace node
                     }
                     break;
                 }
-                case SDL_MOUSEWHEEL:
+                case SDL_EVENT_MOUSE_WHEEL:
                 {
                     this->HandleMouseScroll(e);
                     return true;
                 }
-                case SDL_MOUSEMOTION:
+                case SDL_EVENT_MOUSE_MOTION:
                 {
                     this->HandleMouseMotion(e);
                     return true;
                 }
-                case SDL_KEYDOWN:
+                case SDL_EVENT_KEY_DOWN:
+                case SDL_EVENT_KEY_UP:
                 {
-                    if (SDL_SCANCODE_BACKSPACE == e.key.keysym.scancode || 
-                        SDL_SCANCODE_DELETE == e.key.keysym.scancode ||
-                        SDL_SCANCODE_RETURN == e.key.keysym.scancode || 
-                        SDL_SCANCODE_LEFT == e.key.keysym.scancode || 
-                        SDL_SCANCODE_RIGHT == e.key.keysym.scancode)
+                    if (SDL_SCANCODE_BACKSPACE == e.key.scancode || 
+                        SDL_SCANCODE_DELETE == e.key.scancode ||
+                        SDL_SCANCODE_RETURN == e.key.scancode || 
+                        SDL_SCANCODE_LEFT == e.key.scancode || 
+                        SDL_SCANCODE_RIGHT == e.key.scancode ||
+                        SDL_SCANCODE_RSHIFT == e.key.scancode ||
+                        SDL_SCANCODE_LSHIFT == e.key.scancode ||
+                        SDL_SCANCODE_RCTRL == e.key.scancode ||
+                        SDL_SCANCODE_LCTRL == e.key.scancode ||
+                        SDL_SCANCODE_ESCAPE == e.key.scancode)
                     {
+                        if (e.key.scancode == SDL_SCANCODE_ESCAPE)
+                        {
+                            m_scene->CancelCurrentDrag();
+                        }
                         m_scene->SendKeyPress({ e.key });
                         return true;
                     }
                     break;
                 }
-                case SDL_TEXTINPUT:
+                case SDL_EVENT_TEXT_INPUT:
                 {
                     std::string_view sv{ e.text.text };
                     m_scene->SendCharPress({ e.text });
                     return true;
                 }
-                case SDL_WINDOWEVENT:
+                case SDL_EVENT_WINDOW_RESIZED:
                 {
-                    if (SDL_WINDOWEVENT_RESIZED == e.window.event) {
-                        SDL_Rect rect(0,0, e.window.data1, e.window.data2);
-                        this->m_rect = rect;
-                        assert(m_scene);
-                        this->m_scene->SetRect(rect);
-                        b_redrawScene = true;
-                        return true;
-                    }
-                    break;
+                    SDL_Rect rect(0,0, e.window.data1, e.window.data2);
+                    this->m_rect = rect;
+                    assert(m_scene);
+                    this->m_scene->SetRect(ToFRect(rect));
+                    b_redrawScene = true;
+                    return true;
                 }
-                case SDL_USEREVENT:
+                case SDL_EVENT_USER:
                 {
                     if (e.user.code == 1)
                     {
@@ -212,16 +149,12 @@ namespace node
         SDL_Event e;
         if (m_scene == nullptr || UpdateTasksEmpty())
         {
-            SDL_WaitEvent(&e);
+            SDL_PollEvent(&e);
             HandleEvent(e);
         }
         while (SDL_PollEvent(&e))
         {
             HandleEvent(e);
-        }
-        if (m_scene && !UpdateTasksEmpty())
-        {
-            DoUpdateTasks();
         }
     }
 
@@ -235,7 +168,7 @@ namespace node
         m_scene = std::move(scene);
         if (b_running)
         {
-            m_scene->SetRect(m_rect);
+            m_scene->SetRect(ToFRect(m_rect));
         }
         m_scene->Start();
     }
@@ -245,7 +178,7 @@ namespace node
         if (m_scene)
         {
             m_scene->OnInit();
-            m_scene->SetRect(m_rect);
+            m_scene->SetRect(ToFRect(m_rect));
         }
         
     }
@@ -271,10 +204,10 @@ namespace node
     }
     void Application::HandleMouseScroll(SDL_Event& e)
     {
-        SDL_Point p;
+        SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
         p = convert_to_renderer_coordinates(p.x, p.y);
-        m_scene->Scroll(e.wheel.preciseY, p);
+        m_scene->Scroll(e.wheel.y, p);
     }
 
     const SDL_Rect& Application::getRect() const
@@ -332,12 +265,105 @@ namespace node
         m_deleted_updateTasks.push_back(task_id);
     }
 
+    void Application::StartTextInput()
+    {
+        SDL_StartTextInput(m_window.get());
+    }
+
+    void Application::StopTextInput()
+    {
+        SDL_StopTextInput(m_window.get());
+    }
+
+    int Application::Initialize()
+    {
+        if (!m_framework.Init(SDL_INIT_VIDEO))
+        {
+            assert(false);
+            return -1;
+        }
+
+#if defined linux && SDL_VERSION_ATLEAST(2, 0, 8)
+        // Disable compositor bypass
+        if (!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
+        {
+            SDL_Log("SDL can not disable compositor bypass!");
+            assert(false);
+            return -1;
+        }
+#endif
+        SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
+        // Create window
+        m_window.reset(SDL_CreateWindow(m_title.c_str(),
+            m_width, m_height,
+            SDL_WINDOW_RESIZABLE));
+        if (!m_window)
+        {
+            SDL_Log("Window could not be created!");
+            std::cout << "SDL_Error: " << SDL_GetError() << std::endl;
+            assert(false);
+            return -1;
+        }
+
+        // Create renderer
+        if (!m_renderer.Init(m_window.get()))
+        {
+            SDL_Log("Failed to initialize Renderer.");
+            assert(false);
+            return -1;
+        }
+
+        // load Font
+        AssetsManager manager;
+        const char* font_path = "assets/Roboto-Regular.ttf";
+        auto font_resource = manager.GetResource(font_path);
+        if (!font_resource)
+        {
+            SDL_Log("failed to load font resource %s", font_path);
+            return -1;
+        }
+        auto font_ops1 = SDL_IOFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
+        m_appFonts[0] = TTFFont{ TTF_OpenFontIO(font_ops1, 1, 20) };
+        if (!m_appFonts[0])
+        {
+            SDL_Log("Failed to load Font %s", font_path);
+        }
+        auto font_ops2 = SDL_IOFromConstMem(font_resource->data(), static_cast<int>(font_resource->size()));
+        m_appFonts[1] = TTFFont{ TTF_OpenFontIO(font_ops2, 1, 16) };
+        if (!m_appFonts[1])
+        {
+            SDL_Log("Failed to load Font %s", font_path);
+        }
+
+        b_running = true;
+
+        SDL_AddEventWatch(resizingEventWatcher, m_window.get());
+
+        this->OnRun();
+        return 0;
+    }
+
+    int Application::Update()
+    {
+        if (m_scene && !UpdateTasksEmpty())
+        {
+            DoUpdateTasks();
+        }
+        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+        SDL_RenderClear(m_renderer);
+        SDL_assert(m_scene);
+        m_scene->Draw(m_renderer);
+        // Update screen
+        SDL_RenderPresent(m_renderer);
+        return 0;
+    }
+
     void Application::AddMainThreadTask(std::function<void()> task)
     {
         m_mainThreadTasks.Push(std::move(task));
         SDL_Event event;
-        event.type = SDL_USEREVENT;
-        event.user.type = SDL_USEREVENT;
+        event.type = SDL_EVENT_USER;
+        event.user.type = SDL_EVENT_USER;
         event.user.timestamp = SDL_GetTicks();
         event.user.code = 1;
         SDL_PushEvent(&event);
@@ -352,14 +378,13 @@ namespace node
         }
     }
 
-    SDL_Point Application::convert_to_renderer_coordinates(int x, int y)
+    SDL_FPoint Application::convert_to_renderer_coordinates(float x, float y)
     {
         SDL_Rect viewport;
         float scale_x, scale_y;
-        SDL_RenderGetViewport(m_renderer, &viewport);
-        SDL_RenderGetScale(m_renderer, &scale_x, &scale_y);
-        return {static_cast<int>((x / scale_x) - viewport.x),
-        static_cast<int>((y / scale_y) - viewport.y)};
+        SDL_GetRenderViewport(m_renderer, &viewport);
+        SDL_GetRenderScale(m_renderer, &scale_x, &scale_y);
+        return {(x / scale_x) - viewport.x,(y / scale_y) - viewport.y};
     }
 }
 

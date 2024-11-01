@@ -87,26 +87,26 @@ struct std::hash<RoundRectSpec>
 
 CacheStore<RoundRectSpec, DroppableTexture> g_roundrect_store;
 
-void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color)
+void FilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color& color)
 {
     DrawRoundRect(renderer, rect, radius, color);
 }
 
-void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2)
+void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect, int original_radius, float thickness, const SDL_Color& color1, const SDL_Color& color2)
 {
     {
-        SDL_Rect rect = original_rect;
+        SDL_FRect rect = original_rect;
         int radius = original_radius;
         FilledRoundRect(renderer, rect, radius, color1);
     }
 
     {
-        SDL_Rect rect;
+        SDL_FRect rect;
         rect.x = original_rect.x + thickness;
         rect.y = original_rect.y + thickness;
         rect.w = original_rect.w - 2 * thickness;
         rect.h = original_rect.h - 2 * thickness;
-        int radius = original_radius - thickness;
+        int radius = static_cast<int>(original_radius - thickness);
         FilledRoundRect(renderer, rect, radius, color2);
     }
 }
@@ -132,7 +132,7 @@ void textures::ResetAllTextures()
 
 
 
-void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color)
+void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, const SDL_Color& color)
 {
     if (!m_arc_texture || !m_arc_texture->GetTexture() || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
     {
@@ -140,13 +140,19 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
         stored_radius = radius;
         ReCreateArcTexture(renderer);
     }
+    rect.x = std::floor(rect.x);
+    rect.y = std::floor(rect.y);
+    rect.h = std::ceil(rect.h);
+    rect.w = std::ceil(rect.w);
+
+    float radius_f = static_cast<float>(radius);
     {
         // draw rects
         SDL_SetRenderDrawColor(renderer, stored_color.r, stored_color.g, stored_color.b, 255);
-        SDL_Rect rects[]{
-            {rect.x + radius, rect.y, rect.w - 2 * radius, radius},
-            {rect.x, rect.y + radius, rect.w, rect.h - 2 * radius},
-            {rect.x + radius, rect.y + rect.h - radius, rect.w - 2 * radius, radius},
+        SDL_FRect rects[]{
+            {rect.x + radius_f, rect.y, rect.w - 2 * radius_f, radius_f},
+            {rect.x, rect.y + radius_f, rect.w, rect.h - 2 * radius_f},
+            {rect.x + radius_f, rect.y + rect.h - radius_f, rect.w - 2 * radius_f, radius_f},
         };
 
         SDL_RenderFillRects(renderer, rects, static_cast<int>(std::size(rects)));
@@ -154,23 +160,23 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, const SDL_Rect rect, int rad
 
     {
         // draw lower right corner
-        SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y + rect.h - radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
+        SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y + rect.h - radius_f, radius_f, radius_f };
+        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper right corner
-        SDL_Rect trgt{ rect.x + rect.w - stored_radius, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
+        SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y, radius_f, radius_f };
+        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
     }
     {
         // draw upper left corner
-        SDL_Rect trgt{ rect.x, rect.y, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
+        SDL_FRect trgt{ rect.x, rect.y, radius_f, radius_f };
+        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
     }
     {
         // draw lower left corner
-        SDL_Rect trgt{ rect.x, rect.y + rect.h - stored_radius, stored_radius, stored_radius };
-        SDL_RenderCopyEx(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
+        SDL_FRect trgt{ rect.x, rect.y + rect.h - radius_f, radius_f, radius_f };
+        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
     }
 }
 
@@ -205,9 +211,9 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
 
 void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
 {
-    int y = 0;
-    int max_y = radius;
-    int raidus_squared = radius * radius;
+    float y = 0;
+    float max_y = static_cast<float>(radius);
+    float raidus_squared = static_cast<float>(radius * radius);
     while (y <= max_y)
     {
         double x = sqrt(raidus_squared - y * y);
@@ -216,30 +222,30 @@ void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
             break;
         }
         {
-            int max_x = static_cast<int>(floor(x));
+            float max_x = static_cast<float>(floor(x));
             if (floor(x) + 2 < y)
             {
                 break;
             }
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
-            std::array<SDL_Point, 4> points{
-            SDL_Point{0, y}, SDL_Point{max_x,y},
-            SDL_Point{y, 0}, SDL_Point{y, max_x},
+            std::array<SDL_FPoint, 4> points{
+            SDL_FPoint{0, y}, SDL_FPoint{max_x,y},
+            SDL_FPoint{y, 0}, SDL_FPoint{y, max_x},
             };
-            SDL_RenderDrawLines(renderer, points.data(), static_cast<int>(points.size()));
+            SDL_RenderLines(renderer, points.data(), static_cast<int>(points.size()));
         }
 
         {
             double overflow = x - floor(x);
             int color_value = static_cast<int>(255 * overflow);
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, static_cast<Uint8>(color_value));
-            int max_x = static_cast<int>(floor(x + 1));
-            std::array<SDL_Point, 2> points{
-                SDL_Point{max_x, y},
-                SDL_Point{y, max_x},
+            float max_x = static_cast<float>(floor(x + 1));
+            std::array<SDL_FPoint, 2> points{
+                SDL_FPoint{max_x, y},
+                SDL_FPoint{y, max_x},
             };
 
-            SDL_RenderDrawPoints(renderer, points.data(), static_cast<int>(points.size()));
+            SDL_RenderPoints(renderer, points.data(), static_cast<int>(points.size()));
         }
 
         y++;
@@ -256,81 +262,82 @@ enum class ArcDirection
 
 
 template <ArcDirection x_mul, ArcDirection y_mul>
-void DrawFilledArcAA4(SDL_Renderer* renderer, SDL_Point midpoint, int radius, const SDL_Color color)
+void DrawFilledArcAA4(SDL_Renderer* renderer, SDL_FPoint midpoint, float radius, const SDL_Color color)
 {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     const int x_mul_i = static_cast<int>(x_mul);
     const int y_mul_i = static_cast<int>(y_mul);
-    int y = 0;
-    int max_y = radius;
-    int raidus_squared = radius * radius;
+    float y = 0;
+    float max_y = radius;
+    float raidus_squared = radius * radius;
     while (y <= max_y)
     {
-        double x = sqrt(raidus_squared - y * y);
+        float x = sqrt(raidus_squared - y * y);
         if (std::isnan(x))
         {
             break;
         }
         {
-            int max_x = static_cast<int>(floor(x));
+            float max_x = static_cast<float>(floor(x));
             if (floor(x) + 2 < y)
             {
                 break;
             }
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
-            std::array<SDL_Point, 4> points{
-            SDL_Point{midpoint.x, midpoint.y + y * y_mul_i}, SDL_Point{midpoint.x + max_x * x_mul_i, midpoint.y + y * y_mul_i},
-            SDL_Point{midpoint.x + y * x_mul_i, midpoint.y}, SDL_Point{midpoint.x + y * x_mul_i, midpoint.y + max_x * y_mul_i},
+            std::array<SDL_FPoint, 4> points{
+            SDL_FPoint{midpoint.x, midpoint.y + y * y_mul_i}, SDL_FPoint{midpoint.x + max_x * x_mul_i, midpoint.y + y * y_mul_i},
+            SDL_FPoint{midpoint.x + y * x_mul_i, midpoint.y}, SDL_FPoint{midpoint.x + y * x_mul_i, midpoint.y + max_x * y_mul_i},
             };
-            SDL_RenderDrawLines(renderer, points.data(), static_cast<int>(points.size()));
+            SDL_RenderLines(renderer, points.data(), static_cast<int>(points.size()));
         }
 
         {
-            double overflow = x - floor(x);
+            float overflow = x - floor(x);
             int color_value = static_cast<int>(255 * overflow);
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, static_cast<Uint8>(color_value));
-            int max_x = static_cast<int>(floor(x + 1));
-            std::array<SDL_Point, 2> points{
-                SDL_Point{midpoint.x + max_x * x_mul_i, midpoint.y + y * y_mul_i},
-                SDL_Point{midpoint.x + y * x_mul_i, midpoint.y + max_x * y_mul_i},
+            float max_x = static_cast<float>(floor(x + 1));
+            std::array<SDL_FPoint, 2> points{
+                SDL_FPoint{midpoint.x + max_x * x_mul_i, midpoint.y + y * y_mul_i},
+                SDL_FPoint{midpoint.x + y * x_mul_i, midpoint.y + max_x * y_mul_i},
             };
 
-            SDL_RenderDrawPoints(renderer, points.data(), static_cast<int>(points.size()));
+            SDL_RenderPoints(renderer, points.data(), static_cast<int>(points.size()));
         }
 
         y++;
     }
 }
 
-void DrawRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color color)
+void DrawRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color color)
 {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 
-    SDL_Rect rects[]{
-        {rect.x + radius, rect.y, rect.w - 2 * radius, radius},
-        {rect.x, rect.y + radius, rect.w, rect.h - 2 * radius},
-        {rect.x + radius, rect.y + rect.h - radius, rect.w - 2 * radius, radius},
+    float radius_f = static_cast<float>(radius);
+    SDL_FRect rects[]{
+        {rect.x + radius_f, rect.y, rect.w - 2 * radius_f, radius_f},
+        {rect.x, rect.y + radius_f, rect.w, rect.h - 2 * radius_f},
+        {rect.x + radius_f, rect.y + rect.h - radius_f, rect.w - 2 * radius_f, radius_f},
     };
 
     SDL_RenderFillRects(renderer, rects, static_cast<int>(std::size(rects)));
 
-    DrawFilledArcAA4<ArcDirection::pos, ArcDirection::pos>(renderer, { rect.x + rect.w - radius, rect.y + rect.h - radius }, radius - 1, color);
-    DrawFilledArcAA4<ArcDirection::neg, ArcDirection::pos>(renderer, { rect.x + radius - 1, rect.y + rect.h - radius }, radius - 1, color);
-    DrawFilledArcAA4<ArcDirection::neg, ArcDirection::neg>(renderer, { rect.x + radius - 1, rect.y + radius - 1 }, radius - 1, color);
-    DrawFilledArcAA4<ArcDirection::pos, ArcDirection::neg>(renderer, { rect.x + rect.w - radius, rect.y + radius - 1 }, radius - 1, color);
+    DrawFilledArcAA4<ArcDirection::pos, ArcDirection::pos>(renderer, { rect.x + rect.w - radius_f, rect.y + rect.h - radius_f }, radius_f - 1, color);
+    DrawFilledArcAA4<ArcDirection::neg, ArcDirection::pos>(renderer, { rect.x + radius_f - 1, rect.y + rect.h - radius_f }, radius_f - 1, color);
+    DrawFilledArcAA4<ArcDirection::neg, ArcDirection::neg>(renderer, { rect.x + radius_f - 1, rect.y + radius_f - 1 }, radius_f - 1, color);
+    DrawFilledArcAA4<ArcDirection::pos, ArcDirection::neg>(renderer, { rect.x + rect.w - radius_f, rect.y + radius_f - 1 }, radius_f - 1, color);
 
 }
 
-void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2, RoundRectPainter& outer, RoundRectPainter& inner)
+void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2, RoundRectPainter& outer, RoundRectPainter& inner)
 {
     {
-        SDL_Rect rect = original_rect;
+        SDL_FRect rect = original_rect;
         int radius = original_radius;
         outer.Draw(renderer, rect, radius, color1);
     }
 
     {
-        SDL_Rect rect;
+        SDL_FRect rect;
         rect.x = original_rect.x + thickness;
         rect.y = original_rect.y + thickness;
         rect.w = original_rect.w - 2 * thickness;
@@ -340,24 +347,24 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect,
     }
 }
 
-void TextPainter::Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color)
+void TextPainter::Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL_Color color)
 {
     assert(m_font);
     AssureTexture(renderer, color);
 
-    SDL_Rect text_rect{ 0,0,0,0 };
-    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
+    SDL_FRect text_rect{ 0,0,0,0 };
+    SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
     text_rect.x = point.x;
     text_rect.y = point.y;
-    SDL_RenderCopy(renderer, m_text_texture.GetTexture(), NULL, &text_rect);
+    SDL_RenderTexture(renderer, m_text_texture.GetTexture(), NULL, &text_rect);
 }
 
-SDL_Rect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
+SDL_FRect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
 {
     assert(m_font);
     AssureTexture(renderer, color);
-    SDL_Rect text_rect{ 0,0,0,0 };
-    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
+    SDL_FRect text_rect{ 0,0,0,0 };
+    SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
     return text_rect;
 }
 
@@ -370,11 +377,11 @@ void TextPainter::SetText(std::string text)
 void TextPainter::ReCreateTexture(SDL_Renderer* renderer)
 {
     SDL_Color color = m_stored_color;
-    auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), color) };
+    auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), m_text.size(), color)};
     auto texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
     m_text_texture.SetTexture(std::move(texture));
-    SDL_Rect text_rect{};
-    SDL_QueryTexture(m_text_texture.GetTexture(), NULL, NULL, &text_rect.w, &text_rect.h);
+    SDL_FRect text_rect{};
+    SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
 }
 
 void TextPainter::AssureTexture(SDL_Renderer* renderer, const SDL_Color& color)

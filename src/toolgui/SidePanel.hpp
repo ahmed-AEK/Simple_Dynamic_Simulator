@@ -19,11 +19,11 @@ namespace node
 			right,
 		};
 
-		SidePanel(PanelSide side, const SDL_Rect& rect, Widget* parent);
+		SidePanel(PanelSide side, const SDL_FRect& rect, Widget* parent);
 
 		void Expand() noexcept;
 		void Retract() noexcept;
-		void UpdateWindowSize(const SDL_Rect& rect);
+		void UpdateWindowSize(const SDL_FRect& rect);
 
 		void SetWidget(std::unique_ptr<Widget> widget);
 
@@ -33,16 +33,16 @@ namespace node
 		const PanelSide& GetSide() const noexcept {	return m_side; }
 
 	protected:
-		Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
+		Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
 		MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 
 	private:
 
 		void UpdatePanelMotion();
-		SDL_Rect CalculateChildWidgetRect();
+		SDL_FRect CalculateChildWidgetRect();
 		void RepositionWidget();
 
-		SDL_Rect GetKnobRect();
+		SDL_FRect GetKnobRect();
 		void DrawKnob(SDL_Renderer* renderer);
 
 		enum PanelState
@@ -61,13 +61,13 @@ namespace node
 
 		double m_expand_percent = 0;
 		uint64_t m_last_action_time = 0;
-		int64_t m_corner_position = 0;
+		float m_corner_position = 0;
 		int64_t m_updateTaskId = 0;
 
 		static constexpr double TICKS_PER_SECOND = 1000;
 		static constexpr double TRANSITION_TIME = 0.25;
-		static constexpr int knob_width = 50;
-		static constexpr int knob_height = 100;
+		static constexpr int knob_width = 40;
+		static constexpr int knob_height = 80;
 		static constexpr int widget_margin = 2;
 	};
 

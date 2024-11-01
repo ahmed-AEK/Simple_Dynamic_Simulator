@@ -5,13 +5,13 @@
 namespace node
 {
     class MainNodeScene;
-
+    class MainNodeScene;
     class NodeEditorApplication : public node::Application
     {
     public:
         NodeEditorApplication();
         MainNodeScene* GetScene() noexcept;
-    protected:
-        bool HandleEvent(SDL_Event& e) override;
+    private:
+        MainNodeScene* m_scene;
     };
 }

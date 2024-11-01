@@ -25,14 +25,12 @@ namespace node
     class TOOLGUI_API Scene: public Widget
     {
     public:
-        Scene(SDL_Rect rect, Application* parent);
+        Scene(SDL_FRect rect, Application* parent);
         
         Scene(Scene&&) = delete;
         Scene& operator=(Scene&&) = delete;
 
         void Draw(SDL_Renderer* renderer);
-        void SetRect(const SDL_Rect& rect);
-        SDL_Rect GetRect() const { return m_rect; }
         virtual ~Scene();
         Application* GetApp() { return p_parent; }
 
@@ -51,15 +49,16 @@ namespace node
         void ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip);
         void HideToolTip(Widget* widget);
 
-        void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_Point& p);
+        void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_FPoint& p);
         void DestroyContextMenu();
 
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
+        ToolBar* GetToolBar() const { return m_toolbar.get(); }
         void SetCenterWidget(std::unique_ptr<Widget> scene);
 
         void StartDragObject(DragDropObject object);
-        void CancelCurrentLogic();
+        void CancelCurrentDrag();
 
         void SendKeyPress(KeyboardEvent& e) { OnSendKeyPress(e); }
         void SendKeyPress(KeyboardEvent&& e) { OnSendKeyPress(e); }
@@ -72,7 +71,7 @@ namespace node
     protected:
         virtual void OnStart() {};
 
-        virtual void OnSetRect(const SDL_Rect& rect);
+        virtual void OnSetRect(const SDL_FRect& rect);
         virtual void OnDraw(SDL_Renderer* renderer);
 
         void OnMouseMove(MouseHoverEvent& e) override;
@@ -80,16 +79,15 @@ namespace node
         MI::ClickEvent OnRMBDown(MouseButtonEvent& e) override;
         MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
         MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
-        bool OnScroll(const double amount, const SDL_Point& p) override;
+        bool OnScroll(const double amount, const SDL_FPoint& p) override;
 
         virtual void OnSendKeyPress(KeyboardEvent& e);
         virtual void OnSendChar(TextInputEvent& e);
 
-        node::Widget* OnGetInteractableAtPoint(const SDL_Point& p) const;
+        node::Widget* OnGetInteractableAtPoint(const SDL_FPoint& p) const;
         std::unique_ptr<node::ContextMenu> m_pContextMenu;
         Application* p_parent;
-        SDL_Rect m_rect_base;
-        SDL_Rect m_rect;
+        SDL_FRect m_rect_base;
 
     private:
         std::unique_ptr<ToolTipWidget> m_tooltip;

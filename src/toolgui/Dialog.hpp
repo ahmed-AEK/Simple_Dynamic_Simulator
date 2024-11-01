@@ -11,7 +11,7 @@ class Dialog;
 class DialogButton : public Widget
 {
 public:
-	DialogButton(std::string text, std::function<void()> OnClick, const SDL_Rect& rect, Widget* scene);
+	DialogButton(std::string text, std::function<void()> OnClick, const SDL_FRect& rect, Widget* scene);
 	void Draw(SDL_Renderer* renderer) override;
 
 protected:
@@ -33,13 +33,13 @@ public:
 		expanding,
 	};
 
-	DialogControl(const SDL_Rect& rect, Dialog* parent);
-	SDL_Rect GetSizeHint() const { return m_size_hint; }
-	void SetSizeHint(const SDL_Rect& rect) { m_size_hint = rect; }
+	DialogControl(const SDL_FRect& rect, Dialog* parent);
+	SDL_FRect GetSizeHint() const { return m_size_hint; }
+	void SetSizeHint(const SDL_FRect& rect) { m_size_hint = rect; }
 	SizingMode GetSizingMode() const { return m_sizingMode; }
 	void SetSizingMode(SizingMode mode) { m_sizingMode = mode; }
 private:
-	SDL_Rect m_size_hint{ 0,0,0,0 };
+	SDL_FRect m_size_hint{ 0,0,0,0 };
 	SizingMode m_sizingMode = SizingMode::constantSize;
 };
 
@@ -54,7 +54,7 @@ public:
 		Center,
 	};
 
-	Dialog(std::string title, const SDL_Rect& rect, Scene* parent);
+	Dialog(std::string title, const SDL_FRect& rect, Scene* parent);
 	~Dialog() override;
 	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetTitle() const { return m_title; };
@@ -69,7 +69,7 @@ public:
 	void TriggerClose() { OnClose(); }
 	void TriggerOk() { OnOk(); }
 	
-	SDL_Rect GetTitleBarRect() const;
+	SDL_FRect GetTitleBarRect() const;
 	
 	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
 	
@@ -79,43 +79,46 @@ public:
 	void SetScene(Scene* scene) { m_scene = scene; }
 
 	Widget* GetFocusable() override;
+	bool BeingDragged() const;
+	void StopDrag();
 protected:
 	void OnMouseMove(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 	void OnMouseOut() override;
-	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
-	void OnSetRect(const SDL_Rect& rect) override;
+	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
+	void OnSetRect(const SDL_FRect& rect) override;
 	virtual void OnClose();
 	virtual void OnOk();
+	bool OnKeyPress(KeyboardEvent& e) override;
 
 private:
 	void RepositionControls();
 	void RepositionButtons();
 	void ResizeToFitChildren();
-	void DrawTitle(SDL_Renderer* renderer, const SDL_Point& start);
-	void DrawXButton(SDL_Renderer* renderer, const SDL_Rect& rect);
-	void DrawOutline(SDL_Renderer* renderer, const SDL_Rect& rect);
-	SDL_Rect GetXButtonRect() const;
-	SDL_Rect GetResizeGripRect() const;
-	bool BeingDragged() const;
-	SDL_Point CalculateMinSize() const;
+	void DrawTitle(SDL_Renderer* renderer, const SDL_FPoint& start);
+	void DrawXButton(SDL_Renderer* renderer, const SDL_FRect& rect);
+	void DrawOutline(SDL_Renderer* renderer, const SDL_FRect& rect);
+	SDL_FRect GetXButtonRect() const;
+	SDL_FRect GetResizeGripRect() const;
+	SDL_FPoint CalculateMinSize() const;
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;
 	std::vector<std::unique_ptr<DialogButton>> m_buttons;
 	std::unique_ptr<ToolBar> m_toolbar;
 	TextPainter m_title_painter;
+	TextPainter m_X_painter;
 
-	static constexpr int ButtonHeight = 35;
-	static constexpr int ButtonsMargin = 10;
-	static constexpr int ControlsMargin = 10;
-	static constexpr int MinWidth = 300;
-	static constexpr int top_resize_grip_height = 3;
+	static constexpr float ButtonHeight{ 25.0f };
+	static constexpr float ButtonsMargin{ 6.0f };
+	static constexpr float ControlsMargin{ 6.0f };
+	static constexpr float MinWidth{ 300.0f };
+	static constexpr float top_resize_grip_height{ 3.0f };
 
 	struct TitleDrag
 	{
-		SDL_Point drag_edge_start_position{ 0,0 };
-		SDL_Point drag_mouse_start_position{ 0,0 };
+		SDL_FPoint drag_edge_start_position{ 0,0 };
+		SDL_FPoint drag_mouse_start_position{ 0,0 };
 	};
 	struct ResizeDrag
 	{
@@ -124,8 +127,8 @@ private:
 			grip,
 			top,
 		};
-		SDL_Point drag_edge_start_position{ 0,0 };
-		SDL_Point min_size;
+		SDL_FPoint drag_edge_start_position{ 0,0 };
+		SDL_FPoint min_size;
 		DragMode mode;
 	};
 	using DragData = std::variant<std::monostate, TitleDrag, ResizeDrag>;
@@ -138,6 +141,6 @@ private:
 	bool b_mouse_on_close = false;
 	ScreenResizeStrategy m_resize_strategy = ScreenResizeStrategy::FixedPosition;
 	bool m_resizable = false;
-	int m_excess_height = 0;
+	float m_excess_height = 0;
 };
 }

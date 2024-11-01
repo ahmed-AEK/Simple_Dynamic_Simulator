@@ -13,9 +13,9 @@ node::logic::BlockRotateLogic::BlockRotateLogic(const model::Rect& rotate_btn_re
 
 MI::ClickEvent node::logic::BlockRotateLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
-	SDL_Rect rotate_btn_rect_sdl = node::ToSDLRect(m_rotate_btn_rect);
-	SDL_Point mouse_screen = node::ToSDLPoint(current_mouse_point);
-	if (!m_block || !SDL_PointInRect(&mouse_screen, &rotate_btn_rect_sdl))
+	SDL_FRect rotate_btn_rect_sdl = node::ToSDLRect(m_rotate_btn_rect);
+	SDL_FPoint mouse_screen = node::ToSDLPoint(current_mouse_point);
+	if (!m_block || !SDL_PointInRectFloat(&mouse_screen, &rotate_btn_rect_sdl))
 	{
 		return MI::ClickEvent::NONE;
 	}

@@ -14,7 +14,7 @@ namespace node
 		model::BlockModel block;
 		std::shared_ptr<BlockStyler> styler;
 
-		void Draw(SDL_Renderer* renderer, const SDL_Point& p) const
+		void Draw(SDL_Renderer* renderer, const SDL_FPoint& p) const
 		{
 			UNUSED_PARAM(renderer);
 			UNUSED_PARAM(p);

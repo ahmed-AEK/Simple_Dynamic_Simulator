@@ -34,14 +34,14 @@ using SDLTexture = std::unique_ptr<SDL_Texture, decltype(SDL_Texture_deleter)>;
 
 inline auto SDL_Surface_deleter=[](SDL_Surface* ptr)
 {
-    SDL_FreeSurface(ptr);
+    SDL_DestroySurface(ptr);
 };
 
 using SDLSurface = std::unique_ptr<SDL_Surface, decltype(SDL_Surface_deleter)>;
 
 inline auto SDL_Cursor_deleter=[](SDL_Cursor* ptr)
 {
-    SDL_FreeCursor(ptr);
+    SDL_DestroyCursor(ptr);
 };
 
 using SDLCursor = std::unique_ptr<SDL_Cursor, decltype(SDL_Cursor_deleter)>;

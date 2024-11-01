@@ -22,7 +22,7 @@ node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, Ne
 void node::NetSegment::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-	SDL_Rect ScreenRect = transformer.SpaceToScreenRect(GetSpaceRect());
+	SDL_FRect ScreenRect = transformer.SpaceToScreenRect(GetSpaceRect());
 	SDL_RenderFillRect(renderer, &ScreenRect);
 }
 
@@ -100,7 +100,7 @@ node::NetNode::NetNode(const model::Point& center, GraphicsScene* scene)
 void node::NetNode::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_Rect screenRect = transformer.SpaceToScreenRect(GetSpaceRect());
+	SDL_FRect screenRect = transformer.SpaceToScreenRect(GetSpaceRect());
 	SDL_RenderFillRect(renderer, &screenRect);
 }
 

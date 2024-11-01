@@ -15,11 +15,11 @@ class ToolBar;
 class ToolBarButton : public Widget
 {
 public:
-	static constexpr int width = 40;
-	static constexpr int height = 40;
-	static constexpr int Hmargin = 10;
+	static constexpr float width = 32;
+	static constexpr float height = 32;
+	static constexpr float Hmargin = 8;
 
-	ToolBarButton(const SDL_Rect& rect, ToolBar* parent, std::string name = {});
+	ToolBarButton(const SDL_FRect& rect, ToolBar* parent, std::string name = {});
 	~ToolBarButton() override;
 	const std::string& GetName() const noexcept { return m_name; }
 	void Draw(SDL_Renderer* renderer) override;
@@ -50,7 +50,7 @@ private:
 	std::unique_ptr<RoundRectPainter> m_painter_inner;
 	uint64_t m_last_action_time = 0;
 	int64_t m_updateTaskId = 0;
-	SDL_Point m_last_mouse_pos;
+	SDL_FPoint m_last_mouse_pos;
 	std::string m_description;
 	ToolBar* m_parent_toolbar;
 	
@@ -60,9 +60,9 @@ private:
 class ToolBar: public Widget
 {
 public:
-	static constexpr int height = 50;
+	static constexpr int height = 40;
 
-	ToolBar(const SDL_Rect& rect, Widget* parent);
+	ToolBar(const SDL_FRect& rect, Widget* parent);
 	~ToolBar() override;
 	void AddButton(std::unique_ptr<ToolBarButton> button, int position = -1);
 	void AddSeparator(int position = -1);
@@ -71,14 +71,14 @@ public:
 
 
 	struct ToolBarSeparator {
-		static constexpr int width = 2;
-		static constexpr int VMargin = 5;
-		int position_x = 0;
+		static constexpr float width{ 2.0f };
+		static constexpr float VMargin{ 5.0f };
+		float position_x = 0;
 	};
 	using ToolBarElement = typename std::variant<std::unique_ptr<ToolBarButton>, ToolBarSeparator>;
 protected:
-	Widget* OnGetInteractableAtPoint(const SDL_Point& point) override;
-	void OnSetRect(const SDL_Rect& rect) override;
+	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
+	void OnSetRect(const SDL_FRect& rect) override;
 private:
 	void RepositionButtons();
 	std::vector<ToolBarElement> m_buttons;
@@ -88,7 +88,7 @@ private:
 class ToolBarCommandButton : public ToolBarButton
 {
 public:
-	ToolBarCommandButton(const SDL_Rect& rect, ToolBar* parent,
+	ToolBarCommandButton(const SDL_FRect& rect, ToolBar* parent,
 		std::string name = {}, std::function<void()> func = {}, std::function<bool()> Active = []()->bool {return true; });
 	void OnButonClicked() override;
 protected:

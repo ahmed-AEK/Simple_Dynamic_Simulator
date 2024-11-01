@@ -2,7 +2,7 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 
-node::LineEditControl::LineEditControl(std::string initial_value, const SDL_Rect& rect, Widget* parent)
+node::LineEditControl::LineEditControl(std::string initial_value, const SDL_FRect& rect, Widget* parent)
 	:Widget{ rect,parent }, m_value{ std::move(initial_value) }, m_painter{ parent ? parent->GetApp()->getFont().get() : nullptr }, m_cursor_position{m_value.size()}
 {
 	SetFocusable(true);
@@ -12,10 +12,10 @@ node::LineEditControl::LineEditControl(std::string initial_value, const SDL_Rect
 
 void node::LineEditControl::Draw(SDL_Renderer* renderer)
 {
-	SDL_Rect edit_box = GetRect();
+	SDL_FRect edit_box = GetRect();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &edit_box);
-	SDL_Rect inner_rect{ edit_box };
+	SDL_FRect inner_rect{ edit_box };
 	inner_rect.x += 1;
 	inner_rect.y += 1;
 	inner_rect.w -= 2;
@@ -24,12 +24,12 @@ void node::LineEditControl::Draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &inner_rect);
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		SDL_Point text_start{ inner_rect.x, inner_rect.y };
+		SDL_FPoint text_start{ inner_rect.x + H_Margin, inner_rect.y };
 		m_painter.Draw(renderer, text_start, Black);
 	}
 	if (m_focused)
 	{
-		SDL_Rect cursor_rect{ inner_rect.x + m_cursor_pixel_position, inner_rect.y + 4, 2, inner_rect.h - 8 };
+		SDL_FRect cursor_rect{ inner_rect.x + H_Margin + m_cursor_pixel_position, inner_rect.y + 4, 2, inner_rect.h - 8 };
 		SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
 		SDL_RenderFillRect(renderer, &cursor_rect);
 	}
@@ -42,11 +42,11 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 		// edit empty, nothing to do
 		return MI::ClickEvent::CLICKED;
 	}
-	SDL_Point current_mouse_point{ e.point() };
-	int click_pos_x = current_mouse_point.x - GetRect().x - 1;
+	SDL_FPoint current_mouse_point{ e.point() };
+	int click_pos_x = static_cast<int>(current_mouse_point.x - GetRect().x - H_Margin);
 	int extent = 0;
-	int count = 0;
-	if (TTF_MeasureText(m_painter.GetFont(), m_value.c_str(), click_pos_x, &extent, &count))
+	size_t count = 0;
+	if (!TTF_MeasureString(m_painter.GetFont(), m_value.c_str(), m_value.size(), click_pos_x, &extent, &count))
 	{
 		// failed for some reason
 		return MI::ClickEvent::CLICKED;
@@ -57,11 +57,7 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 	{
 		// compare it with next character too
 		int w = 0, h = 0;
-		std::array<char, 256> buffer;
-		assert(buffer.size() > m_value.size());
-		std::copy(m_value.begin(), m_value.begin() + new_cursor_pos + 1, buffer.begin());
-		buffer[new_cursor_pos + 1] = '\0';
-		TTF_SizeText(m_painter.GetFont(), buffer.data(), &w, &h);
+		TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), new_cursor_pos + 1, &w, &h);
 		if (click_pos_x - extent > w - click_pos_x)
 		{
 			new_cursor_pos++;
@@ -75,9 +71,13 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::CLICKED;
 }
 
-void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
+bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 {
-	int key = e.e.keysym.scancode;
+	if (e.e.type != SDL_EVENT_KEY_DOWN)
+	{
+		return false;
+	}
+	int key = e.e.scancode;
 	if (key == SDL_SCANCODE_BACKSPACE)
 	{
 		SDL_Log("BackSpace");
@@ -88,6 +88,7 @@ void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 			m_cursor_position--;
 			ReCalculateCursorPixelPosition();
 		}
+		return true;
 	}
 	else if (key == SDL_SCANCODE_DELETE)
 	{
@@ -96,6 +97,7 @@ void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 			m_value.erase(m_value.begin() + m_cursor_position);
 			m_painter.SetText(m_value);
 		}
+		return true;
 	}
 	else if (key == SDL_SCANCODE_LEFT)
 	{
@@ -104,6 +106,7 @@ void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 			m_cursor_position--;
 			ReCalculateCursorPixelPosition();
 		}
+		return true;
 	}
 	else if (key == SDL_SCANCODE_RIGHT)
 	{
@@ -112,6 +115,7 @@ void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 			m_cursor_position++;
 			ReCalculateCursorPixelPosition();
 		}
+		return true;
 	}
 	else if (key == SDL_SCANCODE_RETURN)
 	{
@@ -121,34 +125,38 @@ void node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	{
 		SDL_Log("key %d", key);
 	}
-
+	return false;
 }
 
 void node::LineEditControl::OnKeyboardFocusIn()
 {
 	m_focused = true;
+	GetApp()->StartTextInput();
 }
 
 void node::LineEditControl::OnKeyboardFocusOut()
 {
 	m_focused = false;
+	GetApp()->StopTextInput();
 }
 
 void node::LineEditControl::ReCalculateCursorPixelPosition()
 {
 	int w = 0, h = 0;
-	std::array<char, 256> buffer;
-	assert(buffer.size() > m_value.size());
-	std::copy(m_value.begin(), m_value.begin() + m_cursor_position, buffer.begin());
-	buffer[m_cursor_position] = '\0';
-
-	if (!TTF_SizeText(m_painter.GetFont(), buffer.data(), &w, &h))
+	if (m_cursor_position == 0)
 	{
-		m_cursor_pixel_position = w;
+		m_cursor_pixel_position = 0;
+	}
+	else
+	{
+		if (TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), m_cursor_position, &w, &h))
+		{
+			m_cursor_pixel_position = w;
+		}
 	}
 }
 
-void node::LineEditControl::OnChar(TextInputEvent& e)
+bool node::LineEditControl::OnChar(TextInputEvent& e)
 {
 	int key = e.e.text[0];
 	SDL_Log("%d", key);
@@ -158,5 +166,7 @@ void node::LineEditControl::OnChar(TextInputEvent& e)
 		m_painter.SetText(m_value);
 		m_cursor_position++;
 		ReCalculateCursorPixelPosition();
+		return true;
 	}
+	return false;
 }

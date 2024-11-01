@@ -14,7 +14,7 @@ namespace node
 class ScopeDisplayToolButton : public ToolBarButton
 {
 public:
-	ScopeDisplayToolButton(const SDL_Rect& rect, ToolBar* parent,
+	ScopeDisplayToolButton(const SDL_FRect& rect, ToolBar* parent,
 		std::string name, ScopeDisplayToolsManager& manager);
 	void OnButonClicked() override;
 	void SetActive(bool value = true) { b_active = value; }
@@ -39,7 +39,7 @@ class ScopeMoveTool : public ScopeDisplayTool
 public:
 	explicit ScopeMoveTool(PlotWidget& widget) :ScopeDisplayTool{ "M", widget } {}
 protected:
-	MI::ClickEvent OnLMBDown(const SDL_Point& point) override
+	MI::ClickEvent OnLMBDown(const SDL_FPoint& point) override
 	{
 		if (auto widget = GetWidget())
 		{
@@ -51,7 +51,7 @@ protected:
 		return MI::ClickEvent::CAPTURE_START;
 	}
 
-	void OnMouseMove(const SDL_Point& point) override
+	void OnMouseMove(const SDL_FPoint& point) override
 	{
 		if (!b_held_down)
 		{
@@ -62,14 +62,14 @@ protected:
 		{
 			auto&& extent = widget->GetExtent();
 			auto&& drawing_rect = widget->GetDrawingRect();
-			SDL_Point move_distance{ point.x - m_drag_start_point.x, point.y - m_drag_start_point.y };
+			SDL_FPoint move_distance{ point.x - m_drag_start_point.x, point.y - m_drag_start_point.y };
 			SDL_FPoint move_distance_space{ static_cast<float > (move_distance.x) / static_cast<float>(drawing_rect.w) * extent.w,
 				static_cast<float>(move_distance.y) / static_cast<float>(drawing_rect.h) * extent.h };
 			widget->SetExtend(SDL_FRect{ m_drag_start_edge.x - move_distance_space.x, m_drag_start_edge.y + move_distance_space.y, extent.w, extent.h });
 		}
 	}
 
-	MI::ClickEvent OnLMBUp(const SDL_Point& point) override
+	MI::ClickEvent OnLMBUp(const SDL_FPoint& point) override
 	{
 		UNUSED_PARAM(point);
 		b_held_down = false;
@@ -83,7 +83,7 @@ protected:
 
 
 private:
-	SDL_Point m_drag_start_point{ 0,0 };
+	SDL_FPoint m_drag_start_point{ 0,0 };
 	SDL_FPoint m_drag_start_edge{ 0.0,0.0 };
 	bool b_held_down = false;
 
@@ -94,12 +94,12 @@ class ScopeZoomTool : public ScopeDisplayTool
 public:
 	explicit ScopeZoomTool(PlotWidget& widget) :ScopeDisplayTool{ "Z", widget } {}
 protected:
-	MI::ClickEvent OnLMBDown(const SDL_Point& point) override
+	MI::ClickEvent OnLMBDown(const SDL_FPoint& point) override
 	{
 		if (auto widget = GetWidget())
 		{
-			SDL_Rect inner_rect = widget->GetDrawingRect();
-			if (SDL_PointInRect(&point, &inner_rect))
+			SDL_FRect inner_rect = ToFRect(widget->GetDrawingRect());
+			if (SDL_PointInRectFloat(&point, &inner_rect))
 			{
 				m_drag_start_point = point;
 				m_current_drag_point = point;
@@ -109,7 +109,7 @@ protected:
 		return MI::ClickEvent::CAPTURE_START;
 	}
 
-	void OnMouseMove(const SDL_Point& point) override
+	void OnMouseMove(const SDL_FPoint& point) override
 	{
 		if (!b_held_down)
 		{
@@ -118,15 +118,15 @@ protected:
 
 		if (auto widget = GetWidget())
 		{
-			SDL_Point contained_point = point;
-			const auto& inner_rect = widget->GetDrawingRect();
+			SDL_FPoint contained_point = point;
+			const auto& inner_rect = ToFRect(widget->GetDrawingRect());
 			contained_point.x = std::clamp(contained_point.x, inner_rect.x, inner_rect.x + inner_rect.w);
 			contained_point.y = std::clamp(contained_point.y, inner_rect.y, inner_rect.y + inner_rect.h);
 			m_current_drag_point = contained_point;
 		}
 	}
 
-	MI::ClickEvent OnLMBUp(const SDL_Point& point) override
+	MI::ClickEvent OnLMBUp(const SDL_FPoint& point) override
 	{
 		if (!b_held_down)
 		{
@@ -136,12 +136,12 @@ protected:
 
 		if (auto widget = GetWidget())
 		{
-			SDL_Point contained_point = point;
-			const auto& inner_rect = widget->GetDrawingRect();
+			SDL_FPoint contained_point = point;
+			const auto& inner_rect = ToFRect(widget->GetDrawingRect());
 			contained_point.x = std::clamp(contained_point.x, inner_rect.x, inner_rect.x + inner_rect.w);
 			contained_point.y = std::clamp(contained_point.y, inner_rect.y, inner_rect.y + inner_rect.h);
 			const auto& extent = widget->GetExtent();
-			auto ScreenToSpace = [&](const SDL_Point& p) -> SDL_FPoint
+			auto ScreenToSpace = [&](const SDL_FPoint& p) -> SDL_FPoint
 				{
 					return { static_cast<float>(p.x - inner_rect.x) / (inner_rect.w) * extent.w + extent.x,
 						extent.y + extent.h - static_cast<float>(p.y - inner_rect.y) / inner_rect.h * extent.h };
@@ -167,18 +167,18 @@ protected:
 	{
 		if (b_held_down)
 		{
-			auto start_point = SDL_Point{ std::min(m_drag_start_point.x, m_current_drag_point.x), std::min(m_drag_start_point.y, m_current_drag_point.y) };
-			auto end_point = SDL_Point{ std::max(m_drag_start_point.x, m_current_drag_point.x), std::max(m_drag_start_point.y, m_current_drag_point.y) };
-			auto draw_rect = SDL_Rect{ start_point.x, start_point.y, end_point.x - start_point.x, end_point.y - start_point.y };
+			auto start_point = SDL_FPoint{ std::min(m_drag_start_point.x, m_current_drag_point.x), std::min(m_drag_start_point.y, m_current_drag_point.y) };
+			auto end_point = SDL_FPoint{ std::max(m_drag_start_point.x, m_current_drag_point.x), std::max(m_drag_start_point.y, m_current_drag_point.y) };
+			auto draw_rect = SDL_FRect{ start_point.x, start_point.y, end_point.x - start_point.x, end_point.y - start_point.y };
 			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-			SDL_RenderDrawRect(renderer, &draw_rect);
+			SDL_RenderRect(renderer, &draw_rect);
 		}
 	}
 
 private:
 	bool b_held_down = false;
-	SDL_Point m_drag_start_point{ 0,0 };
-	SDL_Point m_current_drag_point{ 0,0 };
+	SDL_FPoint m_drag_start_point{ 0,0 };
+	SDL_FPoint m_current_drag_point{ 0,0 };
 };
 
 }
@@ -247,7 +247,7 @@ void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 	m_plot_widget = widget.GetMIHandlePtr();
 }
 
-node::ScopeDisplayToolButton::ScopeDisplayToolButton(const SDL_Rect& rect, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
+node::ScopeDisplayToolButton::ScopeDisplayToolButton(const SDL_FRect& rect, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
 	:ToolBarButton(rect, parent, std::move(name)), m_manager{ manager } 
 {
 }
@@ -257,30 +257,30 @@ void node::ScopeDisplayToolButton::OnButonClicked()
 	m_manager.ChangeTool(GetName());
 }
 
-node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent)
+node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_FRect& rect, Scene* parent)
 	:BlockDialog{"Scope Display", rect, parent}
 {	
-	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_Rect{0,0,400,200}, this);
+	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_FRect{0.0f,0.0f,400.0f,200.0f}, this);
 	m_tools_manager.SetWidget(*plot);
 	{
 		SetResizeable(true);
 
 		auto toolbar = std::make_unique<ToolBar>(rect, this);
 		
-		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_Rect{ 0,0,ToolBarButton::width, ToolBarButton::height }, toolbar.get(),
+		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,ToolBarButton::width, ToolBarButton::height }, toolbar.get(),
 			"Reset", [plot_ptr = plot.get()]() {plot_ptr->ResetZoom(); });
 		reset_btn->SetSVGPath("assets/expand.svg");
 		reset_btn->SetDescription("Reset Zoom");
 		toolbar->AddButton(std::move(reset_btn));
 		toolbar->AddSeparator();
 
-		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{0,0, ToolBarButton::width, ToolBarButton::height}, toolbar.get(), "A", m_tools_manager);
+		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{0.0f,0.0f, ToolBarButton::width, ToolBarButton::height}, toolbar.get(), "A", m_tools_manager);
 		A_btn->SetSVGPath("assets/arrow.svg");
 		A_btn->SetDescription("Arrow Tool");
-		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "M", m_tools_manager);
+		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{ 0.0f,0.0f, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "M", m_tools_manager);
 		M_btn->SetSVGPath("assets/move.svg");
 		M_btn->SetDescription("Move Tool");
-		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_Rect{ 0,0, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "Z", m_tools_manager);
+		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{ 0.0f,0.0f, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "Z", m_tools_manager);
 		Z_btn->SetSVGPath("assets/zoom.svg");
 		Z_btn->SetDescription("Zoom Tool");
 
@@ -330,7 +330,7 @@ void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
 	}
 }
 
-node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_Rect& rect, Dialog* parent)
+node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_FRect& rect, Dialog* parent)
 	:DialogControl{rect,parent}, m_font{font}, m_current_point_painter{font}
 {
 	SetSizingMode(DialogControl::SizingMode::expanding);
@@ -426,12 +426,12 @@ SDL_Rect node::PlotWidget::GetDrawingRect()
 
 void node::PlotWidget::OnMouseMove(MouseHoverEvent& e)
 {
-	SDL_Point current_mouse_point{e.point()};
-	SDL_Rect inner_rect = GetInnerRect();
-	if (SDL_PointInRect(&current_mouse_point, &inner_rect))
+	SDL_FPoint current_mouse_point{e.point()};
+	SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	if (SDL_PointInRectFloat(&current_mouse_point, &inner_rect))
 	{
 		auto&& extent = GetExtent();
-		auto ScreenToSpace = [&](const SDL_Point& p) -> SDL_FPoint
+		auto ScreenToSpace = [&](const SDL_FPoint& p) -> SDL_FPoint
 			{
 				return { static_cast<float>(p.x - inner_rect.x) / (inner_rect.w) * extent.w + extent.x,
 					extent.y + extent.h - static_cast<float>(p.y - inner_rect.y) / inner_rect.h * extent.h };
@@ -458,7 +458,7 @@ MI::ClickEvent node::PlotWidget::OnLMBDown(MouseButtonEvent& e)
 {
 	if (m_tool)
 	{
-		SDL_Point current_mouse_point{ e.point()};
+		SDL_FPoint current_mouse_point{ e.point()};
 		return m_tool->LMBDown(current_mouse_point);
 	}
 	return DialogControl::OnLMBDown(e);
@@ -468,7 +468,7 @@ MI::ClickEvent node::PlotWidget::OnLMBUp(MouseButtonEvent& e)
 {
 	if (m_tool)
 	{
-		SDL_Point current_mouse_point{ e.point()};
+		SDL_FPoint current_mouse_point{ e.point()};
 		return m_tool->LMBUp(current_mouse_point);
 	}
 	return DialogControl::OnLMBUp(e);
@@ -481,9 +481,11 @@ void node::PlotWidget::OnMouseOut()
 
 void node::PlotWidget::DrawAxes(SDL_Renderer* renderer)
 {
+	SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	SDL_RenderFillRect(renderer, &inner_rect);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_Rect inner_rect = GetInnerRect();
-	SDL_Rect axes[]{ 
+	SDL_FRect axes[]{ 
 		{ inner_rect.x, inner_rect.y + inner_rect.h, inner_rect.w + 1, 1 },
 		{ inner_rect.x, inner_rect.y, 1, inner_rect.h + 1 },
 		{ inner_rect.x, inner_rect.y, inner_rect.w + 1, 1 },
@@ -493,26 +495,26 @@ void node::PlotWidget::DrawAxes(SDL_Renderer* renderer)
 
 SDL_Rect node::PlotWidget::GetInnerRect()
 {
-	const int left_margin = 45;
-	const int right_margin = 20;
-	const int top_margin = 20;
-	const int bottom_margin = 40;
+	constexpr float left_margin = 45;
+	constexpr float right_margin = 20;
+	constexpr float top_margin = 20;
+	constexpr float bottom_margin = 40;
 	const auto& base_rect = GetRect();
-	SDL_Rect inner_rect{ base_rect.x + left_margin, base_rect.y + top_margin, base_rect.w - left_margin - right_margin, base_rect.h - top_margin - bottom_margin };
+	SDL_Rect inner_rect = ToRect(SDL_FRect{ base_rect.x + left_margin, base_rect.y + top_margin, base_rect.w - left_margin - right_margin, base_rect.h - top_margin - bottom_margin });
 	return inner_rect;
 }
 
 void node::PlotWidget::ResetPainters()
 {
-	SDL_Rect inner_rect = GetInnerRect();
+	SDL_FRect inner_rect = ToFRect(GetInnerRect());
 	m_painters.clear();
 	m_data_texture.DropTexture();
 
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
 	{
-		const int spacing = (inner_rect.h) / static_cast<int>(y_ticks_count + 1);
-		int y = inner_rect.y + spacing;
+		const float spacing = (inner_rect.h) / static_cast<int>(y_ticks_count + 1);
+		float y = inner_rect.y + spacing;
 		for (size_t i = 0; i < y_ticks_count; i++)
 		{
 			if (draw_text)
@@ -532,8 +534,8 @@ void node::PlotWidget::ResetPainters()
 	}
 
 	{
-		const int spacing = (inner_rect.w) / static_cast<int>(x_ticks_count + 1);
-		int x = inner_rect.x + spacing;
+		const float spacing = (inner_rect.w) / static_cast<int>(x_ticks_count + 1);
+		float x = inner_rect.x + spacing;
 		for (size_t i = 0; i < x_ticks_count; i++)
 		{
 			if (draw_text)
@@ -797,7 +799,7 @@ void node::PlotWidget::ReDrawSurface()
 	std::vector<SDL_FPoint> points;
 	points.reserve(m_data.points.size());
 	SDL_Rect inner_rect = GetInnerRect();
-	m_data_surface.reset(SDL_CreateRGBSurfaceWithFormat(0, inner_rect.w, inner_rect.h, 32, SDL_PIXELFORMAT_RGBA32));
+	m_data_surface.reset(SDL_CreateSurface(inner_rect.w, inner_rect.h, SDL_PIXELFORMAT_RGBA32));
 	for (const auto& point : m_data.points)
 	{
 		SDL_FPoint transformed{ (point.x - m_space_extent.x) / (m_space_extent.w) * inner_rect.w, inner_rect.h - (point.y - m_space_extent.y) / (m_space_extent.h) * inner_rect.h };
@@ -821,43 +823,43 @@ void node::PlotWidget::ReDrawSurface()
 
 void node::PlotWidget::DrawData(SDL_Renderer* renderer)
 {
-	int tex_w, tex_h;
-	SDL_QueryTexture(m_data_texture.GetTexture(), nullptr, nullptr, &tex_w, &tex_h);
-	SDL_Rect inner_rect = GetInnerRect();
+	float tex_w, tex_h;
+	SDL_GetTextureSize(m_data_texture.GetTexture(), &tex_w, &tex_h);
+	SDL_FRect inner_rect = ToFRect(GetInnerRect());
 
 	if (!m_data_texture || inner_rect.w != tex_w || inner_rect.h != tex_h)
 	{
 		ReDrawSurface();
 		m_data_texture.SetTexture(SDLTexture{ SDL_CreateTextureFromSurface(renderer, m_data_surface.get()) });
 	}
-	SDL_RenderCopy(renderer, m_data_texture.GetTexture(), nullptr, &inner_rect);
+	SDL_RenderTexture(renderer, m_data_texture.GetTexture(), nullptr, &inner_rect);
 }
 
 void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 {
-	SDL_Rect inner_rect = GetInnerRect();
+	SDL_FRect inner_rect = ToFRect(GetInnerRect());
 	const int tick_length = 5;
 	size_t painter_idx = 0;
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
 	{
-		std::array<SDL_Rect, y_ticks_count> left_ticks;
+		std::array<SDL_FRect, y_ticks_count> left_ticks;
 		{
-			const int spacing = (inner_rect.h) / static_cast<int>(left_ticks.size() + 1);
-			int y = inner_rect.y + spacing;
+			const float spacing = (inner_rect.h) / static_cast<float>(left_ticks.size() + 1);
+			float y = inner_rect.y + spacing;
 			for (size_t i = 0; i < left_ticks.size(); i++)
 			{
 				if (draw_text)
 				{
 					SDL_Color Black = { 50, 50, 50, 255 };
-					SDL_Rect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
+					SDL_FRect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
 					text_rect.x = inner_rect.x - 5 - tick_length - text_rect.w;
 					text_rect.y = y - text_rect.h / 2;
 					m_painters[painter_idx].Draw(renderer, { text_rect.x, text_rect.y }, Black);
 					painter_idx += 1;
 				}
 
-				left_ticks[i] = SDL_Rect{ inner_rect.x - tick_length, y, tick_length + 1, 1 };
+				left_ticks[i] = SDL_FRect{ inner_rect.x - tick_length, y, tick_length + 1, 1 };
 				y += spacing;
 			}
 		}
@@ -865,17 +867,17 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 	}
 
 	{
-		std::array<SDL_Rect, x_ticks_count> bottom_ticks;
+		std::array<SDL_FRect, x_ticks_count> bottom_ticks;
 		{
-			const int spacing = (inner_rect.w) / static_cast<int>(bottom_ticks.size() + 1);
-			int x = inner_rect.x + spacing;
+			const int spacing = static_cast<int>(inner_rect.w) / static_cast<int>(bottom_ticks.size() + 1);
+			float x = inner_rect.x + spacing;
 			for (size_t i = 0; i < bottom_ticks.size(); i++)
 			{
 				if (draw_text)
 				{
 					SDL_Color Black = { 50, 50, 50, 255 };
 					
-					SDL_Rect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
+					SDL_FRect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
 					text_rect.x = x - text_rect.w/2;
 					text_rect.y = inner_rect.y + inner_rect.h + tick_length + 5;
 					m_painters[painter_idx].Draw(renderer, { text_rect.x, text_rect.y }, Black);
@@ -883,7 +885,7 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 				}
 				
 
-				bottom_ticks[i] = SDL_Rect{ x, inner_rect.y + inner_rect.h, 1, tick_length + 1 };
+				bottom_ticks[i] = SDL_FRect{ x, inner_rect.y + inner_rect.h, 1, tick_length + 1 };
 				x += spacing;
 			}
 		}
@@ -898,7 +900,7 @@ void node::PlotWidget::DrawCoords(SDL_Renderer* renderer)
 		SDL_Color black{ 50, 50, 50, 255};
 		auto&& rect = GetInnerRect();
 		auto text_rect = m_current_point_painter.GetRect(renderer, black);
-		SDL_Point start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};
+		SDL_FPoint start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};
 		m_current_point_painter.Draw(renderer, start_point, black);
 	}
 }

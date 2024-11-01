@@ -38,8 +38,8 @@ void node::SVGBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model:
 	bound_inner.w -= 2 * SocketLength;
 	bound_inner.h -= 2 * SocketLength;
 
-	SDL_Rect screen_rect = transformer.SpaceToScreenRect(bound_inner);
-	SDL_Point screen_center{ screen_rect.x + screen_rect.w / 2, screen_rect.y + screen_rect.h / 2 };
+	SDL_FRect screen_rect = transformer.SpaceToScreenRect(bound_inner);
+	SDL_FPoint screen_center{ screen_rect.x + screen_rect.w / 2, screen_rect.y + screen_rect.h / 2 };
 	if (!m_max_rect)
 	{
 		auto svg_size = m_svg_rasterizer->GetSVGSize();
@@ -54,15 +54,15 @@ void node::SVGBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model:
 	screen_rect.w -= 10;
 	screen_rect.h -= 10;
 
-	int width = screen_rect.w;
-	int height = screen_rect.h;
+	int width = static_cast<int>(screen_rect.w);
+	int height = static_cast<int>(screen_rect.h);
 	if (m_max_rect)
 	{
 		width = std::min(static_cast<int>(m_max_rect->x), width);
 		height = std::min(static_cast<int>(m_max_rect->y), height);
 	}
 
-	SDL_Point start_point{ screen_center.x - width / 2, screen_center.y - height / 2 };
+	SDL_FPoint start_point{ screen_center.x - width / 2, screen_center.y - height / 2 };
 	m_svg_rasterizer->SetSize(width, height);
 	if (!m_svg_rasterizer->Draw(renderer, start_point.x, start_point.y))
 	{

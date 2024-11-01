@@ -16,9 +16,9 @@ class ScopeDisplayTool
 {
 public:
 	ScopeDisplayTool(std::string name, PlotWidget& widget);
-	MI::ClickEvent LMBDown(const SDL_Point& point) { return OnLMBDown(point); }
-	MI::ClickEvent LMBUp(const SDL_Point& point) { return OnLMBUp(point); }
-	void MouseMove(const SDL_Point& point) { OnMouseMove(point); }
+	MI::ClickEvent LMBDown(const SDL_FPoint& point) { return OnLMBDown(point); }
+	MI::ClickEvent LMBUp(const SDL_FPoint& point) { return OnLMBUp(point); }
+	void MouseMove(const SDL_FPoint& point) { OnMouseMove(point); }
 	void Activate() { OnActivate(); }
 	void Deactivate() { OnDeactivate(); }
 	virtual void Draw(SDL_Renderer* renderer) { UNUSED_PARAM(renderer); }
@@ -26,9 +26,9 @@ public:
 	const std::string& GetName() const { return m_name; }
 	PlotWidget* GetWidget();
 protected:
-	virtual MI::ClickEvent OnLMBDown(const SDL_Point& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }
-	virtual MI::ClickEvent OnLMBUp(const SDL_Point& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }
-	virtual void OnMouseMove(const SDL_Point& point) { UNUSED_PARAM(point); }
+	virtual MI::ClickEvent OnLMBDown(const SDL_FPoint& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }
+	virtual MI::ClickEvent OnLMBUp(const SDL_FPoint& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }
+	virtual void OnMouseMove(const SDL_FPoint& point) { UNUSED_PARAM(point); }
 	virtual void OnActivate() { }
 	virtual void OnDeactivate() {}
 	virtual void OnCancel() {}
@@ -56,7 +56,7 @@ private:
 class PlotWidget : public DialogControl
 {
 public:
-	PlotWidget(TTF_Font* font, const SDL_Rect& rect, Dialog* parent);
+	PlotWidget(TTF_Font* font, const SDL_FRect& rect, Dialog* parent);
 	void Draw(SDL_Renderer* renderer) override;
 	void SetData(XYSeries data);
 	void ResetZoom();
@@ -97,7 +97,7 @@ private:
 class ScopeDiplayDialog : public BlockDialog
 {
 public:
-	ScopeDiplayDialog(const SDL_Rect& rect, Scene* parent);
+	ScopeDiplayDialog(const SDL_FRect& rect, Scene* parent);
 	void SetData(XYSeries data);
 	void UpdateResults(std::any new_result) override;
 

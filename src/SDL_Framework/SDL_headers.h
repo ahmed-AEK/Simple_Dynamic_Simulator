@@ -7,10 +7,10 @@
 #elif _WIN32
 #pragma warning(push)
 #pragma warning(disable : 26819)
-    #include <SDL2/SDL.h>
-    #include <SDL2/SDL_image.h>
-    #include <SDL2/SDL_ttf.h>
+    #include <SDL3/SDL.h>
+    #include <SDL3_image/SDL_image.h>
+    #include <SDL3_ttf/SDL_ttf.h>
 #pragma warning(pop)
 #else
-    #error "OS missing SDL2 header file includes"
+    #error "OS missing SDL3 header file includes"
 #endif

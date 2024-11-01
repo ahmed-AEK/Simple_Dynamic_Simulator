@@ -7,7 +7,7 @@ node::SVGRasterizer::SVGRasterizer(std::string path, int width, int height)
 {
 }
 
-bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, int x, int y)
+bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, float x, float y)
 {
 	if (!m_texture.GetTexture())
 	{
@@ -17,8 +17,13 @@ bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, int x, int y)
         }
 	}
 
-    SDL_Rect draw_area{ x + (m_width - m_actual_size.x) / 2,y + (m_height - m_actual_size.y) / 2,m_actual_size.x,m_actual_size.y};
-    SDL_RenderCopy(renderer, m_texture.GetTexture(), nullptr, &draw_area);
+    SDL_FRect draw_area{ 
+        std::floor(x + (m_width - m_actual_size.x) / 2),
+        std::floor(y + (m_height - m_actual_size.y) / 2),
+        static_cast<float>(m_actual_size.x),
+        static_cast<float>(m_actual_size.y)
+    };
+    SDL_RenderTexture(renderer, m_texture.GetTexture(), nullptr, &draw_area);
     return true;
 }
 
@@ -88,7 +93,7 @@ bool node::SVGRasterizer::ReCreateTexture(SDL_Renderer* renderer)
     }
 
     // ARGB32 to RGBA32
-    SDLSurface surface{ SDL_CreateRGBSurfaceFrom(bitmap.data(), bitmap.width(), bitmap.height(), 32, bitmap.stride(), 0xFF0000, 0xFF00, 0xFF, 0xFF000000) };
+    SDLSurface surface{ SDL_CreateSurfaceFrom(bitmap.width(), bitmap.height(), SDL_GetPixelFormatForMasks(32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000), bitmap.data(), bitmap.stride())};
     SDLTexture texture{ SDL_CreateTextureFromSurface(renderer, surface.get()) };
     m_texture.SetTexture(std::move(texture));
     return true;

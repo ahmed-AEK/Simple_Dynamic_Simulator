@@ -1,6 +1,6 @@
 #include "ToolTipWidget.hpp"
 
-node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text, const SDL_Rect& rect, Widget* parent)
+node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text, const SDL_FRect& rect, Widget* parent)
     : Widget{ rect,parent }, m_painter{ font }
 {
     m_painter.SetText(std::move(text));
@@ -9,9 +9,9 @@ node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text, const SDL_R
 void node::ToolTipWidget::Draw(SDL_Renderer* renderer)
 {
     SDL_Color Black = { 50, 50, 50, 255 };
-    SDL_Rect text_rect = m_painter.GetRect(renderer, Black);
-    SDL_Rect current_rect = GetRect();
-    SDL_Rect desired_rect = text_rect;
+    SDL_FRect text_rect = m_painter.GetRect(renderer, Black);
+    SDL_FRect current_rect = GetRect();
+    SDL_FRect desired_rect = text_rect;
     desired_rect.w += 8;
     desired_rect.h += 8;
     if (desired_rect.w != current_rect.w || desired_rect.h != current_rect.h)

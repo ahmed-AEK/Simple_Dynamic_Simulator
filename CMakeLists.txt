@@ -32,9 +32,9 @@ set(DRAWRECT_ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries (DLLs).")
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_image REQUIRED)
+find_package(SDL3 REQUIRED)
+find_package(SDL3_ttf REQUIRED)
+find_package(SDL3_image REQUIRED)
 find_package(NLopt REQUIRED)
 find_package(lunasvg REQUIRED)
 

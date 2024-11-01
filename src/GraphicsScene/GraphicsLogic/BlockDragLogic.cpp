@@ -55,7 +55,7 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
     auto* block = static_cast<BlockObject*>(m_block.GetObjectPtr());
     if (!scene && !block)
     {
-        return MI::ClickEvent::NONE;
+        return MI::ClickEvent::CAPTURE_END;
     }
 
     const auto drag_vector = model::Point{
@@ -73,7 +73,7 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
         model::Point quantized_drag_vector = scene->QuantizePoint(drag_vector + m_startObjectEdge);
         if (quantized_drag_vector == m_startObjectEdge)
         {
-            return MI::ClickEvent::NONE;
+            return MI::ClickEvent::CAPTURE_END;
         }
     }
 
@@ -82,7 +82,7 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
     assert(block_id);
     GetObjectsManager()->GetSceneModel()->MoveBlockById(*block_id, scene->QuantizePoint(drag_vector + m_startObjectEdge));
 
-    return MI::ClickEvent::CLICKED;
+    return MI::ClickEvent::CAPTURE_END;
 }
 
 

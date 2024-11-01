@@ -34,6 +34,9 @@ void node::GainBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model
 	SDL_Color inner_color{ 220,220,220,255 };
 	SDL_SetRenderDrawColor(renderer, outer_color.r, outer_color.g, outer_color.b, 255);
 	
+	SDL_FColor outer_color_f{ToFColor(outer_color)};
+	SDL_FColor inner_color_f{ToFColor(inner_color)};
+
 	std::array<SDL_Vertex, 3> arrow_verts;
 	switch (orientation)
 	{
@@ -69,7 +72,7 @@ void node::GainBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model
 	}
 	for (auto&& vert : arrow_verts)
 	{
-		vert.color = outer_color;
+		vert.color = outer_color_f;
 	}
 
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
@@ -109,7 +112,7 @@ void node::GainBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model
 	}
 	for (auto&& vert : arrow_verts)
 	{
-		vert.color = inner_color;
+		vert.color = inner_color_f;
 	}
 	SDL_RenderGeometry(renderer, nullptr, arrow_verts.data(), 3, nullptr, 0);
 

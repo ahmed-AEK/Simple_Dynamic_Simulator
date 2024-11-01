@@ -40,7 +40,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
                 SDL_Log("Double Click Started!");
                 BlockDoubleClickedEvent ev{ static_cast<BlockObject*>(current_hover) };
                 Notify(ev);
-                return MI::ClickEvent::CLICKED;
+                return MI::ClickEvent::NONE;
             }
             else
             {
@@ -67,7 +67,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(e.point, model::Point{ obj_rect.x, obj_rect.y }, 
                 *block_obj, GetScene(), GetObjectsManager());
             GetScene()->SetGraphicsLogic(std::move(drag_logic));
-            return MI::ClickEvent::CLICKED;
+            return MI::ClickEvent::CAPTURE_START;
         }
         case ObjectType::socket:
         {

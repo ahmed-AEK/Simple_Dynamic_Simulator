@@ -12,7 +12,10 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load()
 {
     try
     {
-        m_db = SQLite::Database{ m_dbname , SQLite::OPEN_READWRITE };
+        if (!m_db)
+        {
+            m_db = SQLite::Database{ m_dbname , SQLite::OPEN_READWRITE };
+        }
         std::optional<node::model::NodeSceneModel> scene{ std::in_place };
         SQLBlockLoader nodeLoader{ m_dbname, *m_db };
         auto blocks = nodeLoader.GetBlocks();

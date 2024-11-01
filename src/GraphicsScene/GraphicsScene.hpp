@@ -38,7 +38,7 @@ struct GRAPHICSSCENE_API DragObject
 struct BlockObjectDropped
 {
     DragDropObject& object;
-    const SDL_Point& p;
+    const SDL_FPoint& p;
 };
 
 class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::SinglePublisher<BlockObjectDropped>
@@ -57,7 +57,7 @@ public:
     static constexpr int NetNodeLayer = 300;
     static constexpr int InteractiveLayer = 400;
 
-    GraphicsScene(const SDL_Rect& rect, node::Scene* parent);
+    GraphicsScene(const SDL_FRect& rect, node::Scene* parent);
     ~GraphicsScene() override;
 
     void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
@@ -99,15 +99,15 @@ public:
     GraphicsTool* GetTool() const { return m_tool.get(); }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 protected:
-    void OnSetRect(const SDL_Rect& rect) override;
+    void OnSetRect(const SDL_FRect& rect) override;
     void OnMouseMove(MouseHoverEvent& e) override;
     MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
     MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
-    bool OnScroll(const double amount, const SDL_Point& p) override;
+    bool OnScroll(const double amount, const SDL_FPoint& p) override;
 
-    void OnDropObject(DragDropObject& object, const SDL_Point& p) override;
+    void OnDropObject(DragDropObject& object, const SDL_FPoint& p) override;
     void OnDrawDropObject(SDL_Renderer* renderer,
-        const DragDropObject& object, const SDL_Point& p) override;
+        const DragDropObject& object, const SDL_FPoint& p) override;
     void OnDropEnter(const DragDropObject& object) override;
     void OnDropExit(const DragDropObject& object) override;
 
@@ -126,7 +126,7 @@ private:
     double m_zoomScale = 1;
     int m_spaceQuantization = 20;
 
-    SDL_Point m_current_mouse_position{ 0,0 };
+    SDL_FPoint m_current_mouse_position{ 0,0 };
     
     std::vector<ObjectSlot> m_objects;
     HandlePtr<GraphicsObject> m_current_mouse_hover;

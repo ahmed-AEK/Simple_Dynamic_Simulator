@@ -66,7 +66,13 @@ public:
     int64_t AddUpdateTask(UpdateTask task);
     void RemoveUpdateTask(int64_t task_id);
     Scene* GetScene() { return m_scene.get(); }
-
+    void StartTextInput();
+    void StopTextInput();
+    int Initialize();
+    int Update();
+    bool virtual HandleEvent(SDL_Event& e);
+    bool IsRunning() const { return b_running; }
+    SDL_Window* GetWindow() const { return m_window.get(); }
 protected:
     virtual void OnInit() {};
     virtual void OnRun();
@@ -78,8 +84,7 @@ protected:
     virtual void HandleMouseScroll(SDL_Event& e);
     
     virtual void OnSetScene(std::unique_ptr<Scene>& scene);
-    bool virtual HandleEvent(SDL_Event& e);
-    SDL_Point convert_to_renderer_coordinates(int x, int y);
+    SDL_FPoint convert_to_renderer_coordinates(float x, float y);
 private:
     void HandleInputs();
     std::string m_title;

@@ -4,21 +4,21 @@
 
 namespace node
 {
-    SDL_Rect ToSDLRect(const model::Rect& rect);
-    SDL_Point ToSDLPoint(const model::Point& point);
+    SDL_FRect ToSDLRect(const model::Rect& rect);
+    SDL_FPoint ToSDLPoint(const model::Point& point);
     class SpaceScreenTransformer
     {
     public:
-        SpaceScreenTransformer(const SDL_Rect& screen, const model::Rect& space);
+        SpaceScreenTransformer(const SDL_FRect& screen, const model::Rect& space);
         SpaceScreenTransformer();
-        model::Point ScreenToSpacePoint(const SDL_Point& p) const noexcept;
-        SDL_Point SpaceToScreenPoint(const model::Point& p) const noexcept;
-        model::Point ScreenToSpaceVector(const SDL_Point& p) const noexcept;
-        SDL_Point SpaceToScreenVector(const model::Point& p) const noexcept;
-        node::model::Rect ScreenToSpaceRect(const SDL_Rect& rect) const noexcept;
-        SDL_Rect SpaceToScreenRect(const model::Rect& rect) const noexcept;
+        model::Point ScreenToSpacePoint(const SDL_FPoint& p) const noexcept;
+        SDL_FPoint SpaceToScreenPoint(const model::Point& p) const noexcept;
+        model::Point ScreenToSpaceVector(const SDL_FPoint& p) const noexcept;
+        SDL_FPoint SpaceToScreenVector(const model::Point& p) const noexcept;
+        node::model::Rect ScreenToSpaceRect(const SDL_FRect& rect) const noexcept;
+        SDL_FRect SpaceToScreenRect(const model::Rect& rect) const noexcept;
     private:
-        SDL_Rect m_screenRect;
+        SDL_FRect m_screenRect;
         model::Rect m_spaceRect;
     };
 

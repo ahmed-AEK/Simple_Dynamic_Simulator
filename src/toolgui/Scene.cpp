@@ -16,7 +16,7 @@ void node::Scene::Draw(SDL_Renderer* renderer)
     OnDraw(renderer);
     if (m_current_mouse_hover.isAlive() && m_dragObject)
     {
-        SDL_Point p;
+        SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
         m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
     }
@@ -55,7 +55,7 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
     }
 }
 
-void node::Scene::ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_Point& p)
+void node::Scene::ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_FPoint& p)
 {
     m_pContextMenu = std::move(menu);
     m_pContextMenu->SetRect({p.x,p.y, 0,0});
@@ -87,14 +87,14 @@ void node::Scene::StartDragObject(DragDropObject object)
     if (m_current_mouse_hover.isAlive() && m_current_mouse_hover.GetObjectPtr()->IsDropTarget())
     {
         m_current_mouse_hover.GetObjectPtr()->DropEnter(*m_dragObject);
-        SDL_Point p;
+        SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
         m_current_mouse_hover.GetObjectPtr()->DropHover(*m_dragObject, p);
     }
     
 }
 
-void node::Scene::CancelCurrentLogic()
+void node::Scene::CancelCurrentDrag()
 {
     if (m_dragObject)
     {
@@ -103,6 +103,14 @@ void node::Scene::CancelCurrentLogic()
             ptr->DropExit(*m_dragObject);
         }
         m_dragObject = std::nullopt;
+    }
+    b_mouseCaptured = false;
+    for (auto&& dialog_obj : m_dialogs)
+    {
+        if (dialog_obj->BeingDragged())
+        {
+            dialog_obj->StopDrag();
+        }
     }
 }
 
@@ -137,7 +145,7 @@ void node::Scene::SetFocus(Widget* widget)
 
 void node::Scene::OnMouseMove(MouseHoverEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     if (!b_mouseCaptured)
     {
         node::Widget* current_hover = this->OnGetInteractableAtPoint(p);
@@ -193,7 +201,7 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
     }
 }
 
-node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_Point& p) const
+node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
 {
     if (m_pContextMenu)
     {
@@ -302,11 +310,6 @@ void node::Scene::SetModalDialog(std::unique_ptr<node::Dialog> dialog)
     SetFocus(m_modal_dialog.get());
 }
 
-void node::Scene::SetRect(const SDL_Rect& rect)
-{
-    OnSetRect(rect);
-}
-
 void node::Scene::Start()
 {
     OnStart();
@@ -325,21 +328,21 @@ void node::Scene::HideToolTip(Widget* widget)
     }
 }
 
-void node::Scene::OnSetRect(const SDL_Rect& rect)
+void node::Scene::OnSetRect(const SDL_FRect& rect)
 {
-    m_rect = rect;
+    Widget::OnSetRect(rect);
     if (m_sidePanel)
     {
         m_sidePanel->UpdateWindowSize(rect);
     }
     if (m_toolbar)
     {
-        m_toolbar->SetRect({ 0,0, rect.w, 50 });
+        m_toolbar->SetRect({ 0,0, rect.w, ToolBar::height });
     }
 
     if (m_gScene)
     {
-        SDL_Rect scene_rect{ rect.x, rect.y + (m_toolbar ? ToolBar::height : 0), rect.w, rect.h - (m_toolbar ? ToolBar::height : 0) };
+        SDL_FRect scene_rect{ rect.x, rect.y + (m_toolbar ? ToolBar::height : 0), rect.w, rect.h - (m_toolbar ? ToolBar::height : 0) };
         m_gScene->SetRect(scene_rect);
     }
 
@@ -349,8 +352,8 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
             {
                 return;
             }
-            SDL_Rect modified_rect = dialog.GetRect();
-            SDL_Rect title_rect = dialog.GetTitleBarRect();
+            SDL_FRect modified_rect = dialog.GetRect();
+            SDL_FRect title_rect = dialog.GetTitleBarRect();
             if (modified_rect.x + modified_rect.w > rect.w)
             {
                 modified_rect.x = rect.w - modified_rect.w;
@@ -383,7 +386,7 @@ void node::Scene::OnSetRect(const SDL_Rect& rect)
 
 MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -398,34 +401,51 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
         DestroyContextMenu();
     }
 
-    SetFocus(current_hover);
-
     if (current_hover)
     {
-        auto result = current_hover->LMBDown(e);
-        switch (result)
+        Widget* current_widget = current_hover;
+        bool processed = false;
+        while (current_widget && !processed)
         {
-            using enum MI::ClickEvent;
+            auto result = current_hover->LMBDown(e);
+            switch (result)
+            {
+                using enum MI::ClickEvent;
             case CAPTURE_START:
             {
                 this->b_mouseCaptured = true;
+                processed = true;
+                SetFocus(current_hover);
                 break;
             }
             case CAPTURE_END:
             {
                 this->b_mouseCaptured = false;
+                processed = true;
+                SetFocus(current_hover);
                 break;
             }
             case CLICKED:
             {
+                processed = true;
+                SetFocus(current_hover);
                 break;
             }
             case NONE:
             {
+                current_widget = current_widget->GetParent();
                 break;
             }
+            }
         }
-        return MI::ClickEvent::CLICKED;
+        if (processed)
+        {
+            return MI::ClickEvent::CLICKED;
+        }
+        else
+        {
+            return MI::ClickEvent::NONE;
+        }
     }
     else
     {
@@ -435,7 +455,7 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -484,7 +504,7 @@ MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -533,7 +553,7 @@ MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 {
-    SDL_Point p{ e.point() };
+    SDL_FPoint p{ e.point() };
     node::Widget* current_hover;
     if (m_current_mouse_hover.isAlive())
     {
@@ -592,7 +612,7 @@ MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
     }
 }
 
-bool node::Scene::OnScroll(const double amount, const SDL_Point& p)
+bool node::Scene::OnScroll(const double amount, const SDL_FPoint& p)
 {
     if (m_current_mouse_hover.isAlive())
     {
@@ -605,7 +625,13 @@ void node::Scene::OnSendKeyPress(KeyboardEvent& e)
 {
     if (m_current_keyboar_focus)
     {
-        m_current_keyboar_focus->KeyPress(e);
+        Widget* current_widget = m_current_keyboar_focus.GetObjectPtr();
+        bool processed = false;
+        while (current_widget && !processed)
+        {
+            processed = current_widget->KeyPress(e);
+            current_widget = current_widget->GetParent();
+        }
     }
 }
 
@@ -613,12 +639,18 @@ void node::Scene::OnSendChar(TextInputEvent& e)
 {
     if (m_current_keyboar_focus)
     {
-        m_current_keyboar_focus->CharPress(e);
+        Widget* current_widget = m_current_keyboar_focus.GetObjectPtr();
+        bool processed = false;
+        while (current_widget && !processed)
+        {
+            processed = current_widget->CharPress(e);
+            current_widget = current_widget->GetParent();
+        }
     }
 }
 
-node::Scene::Scene(SDL_Rect rect, Application* parent)
-    :Widget{rect, nullptr}, p_parent(parent), m_rect_base(rect), m_rect(rect)
+node::Scene::Scene(SDL_FRect rect, Application* parent)
+    :Widget{rect, nullptr}, p_parent(parent), m_rect_base(rect)
 {
 
 }

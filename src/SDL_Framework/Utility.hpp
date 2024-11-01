@@ -6,11 +6,39 @@
 #include <mutex>
 #include <optional>
 
-void FilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color& color);
+void FilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color& color);
 
-void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2);
+void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect, int original_radius, float thickness, const SDL_Color& color1, const SDL_Color& color2);
 
-void DrawRoundRect(SDL_Renderer* renderer, const SDL_Rect& rect, int radius, const SDL_Color color);
+void DrawRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color color);
+
+inline SDL_FRect ToFRect(const SDL_Rect& rect)
+{
+    SDL_FRect rect2;
+    SDL_RectToFRect(&rect, &rect2);
+    return rect2;
+}
+inline SDL_Rect ToRect(const SDL_FRect& rect)
+{
+    return
+    {
+        static_cast<int>(rect.x),
+        static_cast<int>(rect.y),
+        static_cast<int>(rect.w),
+        static_cast<int>(rect.h),
+    };
+}
+
+inline SDL_FColor ToFColor(const SDL_Color& color)
+{
+    return
+    {
+        static_cast<float>(color.r)/255,
+        static_cast<float>(color.g)/255,
+        static_cast<float>(color.b)/255,
+        static_cast<float>(color.a)/255,
+    };
+}
 
 namespace textures
 {
@@ -47,7 +75,7 @@ public:
     RoundRectPainter(RoundRectPainter&& other) = default;
     RoundRectPainter& operator=(RoundRectPainter&& other) = default;
 
-    void Draw(SDL_Renderer* renderer, const SDL_Rect rect, int radius, const SDL_Color& color);
+    void Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, const SDL_Color& color);
 
 private:
     void ReCreateArcTexture(SDL_Renderer* renderer);
@@ -57,7 +85,7 @@ private:
     int stored_radius{ 0 };
 };
 
-void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_Rect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2,
+void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2,
     RoundRectPainter& outer, RoundRectPainter& inner);
 
 class TextPainter
@@ -69,8 +97,8 @@ public:
     TextPainter& operator=(TextPainter&&) = default;
     TextPainter(TextPainter&&) = default;
 
-    void Draw(SDL_Renderer* renderer, const SDL_Point point, const SDL_Color color);
-    SDL_Rect GetRect(SDL_Renderer* renderer, const SDL_Color color);
+    void Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL_Color color);
+    SDL_FRect GetRect(SDL_Renderer* renderer, const SDL_Color color);
 
     void SetText(std::string text);
     void SetFont(TTF_Font* font);

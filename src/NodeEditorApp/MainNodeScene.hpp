@@ -51,7 +51,7 @@ struct DBConnector
 class MainNodeScene: public node::Scene
 {
 public:
-    MainNodeScene(SDL_Rect rect, node::Application* parent);
+    MainNodeScene(SDL_FRect rect, node::Application* parent);
     void OnInit() override;
     NodeGraphicsScene* GetCenterWidget() { return m_centerWidget; }
     ~MainNodeScene() override;

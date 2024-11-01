@@ -13,7 +13,7 @@ class PropertyEditControl;
 class BlockPropertiesDialog: public Dialog
 {
 public:
-	BlockPropertiesDialog(const model::BlockModel& block, std::shared_ptr<GraphicsObjectsManager> SceneModel, std::shared_ptr<BlockClassesManager> manager, const SDL_Rect& rect, Scene* parent);
+	BlockPropertiesDialog(const model::BlockModel& block, std::shared_ptr<GraphicsObjectsManager> SceneModel, std::shared_ptr<BlockClassesManager> manager, const SDL_FRect& rect, Scene* parent);
 protected:
 	void OnOk() override;
 private:

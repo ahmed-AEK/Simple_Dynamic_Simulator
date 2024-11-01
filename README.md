@@ -24,7 +24,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 ### Dependencies:
 - Boost (containers, odeint)
 - nlopt
-- SDL2, SDL2-TTF, SDL2-image
+- SDL3, SDL3-TTF, SDL3-image
 - google-test
 - lunasvg
 
@@ -41,7 +41,7 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 the dependencies make it hard to build this on other machines, i don't want to use a package manager yet so that i don't have to re-download the dependencies on each platform.
 
-you need `SDL2`, `SDL2-TTF`, `SDL2-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
+you need `SDL3`, `SDL3-TTF`, `SDL3-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
 
 ```
 mkdir build

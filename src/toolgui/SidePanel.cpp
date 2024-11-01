@@ -5,7 +5,7 @@
 
 static double easeOut(double val) { return 2 * val - val * val; }
 
-node::SidePanel::SidePanel(PanelSide side, const SDL_Rect& rect, Widget* parent)
+node::SidePanel::SidePanel(PanelSide side, const SDL_FRect& rect, Widget* parent)
 	: Widget(rect, parent), m_side(side)
 {
 	RepositionWidget();
@@ -17,7 +17,7 @@ void node::SidePanel::Expand() noexcept
 	{
 		return;
 	}
-	m_last_action_time = SDL_GetTicks64();
+	m_last_action_time = SDL_GetTicks();
 	m_state = PanelState::openning;
 	m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
@@ -28,7 +28,7 @@ void node::SidePanel::Retract() noexcept
 	{
 		return;
 	}
-	m_last_action_time = SDL_GetTicks64();
+	m_last_action_time = SDL_GetTicks();
 	m_state = PanelState::closing;
 	m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdatePanelMotion(); } ));
 }
@@ -44,14 +44,14 @@ void node::SidePanel::SetWidget(std::unique_ptr<Widget> widget)
 
 void node::SidePanel::Draw(SDL_Renderer* renderer)
 {
-	SDL_Rect draw_area = GetRect();
+	SDL_FRect draw_area = GetRect();
 	draw_area.x += knob_width;
 	draw_area.w -= knob_width;
 	// draw main widget part
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &draw_area);
 	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_Rect inner_rect{ draw_area.x + 2, draw_area.y + 2, draw_area.w - 4, draw_area.h - 4 };
+	SDL_FRect inner_rect{ draw_area.x + 2, draw_area.y + 2, draw_area.w - 4, draw_area.h - 4 };
 	SDL_RenderFillRect(renderer, &inner_rect);
 
 	// draw side knob
@@ -67,9 +67,9 @@ void node::SidePanel::Draw(SDL_Renderer* renderer)
 
 MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
 {
-	SDL_Point current_mouse_point{ e.point() };
-	SDL_Rect knobRect = GetKnobRect();
-	if (!SDL_PointInRect(&current_mouse_point, &knobRect)) { return MI::ClickEvent::NONE; }
+	SDL_FPoint current_mouse_point{ e.point() };
+	SDL_FRect knobRect = GetKnobRect();
+	if (!SDL_PointInRectFloat(&current_mouse_point, &knobRect)) { return MI::ClickEvent::NONE; }
 	switch (m_state)
 	{
 	case PanelState::closed:
@@ -86,7 +86,7 @@ MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::NONE;
 }
 
-void node::SidePanel::UpdateWindowSize(const SDL_Rect& rect)
+void node::SidePanel::UpdateWindowSize(const SDL_FRect& rect)
 {
 	if (PanelSide::right == m_side)
 	{
@@ -100,21 +100,21 @@ void node::SidePanel::UpdateWindowSize(const SDL_Rect& rect)
 	RepositionWidget();
 }
 
-node::Widget* node::SidePanel::OnGetInteractableAtPoint(const SDL_Point& point)
+node::Widget* node::SidePanel::OnGetInteractableAtPoint(const SDL_FPoint& point)
 {
 	auto&& knobRect = GetKnobRect();
-	if (SDL_PointInRect(&point, &knobRect))
+	if (SDL_PointInRectFloat(&point, &knobRect))
 	{
 		return this;
 	}
 	if (m_contained_widget &&
-		SDL_PointInRect(&point, &m_contained_widget->GetRect()))
+		SDL_PointInRectFloat(&point, &m_contained_widget->GetRect()))
 	{
 		return m_contained_widget.get();
 	}
 	else
 	{
-		SDL_Rect inner_rect = GetRect();
+		SDL_FRect inner_rect = GetRect();
 		switch (m_side)
 		{
 		case PanelSide::right:
@@ -125,7 +125,7 @@ node::Widget* node::SidePanel::OnGetInteractableAtPoint(const SDL_Point& point)
 			break;
 		}
 		inner_rect.w -= knob_width;
-		if (SDL_PointInRect(&point, &inner_rect))
+		if (SDL_PointInRectFloat(&point, &inner_rect))
 		{
 			return this;
 		}
@@ -138,7 +138,7 @@ void node::SidePanel::UpdatePanelMotion()
 {
 	if (PanelState::openning == m_state)
 	{
-		auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
+		auto passed_ticks = SDL_GetTicks() - m_last_action_time;
 		auto passed_time = passed_ticks / TICKS_PER_SECOND;
 		m_expand_percent = passed_time / TRANSITION_TIME;
 		if (m_expand_percent >= 1)
@@ -152,7 +152,7 @@ void node::SidePanel::UpdatePanelMotion()
 	}
 	if (PanelState::closing == m_state)
 	{
-		auto passed_ticks = SDL_GetTicks64() - m_last_action_time;
+		auto passed_ticks = SDL_GetTicks() - m_last_action_time;
 		auto passed_time = passed_ticks / TICKS_PER_SECOND;
 		m_expand_percent = 1 - passed_time / TRANSITION_TIME;
 		if (m_expand_percent <= 0)
@@ -166,7 +166,7 @@ void node::SidePanel::UpdatePanelMotion()
 	}
 }
 
-SDL_Rect node::SidePanel::CalculateChildWidgetRect()
+SDL_FRect node::SidePanel::CalculateChildWidgetRect()
 {
 	switch (m_side)
 	{
@@ -180,12 +180,12 @@ SDL_Rect node::SidePanel::CalculateChildWidgetRect()
 	return {};
 }
 
-SDL_Rect node::SidePanel::GetKnobRect()
+SDL_FRect node::SidePanel::GetKnobRect()
 {
 	switch (m_side)
 	{
 	case PanelSide::right:
-		return { GetRect().x, GetRect().y + GetRect().h / 2 - knob_height / 2, knob_width, knob_height };
+		return { GetRect().x, std::floor(GetRect().y + GetRect().h / 2 - knob_height / 2), knob_width, knob_height };
 	case PanelSide::left:
 		assert(false);
 		return {};
@@ -195,19 +195,7 @@ SDL_Rect node::SidePanel::GetKnobRect()
 
 void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 {
-	SDL_Point knob_start{};
-	SDL_Point knob_end{};
-	switch (m_side)
-	{
-	case PanelSide::right:
-		knob_start = { GetRect().x, GetRect().h / 2 - knob_height / 2 };
-		knob_end = { GetRect().x + knob_width, GetRect().h / 2 + knob_height / 2 };
-		break;
-	case PanelSide::left:
-		assert(false);
-		break;
-	}
-	SDL_Rect knob_rect = GetKnobRect();
+	SDL_FRect knob_rect = GetKnobRect();
 	ThickFilledRoundRect(renderer, knob_rect, 15, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 },
 		m_outer_painter, m_inner_painter);
 	// draw arrow
@@ -268,8 +256,8 @@ void node::SidePanel::RepositionWidget()
 	case PanelSide::right:
 	{
 		auto width = GetRect().w - knob_width;
-		SetRect({ static_cast<int>(m_corner_position - width * easeOut(m_expand_percent) - knob_width),
-			0, GetRect().w, GetRect().h });
+		SetRect({ static_cast<float>(m_corner_position - width * easeOut(m_expand_percent) - knob_width),
+			0.0f, GetRect().w, GetRect().h });
 		if (m_contained_widget)
 		{
 			m_contained_widget->SetRect(CalculateChildWidgetRect());

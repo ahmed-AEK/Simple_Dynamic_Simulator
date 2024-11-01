@@ -1,7 +1,5 @@
 #include "SDL_headers.h"
 #include "SDLFramework.hpp"
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
 
 namespace SDL
 {
@@ -28,7 +26,7 @@ namespace SDL
 
     bool SDLFramework::Init(uint32_t flags)
     {
-        m_SDL_init_done = !SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | flags);
+        m_SDL_init_done = SDL_Init(SDL_INIT_VIDEO | flags);
         if (!(m_SDL_init_done))
         {
             SDL_Log("%s",SDL_GetError());
@@ -36,7 +34,7 @@ namespace SDL
             return false;
         }
 
-        m_SDL_TTF_init_done = !TTF_Init();
+        m_SDL_TTF_init_done = TTF_Init();
         if (!(m_SDL_TTF_init_done))
         {
             SDL_Log("Couldn't initialize SDL_TTF");
