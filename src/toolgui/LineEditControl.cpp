@@ -35,6 +35,14 @@ void node::LineEditControl::Draw(SDL_Renderer* renderer)
 	}
 }
 
+node::LineEditControl::~LineEditControl()
+{
+	if (m_focused)
+	{
+		GetApp()->StopTextInput();
+	}
+}
+
 MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 {
 	if (!m_value.size())

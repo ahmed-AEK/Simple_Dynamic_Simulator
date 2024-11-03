@@ -31,5 +31,5 @@ MI::ClickEvent node::NodeDeleteLogic::OnLMBUp(const model::Point& current_mouse_
 	
 	UNUSED_PARAM(current_mouse_point);
 
-	return MI::ClickEvent::NONE;
+	return MI::ClickEvent::CAPTURE_END;
 }

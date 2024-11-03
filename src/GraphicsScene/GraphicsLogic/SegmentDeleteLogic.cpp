@@ -24,7 +24,7 @@ MI::ClickEvent node::logic::SegmentDeleteLogic::OnLMBUp(const model::Point& curr
 	auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_segment.isAlive() || new_hover != m_segment.GetObjectPtr())
 	{
-		return MI::ClickEvent::NONE;
+		return MI::ClickEvent::CAPTURE_END;
 	}
 
 	NetModificationRequest request;
@@ -32,7 +32,7 @@ MI::ClickEvent node::logic::SegmentDeleteLogic::OnLMBUp(const model::Point& curr
 	assert(segment.GetId());
 	if (!segment.GetId())
 	{
-		return MI::ClickEvent::NONE;
+		return MI::ClickEvent::CAPTURE_END;
 	}
 	request.removed_segments.push_back(*segment.GetId());
 	auto add_connected_node = [&](NetNode* node)
@@ -53,7 +53,7 @@ MI::ClickEvent node::logic::SegmentDeleteLogic::OnLMBUp(const model::Point& curr
 	add_connected_node(segment.getEndNode());
 	
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::CAPTURE_END;
 }
 
 

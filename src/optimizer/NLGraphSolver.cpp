@@ -18,7 +18,7 @@ double opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::sp
         for (size_t i = 0; i < x.size(); i++)
         {
             const double old_value = m_current_state.get(m_estimated_output_ids[i]);
-            const double delta = std::abs(old_value) * 1e-5 + 1e-5;
+            const double delta = std::abs(old_value) * 1e-3 + 1e-5;
             m_current_state.modify(m_estimated_output_ids[i], old_value + delta );
             const double new_penalty = CalcPenalty(m_current_state);
             grad[i] = (new_penalty - main_penalty) / delta;
@@ -189,10 +189,10 @@ void opt::NLGraphSolver_impl::Initialize()
     }
     m_optimizer = nlopt::opt(nlopt::LD_SLSQP, static_cast<unsigned int>(m_estimated_output_ids.size()));
     m_optimizer.set_min_objective(opt::NLGraphSolver_impl::CostFunction, this);
-    m_optimizer.set_xtol_rel(1e-6);
-    m_optimizer.set_xtol_abs(1e-8);
-    m_optimizer.set_ftol_rel(1e-6);
-    m_optimizer.set_ftol_abs(1e-8);
+    m_optimizer.set_xtol_rel(1e-4);
+    m_optimizer.set_xtol_abs(1e-6);
+    m_optimizer.set_ftol_rel(1e-4);
+    m_optimizer.set_ftol_abs(1e-6);
 }
 
 void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int64_t>& remaining_output_ids)
@@ -386,6 +386,36 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
         }
     }
 
+    auto block_has_remaining_id = [&](const EquationIndex& index) -> bool
+        {
+            switch (index.type)
+            {
+            case EquationType::NLEquation:
+            {
+                for (auto&& id : m_equations[index.index].get_output_ids())
+                {
+                    if (std::find(remaining_output_ids.begin(), remaining_output_ids.end(), id) != remaining_output_ids.end())
+                    {
+                        return true;
+                    }
+                }
+                break;
+            }
+            case EquationType::statefulNLEquation:
+            {
+                for (auto&& id : m_stateful_equations[index.index].get_output_ids())
+                {
+                    if (std::find(remaining_output_ids.begin(), remaining_output_ids.end(), id) != remaining_output_ids.end())
+                    {
+                        return true;
+                    }
+                }
+                break;
+            }
+            }
+            return false;
+        };
+
     std::queue<EquationIndex> blocks_to_process;
     while (remaining_output_ids.size())
     {
@@ -444,6 +474,10 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
             std::optional<BlockInputsCount> max_block;
             for (const auto& block : all_blocks)
             {
+                if (!block_has_remaining_id(block.index))
+                {
+                    continue;
+                }
                 if (!max_block.has_value() && block.count > 0)
                 {
                     max_block = block;
@@ -468,17 +502,17 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
                         };
                     size_t first_output_ids_count = get_block_outputs_count(*max_block);
                     size_t second_output_ids_count = get_block_outputs_count(block);
-                    if (second_output_ids_count < first_output_ids_count)
+                    if (second_output_ids_count > first_output_ids_count)
                     {
                         max_block = block;
                     }
-                    
                 }
             }
             assert(max_block);
 
             // add it as estimated block
             m_estimated_eqns.push_back(max_block->index);
+            all_blocks[max_block->index.index].count = 0;
             auto output_ids = [&]()->std::span<const int64_t>
                 {
                     switch (max_block->index.type)

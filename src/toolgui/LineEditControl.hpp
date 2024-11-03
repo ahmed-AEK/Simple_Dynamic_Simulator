@@ -11,6 +11,7 @@ public:
 	LineEditControl(std::string initial_value, const SDL_FRect& rect, Widget* parent);
 	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetValue() const { return m_value; }
+	~LineEditControl() override;
 protected:
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	bool OnChar(TextInputEvent& e) override;

@@ -623,7 +623,7 @@ void node::MainNodeScene::LoadSceneButtonPressed()
             }
             scene->LoadScene(file_list[0]);
         };
-    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file", "blks"}, {"Any File","*"} };
+    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
     SDL_ShowOpenFileDialog(callback, this, GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks", false);
 #endif
 }
@@ -655,7 +655,7 @@ void node::MainNodeScene::SaveSceneButtonPressed()
             }
             scene->MaybeSaveScene(file_list[0]);
         };
-    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file", "blks"}, {"Any File","*"} };
+    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
     SDL_ShowSaveFileDialog(callback, this, GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks");
 #endif
 }
@@ -737,7 +737,7 @@ void node::MainNodeScene::OnInit()
 
     GetToolBar()->SetFocusProxy(gScene.get());
     gScene->SetToolsManager(m_toolsManager);
-
+    gScene->SetObjectsManager(m_graphicsObjectsManager);
     AddInitialNodes_forScene(m_graphicsObjectsManager.get());
 
     SetCenterWidget(std::move(gScene));

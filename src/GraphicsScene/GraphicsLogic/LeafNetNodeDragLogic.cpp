@@ -70,7 +70,7 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 	if (!m_dragged_node.isAlive())
 	{
 		GetScene()->SetGraphicsLogic(nullptr);
-		return MI::ClickEvent::NONE;
+		return MI::ClickEvent::CAPTURE_END;
 	}
 	assert(m_connected_node.isAlive());
 
@@ -118,7 +118,7 @@ MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& cu
 	}
 	CleanUp();
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::CAPTURE_END;
 }
 
 
