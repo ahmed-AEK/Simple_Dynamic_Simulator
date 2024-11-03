@@ -2,6 +2,7 @@
 #include "toolgui/Scene.hpp"
 #include "SDL_Framework/Utility.hpp"
 #include "toolgui/Application.hpp"
+#include <cmath>
 
 static double easeOut(double val) { return 2 * val - val * val; }
 

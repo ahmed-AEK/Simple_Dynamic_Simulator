@@ -107,7 +107,8 @@ namespace node
                         SDL_SCANCODE_LSHIFT == e.key.scancode ||
                         SDL_SCANCODE_RCTRL == e.key.scancode ||
                         SDL_SCANCODE_LCTRL == e.key.scancode ||
-                        SDL_SCANCODE_ESCAPE == e.key.scancode)
+                        SDL_SCANCODE_ESCAPE == e.key.scancode ||
+                        SDL_SCANCODE_Z == e.key.scancode)
                     {
                         if (e.key.scancode == SDL_SCANCODE_ESCAPE)
                         {

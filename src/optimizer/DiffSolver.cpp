@@ -95,7 +95,19 @@ opt::StepResult opt::DiffSolver_impl::Step(opt::FlatMap& state)
 
     while (result != boost::numeric::odeint::controlled_step_result::success)
     {
-        result = m_stepper.try_step(diffsystem, m_current_x, m_current_time, m_last_dt);
+        if (m_equations.size())
+        {
+            result = m_stepper.try_step(diffsystem, m_current_x, m_current_time, m_last_dt);
+        }
+        else
+        {
+            m_current_time += m_last_dt;
+            if (m_last_dt < m_max_step)
+            {
+                m_last_dt = m_max_step;
+            }
+            result = boost::numeric::odeint::controlled_step_result::success;
+        }
     }
     LoadDatatoMap(m_current_x, state);
 

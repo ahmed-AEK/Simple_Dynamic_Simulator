@@ -1,11 +1,11 @@
 #include "NodeGraphicsScene.hpp"
 #include "ExampleContextMenu.hpp"
-#include "SDL2/SDL_ttf.h"
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/Application.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
+#include "GraphicsScene/GraphicsObjectsManager.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(SDL_FRect rect, node::Scene* parent)
     : node::GraphicsScene{ rect, parent }
@@ -24,6 +24,11 @@ void node::NodeGraphicsScene::Draw(SDL_Renderer* renderer)
 void node::NodeGraphicsScene::SetToolsManager(std::weak_ptr<node::ToolsManager> manager)
 {
     m_tools_manager = std::move(manager);
+}
+
+void node::NodeGraphicsScene::SetObjectsManager(std::weak_ptr<GraphicsObjectsManager> manager)
+{
+    m_objects_manager = manager;
 }
 
 void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
@@ -92,6 +97,38 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
             CancelCurrentLogic();
             return true;
         }
+        case SDL_SCANCODE_Z:
+        {
+            if (e.e.mod & SDL_KMOD_LCTRL)
+            {
+                auto mgr = m_objects_manager.lock();
+                if (!mgr)
+                {
+                    return false;
+                }
+                auto&& model = mgr->GetSceneModel();
+                if (!model)
+                {
+                    return false;
+                }
+                if (e.e.mod & SDL_KMOD_LSHIFT)
+                {
+                    if (model->CanRedo())
+                    {
+                        model->Redo();
+                    }
+                }
+                else
+                {
+                    if (model->CanUndo())
+                    {
+                        model->Undo();
+                    }
+                }
+                return true;
+            }
+            break;
+        }
         }
         break;
     }
@@ -116,6 +153,11 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
     }
     }
     return false;
+}
+
+void node::NodeGraphicsScene::OnKeyboardFocusIn()
+{
+    GetApp()->StopTextInput();
 }
 
 void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const

@@ -5,8 +5,7 @@
 #include <array>
 #include <cassert>
 #include <utility>
-
-
+#include <cmath>
 
 template <typename Key, typename Value>
 class CacheStore
@@ -211,6 +210,7 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
 
 void DrawFilledArcAA3(SDL_Renderer* renderer, int radius, const SDL_Color color)
 {
+    using std::floor;
     float y = 0;
     float max_y = static_cast<float>(radius);
     float raidus_squared = static_cast<float>(radius * radius);

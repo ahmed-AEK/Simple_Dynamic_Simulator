@@ -22,12 +22,12 @@ MI::ClickEvent node::logic::BlockDeleteLogic::OnLMBUp(const model::Point& curren
 	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_block.isAlive() || new_hover != m_block.GetObjectPtr())
 	{
-		return MI::ClickEvent::NONE;
+		return MI::ClickEvent::CAPTURE_END;
 	}
 
 	GetObjectsManager()->GetSceneModel()->RemoveBlockById(*static_cast<BlockObject*>(m_block.GetObjectPtr())->GetModelId());
 
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::CAPTURE_END;
 }
 
 

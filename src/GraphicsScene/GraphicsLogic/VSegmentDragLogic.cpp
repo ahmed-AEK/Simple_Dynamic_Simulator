@@ -138,7 +138,7 @@ MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& curre
 	m_second_node_handler->CreateRequest(request, current_mouse_point);
 	CleanUp();
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::CAPTURE_END;
 }
 
 void node::logic::VSegmentDragLogic::CleanUp()

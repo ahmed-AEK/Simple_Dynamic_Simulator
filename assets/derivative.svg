@@ -27,22 +27,18 @@
   <g
      id="layer1"
      transform="translate(-0.690815,-2.3961739)">
-    <text
-       xml:space="preserve"
-       transform="matrix(0.26458333,0,0,0.26458333,-75.882924,-19.643111)"
+    <path
+       d="m 324.9043,107.61059 h -2.9375 v -1.82813 q -1.26563,1.09375 -2.64063,1.70313 -1.375,0.60937 -2.98437,0.60937 -3.125,0 -4.96875,-2.40625 -1.82813,-2.40625 -1.82813,-6.671874 0,-2.21875 0.625,-3.953125 0.64063,-1.734375 1.71875,-2.953125 1.0625,-1.1875 2.46875,-1.8125 1.42188,-0.625 2.9375,-0.625 1.375,0 2.4375,0.296875 1.0625,0.28125 2.23438,0.890625 v -7.5625 h 2.9375 z m -2.9375,-4.29688 V 93.298086 q -1.1875,-0.53125 -2.125,-0.734375 -0.9375,-0.203125 -2.04688,-0.203125 -2.46875,0 -3.84375,1.71875 -1.375,1.71875 -1.375,4.875 0,3.109374 1.0625,4.734374 1.0625,1.60938 3.40625,1.60938 1.25,0 2.53125,-0.54688 1.28125,-0.5625 2.39063,-1.4375 z"
        id="text1"
-       style="font-size:32px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"><tspan
-         x="307.85742"
-         y="107.61059"
-         id="tspan3">d</tspan></text>
-    <text
-       xml:space="preserve"
-       transform="matrix(0.26458333,0,0,0.26458333,-6.8678848,-8.64489)"
+       style="font-size:32px;white-space:pre;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       transform="matrix(0.26458333,0,0,0.26458333,-75.882924,-19.643111)"
+       aria-label="d" />
+    <path
+       d="m 57.34375,102.52855 h -2.9375 v -1.82812 q -1.265625,1.09375 -2.640625,1.70312 -1.375,0.60938 -2.984375,0.60938 -3.125,0 -4.96875,-2.40625 -1.828125,-2.40625 -1.828125,-6.671875 0,-2.21875 0.625,-3.953125 0.640625,-1.734375 1.71875,-2.953125 1.0625,-1.1875 2.46875,-1.8125 1.421875,-0.625 2.9375,-0.625 1.375,0 2.4375,0.296875 1.0625,0.28125 2.234375,0.890625 v -7.5625 h 2.9375 z m -2.9375,-4.29687 V 88.216055 q -1.1875,-0.53125 -2.125,-0.734375 -0.9375,-0.203125 -2.046875,-0.203125 -2.46875,0 -3.84375,1.71875 -1.375,1.71875 -1.375,4.875 0,3.109375 1.0625,4.734375 1.0625,1.60937 3.40625,1.60937 1.25,0 2.53125,-0.54687 1.28125,-0.5625 2.390625,-1.4375 z m 17.78125,4.14062 q -0.828125,0.21875 -1.8125,0.35938 -0.96875,0.14062 -1.734375,0.14062 -2.671875,0 -4.0625,-1.4375 Q 63.1875,99.997305 63.1875,96.82543 V 87.54418 H 61.203125 V 85.07543 H 63.1875 v -5.015625 h 2.9375 v 5.015625 h 6.0625 v 2.46875 H 66.125 v 7.953125 q 0,1.375 0.0625,2.15625 0.0625,0.765625 0.4375,1.4375 0.34375,0.625 0.9375,0.921875 0.609375,0.28125 1.84375,0.28125 0.71875,0 1.5,-0.20313 0.78125,-0.218745 1.125,-0.35937 h 0.15625 z"
        id="text3"
-       style="font-size:32px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect4);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"><tspan
-         x="40.296875"
-         y="102.52855"
-         id="tspan4">dt</tspan></text>
+       style="font-size:32px;white-space:pre;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       transform="matrix(0.26458333,0,0,0.26458333,-6.8678848,-8.64489)"
+       aria-label="dt" />
     <path
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
        d="M 1.440815,10.758085 H 14.504204"

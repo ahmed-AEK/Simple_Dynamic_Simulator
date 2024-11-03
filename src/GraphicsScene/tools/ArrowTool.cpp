@@ -107,6 +107,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
                 *segment->getEndNode(), *segment, e.point, GetScene(), GetObjectsManager()))
             {
                 GetScene()->SetGraphicsLogic(std::move(ptr));
+                return MI::ClickEvent::CAPTURE_START;
             }
             break;
         }

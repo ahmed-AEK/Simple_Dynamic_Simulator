@@ -7,6 +7,7 @@
 #include <charconv>
 #include <cstring>
 #include "boost/container/static_vector.hpp"
+#include <cmath>
 
 namespace node
 {

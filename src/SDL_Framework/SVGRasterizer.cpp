@@ -1,6 +1,7 @@
 #include "SVGRasterizer.hpp"
 #include "AssetsManager/AssetsManager.hpp"
 #include "lunasvg.h"
+#include <cmath>
 
 node::SVGRasterizer::SVGRasterizer(std::string path, int width, int height)
 	:m_path{std::move(path)}, m_width{width}, m_height{ height }

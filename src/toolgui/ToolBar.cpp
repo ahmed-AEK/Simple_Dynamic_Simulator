@@ -292,7 +292,8 @@ void node::ToolBarButton::InternalUpdateToolTip()
 	uint64_t current_time = SDL_GetTicks();
 	if (current_time - m_last_action_time > 500 && m_updateTaskId)
 	{
-		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetApp()->getFont().get(), m_description, SDL_FRect{ m_last_mouse_pos.x, m_last_mouse_pos.y, 1.0f,1.0f }, this);
+		constexpr float tooltip_y_offset = 15;
+		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetApp()->getFont().get(), m_description, SDL_FRect{ m_last_mouse_pos.x, m_last_mouse_pos.y + tooltip_y_offset, 1.0f,1.0f }, this);
 		m_toolTipWidget = toolTipWidget->GetMIHandlePtr();
 		GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget));
 		GetApp()->RemoveUpdateTask(m_updateTaskId);
