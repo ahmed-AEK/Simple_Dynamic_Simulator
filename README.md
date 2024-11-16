@@ -43,13 +43,14 @@ the dependencies make it hard to build this on other machines, i don't want to u
 
 you need `SDL3`, `SDL3-TTF`, `SDL3-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
 
+you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
+
 ```
 mkdir build
 cd build
 cmake ..
 cmake --build .
 ```
-then you need to manually copy the `assets` folder to the folder containing the executable, because the folder changes with the IDE.
 
 License
 -----------

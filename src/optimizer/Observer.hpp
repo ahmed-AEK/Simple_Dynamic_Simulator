@@ -7,7 +7,7 @@
 
 namespace opt
 {
-class Observer : public Equation
+class Observer : public InputEquation
 {
 public:
 	using ObserverFunctor = std::function<void(
@@ -16,7 +16,7 @@ public:
 	using CaptureEndFunctor = std::function<void(const double)>;
 	using GetResultsFunctor = std::function<std::any()>;
 
-	Observer(std::pmr::vector<int64_t> input_ids,
+	Observer(std::pmr::vector<int32_t> input_ids,
 		ObserverFunctor functor,
 		InitializeFunctor init_functor = {},
 		CaptureEndFunctor end_functor = {},

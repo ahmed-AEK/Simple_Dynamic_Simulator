@@ -574,6 +574,7 @@ MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
         {
             auto&& widget = m_current_mouse_hover.GetObjectPtr();
             widget->DropObject(*m_dragObject, p);
+            SetFocus(widget);
         }
         m_dragObject = std::nullopt;
         return MI::ClickEvent::CLICKED;

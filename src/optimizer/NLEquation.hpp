@@ -8,13 +8,13 @@
 
 namespace opt
 {
-class NLEquation : public Equation
+class NLEquation : public InputEquation, public OutputEquation
 {
 public:
 	using NLFunctor = std::function<void(std::span<const double>, std::span<double>)>;
 
-	NLEquation(std::pmr::vector<int64_t> input_ids, 
-		std::pmr::vector<int64_t> output_ids, 
+	NLEquation(std::pmr::vector<int32_t> input_ids, 
+		std::pmr::vector<int32_t> output_ids, 
 		NLFunctor functor,
 		std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 	void Apply();

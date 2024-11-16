@@ -77,8 +77,8 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<uint64_t>(properties[0].prop));
 	uint64_t value = std::get<uint64_t>(properties[0].prop);
-	std::pmr::vector<int64_t> ports;
-	for (uint64_t i = 0; i < value; i++)
+	std::pmr::vector<int32_t> ports;
+	for (uint32_t i = 0; i < value; i++)
 	{
 		ports.push_back(i);
 	}

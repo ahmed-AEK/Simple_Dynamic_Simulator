@@ -41,11 +41,20 @@ public:
 private:
 	void ApplySources(FlatMap& state, const double t);
 	void UpdateSources(const double t);
+	void TriggerSources(const double t);
+	void NotifyZeroCrossings(const FlatMap& state, const double t);
+	bool UpdateNewZeroCrossings(const FlatMap& state);
+	void InterpolateStateAt(FlatMap& state, const double t);
+
+	static constexpr int ZeroCrossingIterations = 10;
 	double m_last_oberver_time = 0;
 	std::vector<SourceEq> m_sources;
 	DiffSolver m_diffSolver;
 	NLGraphSolver m_NLSolver;
 	std::vector<ObserverSlot> m_observers;
 	std::vector<double> m_source_event_times;
+	std::vector<int32_t> m_new_zero_crossed_blocks;
+	FlatMap m_crossed_states;
+	FlatMap m_new_crossed_states;
 };
 }

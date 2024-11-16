@@ -89,6 +89,7 @@ void opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
 	m_NLSolver.Solve(state, GetCurrentTime());
 	m_NLSolver.UpdateState(state, GetCurrentTime());
 	NotifyObservers(state, GetCurrentTime());
+	NotifyZeroCrossings(state, GetCurrentTime());
 }
 
 void opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)
@@ -119,6 +120,7 @@ std::vector<opt::ObserverData> opt::NLDiffSolver::GetObserversData()
 
 opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 {
+	double start_time = GetCurrentTime();
 	std::optional<double> next_event;
 	UpdateSources(GetCurrentTime());
 	if (m_source_event_times.size())
@@ -130,21 +132,42 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 
 	const auto result = m_diffSolver.Step(state);
 	m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
-	if (next_event && GetCurrentTime() <= *next_event)
+
+	double end_time = GetCurrentTime();
+
+	if (UpdateNewZeroCrossings(state))
 	{
-		// event happened, notify before and after the update
-		NotifyObservers(state, GetCurrentTime());
-		UpdateSources(GetCurrentTime());
-		m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
-		NotifyObservers(state, GetCurrentTime());
-		m_last_oberver_time = GetCurrentTime();
-	}
-	else if (GetCurrentTime() - m_last_oberver_time > 1e-4)
-	{
-		NotifyObservers(state, GetCurrentTime());
-		m_last_oberver_time = GetCurrentTime();
+		double crossed_time = end_time;
+		FlatMap::sync(state, m_crossed_states);
+		FlatMap::sync(state, m_new_crossed_states);
+		for (int i = 0; i < ZeroCrossingIterations; i++)
+		{
+			double current_time = (start_time + end_time) / 2;
+			InterpolateStateAt(m_new_crossed_states, current_time);
+			bool crossing_contained = UpdateNewZeroCrossings(m_new_crossed_states);
+			if (crossing_contained)
+			{
+				end_time = current_time;
+				crossed_time = current_time;
+				FlatMap::sync(m_new_crossed_states, m_crossed_states);
+			}
+			else
+			{
+				start_time = current_time;
+			}
+		}
+		FlatMap::sync(m_crossed_states, state);
+		NotifyZeroCrossings(state, crossed_time);
+		m_diffSolver.SetCurrentTime(crossed_time);
 	}
 
+	if (next_event && GetCurrentTime() >= *next_event)
+	{
+		TriggerSources(GetCurrentTime());
+	}
+	NotifyObservers(state, GetCurrentTime());
+	m_last_oberver_time = GetCurrentTime();
+	
 	if (result == opt::StepResult::ReachedEnd)
 	{
 		for (auto& observer : m_observers)
@@ -171,9 +194,8 @@ void opt::NLDiffSolver::ApplySources(FlatMap& state, const double t)
 	}
 }
 
-void opt::NLDiffSolver::UpdateSources(const double t)
+void opt::NLDiffSolver::TriggerSources(const double t)
 {
-	m_source_event_times.clear();
 	for (auto& source : m_sources)
 	{
 		auto&& event_ref = source.GetEvent();
@@ -182,11 +204,152 @@ void opt::NLDiffSolver::UpdateSources(const double t)
 			continue;
 		}
 
-		if(event_ref->t <= t)
+		if (event_ref->t <= t && !event_ref->set)
 		{
 			event_ref->set = true;
+			source.EventTrigger(t);
 		}
-		else
+
+	}
+	for (auto& eq : m_NLSolver.GetStatefulEquations())
+	{
+		auto&& event_ref = eq.GetEvent();
+		if (!event_ref)
+		{
+			continue;
+		}
+
+		if (event_ref->t <= t && !event_ref->set)
+		{
+			event_ref->set = true;
+			eq.EventTrigger(t);
+		}
+	}
+}
+
+void opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t)
+{
+	for (auto&& eq : m_NLSolver.GetStatefulEquations())
+	{
+		auto& zero_crossings = eq.GetZeroCrossings();
+		if (!zero_crossings.size())
+		{
+			continue;
+		}
+		int32_t idx = 0;
+		for (auto&& crossing : zero_crossings)
+		{
+			assert(eq.get_input_ids().size() > crossing.in_port_id);
+			auto& port_id = eq.get_input_ids()[crossing.in_port_id];
+			auto&& signal_value = state.get(port_id);
+			auto old_state = crossing.current_value;
+			auto new_state = (signal_value - crossing.value > 0) ? ZeroCrossDescriptor::Position::above : ZeroCrossDescriptor::Position::below;
+			if (old_state == new_state)
+			{
+				continue;
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::both)
+			{
+				crossing.last_value = crossing.current_value;
+				crossing.current_value = new_state;
+				eq.CrossTrigger(t, idx);
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::falling && 
+				new_state == ZeroCrossDescriptor::Position::below)
+			{
+				crossing.last_value = crossing.current_value;
+				crossing.current_value = new_state;
+				eq.CrossTrigger(t, idx);
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::rising && 
+				new_state == ZeroCrossDescriptor::Position::above)
+			{
+				crossing.last_value = crossing.current_value;
+				crossing.current_value = new_state;
+				eq.CrossTrigger(t, idx);
+			}
+			idx++;
+
+		}
+	}
+}
+
+bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
+{
+	m_new_zero_crossed_blocks.clear();
+
+	int32_t index = 0;
+	for (auto&& eq : m_NLSolver.GetStatefulEquations())
+	{
+		auto& zero_crossings = eq.GetZeroCrossings();
+		if (!zero_crossings.size())
+		{
+			index++;
+			continue;
+		}
+		for (auto&& crossing : zero_crossings)
+		{
+			assert(eq.get_input_ids().size() > crossing.in_port_id);
+			auto& port_id = eq.get_input_ids()[crossing.in_port_id];
+			auto&& signal_value = state.get(port_id);
+			auto old_state = crossing.current_value;
+			auto new_state = (signal_value - crossing.value > 0) ? ZeroCrossDescriptor::Position::above : ZeroCrossDescriptor::Position::below;
+			if (old_state == new_state)
+			{
+				continue;
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::both)
+			{
+				if (m_new_zero_crossed_blocks.size() == 0 || index == m_new_zero_crossed_blocks.back())
+				{
+					m_new_zero_crossed_blocks.push_back(index);
+				}
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::falling
+				&& new_state == ZeroCrossDescriptor::Position::below)
+			{
+				if (m_new_zero_crossed_blocks.size() == 0 || index == m_new_zero_crossed_blocks.back())
+				{
+					m_new_zero_crossed_blocks.push_back(index);
+				}
+			}
+			else if (crossing.type == ZeroCrossDescriptor::CrossType::rising
+				&& new_state == ZeroCrossDescriptor::Position::above)
+			{
+				if (m_new_zero_crossed_blocks.size() == 0 || index == m_new_zero_crossed_blocks.back())
+				{
+					m_new_zero_crossed_blocks.push_back(index);
+				}
+			}
+		}
+		index++;
+	}
+	return m_new_zero_crossed_blocks.size(); 
+}
+
+void opt::NLDiffSolver::InterpolateStateAt(FlatMap& state, const double t)
+{
+	ApplySources(state, t);
+	m_diffSolver.InterpolateAt(state, t);
+	m_NLSolver.Solve(state, t);
+}
+
+void opt::NLDiffSolver::UpdateSources(const double t)
+{
+	m_source_event_times.clear();
+	for (auto& source : m_sources)
+	{
+		auto&& event_ref = source.GetEvent();
+
+		if(event_ref && event_ref->t > t)
+		{
+			m_source_event_times.push_back(event_ref->t);
+		}
+	}
+	for (auto& eq : m_NLSolver.GetStatefulEquations())
+	{
+		auto&& event_ref = eq.GetEvent();
+		if (event_ref && event_ref->t > t)
 		{
 			m_source_event_times.push_back(event_ref->t);
 		}

@@ -31,6 +31,7 @@
 #include "BlockClasses/MultiplyBlockClass.hpp"
 #include "BlockClasses/SineSourceClass.hpp"
 #include "BlockClasses/StepSourceClass.hpp"
+#include "BlockClasses/ComparatorClass.hpp"
 
 #include "BlockClasses/BlockDialog.hpp"
 
@@ -444,10 +445,23 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
         node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
         node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
         node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
+        node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
     },
     model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
     };
     pallete_provider->AddElement(std::move(step_block));
+
+    auto comparator_block = BlockTemplate{
+    "Comparator",
+    "Comparator",
+    "SVG Styler",
+    std::vector<model::BlockProperty>{
+        node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
+        node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+    },
+    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
+    };
+    pallete_provider->AddElement(std::move(comparator_block));
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_FRect{ 0.0f,0.0f,200.0f,200.0f },
         std::move(pallete_provider), sidePanel.get()));
@@ -730,6 +744,8 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<MultiplyBlockClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<SineSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<StepSourceClass>());
+    m_classesManager->RegisterBlockClass(std::make_shared<ComparatorBlockClass>());
+
 
     InitializeSidePanel(gScene.get());
 
@@ -741,7 +757,7 @@ void node::MainNodeScene::OnInit()
     AddInitialNodes_forScene(m_graphicsObjectsManager.get());
 
     SetCenterWidget(std::move(gScene));
-    SetFocused(GetCenterWidget());
+    SetFocus(GetCenterWidget());
 }
 
 node::MainNodeScene::~MainNodeScene() = default;

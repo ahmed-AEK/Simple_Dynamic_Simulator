@@ -34,5 +34,7 @@
 # dev folders
 build/
 build_win/
+build_linux/
+build_linux_static/
 Testing/
 .vscode/

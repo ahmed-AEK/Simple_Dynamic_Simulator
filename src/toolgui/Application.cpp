@@ -101,6 +101,7 @@ namespace node
                     if (SDL_SCANCODE_BACKSPACE == e.key.scancode || 
                         SDL_SCANCODE_DELETE == e.key.scancode ||
                         SDL_SCANCODE_RETURN == e.key.scancode || 
+                        SDL_SCANCODE_KP_ENTER == e.key.scancode ||
                         SDL_SCANCODE_LEFT == e.key.scancode || 
                         SDL_SCANCODE_RIGHT == e.key.scancode ||
                         SDL_SCANCODE_RSHIFT == e.key.scancode ||

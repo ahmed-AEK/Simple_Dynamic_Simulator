@@ -129,6 +129,10 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
             }
             break;
         }
+        default:
+        {
+            break;
+        }
         }
         break;
     }
@@ -148,7 +152,15 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
             tools_manager->RemoveTemporaryTool("D");
             return true;
         }
+        default:
+        {
+            break;
         }
+        }
+        break;
+    }
+    default:
+    {
         break;
     }
     }

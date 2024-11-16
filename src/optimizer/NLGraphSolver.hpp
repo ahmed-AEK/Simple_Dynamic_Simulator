@@ -23,6 +23,8 @@ public:
 	void UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquation eq);
 	void AddStatefulEquation(NLStatefulEquation eq);
+	
+	std::vector<NLStatefulEquation>& GetStatefulEquations();
 private:
 	std::unique_ptr<NLGraphSolver_impl> m_impl;
 };

@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "SDL_Framework/Utility.hpp"
 #include "ToolTipWidget.hpp"
-
+#include <algorithm>
 node::ToolBar::ToolBar(const SDL_FRect& rect, Widget* parent)
 	:Widget(rect, parent)
 {

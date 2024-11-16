@@ -125,7 +125,7 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 		}
 		return true;
 	}
-	else if (key == SDL_SCANCODE_RETURN)
+	else if (key == SDL_SCANCODE_RETURN || key == SDL_SCANCODE_KP_ENTER)
 	{
 		SDL_Log("Return");
 	}

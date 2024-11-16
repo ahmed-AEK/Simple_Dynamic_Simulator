@@ -12,13 +12,13 @@ namespace opt
 class FlatMap
 {
 public:
-	explicit constexpr FlatMap(size_t size = 0) : m_data(size) {};
+	explicit constexpr FlatMap(int32_t size = 0) : m_data(size) {};
 
-	constexpr void modify(const size_t& index, const double& item)
+	constexpr void modify(const int32_t& index, const double& item)
 	{
 		m_data[index] = item;
 	}
-	[[nodiscard]] constexpr double get(const size_t& key) const
+	[[nodiscard]] constexpr double get(const int32_t& key) const
 	{
 		assert(key < m_data.size());
 		return m_data[key];
@@ -27,7 +27,7 @@ public:
 	{
 		return m_data;
 	}
-	[[nodiscard]] constexpr size_t size() const { return m_data.size(); }
+	[[nodiscard]] constexpr int32_t size() const { return static_cast<int32_t>(m_data.size()); }
 	void copy_to(FlatMap& other)
 	{
 		assert(m_data.size() == other.size());

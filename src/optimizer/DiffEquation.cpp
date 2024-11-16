@@ -5,10 +5,10 @@
 
 
 
-opt::DiffEquation::DiffEquation(std::pmr::vector<int64_t> input_ids,
-	std::pmr::vector<int64_t> output_ids, DiffFunctor functor,
+opt::DiffEquation::DiffEquation(std::pmr::vector<int32_t> input_ids,
+	std::pmr::vector<int32_t> output_ids, DiffFunctor functor,
 	std::pmr::memory_resource* resource)
-	:Equation(std::move(input_ids), std::move(output_ids), resource), m_functor(std::move(functor))
+	:InputEquation{ std::move(input_ids), resource }, OutputEquation{ std::move(output_ids), resource }, m_functor{ std::move(functor) }
 {
 }
 

@@ -183,26 +183,56 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
 
 TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
 {
+
+    struct DerivativeStateTest
+    {
+        double last_input;
+        double last_input_time;
+        double last_out;
+    };
+
     auto s1 = opt::SourceEq{ {0} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
     auto s2 = opt::SourceEq{ {1} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
     auto mul = opt::NLEquation{ {0,1}, {2}, [](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; } };
     auto diff = opt::NLStatefulEquation{
         {2},
         {3},
-        opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::FatAny& old_state) ->opt::FatAny
+        opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
         {
-            if (old_state.contains<std::array<double, 2>>())
+            const auto& old_state = eq.GetState();
+            if (old_state.contains<DerivativeStateTest>())
             {
-                const auto& arr = old_state.get<const std::array<double, 2>>();
-                out[0] = (in[0] - arr[1]) / (t - arr[0]);
+                const auto& state = old_state.get<const DerivativeStateTest>();
+                if (t == state.last_input_time)
+                {
+                    out[0] = state.last_out;
+                }
+                else
+                {
+                    out[0] = (in[0] - state.last_input) / (t - state.last_input_time);
+                }
             }
             else
             {
                 out[0] = 0;
             }
-
-            return opt::FatAny{ std::array<double, 2>{ t,in[0] }};
-        }}
+        }},
+        opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> in, const double t, opt::NLStatefulEquation& eq)
+        {
+            auto& old_state = eq.GetState();
+            if (old_state.contains<DerivativeStateTest>())
+            {
+                auto& state = old_state.get<DerivativeStateTest>();
+                state.last_out = (in[0] - state.last_input) / (t - state.last_input_time);;
+                state.last_input = in[0];
+                state.last_input_time = t;
+            }
+            else
+            {
+                old_state = opt::FatAny{DerivativeStateTest{in[0], t, 0}};
+            }
+        }
+    }
     };
 
     opt::NLDiffSolver solver;
@@ -233,30 +263,28 @@ TEST(testNLDiffSolver, test_SourceEvent)
 {
     bool event1_set = false;
     double event1_time = 0;
-    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double& t, opt::SourceEq& eq) { 
-        if (!event1_set)
+    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double&, opt::SourceEq&) {
+            out[0] = 0;
+        },
+        [&](const double& t, opt::SourceEq&)
         {
-            if (eq.GetEvent() && eq.GetEvent()->set)
-            {
-                event1_set = true;
-                event1_time = t;
-            }
+            event1_set = true;
+            event1_time = t;
         }
-        out[0] = 0; } };
+    };
     s1.GetEvent() = opt::SourceEq::SourceEvent{ 0.2,false };
 
     bool event2_set = false;
     double event2_time = 0;
-    auto s2 = opt::SourceEq{ {1} ,[&](std::span<double> out, const double& t, opt::SourceEq& eq) {
-        if (!event2_set)
+    auto s2 = opt::SourceEq{ {1} ,[&](std::span<double> out, const double&, opt::SourceEq&) {
+            out[0] = 0;
+        },
+        [&](const double& t, opt::SourceEq&)
         {
-            if (eq.GetEvent() && eq.GetEvent()->set)
-            {
-                event2_set = true;
-                event2_time = t;
-            }
+            event2_set = true;
+            event2_time = t;
         }
-        out[0] = 0; } };
+    };
     s2.GetEvent() = opt::SourceEq::SourceEvent{ 0.201,false };
 
     opt::NLDiffSolver solver;
@@ -279,4 +307,61 @@ TEST(testNLDiffSolver, test_SourceEvent)
     EXPECT_NEAR(event1_time, 0.2, 1e-5);
     EXPECT_EQ(event2_set, true);
     EXPECT_NEAR(event2_time, 0.201, 1e-5);
+}
+
+TEST(testNLDiffSolver, testZeroCrossing)
+{
+    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double& t, opt::SourceEq&) {
+            out[0] = t;
+        }
+    };
+    double trigger_planned_time = 0.49;
+    bool triggered = false;
+    double triggered_time = 0;
+    auto comparator = opt::NLStatefulEquation{ {0}, {1},
+        opt::NLStatefulEquation::NLStatefulFunctor{[&](std::span<const double>, std::span<double> out, const double, const opt::NLStatefulEquation& eq)
+        {
+            bool triggered = eq.GetZeroCrossings()[0].current_value == opt::ZeroCrossDescriptor::Position::above;
+            if (triggered)
+            {
+                out[0] = 1;
+            }
+            else
+            {
+                out[0] = 0;
+            }
+        }},
+        opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> , const double, opt::NLStatefulEquation&)
+        {
+
+        }},
+        opt::NLStatefulEquation::NLStatefulCrossFunctor{[&](const double& t, size_t, opt::NLStatefulEquation&) {
+            triggered_time = t;
+            triggered = true;
+        }}
+    };
+    comparator.GetZeroCrossings().push_back(opt::ZeroCrossDescriptor{ trigger_planned_time, 0, opt::ZeroCrossDescriptor::CrossType::both, opt::ZeroCrossDescriptor::Position::undefined,
+opt::ZeroCrossDescriptor::Position::undefined });
+    opt::NLDiffSolver solver;
+    solver.AddSource(std::move(s1));
+    solver.AddNLStatefulEquation(std::move(comparator));
+
+    opt::FlatMap state(2);
+    state.modify(0, 1);
+    state.modify(1, 0);
+
+    double current_time = 0;
+
+    solver.Initialize(0, 1);
+    solver.SetMaxStep(0.01);
+    solver.CalculateInitialConditions(state);
+    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    {
+        EXPECT_GT(solver.GetCurrentTime(), current_time);
+        current_time = solver.GetCurrentTime();
+    }
+
+    EXPECT_NEAR(1, solver.GetCurrentTime(), 1e-3);
+    EXPECT_EQ(true, triggered);
+    EXPECT_NEAR(trigger_planned_time, triggered_time, 1e-4);
 }

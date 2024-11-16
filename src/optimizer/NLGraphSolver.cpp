@@ -95,7 +95,6 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
         case EquationType::statefulNLEquation:
         {
             auto& eq = m_stateful_equations[eq_idx.index];
-            const auto& n = eq_idx.index;
             auto input_buffer = eq.get_input_buffer();
             auto input_ids = eq.get_input_ids();
             assert(input_buffer.size() == input_ids.size());
@@ -105,9 +104,7 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
                 input_buffer[i] = val;
             }
 
-            std::vector<FatAny>& equation_states =  (m_current_time > m_last_state_time) ? m_last_equations_states : m_before_last_equation_states;
-
-            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, equation_states[n]);
+            eq.Apply(m_current_time);
             auto output_buffer = eq.get_output_buffer();
             auto output_ids = eq.get_output_ids();
             assert(output_buffer.size() == output_ids.size());
@@ -127,12 +124,10 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
 {
     m_last_state_time = m_current_time;
-    std::move(m_last_equations_states.begin(), m_last_equations_states.end(), m_before_last_equation_states.begin());
 
     for (auto element : m_stateful_equations | boost::adaptors::indexed())
     {
         auto& eq = element.value();
-        const auto& n = element.index();
         auto input_buffer = eq.get_input_buffer();
         auto input_ids = eq.get_input_ids();
         assert(input_buffer.size() == input_ids.size());
@@ -141,8 +136,13 @@ void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
             const auto val = state.get(input_ids[i]);
             input_buffer[i] = val;
         }
-        m_last_equations_states[n] = eq.Apply(m_current_time, m_before_last_equation_states[n]);
+        eq.Update(m_current_time);
     }
+}
+
+std::vector<opt::NLStatefulEquation>& opt::NLGraphSolver_impl::GetStatefulEquations()
+{
+    return m_stateful_equations;
 }
 
 opt::NLGraphSolver_impl::NLGraphSolver_impl(std::vector<NLEquation> equations)
@@ -156,7 +156,7 @@ opt::NLGraphSolver_impl::NLGraphSolver_impl()
 
 void opt::NLGraphSolver_impl::Initialize()
 {
-    std::vector<int64_t> remaining_output_ids;
+    std::vector<int32_t> remaining_output_ids;
 
     for (const auto& item : m_equations)
     {
@@ -170,8 +170,6 @@ void opt::NLGraphSolver_impl::Initialize()
         std::transform(range.begin(), range.end(), std::back_inserter(remaining_output_ids),
             [](const auto& item) { return item; });
     }
-    m_last_equations_states.resize(m_stateful_equations.size());
-    m_before_last_equation_states.resize(m_stateful_equations.size());
 
     FillInitialSolveEqns(remaining_output_ids);
     for (const auto& id: m_initial_solve_output_ids)
@@ -195,7 +193,7 @@ void opt::NLGraphSolver_impl::Initialize()
     m_optimizer.set_ftol_abs(1e-6);
 }
 
-void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int64_t>& remaining_output_ids)
+void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaining_output_ids)
 {
     // khan's algorithm, we see which blocks have no unevaluated inputs, add them to inital functors, then see whether the connected blocks can be evaluated yet.
     struct BlockInputsCount
@@ -205,7 +203,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int64_t>& remaini
     };
 
     std::vector<BlockInputsCount> all_blocks;
-    std::unordered_map<int64_t, std::vector<size_t>> edges; // map output_id -> all_blocks index
+    std::unordered_map<int32_t, std::vector<size_t>> edges; // map output_id -> all_blocks index
     std::queue<EquationIndex> blocks_to_process;
 
     for (size_t i = 0; i < m_equations.size(); i++)
@@ -250,7 +248,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int64_t>& remaini
         auto index = blocks_to_process.front();
         blocks_to_process.pop();
 
-        auto output_ids = [&]()->std::span<const int64_t>
+        auto output_ids = [&]()->std::span<const int32_t>
             {
                 switch (index.type)
                 {
@@ -319,7 +317,6 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
         case EquationType::statefulNLEquation:
         {
             auto& eq = m_stateful_equations[eq_index.index];
-            const auto& n = eq_index.index;
             auto input_buffer = eq.get_input_buffer();
             auto input_ids = eq.get_input_ids();
             assert(input_buffer.size() == input_ids.size());
@@ -329,9 +326,7 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
                 input_buffer[i] = val;
             }
 
-            std::vector<FatAny>& equation_states = (m_current_time > m_last_state_time) ? m_last_equations_states : m_before_last_equation_states;
-
-            [[maybe_unused]] auto next_state = eq.Apply(m_current_time, equation_states[n]);
+            eq.Apply(m_current_time);
             auto output_buffer = eq.get_output_buffer();
             auto output_ids = eq.get_output_ids();
             assert(output_buffer.size() == output_ids.size());
@@ -346,7 +341,7 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
     }
 }
 
-void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining_output_ids)
+void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining_output_ids)
 {
     struct BlockInputsCount
     {
@@ -355,7 +350,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
     };
 
     std::vector<BlockInputsCount> all_blocks;
-    std::unordered_map<int64_t, std::vector<size_t>> edges; // map output_id -> all_blocks index
+    std::unordered_map<int32_t, std::vector<size_t>> edges; // map output_id -> all_blocks index
 
     for (size_t i = 0; i < m_equations.size(); i++)
     {
@@ -424,7 +419,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
             auto index = blocks_to_process.front();
             blocks_to_process.pop();
 
-            auto output_ids = [&]()->std::span<const int64_t>
+            auto output_ids = [&]()->std::span<const int32_t>
                 {
                     switch (index.type)
                     {
@@ -513,7 +508,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int64_t>& remaining
             // add it as estimated block
             m_estimated_eqns.push_back(max_block->index);
             all_blocks[max_block->index.index].count = 0;
-            auto output_ids = [&]()->std::span<const int64_t>
+            auto output_ids = [&]()->std::span<const int32_t>
                 {
                     switch (max_block->index.type)
                     {
@@ -565,10 +560,10 @@ void opt::NLGraphSolver_impl::AddEquation(opt::NLEquation eq)
 
 void opt::NLGraphSolver_impl::AddStatefulEquation(NLStatefulEquation eq)
 {
-    m_stateful_equations.push_back(eq);
+    m_stateful_equations.push_back(std::move(eq));
 }
 
-static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, const std::vector<int64_t>& indicies)
+static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, const std::vector<int32_t>& indicies)
 {
     for (const auto& idx : indicies)
     {
@@ -654,4 +649,9 @@ void opt::NLGraphSolver::AddEquation(NLEquation eq)
 void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquation eq)
 {
     m_impl->AddStatefulEquation(std::move(eq));
+}
+
+std::vector<opt::NLStatefulEquation>& opt::NLGraphSolver::GetStatefulEquations()
+{
+    return m_impl->GetStatefulEquations();
 }

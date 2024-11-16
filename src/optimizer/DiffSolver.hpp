@@ -35,6 +35,8 @@ public:
     void ApplyPostProcessor(opt::FlatMap& state, const double t);
     void SetMaxStep(double step_size);
     void SetNextEventTime(std::optional<double> t);
+    void SetCurrentTime(const double& t) const;
+    void InterpolateAt(FlatMap& state, const double& t);
 private:
     std::unique_ptr<DiffSolver_impl> m_impl;
 };

@@ -16,6 +16,7 @@ MultiplyBlockClass.cpp MultiplyBlockClass.hpp
 SineSourceClass.hpp SineSourceClass.cpp
 BlockDialog.hpp BlockDialog.cpp
 StepSourceClass.hpp StepSourceClass.cpp
+ComparatorClass.hpp ComparatorClass.cpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

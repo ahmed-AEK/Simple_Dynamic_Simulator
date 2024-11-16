@@ -102,9 +102,14 @@ bool node::Dialog::OnKeyPress(KeyboardEvent& e)
 		return true;
 	}
 	case SDL_SCANCODE_RETURN:
+	case SDL_SCANCODE_KP_ENTER:
 	{
 		TriggerOk();
 		return true;
+	}
+	default: 
+	{
+		break;
 	}
 	}
 	return false;

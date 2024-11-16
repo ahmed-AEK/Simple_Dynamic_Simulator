@@ -27,7 +27,7 @@ struct SocketMapping
 	node::model::SocketId socket_id;
 	bool connected;
 	node::model::BlockSocketModel::SocketType socket_type;
-	size_t net_id;
+	int32_t net_id;
 };
 
 struct SocketMappings
@@ -178,7 +178,7 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 				{
 					nets.nets[it->second].out_sockets_count += 1;
 				}
-				mapping.mappings.push_back(SocketMapping{ socket_id, true, socket.GetType(), it->second });
+				mapping.mappings.push_back(SocketMapping{ socket_id, true, socket.GetType(), static_cast<int32_t>(it->second) });
 			}
 			else
 			{
@@ -189,13 +189,13 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 	return mappings;
 }
 
-static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappings>& mappings, size_t& max_net)
+static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappings>& mappings, int32_t& max_net)
 {
 	using namespace node::model;
 	struct FunctorTerminalsMapping
 	{
-		size_t initial_value;
-		size_t transformed_value;
+		int32_t initial_value;
+		int32_t transformed_value;
 	};
 
 	std::unordered_map<BlockId, std::vector<FunctorTerminalsMapping>> functors_mapping;
@@ -208,7 +208,7 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 				auto& func = func_obj.first;
 				auto it = std::find_if(mappings.begin(), mappings.end(), [&](const auto& obj)->bool {return obj.block_id == block_id; });
 				assert(it != mappings.end());
-				auto id_mapper = [&](int64_t& id)
+				auto id_mapper = [&](int32_t& id)
 					{
 						// look for the socket id in the scene sockets ids, if it is a block socket it should be there, otherwise it is an internal node
 						auto socket_it = std::find_if(it->mappings.begin(), it->mappings.end(), [&](const SocketMapping& mapping) {return mapping.socket_id.value == id; });
@@ -217,12 +217,12 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 							// if it is part of the nets mapping (block socket), map it if it is connected.
 							if (!it->mappings[id].connected)
 							{
-								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), 9999 });
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<int32_t>(id), 9999 });
 								id = 9999;
 							}
 							else
 							{
-								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), static_cast<size_t>(socket_it->net_id) });
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<int32_t>(id), static_cast<int32_t>(socket_it->net_id) });
 								id = socket_it->net_id;
 							}
 						}
@@ -230,26 +230,32 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 						{
 							// see if we have seen it before, if we have then assign the same net_id, otherwise assign a new net_id to it.
 							auto& mapping = functors_mapping[block_id];
-							auto mapping_it = std::find_if(mapping.begin(), mapping.end(), [&](const FunctorTerminalsMapping& term) {return term.initial_value == static_cast<size_t>(id); });
+							auto mapping_it = std::find_if(mapping.begin(), mapping.end(), [&](const FunctorTerminalsMapping& term) {return term.initial_value == static_cast<int32_t>(id); });
 							if (mapping_it != mapping.end())
 							{
 								id = mapping_it->transformed_value;
 							}
 							else
 							{
-								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<size_t>(id), max_net });
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<int32_t>(id), max_net });
 								id = max_net;
 								max_net++;
 							}
 						}
 					};
-				for (auto& id : func.get_input_ids())
+				if constexpr (requires {func.get_input_ids(); })
 				{
-					id_mapper(id);
+					for (auto& id : func.get_input_ids())
+					{
+						id_mapper(id);
+					}
 				}
-				for (auto& id : func.get_output_ids())
+				if constexpr (requires {func.get_output_ids(); })
 				{
-					id_mapper(id);
+					for (auto& id : func.get_output_ids())
+					{
+						id_mapper(id);
+					}
 				}
 			}
 		};
@@ -404,7 +410,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 
 	assert(m_classes_mgr);
 	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
-	size_t max_net = nets.nets.size();
+	int32_t max_net = static_cast<int32_t>(nets.nets.size());
 	RemapFunctions(blocks, socket_mappings, max_net);
 	
 	assert(m_model);

@@ -54,25 +54,53 @@ node::BlockType node::DerivativeBlockClass::GetBlockType(const std::vector<model
 
 node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
 {
+	struct DerivativeState
+	{
+		double last_input;
+		double last_input_time;
+		double last_out;
+	};
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
 	return opt::NLStatefulEquation{
 		{0},
 		{1},
-		opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::FatAny& old_state) ->opt::FatAny
+		opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
 		{
-			if (old_state.contains<std::array<double, 2>>())
+			const auto& old_state = eq.GetState();
+			if (old_state.contains<DerivativeState>())
 			{
-				const auto& arr = old_state.get<const std::array<double, 2>>();
-				out[0] = (in[0] - arr[1]) / (t - arr[0]);
+				const auto& state = old_state.get<const DerivativeState>();
+				if (t == state.last_input_time)
+				{
+					out[0] = state.last_out;
+				}
+				else
+				{
+					out[0] = (in[0] - state.last_input) / (t - state.last_input_time);
+				}
 			}
 			else
 			{
 				out[0] = 0;
 			}
-
-			return opt::FatAny{ std::array<double, 2>{ t,in[0] }};
-		}}
+		}},
+		opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> in, const double t, opt::NLStatefulEquation& eq)
+		{
+			auto& old_state = eq.GetState();
+			if (old_state.contains<DerivativeState>())
+			{
+				auto& state = old_state.get<DerivativeState>();
+				state.last_out = (in[0] - state.last_input) / (t - state.last_input_time);;
+				state.last_input = in[0];
+				state.last_input_time = t;
+			}
+			else
+			{
+				old_state = opt::FatAny{DerivativeState{in[0], t, 0}};
+			}
+		}
+		}
 	};
 }
 

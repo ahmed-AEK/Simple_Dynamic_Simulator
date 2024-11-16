@@ -57,6 +57,8 @@ public:
 		: p_manager{nullptr} { };
 	FatAny(FatAny&& other) noexcept;
 	FatAny& operator=(FatAny&& other) noexcept;
+	FatAny(const FatAny&) = delete;
+	FatAny& operator=(const FatAny&) = delete;
 	~FatAny();
 	
 	template <typename T>
@@ -81,7 +83,7 @@ public:
 	[[nodiscard]] bool IsEmpty() const { return nullptr == p_manager; }
 
 private:
-	static constexpr size_t FatAnySize = std::max(2 * sizeof(void*), 2 * sizeof(double));
+	static constexpr size_t FatAnySize = std::max(4 * sizeof(void*), 4 * sizeof(double));
 	union data_buffer {
 		alignas(FatAnySize) std::array<void*, FatAnySize / sizeof(void*)> buff;
 	};

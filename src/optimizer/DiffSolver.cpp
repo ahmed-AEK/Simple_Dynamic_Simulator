@@ -47,6 +47,7 @@ void opt::DiffSolver_impl::Initialize(double start_time, double end_time)
     }
     m_current_x.reserve(m_output_ids.size());
     m_current_dxdt.reserve(m_output_ids.size());
+    m_current_interpolation_x.resize(m_output_ids.size());
 }
 
 void opt::DiffSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& state)
@@ -97,7 +98,14 @@ opt::StepResult opt::DiffSolver_impl::Step(opt::FlatMap& state)
     {
         if (m_equations.size())
         {
-            result = m_stepper.try_step(diffsystem, m_current_x, m_current_time, m_last_dt);
+            m_stepper.initialize(m_current_x, m_current_time, m_last_dt);
+            auto [start_time, end_time] = m_stepper.do_step(diffsystem);
+            m_current_x = m_stepper.current_state();
+            m_last_dt = m_stepper.current_time_step();
+            m_current_time = end_time;
+            m_interpolation_start_time = start_time;
+            m_interpolation_end_time = end_time;
+            result = boost::numeric::odeint::success;
         }
         else
         {
@@ -190,6 +198,24 @@ void opt::DiffSolver_impl::SetNextEventTime(std::optional<double> t)
     m_next_event_time = t;
 }
 
+void opt::DiffSolver_impl::SetCurrentTime(const double& t)
+{
+    m_current_time = t;
+}
+
+void opt::DiffSolver_impl::InterpolateAt(FlatMap& state, const double& t)
+{
+    if (!m_equations.size())
+    {
+        return;
+    }
+    assert(t >= m_interpolation_start_time);
+    assert(t <= m_interpolation_end_time);
+
+    m_stepper.calc_state(t, m_current_interpolation_x);
+    LoadDatatoMap(m_current_interpolation_x, state);
+}
+
 opt::DiffSolver::DiffSolver()
     :m_impl(std::make_unique<DiffSolver_impl>())
 {
@@ -259,6 +285,16 @@ void opt::DiffSolver::SetMaxStep(double step_size)
 void opt::DiffSolver::SetNextEventTime(std::optional<double> t)
 {
     m_impl->SetNextEventTime(t);
+}
+
+void opt::DiffSolver::SetCurrentTime(const double& t) const
+{
+    m_impl->SetCurrentTime(t);
+}
+
+void opt::DiffSolver::InterpolateAt(FlatMap& state, const double& t)
+{
+    m_impl->InterpolateAt(state, t);
 }
 
 

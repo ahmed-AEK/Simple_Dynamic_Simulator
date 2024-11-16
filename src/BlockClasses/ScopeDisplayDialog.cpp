@@ -8,6 +8,7 @@
 #include <cstring>
 #include "boost/container/static_vector.hpp"
 #include <cmath>
+#include <algorithm>
 
 namespace node
 {

@@ -11,8 +11,8 @@ SDL_AppResult SDL_Fail() {
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     
-    SDL_UNUSED(argc);
-    SDL_UNUSED(argv);
+    UNUSED_PARAM(argc);
+    UNUSED_PARAM(argv);
 
     // set up the application data
     std::unique_ptr<node::NodeEditorApplication> ptr = std::make_unique<node::NodeEditorApplication>();
@@ -49,7 +49,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 }
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
-    SDL_UNUSED(result);
+    UNUSED_PARAM(result);
 
     auto* app = reinterpret_cast<node::NodeEditorApplication*>(appstate);
     delete app;
