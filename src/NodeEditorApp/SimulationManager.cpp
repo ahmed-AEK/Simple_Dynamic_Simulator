@@ -20,7 +20,7 @@ node::SimulationManager::~SimulationManager()
     StopSimulator();
 }
 
-void node::SimulationManager::RunSimulator(model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
+void node::SimulationManager::RunSimulator(size_t scene_session_id, model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
 {
     if (!m_current_running_simulator)
     {
@@ -31,6 +31,7 @@ void node::SimulationManager::RunSimulator(model::NodeSceneModel& scene_model, s
             [app = &app, this] { app->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); }); } },
             m_simulationSettings);
         m_current_running_simulator = runner;
+        m_last_simulation_scene_session_id = scene_session_id;
         runner->Run();
     }
 }

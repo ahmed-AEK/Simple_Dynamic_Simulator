@@ -10,7 +10,7 @@
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 
-node::GraphicsScene::GraphicsScene(const SDL_FRect& rect, node::Scene* parent)
+node::GraphicsScene::GraphicsScene(const SDL_FRect& rect, node::Widget* parent)
 :Widget(rect, parent), 
 m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * rect.h/rect.w)}, 
 m_spaceRect{0, 0, 200, static_cast<int>(200 * rect.h/rect.w)},
@@ -73,7 +73,18 @@ void node::GraphicsScene::BumpObjectInLayer(node::GraphicsObject* obj)
 
 void node::GraphicsScene::Draw(SDL_Renderer *renderer)
 {
+    SDL_Rect screen_rect_int = ToRect(GetRect());
+    SDL_Rect old_clip_rect;
+    SDL_GetRenderClipRect(renderer, &old_clip_rect);
+    SDL_SetRenderClipRect(renderer, &screen_rect_int);
+    OnDraw(renderer);
+    SDL_SetRenderClipRect(renderer, nullptr);
+}
+
+void node::GraphicsScene::OnDraw(SDL_Renderer* renderer)
+{
     SDL_FRect screen_rect = ToSDLRect(GetSpaceRect());
+
     for (auto&& it = m_objects.rbegin(); it != m_objects.rend(); it++)
     {
         auto&& object = *it;
@@ -380,18 +391,9 @@ void  node::GraphicsScene::CancelCurrentLogic()
 }
 
 
-void node::GraphicsScene::SetTool(std::shared_ptr<GraphicsTool> ptr)
+void node::GraphicsScene::SetTool(std::shared_ptr<ToolHandler> ptr)
 {
-    if (m_tool)
-    {
-        m_tool->OnExit();
-    }
-    m_tool = std::move(ptr);
-    m_tool->OnStart();
-
-    GraphicsTool::MouseHoverEvent e{ m_spaceScreenTransformer.ScreenToSpacePoint(m_current_mouse_position) };
-    m_tool->OnMouseEnter(e);
-    
+    m_tool = ptr;
 }
 
 void node::GraphicsScene::OnSetRect(const SDL_FRect& rect)

@@ -41,6 +41,15 @@ struct BlockObjectDropped
     const SDL_FPoint& p;
 };
 
+class ToolHandler
+{
+public:
+    virtual bool IsCapturingMouse() const = 0;
+    virtual void OnMouseMove(GraphicsTool::MouseHoverEvent& e) = 0;
+    virtual MI::ClickEvent OnLMBDown(GraphicsTool::MouseButtonEvent& e) = 0;
+    virtual MI::ClickEvent OnLMBUp(GraphicsTool::MouseButtonEvent& e) = 0;
+};
+
 class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::SinglePublisher<BlockObjectDropped>
 {
 public:
@@ -57,7 +66,7 @@ public:
     static constexpr int NetNodeLayer = 300;
     static constexpr int InteractiveLayer = 400;
 
-    GraphicsScene(const SDL_FRect& rect, node::Scene* parent);
+    GraphicsScene(const SDL_FRect& rect, node::Widget* parent);
     ~GraphicsScene() override;
 
     void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
@@ -95,9 +104,10 @@ public:
     logic::GraphicsLogic* GetGraphicsLogic() { return m_graphicsLogic.get(); }
     void CancelCurrentLogic();
 
-    void SetTool(std::shared_ptr<GraphicsTool> ptr);
-    GraphicsTool* GetTool() const { return m_tool.get(); }
+    void SetTool(std::shared_ptr<ToolHandler> ptr);
+    const std::shared_ptr<ToolHandler>& GetToolHandleer() const { return m_tool; }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
+
 protected:
     void OnSetRect(const SDL_FRect& rect) override;
     void OnMouseMove(MouseHoverEvent& e) override;
@@ -110,7 +120,7 @@ protected:
         const DragDropObject& object, const SDL_FPoint& p) override;
     void OnDropEnter(const DragDropObject& object) override;
     void OnDropExit(const DragDropObject& object) override;
-
+    virtual void OnDraw(SDL_Renderer* renderer);
 
 private:
 
@@ -133,7 +143,7 @@ private:
     std::vector<HandlePtr<GraphicsObject>> m_current_selection;
     
     std::unique_ptr<logic::GraphicsLogic> m_graphicsLogic;
-    std::shared_ptr<GraphicsTool> m_tool;
+    std::shared_ptr<ToolHandler> m_tool;
     
     SpaceScreenTransformer m_spaceScreenTransformer;
 

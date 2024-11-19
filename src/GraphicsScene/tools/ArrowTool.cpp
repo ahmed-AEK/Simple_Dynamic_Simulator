@@ -13,23 +13,24 @@
 #include "BlockResizeObject.hpp"
 
 
-MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
-    node::GraphicsObject* current_hover = GetScene()->GetCurrentHover();
+    node::GraphicsObject* current_hover = scene.GetCurrentHover();
 
     if (!current_hover || current_hover->GetObjectType() != ObjectType::interactive)
     {
-        if (m_current_block_resize_object)
+        if (m_current_block_resize_slot.object && m_current_block_resize_slot.scene)
         {
-            GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
-            m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
+            static_cast<GraphicsScene*>(m_current_block_resize_slot.scene.GetObjectPtr())->PopObject(
+                m_current_block_resize_slot.object.GetObjectPtr());
+            m_current_block_resize_slot = ResizerObjectSlot{};
         }
     }
 
     if (current_hover)
     {
         // selection code
-        InternalSelectObject(current_hover);
+        InternalSelectObject(current_hover, scene);
 
         switch (current_hover->GetObjectType())
         {
@@ -44,41 +45,42 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
             }
             else
             {
-                GetScene()->BumpObjectInLayer(current_hover);
+                scene.BumpObjectInLayer(current_hover);
                 m_last_clicked_block = current_hover->GetFocusHandlePtr();
             }
 
             auto* block_obj = static_cast<BlockObject*>(current_hover);
 
-            if (m_current_block_resize_object)
+            if (m_current_block_resize_slot.object && m_current_block_resize_slot.scene)
             {
-                GetScene()->PopObject(m_current_block_resize_object.GetObjectPtr());
-                m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
+                static_cast<GraphicsScene*>(m_current_block_resize_slot.scene.GetObjectPtr())->PopObject(
+                    m_current_block_resize_slot.object.GetObjectPtr());
+                m_current_block_resize_slot = ResizerObjectSlot{};
             }
 
-            auto resizer = CreateResizeObject(*block_obj);
+            auto resizer = CreateResizeObject(*block_obj, scene, manager);
             if (resizer)
             {
-                m_current_block_resize_object = resizer->GetMIHandlePtr();
-                GetScene()->AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
+                m_current_block_resize_slot = ResizerObjectSlot{ scene.GetMIHandlePtr(), resizer->GetMIHandlePtr() };
+                scene.AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
             }
 
             auto obj_rect = current_hover->GetSpaceRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(e.point, model::Point{ obj_rect.x, obj_rect.y }, 
-                *block_obj, GetScene(), GetObjectsManager());
-            GetScene()->SetGraphicsLogic(std::move(drag_logic));
+                *block_obj, &scene, &manager);
+            scene.SetGraphicsLogic(std::move(drag_logic));
             return MI::ClickEvent::CAPTURE_START;
         }
         case ObjectType::socket:
         {
             auto* socket = static_cast<BlockSocketObject*>(current_hover);
-            GetScene()->BumpObjectInLayer(socket->GetParentBlock());
+            scene.BumpObjectInLayer(socket->GetParentBlock());
             if (!socket->GetConnectedNode())
             {
-                auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, GetScene(), GetObjectsManager());
+                auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, &scene, &manager);
                 if (new_logic)
                 {
-                    GetScene()->SetGraphicsLogic(std::move(new_logic));
+                    scene.SetGraphicsLogic(std::move(new_logic));
                     return MI::ClickEvent::CAPTURE_START;
                 }
             }
@@ -89,11 +91,9 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
             auto* node = static_cast<NetNode*>(current_hover);
             if (node->GetConnectedSegmentsCount() == 1)
             {
-                assert(GetScene());
-                assert(GetObjectsManager());
-                if (auto ptr = logic::LeafNetNodeDragLogic::TryCreate(*node, *GetScene(), *GetObjectsManager()))
+                if (auto ptr = logic::LeafNetNodeDragLogic::TryCreate(*node, scene, manager))
                 {
-                    GetScene()->SetGraphicsLogic(std::move(ptr));
+                    scene.SetGraphicsLogic(std::move(ptr));
                     return MI::ClickEvent::CAPTURE_START;
                 }
             }
@@ -102,11 +102,11 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
         case ObjectType::netSegment:
         {
             auto* segment = static_cast<NetSegment*>(current_hover);
-            GetScene()->BumpObjectInLayer(current_hover);
+            scene.BumpObjectInLayer(current_hover);
             if (auto ptr = logic::VSegmentDragLogic::Create(*segment->getStartNode(),
-                *segment->getEndNode(), *segment, e.point, GetScene(), GetObjectsManager()))
+                *segment->getEndNode(), *segment, e.point, &scene, &manager))
             {
-                GetScene()->SetGraphicsLogic(std::move(ptr));
+                scene.SetGraphicsLogic(std::move(ptr));
                 return MI::ClickEvent::CAPTURE_START;
             }
             break;
@@ -122,64 +122,52 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e)
     }
     else
     {
-        GraphicsScene* scene = GetScene();
-        assert(scene);
-        scene->ClearCurrentSelection();
-        auto startPointScreen = GetScene()->GetSpaceScreenTransformer().SpaceToScreenPoint(e.point);
-        auto&& space_rect = scene->GetSpaceRect();
+        scene.ClearCurrentSelection();
+        auto startPointScreen = scene.GetSpaceScreenTransformer().SpaceToScreenPoint(e.point);
+        auto&& space_rect = scene.GetSpaceRect();
         auto startEdgeSpace = model::Point{ space_rect.x, space_rect.y};
-        auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, GetScene(), GetObjectsManager());
-        GetScene()->SetGraphicsLogic(std::move(logic));
+        auto logic = std::make_unique<logic::ScreenDragLogic>(startPointScreen, startEdgeSpace, &scene, &manager);
+        scene.SetGraphicsLogic(std::move(logic));
         return MI::ClickEvent::CAPTURE_START;
     }
     return MI::ClickEvent::NONE;
 }
 
-MI::ClickEvent node::ArrowTool::OnLMBUp(MouseButtonEvent& e)
+bool node::ArrowTool::InternalSelectObject(GraphicsObject* object, GraphicsScene& scene)
 {
-    UNUSED_PARAM(e);
-	return MI::ClickEvent::NONE;
-}
-
-void node::ArrowTool::OnMouseMove(MouseHoverEvent& e)
-{
-    UNUSED_PARAM(e);
-}
-
-bool node::ArrowTool::InternalSelectObject(GraphicsObject* object)
-{
-    GraphicsScene* scene = GetScene();
-    assert(scene);
     if (object->isSelectable())
     {
-        if (!scene->IsObjectSelected(*object))
+        if (!scene.IsObjectSelected(*object))
         {
-            scene->ClearCurrentSelection();
-            scene->AddSelection(object->GetFocusHandlePtr());
+            scene.ClearCurrentSelection();
+            scene.AddSelection(object->GetFocusHandlePtr());
         }
         return true;
     }
     else
     {
-        scene->ClearCurrentSelection();
+        scene.ClearCurrentSelection();
         return false;
     }
 }
 
 void node::ArrowTool::OnExit()
 {
-    if (const auto* resizer = m_current_block_resize_object.GetObjectPtr())
+    if (const auto* resizer = m_current_block_resize_slot.object.GetObjectPtr())
     {
-        GetScene()->PopObject(resizer);
-        m_current_block_resize_object = HandlePtr<GraphicsObject>{ nullptr };
+        if (auto* scene = m_current_block_resize_slot.scene.GetObjectPtr())
+        {
+            static_cast<GraphicsScene*>(scene)->PopObject(resizer);
+            m_current_block_resize_slot = ResizerObjectSlot{};
+        }
     }
 }
 
-std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(BlockObject& block)
+std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(BlockObject& block, GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
     model::Rect resizer_rect = BlockResizeObject::RectForBlockRect(block.GetSpaceRect());
 
-    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), GetObjectsManager(), resizer_rect, GetScene());
+    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), &manager, resizer_rect, &scene);
     block.SetResizeHandles(*resizer);
     return resizer;
 }

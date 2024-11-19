@@ -19,6 +19,7 @@
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
+#include "GraphicsScene/tools/GraphicsToolHandler.hpp"
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
@@ -51,6 +52,8 @@
 
 #include "SceneLoader/SceneLoader.hpp"
 #include <filesystem>
+#include <limits>
+#include "toolgui/TabbedView.hpp"
 
 #define USE_SDL_DIALOGS
 
@@ -97,9 +100,14 @@ static void AddInitialNodes_forScene(node::GraphicsObjectsManager* manager)
 
 void node::MainNodeScene::RunSimulator()
 {
+    if (!m_current_scene_id)
+    {
+        return;
+    }
     assert(GetApp());
     assert(m_classesManager);
-    m_sim_mgr.RunSimulator(m_graphicsObjectsManager->GetSceneModel()->GetModel(), m_classesManager, *GetApp());
+    auto& graphicsObjectsManager = *m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    m_sim_mgr.RunSimulator( m_sceneComponents[*m_current_scene_id].session_id, graphicsObjectsManager.GetSceneModel()->GetModel(), m_classesManager, *GetApp());
 }
 
 void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* handler)
@@ -122,12 +130,13 @@ void node::MainNodeScene::NewScene()
     }
     m_sim_mgr.ClearLastSimulationReults();
 
-    // remember to save scene here
-
-    m_db_connector = std::nullopt;
-    auto sceneModel = std::make_shared<model::NodeSceneModel>();
     CloseAllDialogs();
-    m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(sceneModel)));
+
+    CreateNewScene();
+    assert(m_sceneComponents.size() - 1 < std::numeric_limits<int>::max());
+    m_current_scene_id = static_cast<int>(m_sceneComponents.size() - 1);
+    m_sceneComponents[*m_current_scene_id].graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::make_shared<model::NodeSceneModel>()));
+    m_tabbedView->SetCurrentTabIndex(*m_current_scene_id);
 }
 
 void node::MainNodeScene::LoadScene(std::string name)
@@ -146,8 +155,12 @@ void node::MainNodeScene::LoadScene(std::string name)
     {
         auto scene = std::make_shared<model::NodeSceneModel>(std::move(*new_scene));
         CloseAllDialogs();
-        m_db_connector = std::move(connector);
-        m_graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(scene)));
+        CreateNewScene();
+        assert(m_sceneComponents.size() - 1 < std::numeric_limits<int>::max());
+        m_current_scene_id = static_cast<int>(m_sceneComponents.size() - 1);
+        m_sceneComponents[*m_current_scene_id].db_connector = std::move(connector);
+        m_sceneComponents[*m_current_scene_id].graphicsObjectsManager->SetSceneModel(std::make_shared<SceneModelManager>(std::move(scene)));
+        m_tabbedView->SetCurrentTabIndex(*m_current_scene_id);
     }
     else
     {
@@ -172,23 +185,36 @@ void node::MainNodeScene::LoadScene(std::string name)
 
 void node::MainNodeScene::SaveScene()
 {
-    assert(m_db_connector);
-    if (!m_db_connector)
+    if (!m_current_scene_id)
     {
         return;
     }
-    SDL_Log("scene Saved to %s", m_db_connector->db_path.c_str());
-    m_db_connector->connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel());
+    auto& db_connector = m_sceneComponents[*m_current_scene_id].db_connector;
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    assert(db_connector);
+    if (!db_connector)
+    {
+        return;
+    }
+    SDL_Log("scene Saved to %s", db_connector->db_path.c_str());
+    db_connector->connector->Save(graphicsObjectsManager->GetSceneModel()->GetModel());
 }
 
 void node::MainNodeScene::SaveScene(std::string name)
 {
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    auto& db_connector = m_sceneComponents[*m_current_scene_id].db_connector;
     SDL_Log("scene Saved to %s", name.c_str());
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
-    if (connector.connector->Save(m_graphicsObjectsManager->GetSceneModel()->GetModel()))
+    if (connector.connector->Save(graphicsObjectsManager->GetSceneModel()->GetModel()))
     {
-        m_db_connector = std::move(connector);
+        db_connector = std::move(connector);
     }
     else
     {
@@ -216,6 +242,36 @@ void node::MainNodeScene::MaybeSaveScene(std::string name)
     {
         SaveScene(std::move(name));
     }
+}
+
+void node::MainNodeScene::OnCenterTabChanged(size_t new_tab)
+{
+    m_current_scene_id = static_cast<int>(new_tab);
+    m_current_scene_session_id = m_sceneComponents[new_tab].session_id;
+}
+
+void node::MainNodeScene::CloseTabRequest(size_t tab_idx)
+{
+    if (m_sceneComponents.size() == 1)
+    {
+        SDL_Log("Closing Tab with only 1 left");
+        return;
+    }
+
+    assert(tab_idx < m_sceneComponents.size());
+    if (!(tab_idx < m_sceneComponents.size()))
+    {
+        return;
+    }
+
+    m_tabbedView->DeleteTab(tab_idx);
+    m_sceneComponents.erase(m_sceneComponents.begin() + tab_idx);
+    
+    if (!(m_current_scene_id < m_sceneComponents.size()))
+    {
+        m_current_scene_id = static_cast<int>(m_sceneComponents.size() - 1);
+    }
+    m_tabbedView->SetCurrentTabIndex(*m_current_scene_id);
 }
 
 namespace
@@ -255,16 +311,16 @@ void node::MainNodeScene::InitializeTools()
         toolbar->AddButton(std::move(save_btn));
     }
     toolbar->AddSeparator();
-    m_toolsManager = std::make_shared<ToolsManager>(m_centerWidget, toolbar.get());
+    m_toolsManager = std::make_shared<ToolsManager>(toolbar.get());
     {
-        auto arrow_tool = std::make_shared<ArrowTool>(m_centerWidget, m_graphicsObjectsManager.get());
+        auto arrow_tool = std::make_shared<ArrowTool>();
         auto receiver = std::make_unique<DoubleClickEventReceiver>(*this, [this](BlockObject& block) {this->OpenBlockDialog(block); } );
         arrow_tool->Attach(*receiver);
         AddEventReceiver(std::move(receiver));
         m_toolsManager->AddTool("A", std::move(arrow_tool));
     }
-    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>(m_centerWidget, m_graphicsObjectsManager.get()));
-    m_toolsManager->AddTool("N", std::make_shared<NetTool>(m_centerWidget, m_graphicsObjectsManager.get()));
+    m_toolsManager->AddTool("D", std::make_shared<DeleteTool>());
+    m_toolsManager->AddTool("N", std::make_shared<NetTool>());
     {
         auto arrow_btn = std::make_unique<ToolButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "A", m_toolsManager);
         arrow_btn->SetDescription("Arrow Tool");
@@ -331,10 +387,8 @@ void node::MainNodeScene::InitializeTools()
     m_toolsManager->ChangeTool("A");
 }
 
-void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
+void node::MainNodeScene::InitializeSidePanel()
 {
-    assert(gScene);
-    UNUSED_PARAM(gScene);
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_FRect{ 0.0f,0.0f,300.0f,GetRect().h}, this);
 
     auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager, m_blockStylerFactory);
@@ -470,7 +524,12 @@ void node::MainNodeScene::InitializeSidePanel(node::GraphicsScene* gScene)
 
 void node::MainNodeScene::OpenPropertiesDialog()
 {
-    auto&& selection = m_centerWidget->GetCurrentSelection();
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+    auto* centerWidget = m_sceneComponents[*m_current_scene_id].scene;
+    auto&& selection = centerWidget->GetCurrentSelection();
     if (selection.size() != 1)
     {
         SDL_Log("More than one object selected!");
@@ -489,9 +548,14 @@ void node::MainNodeScene::OpenPropertiesDialog()
 
 void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
 {
+    if (!m_current_scene_id)
     {
-        auto it = m_objects_dialogs.find(static_cast<BlockObject*>(&object));
-        if (it != m_objects_dialogs.end() && it->second.dialog.isAlive())
+        return;
+    }
+    auto& objects_dialogs = m_sceneComponents[*m_current_scene_id].objects_dialogs;
+    {
+        auto it = objects_dialogs.find(static_cast<BlockObject*>(&object));
+        if (it != objects_dialogs.end() && it->second.dialog.isAlive())
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
@@ -508,8 +572,8 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
         SDL_Log("Block has no model!");
         return;
     }
-
-    auto block = m_graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    auto block = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
     if (!block)
     {
         SDL_Log("couldn't find the block model!");
@@ -517,8 +581,8 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     }
 
     assert(m_classesManager);
-    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, m_graphicsObjectsManager, m_classesManager, SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this);
-    m_objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
+    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, graphicsObjectsManager, m_classesManager, SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this);
+    objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
     auto dialog_ptr = dialog.get();
     AddNormalDialog(std::move(dialog));
     SetFocus(dialog_ptr);
@@ -526,6 +590,12 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
 
 void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
 {
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+    auto& objects_dialogs = m_sceneComponents[*m_current_scene_id].objects_dialogs;
+
     if (!block.GetModelId())
     {
         assert(false);
@@ -533,8 +603,8 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     }
 
     {
-        auto it = m_objects_dialogs.find(&block);
-        if (it != m_objects_dialogs.end() && it->second.dialog.isAlive())
+        auto it = objects_dialogs.find(&block);
+        if (it != objects_dialogs.end() && it->second.dialog.isAlive())
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
@@ -544,9 +614,10 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         }
     }
 
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
 
     assert(block.GetModelId());
-    auto block_model = m_graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
+    auto block_model = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
     if (!block_model)
     {
         assert(false);
@@ -575,7 +646,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         auto dialog = class_ptr->CreateBlockDialog(*this, *block_model, sim_data);
         if (dialog)
         {
-            m_objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
+            objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
             auto dialog_ptr = dialog.get();
             AddNormalDialog(std::move(dialog));
             SetFocus(dialog_ptr);
@@ -589,30 +660,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
 
 void node::MainNodeScene::NewScenePressed()
 {
-#ifndef USE_SDL_DIALOGS
-    SetModalDialog(std::make_unique<NewSceneDialog>(SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this));
-#else
-    int result = 0;
-    SDL_MessageBoxData data;
-    data.flags = SDL_MESSAGEBOX_WARNING;
-    data.window = GetApp()->GetWindow();
-    data.title = "Create New Scene";
-    data.message = "Create a new scene ?\nUnsaved work will be lost!";
-    static constexpr SDL_MessageBoxButtonData buttons_labels[]{
-        {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,1,"Cancel"},
-        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,2,"Ok"},
-    };
-    data.buttons = buttons_labels;
-    data.numbuttons = static_cast<int>(std::size(buttons_labels));
-    data.colorScheme = nullptr;
-    if (SDL_ShowMessageBox(&data, &result))
-    {
-        if (result == 2)
-        {
-            NewScene();
-        }
-    }
-#endif
+    NewScene();
 }
 
 void node::MainNodeScene::LoadSceneButtonPressed()
@@ -644,7 +692,13 @@ void node::MainNodeScene::LoadSceneButtonPressed()
 
 void node::MainNodeScene::SaveSceneButtonPressed()
 {
-    if (m_db_connector)
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+
+    auto& db_connector = m_sceneComponents[*m_current_scene_id].db_connector;
+    if (db_connector)
     {
         SaveScene();
         return;
@@ -674,41 +728,103 @@ void node::MainNodeScene::SaveSceneButtonPressed()
 #endif
 }
 
+void node::MainNodeScene::CreateNewScene()
+{
+    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetRect(), m_tabbedView);
+    auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
+    gScene->Attach(*graphicsObjectsManager);
+    gScene->SetToolsManager(m_toolsManager);
+    gScene->SetObjectsManager(graphicsObjectsManager);
+    auto handler = std::make_shared<GraphicsToolHandler>(*gScene, graphicsObjectsManager, m_toolsManager);
+    gScene->SetTool(std::move(handler));
+
+    m_sceneComponents.push_back(SceneComponents{
+        m_current_scene_session_id,
+        gScene.get(),
+        graphicsObjectsManager
+        });
+    m_current_scene_session_id++;
+
+    m_tabbedView->AddTab("scene", std::move(gScene));
+}
+
 void node::MainNodeScene::OnUndo()
 {
     SDL_Log("Undoed!");
-    if (!m_graphicsObjectsManager->GetSceneModel()->CanUndo())
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    if (!graphicsObjectsManager->GetSceneModel()->CanUndo())
     {
         assert(false);
         return;
     }
-    m_graphicsObjectsManager->GetSceneModel()->Undo();
+    graphicsObjectsManager->GetSceneModel()->Undo();
 }
 
 void node::MainNodeScene::OnRedo()
 {
     SDL_Log("Redoed!");
-    if (!m_graphicsObjectsManager->GetSceneModel()->CanRedo())
+    if (!m_current_scene_id)
+    {
+        return;
+    }
+    auto& graphicsObjectsManager = m_sceneComponents[*m_current_scene_id].graphicsObjectsManager;
+    if (!graphicsObjectsManager->GetSceneModel()->CanRedo())
     {
         assert(false);
         return;
     }
-    m_graphicsObjectsManager->GetSceneModel()->Redo();
+    graphicsObjectsManager->GetSceneModel()->Redo();
 }
 
 bool node::MainNodeScene::CanUndo()
 {
-    return m_graphicsObjectsManager->GetSceneModel()->CanUndo();
+    if (!m_current_scene_id)
+    {
+        return false;
+    }
+    return m_sceneComponents[*m_current_scene_id].graphicsObjectsManager->GetSceneModel()->CanUndo();
 }
 
 bool node::MainNodeScene::CanRedo()
 {
-    return m_graphicsObjectsManager->GetSceneModel()->CanRedo();
+    if (!m_current_scene_id)
+    {
+        return false;
+    }
+    return m_sceneComponents[*m_current_scene_id].graphicsObjectsManager->GetSceneModel()->CanRedo();
 }
 
 node::MainNodeScene::MainNodeScene(SDL_FRect rect, node::Application* parent)
 :Scene(rect, parent)
 {
+}
+
+namespace node
+{
+
+struct TabChangeNotifier : public SingleObserver<TabsChangeEvent>
+{
+    TabChangeNotifier(MainNodeScene& scene) : m_scene{ &scene } {}
+    void OnNotify(TabsChangeEvent& e) override 
+    { 
+        if (std::holds_alternative<TabIndexChangeEvent>(e.e))
+        {
+            auto&& e2 = std::get<TabIndexChangeEvent>(e.e);
+            m_scene->OnCenterTabChanged(e2.new_tab_idx);
+        }
+        if (std::holds_alternative<TabCloseRequestEvent>(e.e))
+        {
+            auto&& e2 = std::get<TabCloseRequestEvent>(e.e);
+            m_scene->CloseTabRequest(e2.tab_idx);
+        }
+    }
+    
+    MainNodeScene* m_scene;
+};
 }
 
 void node::MainNodeScene::OnInit()
@@ -728,10 +844,11 @@ void node::MainNodeScene::OnInit()
     m_blockStylerFactory->AddStyler("SVG Styler", [](const model::BlockModel& model)
         { return std::make_unique<SVGBlockStyler>(model); });
 
-    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetRect(), this);
-    m_centerWidget = static_cast<NodeGraphicsScene*>(gScene.get());
-    m_graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
-    m_centerWidget->Attach(*m_graphicsObjectsManager);
+    {
+        std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont().get(), SDL_FRect{ 0,0,0,0 }, this);
+        m_tabbedView = view.get();
+        SetCenterWidget(std::move(view));
+    }
 
     m_classesManager = std::make_shared<BlockClassesManager>();
     m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
@@ -747,16 +864,20 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<ComparatorBlockClass>());
 
 
-    InitializeSidePanel(gScene.get());
+    InitializeSidePanel();
 
     InitializeTools();
 
-    GetToolBar()->SetFocusProxy(gScene.get());
-    gScene->SetToolsManager(m_toolsManager);
-    gScene->SetObjectsManager(m_graphicsObjectsManager);
-    AddInitialNodes_forScene(m_graphicsObjectsManager.get());
+    CreateNewScene();
+    m_current_scene_id = 0;
+    m_tabbedView->SetCurrentTabIndex(*m_current_scene_id);
 
-    SetCenterWidget(std::move(gScene));
+    m_tab_change_notifier = std::make_unique<TabChangeNotifier>(*this);
+    m_tabbedView->Attach(*m_tab_change_notifier);
+
+    AddInitialNodes_forScene(m_sceneComponents.back().graphicsObjectsManager.get());
+
+    GetToolBar()->SetFocusProxy(m_tabbedView);
     SetFocus(GetCenterWidget());
 }
 
@@ -793,11 +914,18 @@ void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
             SDL_Log("Success!");
             for (auto&& block_result : m_sim_mgr.GetLastSimulationResults())
             {
-                auto&& block_it = m_graphicsObjectsManager->getBlocksRegistry().find(block_result.id);
-                if (block_it != m_graphicsObjectsManager->getBlocksRegistry().end())
+                auto session_id = m_sim_mgr.GetLastSimulationSessionId();
+                auto it = std::find_if(m_sceneComponents.begin(), m_sceneComponents.end(), [&](SceneComponents& components) { return components.session_id == session_id; });
+                if (it == m_sceneComponents.end())
                 {
-                    auto dialog_it = m_objects_dialogs.find(block_it->second);
-                    if (dialog_it != m_objects_dialogs.end() && dialog_it->second.type == DialogType::BlockDialog && dialog_it->second.dialog.isAlive())
+                    return;
+                }
+
+                auto&& block_it = it->graphicsObjectsManager->getBlocksRegistry().find(block_result.id);
+                if (block_it != it->graphicsObjectsManager->getBlocksRegistry().end())
+                {
+                    auto dialog_it = it->objects_dialogs.find(block_it->second);
+                    if (dialog_it != it->objects_dialogs.end() && dialog_it->second.type == DialogType::BlockDialog && dialog_it->second.dialog.isAlive())
                     {
                         static_cast<BlockDialog*>(dialog_it->second.dialog.GetObjectPtr())->UpdateResults(block_result.data);
                     }

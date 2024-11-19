@@ -7,6 +7,7 @@ namespace node
 {
 class BlockObject;
 class BlockResizeObject;
+class Widget;
 
 struct BlockDoubleClickedEvent
 {
@@ -19,15 +20,19 @@ class ArrowTool: public GraphicsTool, public SinglePublisher<BlockDoubleClickedE
 {
 public:
 	using GraphicsTool::GraphicsTool;
-	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
-	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
-	void OnMouseMove(MouseHoverEvent& e) override;
-	bool InternalSelectObject(GraphicsObject* object);
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) override;
+	bool InternalSelectObject(GraphicsObject* object, GraphicsScene& scene);
 	void OnExit() override; // when tool is changed
 private:
-	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block);
+	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block, GraphicsScene& scene, GraphicsObjectsManager& manager);
 
 	HandlePtr<GraphicsObject> m_last_clicked_block = nullptr;
-	HandlePtr<GraphicsObject> m_current_block_resize_object;
+
+	struct ResizerObjectSlot
+	{
+		HandlePtr<Widget> scene;
+		HandlePtr<GraphicsObject> object;
+	};
+	ResizerObjectSlot m_current_block_resize_slot;
 };
 }

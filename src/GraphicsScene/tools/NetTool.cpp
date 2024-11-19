@@ -5,12 +5,12 @@
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
 
-MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
     using namespace node::model;
 
-	GetScene()->ClearCurrentSelection();
-	auto* obj = GetScene()->GetObjectAt(e.point);
+	scene.ClearCurrentSelection();
+	auto* obj = scene.GetObjectAt(e.point);
 	if (!obj)
 	{
 		return MI::ClickEvent::NONE;
@@ -23,10 +23,10 @@ MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e)
         auto* socket = static_cast<BlockSocketObject*>(obj);
         if (!socket->GetConnectedNode())
         {
-            auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, GetScene(), GetObjectsManager());
+            auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, &scene, &manager);
             if (new_logic)
             {
-                GetScene()->SetGraphicsLogic(std::move(new_logic));
+                scene.SetGraphicsLogic(std::move(new_logic));
                 return MI::ClickEvent::CLICKED;
             }
         }
@@ -37,10 +37,10 @@ MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e)
         auto* segment = static_cast<NetSegment*>(obj);
         if (segment->GetOrientation() == NetSegmentOrientation::vertical)
         {
-            auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, GetScene(), GetObjectsManager());
+            auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, &scene, &manager);
             if (new_logic)
             {
-                GetScene()->SetGraphicsLogic(std::move(new_logic));
+                scene.SetGraphicsLogic(std::move(new_logic));
                 return MI::ClickEvent::CLICKED;
             }
         }

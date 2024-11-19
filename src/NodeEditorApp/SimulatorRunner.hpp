@@ -84,8 +84,8 @@ private:
 	SimulationEvent DoSimulation();
 
 	std::function<void()> m_end_callback;
-	std::atomic_flag m_ended;
-	std::atomic_flag m_stopped;
+	std::atomic_bool m_ended;
+	std::atomic_bool m_stopped;
 	std::unique_ptr<model::NodeSceneModel> m_model;
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;
 	std::thread m_thread;

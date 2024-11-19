@@ -326,7 +326,7 @@ node::SimulatorRunner::SimulatorRunner(const model::NodeSceneModel& model, std::
 
 node::SimulatorRunner::~SimulatorRunner()
 {
-	if (!m_ended.test())
+	if (!m_ended.load())
 	{
 		Stop();
 	}
@@ -343,17 +343,17 @@ void node::SimulatorRunner::Run()
 
 void node::SimulatorRunner::Stop()
 {
-	m_stopped.test_and_set();
+	m_stopped.exchange(true);
 }
 
 bool node::SimulatorRunner::IsEnded()
 {
-	return m_ended.test();
+	return m_ended.load();
 }
 
 bool node::SimulatorRunner::IsStopped()
 {
-	return m_stopped.test();
+	return m_stopped.load();
 }
 
 using ErrorsVariant = std::variant<node::SimulationEvent::NetFloatingError, node::SimulationEvent::OutputSocketsConflict, node::SimulationEvent::FloatingInput>;
@@ -431,12 +431,12 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	
 	solver.CalculateInitialConditions(simulation_nets);
 
-	while (step_result != opt::StepResult::ReachedEnd && !m_stopped.test())
+	while (step_result != opt::StepResult::ReachedEnd && !m_stopped.load())
 	{
 		step_result = solver.Step(simulation_nets);
 	}
 	
-	if (m_stopped.test())
+	if (m_stopped.load())
 	{
 		return { SimulationEvent::Stopped{} };
 	}
@@ -460,7 +460,7 @@ void node::SimulatorRunner::RunImpl()
 {
 	m_evt = DoSimulation();
 	
-	m_ended.test_and_set();
+	m_ended.exchange(true);
 	if (m_end_callback)
 	{
 		m_end_callback();

@@ -68,7 +68,7 @@ HandleOwnigPtr<T> HandleAllocator<T>::CreateHandle(T *ptr)
     );
 
     static std::pmr::unsynchronized_pool_resource poolResource{
-        std::pmr::pool_options{0, sizeof(Handle<T>) + 40},
+        std::pmr::pool_options{0, sizeof(Handle<T>) + 64},
         &monotonicResource
     };
 

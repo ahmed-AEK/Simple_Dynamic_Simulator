@@ -24,9 +24,9 @@ void node::Scene::Draw(SDL_Renderer* renderer)
 
 void node::Scene::OnDraw(SDL_Renderer* renderer)
 {
-    if (m_gScene)
+    if (m_centralWidget)
     {
-        m_gScene->Draw(renderer);
+        m_centralWidget->Draw(renderer);
     }
     if (m_toolbar)
     {
@@ -76,9 +76,9 @@ void node::Scene::SetToolBar(std::unique_ptr<ToolBar> toolbar)
     m_toolbar = std::move(toolbar);
 }
 
-void node::Scene::SetCenterWidget(std::unique_ptr<Widget> scene)
+void node::Scene::SetCenterWidget(std::unique_ptr<Widget> widget)
 {
-    m_gScene = std::move(scene);
+    m_centralWidget = std::move(widget);
 }
 
 void node::Scene::StartDragObject(DragDropObject object)
@@ -238,9 +238,9 @@ node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
             return result;
         }
     }
-    if (m_gScene)
+    if (m_centralWidget)
     {
-        if (auto result = m_gScene->GetInteractableAtPoint(p))
+        if (auto result = m_centralWidget->GetInteractableAtPoint(p))
         {
             return result;
         }
@@ -340,10 +340,10 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
         m_toolbar->SetRect({ 0,0, rect.w, ToolBar::height });
     }
 
-    if (m_gScene)
+    if (m_centralWidget)
     {
         SDL_FRect scene_rect{ rect.x, rect.y + (m_toolbar ? ToolBar::height : 0), rect.w, rect.h - (m_toolbar ? ToolBar::height : 0) };
-        m_gScene->SetRect(scene_rect);
+        m_centralWidget->SetRect(scene_rect);
     }
 
     auto dialog_resizer = [&](Dialog& dialog)

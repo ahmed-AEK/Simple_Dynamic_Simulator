@@ -7,10 +7,10 @@
 #include "GraphicsLogic/SegmentDeleteLogic.hpp"
 #include "GraphicsLogic/NetNodeDeleteLogic.hpp"
 
-MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
-	GetScene()->ClearCurrentSelection();
-	auto* obj = GetScene()->GetObjectAt(e.point);
+	scene.ClearCurrentSelection();
+	auto* obj = scene.GetObjectAt(e.point);
 	if (!obj)
 	{
 		return MI::ClickEvent::NONE;
@@ -19,27 +19,22 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e)
 	{
 	case ObjectType::block:
 	{
-		GetScene()->SetGraphicsLogic(std::make_unique<logic::BlockDeleteLogic>(*static_cast<BlockObject*>(obj), GetScene(), GetObjectsManager()));
-		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		scene.SetGraphicsLogic(std::make_unique<logic::BlockDeleteLogic>(*static_cast<BlockObject*>(obj), &scene, &manager));
+		scene.AddSelection(obj->GetMIHandlePtr());
 		break;
 	}
 	case ObjectType::netSegment:
 	{
-		GetScene()->SetGraphicsLogic(std::make_unique<logic::SegmentDeleteLogic>(*static_cast<NetSegment*>(obj), GetScene(), GetObjectsManager()));
-		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		scene.SetGraphicsLogic(std::make_unique<logic::SegmentDeleteLogic>(*static_cast<NetSegment*>(obj), &scene, &manager));
+		scene.AddSelection(obj->GetMIHandlePtr());
 		break;
 	}
 	case ObjectType::netNode:
-		GetScene()->SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), GetScene(), GetObjectsManager()));
-		GetScene()->AddSelection(obj->GetMIHandlePtr());
+		scene.SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), &scene, &manager));
+		scene.AddSelection(obj->GetMIHandlePtr());
 		break;
 	default: break;
 	}
 	return MI::ClickEvent::CLICKED;
 }
 
-MI::ClickEvent node::DeleteTool::OnLMBUp(MouseButtonEvent& e)
-{
-	UNUSED_PARAM(e);
-	return MI::ClickEvent::NONE;
-}

@@ -55,7 +55,8 @@ namespace node
         void SetSidePanel(std::unique_ptr<SidePanel> panel);
         void SetToolBar(std::unique_ptr<ToolBar> toolbar);
         ToolBar* GetToolBar() const { return m_toolbar.get(); }
-        void SetCenterWidget(std::unique_ptr<Widget> scene);
+        void SetCenterWidget(std::unique_ptr<Widget> widget);
+        Widget* GetCenterWidget() { return m_centralWidget.get(); }
 
         void StartDragObject(DragDropObject object);
         void CancelCurrentDrag();
@@ -99,7 +100,7 @@ namespace node
 
         std::unique_ptr<SidePanel> m_sidePanel;
         std::unique_ptr<ToolBar> m_toolbar;
-        std::unique_ptr<Widget> m_gScene;
+        std::unique_ptr<Widget> m_centralWidget;
 
         std::optional<DragDropObject> m_dragObject = std::nullopt;
         bool b_mouseCaptured = false;

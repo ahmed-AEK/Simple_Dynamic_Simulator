@@ -10,10 +10,10 @@ NetObject.cpp NetObject.hpp
 GraphicsScene_exports.h
 
 tools/GraphicsTool.hpp
-tools/ArrowTool.hpp    tools/ArrowTool.cpp
-tools/DeleteTool.hpp   tools/DeleteTool.cpp
-tools/NetTool.hpp      tools/NetTool.cpp
-
+tools/ArrowTool.hpp                     tools/ArrowTool.cpp
+tools/DeleteTool.hpp                    tools/DeleteTool.cpp
+tools/NetTool.hpp                       tools/NetTool.cpp
+tools/GraphicsToolHandler.hpp           tools/GraphicsToolHandler.cpp
 GraphicsLogic/GraphicsLogic.cpp 	    GraphicsLogic/GraphicsLogic.hpp
 GraphicsLogic/NewNetLogic.cpp 	    GraphicsLogic/NewNetLogic.hpp
 GraphicsLogic/NewNetJunction.cpp 	    GraphicsLogic/NewNetJunction.hpp

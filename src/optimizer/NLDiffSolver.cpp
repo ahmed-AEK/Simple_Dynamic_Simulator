@@ -28,7 +28,6 @@ opt::NLDiffSolver::NLDiffSolver()
 		{
 			this->ApplySources(state, time);
 			m_NLSolver.Solve(state, time);
-			m_NLSolver.UpdateState(state, time);
 		};
 	m_diffSolver.SetPostprocessor(std::move(postprocessor));
 }
@@ -165,9 +164,15 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 	{
 		TriggerSources(GetCurrentTime());
 	}
-	NotifyObservers(state, GetCurrentTime());
-	m_last_oberver_time = GetCurrentTime();
-	
+
+	m_NLSolver.UpdateState(state, GetCurrentTime());
+
+	if (GetCurrentTime() - m_last_oberver_time >= 1e-9)
+	{
+		NotifyObservers(state, GetCurrentTime());
+		m_last_oberver_time = GetCurrentTime();
+	}
+
 	if (result == opt::StepResult::ReachedEnd)
 	{
 		for (auto& observer : m_observers)

@@ -7,18 +7,10 @@
 #include "GraphicsScene/ToolsManager.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 
-node::NodeGraphicsScene::NodeGraphicsScene(SDL_FRect rect, node::Scene* parent)
+node::NodeGraphicsScene::NodeGraphicsScene(SDL_FRect rect, node::Widget* parent)
     : node::GraphicsScene{ rect, parent }
 {
     SetFocusable(true);
-}
-
-void node::NodeGraphicsScene::Draw(SDL_Renderer* renderer)
-{
-    DrawDots(renderer);
-    node::GraphicsScene::Draw(renderer);
-    // DrawCoords(renderer);
-    // DrawCurrentInsertMode(renderer);
 }
 
 void node::NodeGraphicsScene::SetToolsManager(std::weak_ptr<node::ToolsManager> manager)
@@ -170,6 +162,14 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
 void node::NodeGraphicsScene::OnKeyboardFocusIn()
 {
     GetApp()->StopTextInput();
+}
+
+void node::NodeGraphicsScene::OnDraw(SDL_Renderer* renderer)
+{
+    DrawDots(renderer);
+    GraphicsScene::OnDraw(renderer);
+    // DrawCoords(renderer);
+    // DrawCurrentInsertMode(renderer);
 }
 
 void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const

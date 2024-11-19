@@ -52,6 +52,12 @@ namespace node
             // User requests quit
             switch(e.type)
             {
+                case SDL_EVENT_RENDER_DEVICE_RESET:
+                case SDL_EVENT_RENDER_TARGETS_RESET:
+                {
+                    textures::ResetAllTextures();
+                    break;
+                }
                 case SDL_EVENT_QUIT:
                 {
                     b_running = false;
