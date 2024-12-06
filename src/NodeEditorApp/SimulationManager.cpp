@@ -1,6 +1,7 @@
 #include "SimulationManager.hpp"
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "toolgui/Application.hpp"
+
 #include <cassert>
 
 // helper type for the visitor #4
@@ -20,7 +21,7 @@ node::SimulationManager::~SimulationManager()
     StopSimulator();
 }
 
-void node::SimulationManager::RunSimulator(size_t scene_session_id, model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
+void node::SimulationManager::RunSimulator(SceneManagerId scene_session_id, model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
 {
     if (!m_current_running_simulator)
     {

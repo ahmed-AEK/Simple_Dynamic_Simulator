@@ -11,9 +11,9 @@
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 
 node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory)
-    :m_scene{&scene}, m_blockStylerFactory{std::move(styler_factory)}
+    :m_scene{scene.GetMIHandlePtr()}, m_blockStylerFactory{std::move(styler_factory)}
 {
-    assert(GetScene());
+    assert(GetGraphicsScene());
     assert(m_blockStylerFactory);
 }
 
@@ -22,8 +22,8 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     m_blocks.clear();
     m_net_nodes.clear();
     m_net_segments.clear();
-    GetScene()->ClearAllObjects();
-    GetScene()->SetGraphicsLogic(nullptr);
+    GetGraphicsScene()->ClearAllObjects();
+    GetGraphicsScene()->SetGraphicsLogic(nullptr);
     if (m_sceneModel)
     {
         m_sceneModel->Detach(*this);
@@ -34,17 +34,17 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     {
         auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block);
         styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), block, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), block, std::move(styler));
         auto ptr = obj.get();
-        GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
+        GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(block.GetId(), ptr);
     }
     for (const auto& net_node : m_sceneModel->GetModel().GetNetNodes())
     {
-        auto node = std::make_unique<node::NetNode>(net_node.GetPosition(), GetScene());
+        auto node = std::make_unique<node::NetNode>(net_node.GetPosition(), GetGraphicsScene());
         node->SetId(net_node.GetId());
         m_net_nodes.emplace(net_node.GetId(), node.get());
-        GetScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
+        GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
     for (const auto& net_segment : m_sceneModel->GetModel().GetNetSegments())
     {
@@ -57,11 +57,11 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
             SDL_Log("broken scene!");
             return;
         }
-        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, GetScene());
+        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, GetGraphicsScene());
 
         segment_obj->SetId(net_segment.GetId());
         m_net_segments.emplace(net_segment.GetId(), segment_obj.get());
-        GetScene()->AddObject(std::move(segment_obj), GraphicsScene::SegmentLayer);
+        GetGraphicsScene()->AddObject(std::move(segment_obj), GraphicsScene::SegmentLayer);
     }
     for (const auto& socket_connection : m_sceneModel->GetModel().GetSocketConnections())
     {
@@ -93,12 +93,12 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
         auto& model_ref = std::get<model::BlockModelConstRef>(e.data);
         auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
-        GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
+        GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
-        GetScene()->ClearCurrentSelection();
-        GetScene()->AddSelection(ptr->GetFocusHandlePtr());
+        GetGraphicsScene()->ClearCurrentSelection();
+        GetGraphicsScene()->AddSelection(ptr->GetFocusHandlePtr());
         break;
     }
     case SceneModification::type_t::BlockAddedWithConnections:
@@ -106,9 +106,9 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         auto& report = std::get<BlockAddWithConnectionsReport>(e.data);
         auto& model_ref = report.block;
         auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetScene(), model_ref, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
-        GetScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
+        GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
         for (auto& conn : report.connections)
         {
@@ -126,8 +126,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             }
             node_it->second->SetConnectedSocket(&(socket_optional->get()));
         }
-        GetScene()->ClearCurrentSelection();
-        GetScene()->AddSelection(ptr->GetFocusHandlePtr());
+        GetGraphicsScene()->ClearCurrentSelection();
+        GetGraphicsScene()->AddSelection(ptr->GetFocusHandlePtr());
         break;
     }
     case SceneModificationType::BlockRemoved:
@@ -145,7 +145,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                     connected_node->SetConnectedSocket(nullptr);
                 }
             }
-            GetScene()->PopObject(it->second);
+            GetGraphicsScene()->PopObject(it->second);
             m_blocks.erase(it);
         }
         break;
@@ -217,7 +217,7 @@ void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
-    block.SetPosition(GetScene()->QuantizePoint(GetScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
+    block.SetPosition(GetGraphicsScene()->QuantizePoint(GetGraphicsScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
     m_sceneModel->AddNewBlock(std::move(block));
 }
 
@@ -254,7 +254,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
             auto& segment = *it->second;
             segment.Disconnect();
             m_net_segments.erase(it);
-            GetScene()->PopObject(&segment);
+            GetGraphicsScene()->PopObject(&segment);
         }
     }
 
@@ -268,17 +268,17 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
             auto& node = *it->second;
             node.SetConnectedSocket(nullptr);
             m_net_nodes.erase(it);
-            GetScene()->PopObject(&node);
+            GetGraphicsScene()->PopObject(&node);
         }
     }
 
     // handle added nodes
     for (const auto& added_node : report.added_nodes)
     {
-        auto node = std::make_unique<NetNode>(added_node.get().GetPosition(), GetScene());
+        auto node = std::make_unique<NetNode>(added_node.get().GetPosition(), GetGraphicsScene());
         m_net_nodes.emplace(added_node.get().GetId(), node.get());
         node->SetId(added_node.get().GetId());
-        GetScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
+        GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
 
     // handle update nodes
@@ -332,11 +332,11 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         {
             continue;
         }
-        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second, GetScene());
+        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second, GetGraphicsScene());
         auto id = added_segment.get().GetId();
         segment->SetId(id);
         m_net_segments.emplace(id, segment.get());
-        GetScene()->AddObject(std::move(segment), GraphicsScene::SegmentLayer);
+        GetGraphicsScene()->AddObject(std::move(segment), GraphicsScene::SegmentLayer);
     }
 
     // handle added connections

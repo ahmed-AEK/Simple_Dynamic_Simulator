@@ -5,11 +5,12 @@ node::TabbedView::TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* pare
 {
 }
 
-void node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
+size_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
 {
 	m_tabs.emplace_back(std::move(tab_name), std::move(widget));
 	m_tabs.back().widget->SetParent(this);
 	m_bar.AddTab(m_tabs.back().name);
+	return m_tabs.size() - 1;
 }
 
 void node::TabbedView::OnSetRect(const SDL_FRect& rect)
@@ -60,6 +61,15 @@ void node::TabbedView::Draw(SDL_Renderer* renderer)
 	}
 }
 
+void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
+{
+	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const TabData& tab) {return tab.widget.get() == ptr; });
+	if (it != m_tabs.end())
+	{
+		SetCurrentTabIndex(std::distance(m_tabs.begin(), it));
+	}
+}
+
 
 node::TabBar::TabBar(TTF_Font* font, const SDL_FRect& rect, TabbedView* parent)
 	:Widget{rect, parent}, m_font{font}, m_parent{parent}
@@ -72,9 +82,8 @@ void node::TabBar::Draw(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &rect);
 	rect.x += 2;
-	rect.y += 2;
 	rect.w -= 4;
-	rect.h -= 4;
+	rect.h -= 2;
 	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
 	SDL_RenderFillRect(renderer, &rect);
 
@@ -158,8 +167,8 @@ node::Widget* node::TabBar::OnGetInteractableAtPoint(const SDL_FPoint& point)
 void node::TabBar::ReCalcLayout()
 {
 	float x_val = GetRect().x + 2;
-	float y_val = GetRect().y + 2;
-	float height = GetRect().h - 4;
+	float y_val = GetRect().y;
+	float height = GetRect().h - 2;
 	for (auto&& btn : m_buttons)
 	{
 		btn->SetRect(SDL_FRect(x_val, y_val, static_cast<float>(GetTabWidth()), height));
@@ -175,11 +184,6 @@ void node::TabbedView::SetCurrentTabIndex(size_t index)
 		return;
 	}
 	auto old_idx = m_current_tab_index;
-	Widget* old_tab = nullptr;
-	if (old_idx < m_tabs.size())
-	{
-		old_tab = m_tabs[old_idx].widget.get();
-	}
 
 	m_current_tab_index = index;
 	m_bar.SetActiveTabIndex(index);
@@ -189,7 +193,7 @@ void node::TabbedView::SetCurrentTabIndex(size_t index)
 	auto&& rect = GetRect();
 	SDL_FRect new_rect{ rect.x, rect.y + GetTabsBarHeight(), rect.w, rect.h - GetTabsBarHeight()};
 	m_tabs[m_current_tab_index].widget->SetRect(new_rect);
-	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, old_tab, m_tabs[m_current_tab_index].widget.get()} });
+	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, m_tabs[m_current_tab_index].widget.get()} });
 }
 
 void node::TabbedView::RequestDeleteTab(size_t index)
@@ -212,8 +216,36 @@ void node::TabbedView::DeleteTab(size_t index)
 	}
 	m_tabs.erase(m_tabs.begin() + index);
 	m_bar.DeleteTab(index);
+	if (m_tabs.size() && m_current_tab_index >= m_tabs.size())
+	{
+		SetCurrentTabIndex(m_tabs.size() - 1);
+	}
+	else if (m_current_tab_index > index)
+	{
+		SetCurrentTabIndex(m_current_tab_index - 1);
+	}
+	else if (m_current_tab_index == index)
+	{
+		// the current widget changed
+		SetCurrentTabIndex(m_current_tab_index);
+	}
 }
 
+node::Widget* node::TabbedView::GetTabWidget(size_t index)
+{
+	assert(m_tabs.size() > index);
+	return m_tabs[index].widget.get();
+}
+
+std::optional<size_t> node::TabbedView::GetWidgetIndex(Widget* widget)
+{
+	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const auto& tab) { return tab.widget.get() == widget; });
+	if (it != m_tabs.end())
+	{
+		return std::distance(m_tabs.begin(), it);
+	}
+	return std::nullopt;
+}
 node::TabButton::TabButton(TTF_Font* font, const SDL_FRect& rect, TabBar* parent)
 	:Widget{rect, parent}, m_tab_text{font}, m_X_painter{font}, m_parent{parent}
 {

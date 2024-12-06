@@ -2,6 +2,7 @@
 
 #include "toolgui/Scene.hpp"
 #include "NodeEditorApp/SimulationManager.hpp"
+#include "NodeEditorApp/IdTypes.hpp"
 
 namespace node
 {
@@ -15,11 +16,7 @@ class BlockObject;
 class BlockStylerFactory;
 class ToolsManager;
 class TabbedView;
-
-namespace loader
-{
-    class SceneLoader;
-}
+class SceneManager;
 
 class NodeSceneEventReceiver
 {
@@ -29,24 +26,6 @@ public:
     MainNodeScene* GetScene() { return m_scene; }
 private:
     MainNodeScene* m_scene;
-};
-
-enum class DialogType
-{
-    BlockDialog,
-    PropertiesDialog,
-};
-
-struct DialogSlot
-{
-    HandlePtr<Widget> dialog;
-    DialogType type;
-};
-
-struct DBConnector
-{
-    std::string db_path;
-    std::unique_ptr<node::loader::SceneLoader> connector;
 };
 
 struct TabChangeNotifier;
@@ -86,26 +65,23 @@ private:
     void NewScenePressed();
     void LoadSceneButtonPressed();
     void SaveSceneButtonPressed();
-    void CreateNewScene();
+    SceneManagerId CreateNewScene();
 
     void OnUndo();
     void OnRedo();
     bool CanUndo();
     bool CanRedo();
 
+    std::optional<node::SceneId> GetSceneIdForTab(size_t index);
+
     struct SceneComponents
     {
-        size_t session_id;
-        GraphicsScene* scene;
-        std::shared_ptr<GraphicsObjectsManager> graphicsObjectsManager;
-        std::unordered_map<BlockObject*, DialogSlot> objects_dialogs;
-        std::optional<DBConnector> db_connector;
+        std::unique_ptr<SceneManager> manager;
     };
 
-    
-    std::vector<SceneComponents> m_sceneComponents;
-    std::optional<int> m_current_scene_id;
-    size_t m_current_scene_session_id = 0;
+    std::unordered_map<SceneManagerId, SceneComponents> m_sceneComponents;
+    std::optional<SceneId> m_current_scene_id;
+    int32_t m_next_manager_id = 0;
 
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;

@@ -17,7 +17,7 @@ class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, pu
 public:
 	GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory);
 	
-	GraphicsScene* GetScene() { return m_scene; }
+	GraphicsScene* GetGraphicsScene() { return static_cast<GraphicsScene*>(m_scene.GetObjectPtr()); }
 
 	void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
 	std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
@@ -28,7 +28,7 @@ protected:
 	void OnNotify(BlockObjectDropped& object) override;
 private:
 	void HandleNetUpdate(NetModificationReport& report);
-	GraphicsScene* m_scene;
+	HandlePtr<Widget> m_scene;
 	std::shared_ptr<SceneModelManager> m_sceneModel;
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;
 	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;

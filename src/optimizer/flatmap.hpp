@@ -20,7 +20,7 @@ public:
 	}
 	[[nodiscard]] constexpr double get(const int32_t& key) const
 	{
-		assert(key < m_data.size());
+		assert(static_cast<size_t>(key) < m_data.size());
 		return m_data[key];
 	}
 	[[nodiscard]] constexpr std::span<double> data()
@@ -30,7 +30,7 @@ public:
 	[[nodiscard]] constexpr int32_t size() const { return static_cast<int32_t>(m_data.size()); }
 	void copy_to(FlatMap& other)
 	{
-		assert(m_data.size() == other.size());
+		assert(size() == other.size());
 		for (size_t i = 0; i < m_data.size(); i++)
 		{
 			other.m_data[i] = m_data[i];

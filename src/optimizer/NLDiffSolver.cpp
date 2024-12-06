@@ -244,7 +244,7 @@ void opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t
 		int32_t idx = 0;
 		for (auto&& crossing : zero_crossings)
 		{
-			assert(eq.get_input_ids().size() > crossing.in_port_id);
+			assert(eq.get_input_ids().size() > static_cast<size_t>(crossing.in_port_id));
 			auto& port_id = eq.get_input_ids()[crossing.in_port_id];
 			auto&& signal_value = state.get(port_id);
 			auto old_state = crossing.current_value;
@@ -294,7 +294,7 @@ bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
 		}
 		for (auto&& crossing : zero_crossings)
 		{
-			assert(eq.get_input_ids().size() > crossing.in_port_id);
+			assert(eq.get_input_ids().size() > static_cast<size_t>(crossing.in_port_id));
 			auto& port_id = eq.get_input_ids()[crossing.in_port_id];
 			auto&& signal_value = state.get(port_id);
 			auto old_state = crossing.current_value;

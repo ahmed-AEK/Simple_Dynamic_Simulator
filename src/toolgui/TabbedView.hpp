@@ -63,7 +63,6 @@ struct TabIndexChangeEvent
 {
 	size_t old_tab_idx;
 	size_t new_tab_idx;
-	Widget* old_tab;
 	Widget* new_tab;
 };
 
@@ -87,11 +86,14 @@ class TabbedView : public Widget, public MultiPublisher<TabsChangeEvent>
 {
 public:
 	TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* parent);
-	void AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
+	size_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
 	void Draw(SDL_Renderer* renderer) override;
+	void SetCurrentTabIndex(Widget* ptr);
 	void SetCurrentTabIndex(size_t index);
 	void RequestDeleteTab(size_t index);
 	void DeleteTab(size_t index);
+	Widget* GetTabWidget(size_t index);
+	std::optional<size_t> GetWidgetIndex(Widget* widget);
 protected:
 	void OnSetRect(const SDL_FRect& rect) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;

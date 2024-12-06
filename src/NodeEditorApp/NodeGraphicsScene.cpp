@@ -25,7 +25,7 @@ void node::NodeGraphicsScene::SetObjectsManager(std::weak_ptr<GraphicsObjectsMan
 
 void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     const int start_x = static_cast<int>(GetSpaceRect().x / m_dotspace) * m_dotspace;
     const int start_y = static_cast<int>(GetSpaceRect().y / m_dotspace) * m_dotspace;
     auto&& transformer = GetSpaceScreenTransformer();
