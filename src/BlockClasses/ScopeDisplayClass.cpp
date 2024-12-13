@@ -21,7 +21,7 @@ node::ScopeDisplayClass::ScopeDisplayClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::ScopeDisplayClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::ScopeDisplayClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

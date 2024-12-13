@@ -6,23 +6,28 @@
 
 using namespace node::loader;
 using namespace node::model;
+using namespace node;
 
 TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
 	Rect block_rect{ 1,1,10,10 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	BlockModel original_block{ block_id, block_rect };
 	BlockOrientation orienation = BlockOrientation::LeftToRight;
 	scene.AddBlock(BlockModel{ original_block });
 
 	SQLSceneLoader loader(":memory:");
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
@@ -43,6 +48,10 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
 	}
 
 	BlockId block_id{ 2 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 20,30,40,50 };
 	BlockOrientation orienation = BlockOrientation::TopToBottom;
 	BlockModel original_block{ block_id, block_rect, orienation };
@@ -50,11 +59,11 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
 
 	SQLSceneLoader loader(":memory:");
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 2);
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
@@ -67,6 +76,10 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	std::string_view property_name = "Multiplier";
@@ -78,11 +91,11 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 
 	scene.AddBlock(BlockModel{ original_block });
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
@@ -100,6 +113,10 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	std::string_view property_name = "Value";
@@ -113,11 +130,11 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 
 	scene.AddBlock(BlockModel{ original_block });
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
@@ -142,6 +159,10 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	std::string property_name = "Multiplier";
@@ -155,11 +176,11 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties)
 
 	scene.AddBlock(BlockModel{ original_block });
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
@@ -176,6 +197,10 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties2)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	std::string property_name = "Multiplier";
@@ -192,11 +217,11 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties2)
 
 	scene.AddBlock(BlockModel{ original_block });
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
@@ -215,6 +240,11 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	auto socket_type = BlockSocketModel::SocketType::input;
@@ -227,11 +257,11 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 
 	SQLSceneLoader loader(":memory:");
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
 	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
@@ -252,6 +282,10 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 {
 	NodeSceneModel scene;
 	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, block_rect };
 	auto socket_type = BlockSocketModel::SocketType::output;
@@ -268,11 +302,11 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 
 	SQLSceneLoader loader(":memory:");
 
-	auto result = loader.Save(scene);
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
 
 	ASSERT_TRUE(result);
 
-	auto loaded_scene = loader.Load();
+	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
 	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);

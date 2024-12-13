@@ -16,7 +16,7 @@ node::RampSourceClass::RampSourceClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::RampSourceClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::RampSourceClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

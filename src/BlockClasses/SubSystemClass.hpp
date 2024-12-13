@@ -5,11 +5,11 @@
 namespace node
 {
 
-class GainBlockClass : public BlockClass
+class SubSystemClass : public BlockClass
 {
 public:
-	GainBlockClass();
-	
+	SubSystemClass();
+
 	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) override;

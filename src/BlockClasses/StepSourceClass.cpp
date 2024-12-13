@@ -22,7 +22,7 @@ node::StepSourceClass::StepSourceClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::StepSourceClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::StepSourceClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

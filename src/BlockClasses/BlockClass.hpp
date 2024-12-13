@@ -39,12 +39,13 @@ public:
 	const std::string& GetName() const { return m_name; }
 	virtual const std::string_view& GetDescription() const = 0;
 	
-	virtual const std::vector<model::BlockProperty>& GetClassProperties() = 0;
+	virtual const std::vector<model::BlockProperty>& GetDefaultClassProperties() = 0;
 	virtual bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties) = 0;
 
 	virtual std::vector<model::BlockSocketModel::SocketType> 
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) = 0;
 	virtual BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) = 0;
+
 	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>>;
 	virtual GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) = 0;
 

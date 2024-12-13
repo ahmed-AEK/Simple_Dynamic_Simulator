@@ -12,6 +12,17 @@ class NetSegment;
 class NetNode;
 class BlockStylerFactory;
 
+class SubScenesManager
+{
+public:
+	SubScenesManager() = default;
+	virtual void AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id) = 0;
+
+	SubScenesManager(const SubScenesManager&) = delete;
+	SubScenesManager& operator=(const SubScenesManager&) = delete;
+	virtual ~SubScenesManager() = default;
+};
+
 class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, public node::SingleObserver<BlockObjectDropped>
 {
 public:
@@ -20,15 +31,21 @@ public:
 	GraphicsScene* GetGraphicsScene() { return static_cast<GraphicsScene*>(m_scene.GetObjectPtr()); }
 
 	void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
+	void SetSubSceneManager(SubScenesManager* manager) { m_parent_manager = manager; }
+
 	std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
 	
 	const std::unordered_map<model::BlockId, BlockObject*>& getBlocksRegistry() const { return m_blocks; }
+
 protected:
 	void OnNotify(SceneModification& e) override;
 	void OnNotify(BlockObjectDropped& object) override;
 private:
 	void HandleNetUpdate(NetModificationReport& report);
+
+
 	HandlePtr<Widget> m_scene;
+	SubScenesManager* m_parent_manager = nullptr;
 	std::shared_ptr<SceneModelManager> m_sceneModel;
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;
 	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;

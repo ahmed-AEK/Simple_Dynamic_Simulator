@@ -2,17 +2,10 @@
 
 #include <cstdint>
 #include <vector>
+#include "NodeModels/IdTypes.hpp"
 
 namespace node
 {
-
-struct SubSceneId
-{
-    SubSceneId() = default;
-    explicit SubSceneId(int32_t value) : value{ value } {}
-    bool operator==(const SubSceneId&) const = default;
-    int32_t value{};
-};
 
 struct SceneManagerId
 {
@@ -31,15 +24,6 @@ struct SceneId
     SubSceneId subscene;
 };
 }
-
-template <>
-struct std::hash<node::SubSceneId>
-{
-    std::size_t operator()(const node::SubSceneId& k) const
-    {
-        return k.value;
-    }
-};
 
 template <>
 struct std::hash<node::SceneManagerId>

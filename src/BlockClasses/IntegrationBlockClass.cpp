@@ -16,7 +16,7 @@ node::IntegrationBlockClass::IntegrationBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::IntegrationBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::IntegrationBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

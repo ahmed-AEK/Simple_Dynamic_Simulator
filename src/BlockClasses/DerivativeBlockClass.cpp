@@ -16,7 +16,7 @@ node::DerivativeBlockClass::DerivativeBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::DerivativeBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::DerivativeBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

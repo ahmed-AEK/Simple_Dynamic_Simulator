@@ -10,7 +10,7 @@ class RampSourceClass : public BlockClass
 public:
 	RampSourceClass();
 
-	const std::vector<model::BlockProperty>& GetClassProperties() override;
+	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) override;
 	const std::string_view& GetDescription() const override;

@@ -16,7 +16,7 @@ node::MultiplyBlockClass::MultiplyBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::MultiplyBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::MultiplyBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

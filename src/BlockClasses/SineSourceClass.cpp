@@ -20,7 +20,7 @@ node::SineSourceClass::SineSourceClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::SineSourceClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::SineSourceClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

@@ -242,6 +242,7 @@ struct AddBlockAction : public ModelAction
 			return false;
 		}
 		manager.GetModel().RemoveBlockById(*stored_id);
+		manager.UnRegisterSubSystem(*stored_id);
 		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{*stored_id} });
 
 		return true;
@@ -264,6 +265,10 @@ struct AddBlockAction : public ModelAction
 
 		auto block_ref = manager.GetModel().GetBlockById(block_id);
 		assert(block_ref);
+		if (block_ref->get().GetClass() == "SubSystem")
+		{
+			manager.RegisterSubSystem(block_ref->get());
+		}
 		manager.Notify(SceneModification{ SceneModificationType::BlockAdded, SceneModification::data_t{*block_ref} });
 		
 		return true;
@@ -295,6 +300,10 @@ struct RemoveBlockAction : public ModelAction
 		{
 			manager.GetModel().AddSocketNodeConnection(connection);
 		}
+		if (block_ref->get().GetClass() == "SubSystem")
+		{
+			manager.RegisterSubSystem(block_ref->get());
+		}
 		manager.Notify(SceneModification{ SceneModificationType::BlockAddedWithConnections, SceneModification::data_t{BlockAddWithConnectionsReport{*block_ref,stored_connections} } });
 
 		return true;
@@ -321,6 +330,7 @@ struct RemoveBlockAction : public ModelAction
 		}
 		stored_block = block;
 		manager.GetModel().RemoveBlockById(id);
+		manager.UnRegisterSubSystem(id);
 		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
 		return true;
 	}
@@ -1081,6 +1091,13 @@ node::SceneModelManager::SceneModelManager(std::shared_ptr<model::NodeSceneModel
 	:m_scene(std::move(scene))
 {
 	assert(m_scene);
+	for (const auto& block : m_scene->GetBlocks())
+	{
+		if (block.GetClass() == "SubSystem")
+		{
+			RegisterSubSystem(block);
+		}
+	}
 }
 
 node::SceneModelManager::~SceneModelManager()
@@ -1177,3 +1194,25 @@ void node::SceneModelManager::PushAction(std::unique_ptr<ModelAction> action)
 	}
 }
 
+
+void node::SceneModelManager::RegisterSubSystem(const model::BlockModel& model)
+{
+	auto& properties = model.GetProperties();
+	auto it = std::find_if(properties.begin(), properties.end(), [&](const model::BlockProperty& p) { return p.name == "SubSceneId"; });
+	if (it == properties.end())
+	{
+		assert(false);
+		return;
+	}
+	auto value = static_cast<int32_t>(std::get<uint64_t>(it->prop));
+	m_subsystem_ids[model.GetId()] = SubSceneId{ value };
+}
+
+void node::SceneModelManager::UnRegisterSubSystem(const model::BlockId& id)
+{
+	auto it = m_subsystem_ids.find(id);
+	if (it != m_subsystem_ids.end())
+	{
+		m_subsystem_ids.erase(it);
+	}
+}

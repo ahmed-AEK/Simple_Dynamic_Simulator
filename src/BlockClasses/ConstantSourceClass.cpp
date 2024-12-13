@@ -16,7 +16,7 @@ node::ConstantSourceClass::ConstantSourceClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::ConstantSourceClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::ConstantSourceClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

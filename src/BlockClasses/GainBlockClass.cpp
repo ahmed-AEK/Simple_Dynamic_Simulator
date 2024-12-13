@@ -17,7 +17,7 @@ node::GainBlockClass::GainBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::GainBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::GainBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

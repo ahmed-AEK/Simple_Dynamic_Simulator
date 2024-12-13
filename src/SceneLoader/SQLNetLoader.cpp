@@ -3,7 +3,7 @@
 
 bool node::loader::SQLNetLoader::AddNetNode(const node::model::NetNodeModel& node)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO NetNodes VALUES (?,?,?,?,?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO NetNodes_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?)" };
 	query.bind(1, node.GetId().value);
 	auto&& position = node.GetPosition();
 	query.bind(2, position.x);
@@ -31,7 +31,7 @@ bool node::loader::SQLNetLoader::AddNetNode(const node::model::NetNodeModel& nod
 std::vector<node::model::NetNodeModel> node::loader::SQLNetLoader::GetNetNodes()
 {
 	std::vector<node::model::NetNodeModel> net_nodes;
-	SQLite::Statement query{ m_db, "SELECT * FROM NetNodes" };
+	SQLite::Statement query{ m_db, "SELECT * FROM NetNodes_" + std::to_string(m_scene_id.value) };
 	while (query.executeStep())
 	{
 		if (auto node_model = GetNode_internal(query))
@@ -79,7 +79,7 @@ node::model::id_int node::loader::SQLNetLoader::GetNextNetNodeId()
 
 bool node::loader::SQLNetLoader::AddNetSegment(const node::model::NetSegmentModel& segment)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO NetSegments VALUES (?,?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO NetSegments_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?)" };
 	query.bind(1, segment.GetId().value);
 	query.bind(2, segment.m_firstNodeId.value);
 	query.bind(3, segment.m_secondNodeId.value);
@@ -91,7 +91,7 @@ bool node::loader::SQLNetLoader::AddNetSegment(const node::model::NetSegmentMode
 std::vector<node::model::NetSegmentModel> node::loader::SQLNetLoader::GetNetSegments()
 {
 	std::vector<node::model::NetSegmentModel> segments;
-	SQLite::Statement query{ m_db, "SELECT * FROM NetSegments" };
+	SQLite::Statement query{ m_db, "SELECT * FROM NetSegments_" + std::to_string(m_scene_id.value) };
 	while (query.executeStep())
 	{
 		if (auto segment_model = GetSegment_internal(query))
@@ -127,7 +127,7 @@ node::model::id_int node::loader::SQLNetLoader::GetNextSegmentId()
 
 bool node::loader::SQLNetLoader::AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO SocketNodeConnections VALUES (?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO SocketNodeConnections_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?)" };
 	query.bind(1, model_connection.socketId.socket_id.value);
 	query.bind(2, model_connection.socketId.block_id.value);
 	query.bind(3, model_connection.NodeId.value);
@@ -138,7 +138,7 @@ bool node::loader::SQLNetLoader::AddSocketNodeConnection(const node::model::Sock
 std::vector<node::model::SocketNodeConnection> node::loader::SQLNetLoader::GetSocketNodeConnections()
 {
 	std::vector<model::SocketNodeConnection> connections;
-	SQLite::Statement query{ m_db, "SELECT * FROM SocketNodeConnections" };
+	SQLite::Statement query{ m_db, "SELECT * FROM SocketNodeConnections_" + std::to_string(m_scene_id.value) };
 	while (query.executeStep())
 	{
 		if (auto connection_model = GetConnection_internal(query))

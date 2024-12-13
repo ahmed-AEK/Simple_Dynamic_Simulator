@@ -6,7 +6,7 @@
 bool node::loader::SQLBlockLoader::AddBlock(const node::model::BlockModel& block)
 {
 	{
-		SQLite::Statement query{ m_db, "INSERT INTO blocks VALUES (?,?,?,?,?,?,?,?)" };
+		SQLite::Statement query{ m_db, "INSERT INTO blocks_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?,?)"};
 		query.bind(1, block.GetId().value);
 		query.bind(2, block.GetBounds().x);
 		query.bind(3, block.GetBounds().y);
@@ -50,11 +50,11 @@ bool node::loader::SQLBlockLoader::AddBlock(const node::model::BlockModel& block
 bool node::loader::SQLBlockLoader::DeleteBlockAndSockets(const node::model::BlockId& node_id)
 {
 	{
-		SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE parentid = ?" };
+		SQLite::Statement query{ m_db, "DELETE FROM sockets_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
 		query.bind(1, node_id.value);
 		query.exec();
 	}
-	SQLite::Statement query{ m_db, "DELETE FROM blocks WHERE id = ?" };
+	SQLite::Statement query{ m_db, "DELETE FROM blocks_" + std::to_string(m_scene_id.value) + " WHERE id = ?" };
 	query.bind(1, node_id.value);
 	query.exec();
 	return true;
@@ -64,7 +64,7 @@ std::optional<node::model::BlockModel>
 node::loader::SQLBlockLoader::GetBlock(const node::model::BlockId& block_id)
 {
 	using namespace node::model;
-	SQLite::Statement query{ m_db, "SELECT * FROM blocks WHERE id = ?" };
+	SQLite::Statement query{ m_db, "SELECT * FROM blocks_" + std::to_string(m_scene_id.value) + " WHERE id = ?" };
 	query.bind(1, block_id.value);
 	if (query.executeStep())
 	{
@@ -80,7 +80,7 @@ node::loader::SQLBlockLoader::GetBlock(const node::model::BlockId& block_id)
 bool node::loader::SQLBlockLoader::UpdateBlockPosition(const node::model::BlockId& node_id,
 	const node::model::Point& position)
 {
-	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ? WHERE id = ?" };
+	SQLite::Statement query{ m_db, "UPDATE blocks_" + std::to_string(m_scene_id.value) + " SET x = ?, y = ? WHERE id = ?" };
 	query.bind(1, position.x);
 	query.bind(2, position.y);
 	query.bind(3, node_id.value);
@@ -91,7 +91,7 @@ bool node::loader::SQLBlockLoader::UpdateBlockPosition(const node::model::BlockI
 bool node::loader::SQLBlockLoader::UpdateBlockBounds(const node::model::BlockId& node_id,
 	const node::model::Rect& bounds)
 {
-	SQLite::Statement query{ m_db, "UPDATE blocks SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
+	SQLite::Statement query{ m_db, "UPDATE blocks_" + std::to_string(m_scene_id.value) + " SET x = ?, y = ?, w = ?, h = ? WHERE id = ?" };
 	query.bind(1, bounds.x);
 	query.bind(2, bounds.y);
 	query.bind(3, bounds.w);
@@ -103,7 +103,7 @@ bool node::loader::SQLBlockLoader::UpdateBlockBounds(const node::model::BlockId&
 
 bool node::loader::SQLBlockLoader::AddStylerProperty(const node::model::BlockId& block_id, const std::string& name, const std::string& value, int32_t property_id)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO blockStylerProperties VALUES (?,?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO blockStylerProperties_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?)" };
 	query.bind(1, property_id);
 	query.bind(2, block_id.value);
 	query.bind(3, name.data());
@@ -114,7 +114,7 @@ bool node::loader::SQLBlockLoader::AddStylerProperty(const node::model::BlockId&
 
 bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block_id, const model::BlockProperty& property, int32_t property_id)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO blockProperties VALUES (?,?,?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO blockProperties_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?)" };
 	query.bind(1, property_id);
 	query.bind(2, block_id.value);
 	query.bind(3, property.name.c_str());
@@ -128,7 +128,7 @@ bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block
 bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel& socket,
 	const node::model::BlockId& block_id)
 {
-	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets VALUES (?,?,?,?,?,?)" };
+	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?)" };
 	querySocket.bind(1, socket.GetId().value);
 	querySocket.bind(2, block_id.value);
 	querySocket.bind(3, socket.GetPosition().x);
@@ -148,7 +148,7 @@ bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel
 
 bool node::loader::SQLBlockLoader::DeleteSocket(const node::model::SocketUniqueId& socket_id)
 {
-	SQLite::Statement query{ m_db, "DELETE FROM sockets WHERE id = ? AND parentid = ?" };
+	SQLite::Statement query{ m_db, "DELETE FROM sockets_" + std::to_string(m_scene_id.value) + " WHERE id = ? AND parentid = ?" };
 	query.bind(1, socket_id.socket_id.value);
 	query.bind(2, socket_id.block_id.value);
 	query.exec();
@@ -158,7 +158,7 @@ bool node::loader::SQLBlockLoader::DeleteSocket(const node::model::SocketUniqueI
 bool node::loader::SQLBlockLoader::UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 	const node::model::Point& position)
 {
-	SQLite::Statement query{ m_db, "UPDATE sockets SET x = ?, y = ? WHERE id = ? AND parentid = ?" };
+	SQLite::Statement query{ m_db, "UPDATE sockets_" + std::to_string(m_scene_id.value) + " SET x = ?, y = ? WHERE id = ? AND parentid = ?" };
 	query.bind(1, position.x);
 	query.bind(2, position.y);
 	query.bind(3, socket_id.socket_id.value);
@@ -169,7 +169,7 @@ bool node::loader::SQLBlockLoader::UpdateSocketPosition(const node::model::Socke
 
 node::model::BlockId node::loader::SQLBlockLoader::GetNextBlockId()
 {
-	SQLite::Statement query{ m_db, "SELECT MAX(id) FROM blocks" };
+	SQLite::Statement query{ m_db, "SELECT MAX(id) FROM blocks_" + std::to_string(m_scene_id.value) };
 	auto result = query.executeStep();
 	UNUSED_PARAM(result);
 	assert(result);
@@ -181,7 +181,7 @@ std::vector<node::model::BlockModel> node::loader::SQLBlockLoader::GetBlocks()
 	using namespace node::model;
 
 	std::vector<BlockModel> blocks;
-	SQLite::Statement query{ m_db, "SELECT * FROM blocks" };
+	SQLite::Statement query{ m_db, "SELECT * FROM blocks_" + std::to_string(m_scene_id.value) };
 	while (query.executeStep())
 	{
 		if (auto block = GetBlock_internal(query))
@@ -196,7 +196,7 @@ void
 node::loader::SQLBlockLoader::LoadSocketsForBlock(node::model::BlockModel& block)
 {
 	using namespace node::model;
-	SQLite::Statement querySocket{ m_db, "SELECT * FROM sockets WHERE parentid = ?" };
+	SQLite::Statement querySocket{ m_db, "SELECT * FROM sockets_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
 	querySocket.bind(1, block.GetId().value);
 	while (querySocket.executeStep())
 	{
@@ -225,7 +225,7 @@ bool node::loader::SQLBlockLoader::LoadPropertiesForBlock(node::model::BlockMode
 	};
 	using namespace node::model;
 
-	SQLite::Statement propertyquery{ m_db, "SELECT * FROM blockProperties WHERE parentid = ?" };
+	SQLite::Statement propertyquery{ m_db, "SELECT * FROM blockProperties_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
 	propertyquery.bind(1, block.GetId().value);
 	auto&& properties = block.GetProperties();
 	std::vector<BlockPropertyHolder> holders;
@@ -256,7 +256,7 @@ bool node::loader::SQLBlockLoader::LoadStylerProperties(node::model::BlockModel&
 {
 	using namespace node::model;
 
-	SQLite::Statement propertyquery{ m_db, "SELECT * FROM blockStylerProperties WHERE parentid = ?" };
+	SQLite::Statement propertyquery{ m_db, "SELECT * FROM blockStylerProperties_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
 	propertyquery.bind(1, block.GetId().value);
 	BlockStyleProperties properties;
 	while (propertyquery.executeStep())

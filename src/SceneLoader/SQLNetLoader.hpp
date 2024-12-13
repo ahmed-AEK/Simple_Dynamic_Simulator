@@ -10,8 +10,8 @@ namespace node::loader
 class SQLNetLoader: public NetLoader
 {
 public:
-	SQLNetLoader(std::string dbname, SQLite::Database& db)
-		: m_dbname{ dbname }, m_db{ db } {}
+	SQLNetLoader(std::string dbname, SQLite::Database& db, SubSceneId scene_id)
+		: m_dbname{ dbname }, m_db{ db }, m_scene_id{ scene_id } {}
 
 	// NetNode Functions
 	bool AddNetNode(const node::model::NetNodeModel& node) override;
@@ -48,6 +48,7 @@ private:
 
 	std::string m_dbname;
 	SQLite::Database& m_db;
+	SubSceneId m_scene_id;
 };
 
 }

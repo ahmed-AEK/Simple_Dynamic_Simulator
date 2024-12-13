@@ -5,17 +5,20 @@
 #include "SceneLoader/BlockLoader.hpp"
 #include "SceneLoader/NetLoader.hpp"
 
+
+
 namespace node::loader
 {
-
 
 class SceneLoader
 {
 public:
-	virtual std::optional<node::model::NodeSceneModel> Load() = 0;
-	virtual bool Save(const node::model::NodeSceneModel& scene) = 0;
-	virtual std::shared_ptr<BlockLoader> GetBlockLoader() = 0;
-	virtual std::shared_ptr<NetLoader> GetNetLoader() = 0;
+	virtual bool Reset() = 0;
+	virtual std::optional<node::model::NodeSceneModel> Load(SubSceneId id) = 0;
+	virtual std::optional<std::vector<SubSceneId>> GetChildSubScenes(SubSceneId id) = 0;
+	virtual bool Save(const node::model::NodeSceneModel& scene, SubSceneId id, SubSceneId parent_id) = 0;
+	virtual std::shared_ptr<BlockLoader> GetBlockLoader(SubSceneId id) = 0;
+	virtual std::shared_ptr<NetLoader> GetNetLoader(SubSceneId id) = 0;
 
 	virtual ~SceneLoader() = default;
 	SceneLoader() = default;

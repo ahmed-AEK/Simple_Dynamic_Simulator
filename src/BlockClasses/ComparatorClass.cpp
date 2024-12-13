@@ -19,7 +19,7 @@ node::ComparatorBlockClass::ComparatorBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::ComparatorBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::ComparatorBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }

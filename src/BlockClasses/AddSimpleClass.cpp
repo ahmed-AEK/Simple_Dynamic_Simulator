@@ -16,7 +16,7 @@ node::AddSimpleBlockClass::AddSimpleBlockClass()
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::AddSimpleBlockClass::GetClassProperties()
+const std::vector<node::model::BlockProperty>& node::AddSimpleBlockClass::GetDefaultClassProperties()
 {
 	return ClassProperties;
 }
