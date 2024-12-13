@@ -65,12 +65,19 @@ private:
     void NewScenePressed();
     void LoadSceneButtonPressed();
     void SaveSceneButtonPressed();
-    SceneManagerId CreateNewScene();
+    void CreateNewScene(SceneManagerId manager_id);
 
     void OnUndo();
     void OnRedo();
     bool CanUndo();
     bool CanRedo();
+
+    SceneManagerId GetNewManagerId()
+    {
+        SceneManagerId new_id = SceneManagerId{ m_next_manager_id };
+        m_next_manager_id++;
+        return new_id;
+    }
 
     std::optional<node::SceneId> GetSceneIdForTab(size_t index);
 
@@ -81,7 +88,7 @@ private:
 
     std::unordered_map<SceneManagerId, SceneComponents> m_sceneComponents;
     std::optional<SceneId> m_current_scene_id;
-    int32_t m_next_manager_id = 0;
+    int32_t m_next_manager_id = 1;
 
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;

@@ -17,6 +17,7 @@ SineSourceClass.hpp SineSourceClass.cpp
 BlockDialog.hpp BlockDialog.cpp
 StepSourceClass.hpp StepSourceClass.cpp
 ComparatorClass.hpp ComparatorClass.cpp
+SubSystemClass.hpp SubSystemClass.cpp
 )
 
 target_include_directories(BlockClasses PRIVATE ".")

@@ -6,19 +6,23 @@
 
 using namespace node::loader;
 using namespace node::model;
+using namespace node;
 
 TEST(testNetLoader, testSaveLoadNetNode)
 {
 	NetNodeId node_id{ 1 };
 	NetNodeModel node{ node_id, {10,10} };
 
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	NodeSceneModel scene;
 	scene.AddNetNode(std::move(node));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 
@@ -39,6 +43,10 @@ TEST(testNetLoader, testSaveLoadNetNode)
 TEST(testNetLoader, testSaveLoadNetNode2)
 {
 	NetNodeId node_id{ 3 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	NetNodeModel node{ node_id, {20,20} };
 	node.SetSegmentAt(ConnectedSegmentSide::north, NetSegmentId{ 1 });
 	node.SetSegmentAt(ConnectedSegmentSide::south, NetSegmentId{ 2 });
@@ -48,9 +56,9 @@ TEST(testNetLoader, testSaveLoadNetNode2)
 	scene.AddNetNode(std::move(node));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 
@@ -74,6 +82,10 @@ TEST(testNetLoader, testSaveLoadNetSegment)
 	NetSegmentId segment_id{ 1 };
 	NetNodeId node1{ 2 };
 	NetNodeId node2{ 3 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	auto orientation{ NetSegmentOrientation::horizontal };
 	NetSegmentModel segment{ segment_id, node1, node2, orientation};
 
@@ -81,9 +93,9 @@ TEST(testNetLoader, testSaveLoadNetSegment)
 	scene.AddNetSegment(std::move(segment));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 
@@ -103,6 +115,10 @@ TEST(testNetLoader, testSaveLoadNetSegment2)
 	NetSegmentId segment_id{ 3 };
 	NetNodeId node1{ 1 };
 	NetNodeId node2{ 4 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	auto orientation{ NetSegmentOrientation::vertical };
 	NetSegmentModel segment{ segment_id, node1, node2, orientation };
 
@@ -110,9 +126,9 @@ TEST(testNetLoader, testSaveLoadNetSegment2)
 	scene.AddNetSegment(std::move(segment));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 
@@ -133,15 +149,18 @@ TEST(testNetLoader, testSaveLoadSocketConnection)
 	SocketId socket_id{ 2 };
 	BlockId block_id{ 3 };
 
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	SocketNodeConnection connecion{ {socket_id, block_id}, node_id };
 
 	NodeSceneModel scene;
 	scene.AddSocketNodeConnection(std::move(connecion));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 
@@ -174,14 +193,17 @@ TEST(testNetLoader, testSaveLoadSocketConnection2)
 	SocketId socket_id{ 5 };
 	BlockId block_id{ 6 };
 
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
 	SocketNodeConnection connecion{ {socket_id, block_id}, node_id };
 
 	scene.AddSocketNodeConnection(std::move(connecion));
 
 	SQLSceneLoader loader(":memory:");
-	loader.Save(scene);
+	loader.Save(scene, subscene_id, parent_subscene_id);
 
-	auto new_scene = loader.Load();
+	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
 

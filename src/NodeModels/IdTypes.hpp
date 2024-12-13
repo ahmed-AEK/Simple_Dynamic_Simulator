@@ -3,6 +3,17 @@
 #include <cstdint>
 #include <vector>
 
+namespace node
+{
+	struct SubSceneId
+	{
+		SubSceneId() = default;
+		explicit SubSceneId(int32_t value) : value{ value } {}
+		bool operator==(const SubSceneId&) const = default;
+		int32_t value{};
+	};
+}
+
 namespace node::model
 {
 
@@ -65,7 +76,17 @@ struct SocketUniqueId
 	BlockId   block_id;
 };
 
+
 }
+
+template <>
+struct std::hash<node::SubSceneId>
+{
+	std::size_t operator()(const node::SubSceneId& k) const
+	{
+		return k.value;
+	}
+};
 
 template <>
 struct std::hash<node::model::BlockId>

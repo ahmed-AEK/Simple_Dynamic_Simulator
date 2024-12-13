@@ -132,8 +132,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     }
     case SceneModificationType::BlockRemoved:
     {
-        auto model_id = std::get<model::BlockId>(e.data);
-
+        auto model_id = std::get<model::BlockId>(e.data);        
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
         {
@@ -214,7 +213,10 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
 void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 {
     model::BlockModel block{ model::BlockModel{ object.object.block } };
-
+    if (block.GetClass() == "SubSystem")
+    {
+        m_parent_manager->AddNewSubSceneToScene(block, m_sceneModel->GetSubSceneId());
+    }
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     block.SetPosition(GetGraphicsScene()->QuantizePoint(GetGraphicsScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));

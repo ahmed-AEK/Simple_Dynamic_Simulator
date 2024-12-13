@@ -3,8 +3,9 @@
 
 #include "toolgui/Widget.hpp"
 #include "NodeEditorApp/IdTypes.hpp"
+#include "NodeModels/IdTypes.hpp"
 #include "SceneLoader/SceneLoader.hpp"
-
+#include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include <optional>
 #include <memory>
 #include <unordered_map>
@@ -40,7 +41,7 @@ struct DBConnector
     std::unique_ptr<node::loader::SceneLoader> connector;
 };
 
-class SceneManager
+class SceneManager : public SubScenesManager
 {
 public:
 
@@ -50,7 +51,7 @@ public:
     SceneManager& operator=(const SceneManager&) = delete;
     ~SceneManager();
 
-    SubSceneId GetMainSubSceneId() const { return SubSceneId{ 0 }; }
+    SubSceneId GetMainSubSceneId() const { return SubSceneId{ 1 }; }
     std::shared_ptr<GraphicsObjectsManager> GetManager(SubSceneId id);
     node::SceneManager::DialogStore& GetDialogs(SubSceneId id);
 
@@ -68,7 +69,12 @@ public:
     const std::vector<BlockResult>& GetLastSimulationResults() const { return m_last_sim_results; }
     void SetLastSimulationResults(std::vector<BlockResult> results);
 
+    void AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id) override;
+
+
 private:
+    SubSceneId m_next_subscene_id{ 2 };
+
     std::unordered_map<SubSceneId, std::shared_ptr<SceneModelManager>> m_models;
     std::unordered_map<SubSceneId, std::shared_ptr<GraphicsObjectsManager>> m_managers;
     std::unordered_map<SubSceneId, std::unordered_map<BlockObject*, DialogSlot>> m_objects_dialogs;

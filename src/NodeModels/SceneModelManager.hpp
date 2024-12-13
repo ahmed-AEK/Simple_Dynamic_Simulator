@@ -164,10 +164,23 @@ public:
 	void Redo();
 	void PushAction(std::unique_ptr<ModelAction> action);
 
+	SubSceneId GetSubSceneId() const { return m_id; };
+	void SetSubSceneId(SubSceneId id) { m_id = id; }
+
+	SubSceneId GetParentSceneId() const { return m_id; };
+	void SetParentSceneId(SubSceneId id) { m_id = id; }
+
+	const auto& GetSubsystemIds() const { return m_subsystem_ids; }
+
+	void RegisterSubSystem(const model::BlockModel& model);
+	void UnRegisterSubSystem(const model::BlockId& id);
 private:
+	SubSceneId m_id;
+	SubSceneId m_parent_id;
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 	std::stack<std::unique_ptr<ModelAction>> m_undo_stack;
 	std::stack<std::unique_ptr<ModelAction>> m_redo_stack;
+	std::unordered_map<model::BlockId, SubSceneId> m_subsystem_ids;
 };
 
 }

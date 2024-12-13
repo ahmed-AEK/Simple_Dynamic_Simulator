@@ -43,11 +43,17 @@ std::shared_ptr<node::SceneModelManager> node::SceneManager::GetModel(SubSceneId
 
 void node::SceneManager::SetMainSceneManager(std::shared_ptr<GraphicsObjectsManager> manager)
 {
+	manager->SetSubSceneManager(this);
+	if (auto model = manager->GetSceneModel())
+	{
+		model->SetSubSceneId(GetMainSubSceneId());
+	}
 	m_managers[GetMainSubSceneId()] = manager;
 }
 
 void node::SceneManager::SetMainSceneModel(std::shared_ptr<SceneModelManager> manager)
 {
+	manager->SetSubSceneId(GetMainSubSceneId());
 	auto it = m_managers.find(GetMainSubSceneId());
 	assert(it != m_managers.end());
 	if (it != m_managers.end())
@@ -69,4 +75,19 @@ std::optional<node::DBConnector>& node::SceneManager::GetDBConnector()
 void node::SceneManager::SetLastSimulationResults(std::vector<BlockResult> results)
 {
 	m_last_sim_results = std::move(results);
+}
+
+void node::SceneManager::AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id)
+{
+	UNUSED_PARAM(parent_id);
+	auto& properties = model.GetProperties();
+	auto it = std::find_if(properties.begin(), properties.end(), [&](const node::model::BlockProperty& p) { return p.name == "SubSceneId"; });
+	assert(it != properties.end());
+	auto id = m_next_subscene_id;
+	it->prop = static_cast<uint64_t>(id.value);
+	auto manager = std::make_shared<SceneModelManager>(std::make_shared<model::NodeSceneModel>());
+	manager->SetSubSceneId(id);
+	manager->SetParentSceneId(parent_id);
+	m_models.emplace(id, std::move(manager));
+	m_next_subscene_id.value++;
 }

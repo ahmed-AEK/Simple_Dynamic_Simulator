@@ -365,7 +365,7 @@ namespace node
         SDL_RenderPresent(m_renderer);
         return 0;
     }
-
+    
     void Application::AddMainThreadTask(std::function<void()> task)
     {
         m_mainThreadTasks.Push(std::move(task));

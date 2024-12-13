@@ -12,8 +12,8 @@ namespace node::loader
 class SQLBlockLoader : public BlockLoader
 {
 public:
-	SQLBlockLoader(std::string dbname, SQLite::Database& db)
-		: m_dbname{ dbname }, m_db{ db } {}
+	SQLBlockLoader(std::string dbname, SQLite::Database& db, SubSceneId scene_id)
+		: m_dbname{ dbname }, m_db{ db }, m_scene_id{scene_id} {}
 	bool AddBlock(const node::model::BlockModel& block) override;
 	bool DeleteBlockAndSockets(const node::model::BlockId& block_id) override;
 	bool UpdateBlockPosition(const node::model::BlockId& block_id,
@@ -38,7 +38,7 @@ private:
 	std::optional<node::model::BlockModel> GetBlock_internal(SQLite::Statement& query);
 	std::string m_dbname;
 	SQLite::Database& m_db;
-
+	SubSceneId m_scene_id;
 };
 
 }
