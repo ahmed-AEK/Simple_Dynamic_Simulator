@@ -8,7 +8,6 @@
 #include <cassert>
 #include <memory>
 #include <string>
-#include <variant>
 #include <unordered_map>
 
 namespace node::model
@@ -51,35 +50,14 @@ private:
 	std::optional<NetNodeId> m_connectedNetNode;
 };
 
-enum class BlockPropertyType
-{
-	String,
-	FloatNumber, // float
-	Integer, // maybe negative
-	UnsignedInteger, // unsigned
-	Boolean,
-};
 
-struct BlockProperty
-{
-	using property_t = std::variant<std::string, double, int64_t, uint64_t, bool>;
-	BlockProperty(std::string name, BlockPropertyType type, property_t prop)
-		:name{ name }, type{ type }, prop{ prop } {}
-	std::string name;
-	BlockPropertyType type;
-	property_t prop;
-
-	std::string to_string() const;
-	static std::optional<property_t> from_string(BlockPropertyType type, std::string_view str);
-	static std::optional<property_t> from_string(BlockPropertyType type, std::string&& str);
-};
 
 struct BlockStyleProperties
 {
 	std::unordered_map<std::string, std::string> properties;
 };
 
-enum class BlockOrientation
+enum class BlockOrientation : uint8_t
 {
 	LeftToRight,
 	TopToBottom,
@@ -87,11 +65,17 @@ enum class BlockOrientation
 	BottomToTop,
 };
 
+enum class BlockType: uint8_t
+{
+	Functional,
+	SubSystem,
+};
+
 class BlockModel
 {
 public:
-	explicit BlockModel(const BlockId& id, const Rect& bounds = {}, BlockOrientation orientaion = BlockOrientation::LeftToRight)
-		:m_bounds{ bounds }, m_Id{ id }, m_orientation{orientaion} {}
+	explicit BlockModel(const BlockId& id, BlockType block_type, const Rect& bounds = {}, BlockOrientation orientaion = BlockOrientation::LeftToRight)
+		:m_bounds{ bounds }, m_Id{ id }, m_orientation{ orientaion }, m_type{block_type} {}
 
 	void SetPosition(const Point& origin) { 
 		m_bounds.x = origin.x;
@@ -114,11 +98,9 @@ public:
 		m_sockets.clear();
 	}
 
-	std::optional<std::reference_wrapper<BlockSocketModel>>
-		GetSocketById(SocketId id);
+	BlockSocketModel* GetSocketById(SocketId id);
 
-	std::optional<std::reference_wrapper<const BlockSocketModel>>
-		GetSocketById(SocketId id) const;
+	const BlockSocketModel* GetSocketById(SocketId id) const;
 
 
 	auto GetSockets() const { 
@@ -134,14 +116,11 @@ public:
 		m_sockets.reserve(size);
 	}
 
-	const std::string& GetClass() const { return m_block_class; }
-	void SetClass(std::string block_class) { m_block_class = block_class; }
+	BlockType GetType() const { return m_type; }
+	void SetType(BlockType t) { m_type = t; }
 
 	const std::string& GetStyler() const { return m_block_styler; }
 	void SetStyler(std::string block_styler) { m_block_styler = block_styler; }
-
-	const std::vector<BlockProperty>& GetProperties() const { return m_properties; }
-	std::vector<BlockProperty>& GetProperties() { return m_properties; }
 
 	void SetStylerProperties(BlockStyleProperties properties) { m_stylerProperties = std::move(properties); }
 	const BlockStyleProperties& GetStylerProperties() const { return m_stylerProperties; }
@@ -152,12 +131,11 @@ public:
 private:
 	Rect m_bounds;
 	std::vector<BlockSocketModel> m_sockets;
-	std::vector<BlockProperty> m_properties;
 	std::string m_block_styler;
-	std::string m_block_class;
 	BlockStyleProperties m_stylerProperties;
 	BlockId m_Id;
 	BlockOrientation m_orientation;
+	BlockType m_type;
 };
 
 using BlockModelRef = std::reference_wrapper<BlockModel>;

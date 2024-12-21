@@ -105,21 +105,23 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 	};
 }
 
-std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data)
+std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, 
+	model::FunctionalBlockData& data, std::any& simulation_data)
 {
 	UNUSED_PARAM(model);
+	UNUSED_PARAM(data);
 
 	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_FRect{ 50.0f,50.0f, 500.0f,500.0f }, &scene);
 
 	try
 	{
-		const auto& data = std::any_cast<const std::vector<std::vector<double>>&>(simulation_data);
+		const auto& sim_data = std::any_cast<const std::vector<std::vector<double>>&>(simulation_data);
 		XYSeries xydata;
-		assert(data.size() >= 2);
-		const size_t time_index = data.size() - 1;
-		for (size_t i = 0; i < data[1].size(); i++)
+		assert(sim_data.size() >= 2);
+		const size_t time_index = sim_data.size() - 1;
+		for (size_t i = 0; i < sim_data[1].size(); i++)
 		{
-			xydata.points.push_back(SDL_FPoint{ static_cast<float>(data[time_index][i]), static_cast<float>(data[0][i]) });
+			xydata.points.push_back(SDL_FPoint{ static_cast<float>(sim_data[time_index][i]), static_cast<float>(sim_data[0][i]) });
 		}
 		dialog->SetData(std::move(xydata));
 	}

@@ -1,5 +1,5 @@
 #include "SVGBlockStyler.hpp"
-
+#include "NodeModels/BlockData.hpp"
 
 static std::string GetModelSVGPath(const node::model::BlockModel& model)
 {
@@ -73,15 +73,15 @@ void node::SVGBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model:
 	UNUSED_PARAM(selected);
 }
 
-void node::SVGBlockStyler::UpdateProperties(const model::BlockModel& model)
+void node::SVGBlockStyler::UpdateProperties(const model::BlockDataCRef& model)
 {
 	if (!m_svg_rasterizer)
 	{
-		m_svg_rasterizer.emplace(GetModelSVGPath(model), 0, 0);
+		m_svg_rasterizer.emplace(GetModelSVGPath(model.block), 0, 0);
 	}
 	else
 	{
-		m_svg_rasterizer->SetSVGPath(GetModelSVGPath(model));
+		m_svg_rasterizer->SetSVGPath(GetModelSVGPath(model.block));
 	}
 	m_max_rect = std::nullopt;
 }

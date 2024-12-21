@@ -2,13 +2,13 @@
 
 #include "NodeModels/NodeScene.hpp"
 #include "NodeModels/Observer.hpp"
+#include "NodeModels/FunctionalBlocksManager.hpp"
 #include <variant>
 #include <stack>
 
 namespace node
 {
 
-class BlockClassesManager;
 class SceneModelManager;
 
 struct LeafNodeMovedReport
@@ -146,7 +146,7 @@ public:
 	~SceneModelManager() override;
 
 	std::span<model::BlockModel> GetBlocks();
-	void AddNewBlock(model::BlockModel&& block);
+	void AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data);
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions);
@@ -171,9 +171,6 @@ public:
 	void SetParentSceneId(SubSceneId id) { m_id = id; }
 
 	const auto& GetSubsystemIds() const { return m_subsystem_ids; }
-
-	void RegisterSubSystem(const model::BlockModel& model);
-	void UnRegisterSubSystem(const model::BlockId& id);
 private:
 	SubSceneId m_id;
 	SubSceneId m_parent_id;

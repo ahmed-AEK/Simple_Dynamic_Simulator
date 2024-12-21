@@ -17,7 +17,7 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation)
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 	BlockOrientation orienation = BlockOrientation::LeftToRight;
 	scene.AddBlock(BlockModel{ original_block });
 
@@ -43,7 +43,7 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
 	{
 		BlockId block_id{ 1 };
 		Rect block_rect{ 1,1,10,10 };
-		BlockModel original_block{ block_id, block_rect };
+		BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 		scene.AddBlock(BlockModel{ original_block });
 	}
 
@@ -54,7 +54,7 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
 
 	Rect block_rect{ 20,30,40,50 };
 	BlockOrientation orienation = BlockOrientation::TopToBottom;
-	BlockModel original_block{ block_id, block_rect, orienation };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect, orienation };
 	scene.AddBlock(BlockModel{ original_block });
 
 	SQLSceneLoader loader(":memory:");
@@ -81,12 +81,14 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, model::BlockType::Functional, block_rect };
 	std::string_view property_name = "Multiplier";
 	std::string class_name{ "test1" };
-	original_block.GetProperties().push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::FloatNumber, 1.0});
-	original_block.SetClass(class_name);
-
+	model::FunctionalBlockData block_data;
+	block_data.block_class = class_name;
+	block_data.properties.push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::FloatNumber, 1.0 });
+	scene.GetFunctionalBlocksManager().SetDataForId(block_id, std::move(block_data));
+	
 	SQLSceneLoader loader(":memory:");
 
 	scene.AddBlock(BlockModel{ original_block });
@@ -99,9 +101,12 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetClass(), class_name);
+	auto loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
+	ASSERT_TRUE(loaded_block_data);
+
+	EXPECT_EQ(loaded_block_data->block_class, class_name);
 	
-	auto&& loaded_properties = loaded_block->get().GetProperties();
+	auto&& loaded_properties = loaded_block_data->properties;
 	ASSERT_EQ(loaded_properties.size(), 1);
 	EXPECT_EQ(loaded_properties[0].name, property_name);
 	EXPECT_EQ(loaded_properties[0].type, BlockPropertyType::FloatNumber);
@@ -118,13 +123,16 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, model::BlockType::Functional, block_rect};
 	std::string_view property_name = "Value";
 	std::string_view property2_name = "Value2";
 	std::string class_name{ "test2" };
-	original_block.GetProperties().push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::Boolean, true });
-	original_block.GetProperties().push_back(BlockProperty{ std::string{property2_name}, BlockPropertyType::Integer, static_cast<int64_t>(2) });
-	original_block.SetClass(class_name);
+
+	model::FunctionalBlockData block_data;
+	block_data.block_class = class_name;
+	block_data.properties.push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::Boolean, true });
+	block_data.properties.push_back(BlockProperty{ std::string{property2_name}, BlockPropertyType::Integer, static_cast<int64_t>(2) });
+	scene.GetFunctionalBlocksManager().SetDataForId(block_id, std::move(block_data));
 
 	SQLSceneLoader loader(":memory:");
 
@@ -138,9 +146,13 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 	ASSERT_TRUE(loaded_scene.has_value());
 	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetClass(), class_name);
 
-	auto&& loaded_properties = loaded_block->get().GetProperties();
+	auto loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
+	ASSERT_TRUE(loaded_block_data);
+
+	EXPECT_EQ(loaded_block_data->block_class, class_name);
+
+	auto&& loaded_properties = loaded_block_data->properties;
 	ASSERT_EQ(loaded_properties.size(), 2);
 
 	EXPECT_EQ(loaded_properties[0].name, property_name);
@@ -164,7 +176,7 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 	std::string property_name = "Multiplier";
 	std::string property_value = "Value1";	
 	std::string styler_name{ "test1" };
@@ -202,7 +214,7 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties2)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 	std::string property_name = "Multiplier";
 	std::string property_value = "Value1";
 	std::string styler_name{ "test1" };
@@ -246,7 +258,7 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 	auto socket_type = BlockSocketModel::SocketType::input;
 	auto socket_id = SocketId{ 2 };
 	Point socket_pos{ 5,5 };
@@ -287,7 +299,7 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 	SubSceneId parent_subscene_id{ 0 };
 
 	Rect block_rect{ 1,1,10,10 };
-	BlockModel original_block{ block_id, block_rect };
+	BlockModel original_block{ block_id, BlockType::Functional, block_rect };
 	auto socket_type = BlockSocketModel::SocketType::output;
 	auto socket_id = SocketId{ 3 };
 	Point socket_pos{ 5,5 };

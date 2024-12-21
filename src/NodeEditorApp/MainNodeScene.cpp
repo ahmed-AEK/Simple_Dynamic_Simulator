@@ -65,33 +65,48 @@ static void AddInitialNodes_forScene(node::SceneManager& manager, node::SubScene
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
 
     {
-        model::BlockModel model{ model::BlockId{3}, model::Rect{ 400,10,100,100 }};
+        auto block_id = model::BlockId{ 3 };
+        model::BlockModel model{ block_id, model::BlockType::Functional, model::Rect{ 400,10,100,100 }};
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
-        model.SetClass("Ramp");
         model.SetStyler("SVG Styler");
         model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}} });
-        model.GetProperties().push_back(model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 });
+        sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id, 
+            model::FunctionalBlockData{ "Ramp" ,
+            {
+                model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 }
+            }
+            });
         sceneModel->AddBlock(std::move(model));
     }
 
     {
-        model::BlockModel model{ model::BlockId{4}, model::Rect{ 200,210,100,100 } };
+        auto block_id = model::BlockId{ 4 };
+        model::BlockModel model{ block_id, model::BlockType::Functional, model::Rect{ 200,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
-        model.SetClass("Gain");
         model.SetStyler("Gain");
-        model.GetProperties().push_back(model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 });
+        sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id,
+            model::FunctionalBlockData{ "Gain" ,
+            {
+                model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 }
+            }
+            });
         sceneModel->AddBlock(std::move(model));
     }
 
 
     {
-        model::BlockModel model{ model::BlockId{5}, model::Rect{ 400,210,100,100 } };
+        auto block_id = model::BlockId{ 5 };
+        model::BlockModel model{ block_id, model::BlockType::Functional, model::Rect{ 400,210,100,100 } };
         model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
-        model.SetClass("Scope Display");
         model.SetStyler("SVG Styler");
         model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}} });
-        model.GetProperties().push_back(model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) });
+        sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id,
+            model::FunctionalBlockData{ "Scope Display" ,
+            {
+                model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) }
+            }
+            });
         sceneModel->AddBlock(std::move(model));
     }
 
@@ -519,23 +534,28 @@ void node::MainNodeScene::InitializeSidePanel()
     auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager, m_blockStylerFactory);
     auto block_template = BlockTemplate{
         "Gain",
-        "Gain",
-        "Gain",
-        std::vector<model::BlockProperty>{
-            model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
+        model::FunctionalBlockData{
+            "Gain",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
+            }
         },
+        "Gain",
         model::BlockStyleProperties{}
     };
 
     auto SubScene_block = BlockTemplate
     {
         "SubSystem",
-        "SubSystem",
-        "Default",
-    std::vector<model::BlockProperty>{
+        model::FunctionalBlockData{
+            "SubSystem",
+            std::vector<model::BlockProperty>{
             node::model::BlockProperty{"Storage", node::model::BlockPropertyType::String, std::string{"Inner"}},
             node::model::BlockProperty{"SubSceneId", node::model::BlockPropertyType::UnsignedInteger, uint64_t{0}},
+            }
         },
+        "Default",
+
         model::BlockStyleProperties{}
     };
     pallete_provider->AddElement(std::move(SubScene_block));
@@ -546,109 +566,124 @@ void node::MainNodeScene::InitializeSidePanel()
     }
 
     auto add_block = BlockTemplate{
-    "Add",
-    "Add Simple",
-    "Text",
-    std::vector<model::BlockProperty>{},
-    model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
+        "Add",
+        model::FunctionalBlockData{
+            "Add Simple", {}
+        },
+        "Text",
+        model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
     };
     pallete_provider->AddElement(std::move(add_block));
 
     auto integrate_block = BlockTemplate{
         "Integration",
-        "Integration",
+        model::FunctionalBlockData{
+            "Integration", {}
+        },
         "SVG Styler",
-        std::vector<model::BlockProperty>{},
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/integral.svg"}}}
     };
     pallete_provider->AddElement(std::move(integrate_block));
 
     auto deriv_block = BlockTemplate{
-    "Derivative",
-    "Derivative",
-    "SVG Styler",
-    std::vector<model::BlockProperty>{},
+        "Derivative",
+        model::FunctionalBlockData{
+            "Derivative", {}
+        },
+        "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/derivative.svg"}}}
     };
     pallete_provider->AddElement(std::move(deriv_block));
 
     auto constant_block = BlockTemplate{
         "Constant Source",
-        "Constant Source",
-        "Property Printer",
-        std::vector<model::BlockProperty>{
-        model::BlockProperty{"Value", model::BlockPropertyType::FloatNumber, 1.0}
+        model::FunctionalBlockData{
+            "Constant Source",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Value", model::BlockPropertyType::FloatNumber, 1.0}
+            }
         },
+        "Property Printer",
         model::BlockStyleProperties{{{PropertyPrintStyler::printed_key_text, "Value"}}}
     };
     pallete_provider->AddElement(std::move(constant_block));
 
     auto ramp_block = BlockTemplate{
         "Ramp",
-        "Ramp",
-        "SVG Styler",
-        std::vector<model::BlockProperty>{
-        model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
+        model::FunctionalBlockData{
+            "Ramp",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
+            }
         },
+        "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}}}
     };
     pallete_provider->AddElement(std::move(ramp_block));
 
     auto scope_block = BlockTemplate{
         "Scope",
-        "Scope Display",
-        "SVG Styler",
-        std::vector<model::BlockProperty>{
-        model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
+        model::FunctionalBlockData {
+            "Scope Display",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
+            },
         },
+        "SVG Styler",        
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}}}
     };
     pallete_provider->AddElement(std::move(scope_block));
 
     auto multiply_block = BlockTemplate{
-    "Multiply",
-    "Multiply",
-    "Text",
-    std::vector<model::BlockProperty>{
-    },
-    model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
+        "Multiply",
+        model::FunctionalBlockData{
+            "Multiply", {}
+        },
+        "Text",
+        model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
     };
     pallete_provider->AddElement(std::move(multiply_block));
 
     auto sine_block = BlockTemplate{
-    "Sine",
-    "Sine",
-    "SVG Styler",
-    std::vector<model::BlockProperty>{
-        model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
-        model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
-    },
-    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
+        "Sine",
+        model::FunctionalBlockData{
+            "Sine",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
+                model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
+            }
+        },
+        "SVG Styler",
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
     };
     pallete_provider->AddElement(std::move(sine_block));
 
     auto step_block = BlockTemplate{
-    "Step",
-    "Step",
-    "SVG Styler",
-    std::vector<model::BlockProperty>{
-        node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
-        node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
-        node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
-        node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
-    },
-    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
+        "Step",
+        model::FunctionalBlockData{
+            "Step",
+            std::vector<model::BlockProperty>{
+                node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
+                node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
+                node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
+                node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+            }
+        },
+        "SVG Styler",
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
     };
     pallete_provider->AddElement(std::move(step_block));
 
     auto comparator_block = BlockTemplate{
     "Comparator",
-    "Comparator",
-    "SVG Styler",
-    std::vector<model::BlockProperty>{
-        node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
-        node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+    model::FunctionalBlockData{
+        "Comparator",
+        std::vector<model::BlockProperty>{
+            node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
+            node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+        }
     },
+    "SVG Styler",
     model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
     };
     pallete_provider->AddElement(std::move(comparator_block));
@@ -732,7 +767,20 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         return;
     }
 
-    auto& objects_dialogs = m_sceneComponents[m_current_scene_id->manager].manager->GetDialogs(m_current_scene_id->subscene);
+    auto manager_it = m_sceneComponents.find(m_current_scene_id->manager);
+    if (manager_it == m_sceneComponents.end())
+    {
+        assert(false);
+        return;
+    }
+    if (!manager_it->second.manager)
+    {
+        assert(false);
+        return;
+    }
+
+    auto& manager = *manager_it->second.manager;
+    auto& objects_dialogs = manager.GetDialogs(m_current_scene_id->subscene);
 
     if (!block.GetModelId())
     {
@@ -755,45 +803,61 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
 
     assert(block.GetModelId());
-    auto block_model = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
-    if (!block_model)
+    auto block_model_opt = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
+    if (!block_model_opt)
     {
         assert(false);
         return;
     }
+    auto& block_model = block_model_opt->get();
+    if (block_model.GetType() == model::BlockType::Functional)
+    {
 
-    auto class_ptr = m_classesManager->GetBlockClassByName(block_model->get().GetClass());
-    if (!class_ptr)
-    {
-        SDL_Log("class '%s' not found!", block_model->get().GetClass().c_str());
-        return;
-    }
-    if (class_ptr->HasBlockDialog())
-    {
-        auto sim_data = std::any{};
+        auto block_data = manager.GetModel(m_current_scene_id->subscene)->GetModel().GetFunctionalBlocksManager().GetDataForId(block_model.GetId());
+        if (!block_data)
         {
-            auto model_id = *block.GetModelId();
-            const auto& sim_results = m_sceneComponents[m_current_scene_id->manager].manager->GetLastSimulationResults();
-            auto block_it = std::find_if(sim_results.begin(), sim_results.end(),
-                [&](const BlockResult& r) {return r.id == model_id; });
-            if (block_it != sim_results.end())
+            assert(false);
+            return;
+        }
+
+        auto class_ptr = m_classesManager->GetBlockClassByName(block_data->block_class);
+        if (!class_ptr)
+        {
+            SDL_Log("class '%s' not found!", block_data->block_class.c_str());
+            return;
+        }
+        if (class_ptr->HasBlockDialog())
+        {
+            auto sim_data = std::any{};
             {
-                sim_data = block_it->data;
+                auto model_id = *block.GetModelId();
+                const auto& sim_results = m_sceneComponents[m_current_scene_id->manager].manager->GetLastSimulationResults();
+                auto block_it = std::find_if(sim_results.begin(), sim_results.end(),
+                    [&](const BlockResult& r) {return r.id == model_id; });
+                if (block_it != sim_results.end())
+                {
+                    sim_data = block_it->data;
+                }
+            }
+            auto dialog = class_ptr->CreateBlockDialog(*this, block_model, *block_data,sim_data);
+            if (dialog)
+            {
+                objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
+                auto dialog_ptr = dialog.get();
+                AddNormalDialog(std::move(dialog));
+                SetFocus(dialog_ptr);
             }
         }
-        auto dialog = class_ptr->CreateBlockDialog(*this, *block_model, sim_data);
-        if (dialog)
+        else
         {
-            objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
-            auto dialog_ptr = dialog.get();
-            AddNormalDialog(std::move(dialog));
-            SetFocus(dialog_ptr);
+            OpenPropertiesDialog(block);
         }
     }
     else
     {
-        OpenPropertiesDialog(block);
+        SDL_Log("Openning Dialog Not handled!");
     }
+    
 }
 
 void node::MainNodeScene::NewScenePressed()
@@ -1002,15 +1066,15 @@ void node::MainNodeScene::OnInit()
     m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
 
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
-    m_blockStylerFactory->AddStyler("Default", [](const model::BlockModel&) { return std::make_unique<DefaultBlockStyler>(); });
-    m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockModel& model) 
-        { return TextBlockStyler::Create(model.GetStylerProperties(), font); });
-    m_blockStylerFactory->AddStyler("Gain", [font = this->GetApp()->getFont().get()](const model::BlockModel& model)
+    m_blockStylerFactory->AddStyler("Default", [](const model::BlockDataCRef&) { return std::make_unique<DefaultBlockStyler>(); });
+    m_blockStylerFactory->AddStyler("Text", [font = this->GetApp()->getFont().get()](const model::BlockDataCRef& model)
+        { return TextBlockStyler::Create(model.block.get().GetStylerProperties(), font); });
+    m_blockStylerFactory->AddStyler("Gain", [font = this->GetApp()->getFont().get()](const model::BlockDataCRef& model)
         { return std::make_unique<GainBlockStyler>(model, font); });
-    m_blockStylerFactory->AddStyler("Property Printer", [font = this->GetApp()->getFont().get()](const model::BlockModel& model)
-        { return PropertyPrintStyler::Create(model, font); });
-    m_blockStylerFactory->AddStyler("SVG Styler", [](const model::BlockModel& model)
-        { return std::make_unique<SVGBlockStyler>(model); });
+    m_blockStylerFactory->AddStyler("Property Printer", [font = this->GetApp()->getFont().get()](const model::BlockDataCRef& model)
+        { return std::make_unique<PropertyPrintStyler>(model, font); });
+    m_blockStylerFactory->AddStyler("SVG Styler", [](const model::BlockDataCRef& model)
+        { return std::make_unique<SVGBlockStyler>(model.block); });
 
     {
         std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont().get(), SDL_FRect{ 0,0,0,0 }, this);

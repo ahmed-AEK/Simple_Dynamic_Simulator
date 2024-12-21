@@ -81,18 +81,18 @@ const std::vector<std::unique_ptr<node::BlockSocketObject>>& node::BlockObject::
     return m_sockets;
 }
 
-std::optional<std::reference_wrapper<node::BlockSocketObject>> node::BlockObject::GetSocketById(model::SocketId id)
+node::BlockSocketObject* node::BlockObject::GetSocketById(model::SocketId id)
 {
     auto it = std::find_if(m_sockets.begin(), m_sockets.end(), [&](const std::unique_ptr<BlockSocketObject>& sock) {return id == sock->GetId(); });
     assert(it != m_sockets.end());
     if (it != m_sockets.end())
     {
-        return **it;
+        return it->get();
     }
-    return std::nullopt;
+    return nullptr;
 }
 
-void node::BlockObject::UpdateStyler(const model::BlockModel& model)
+void node::BlockObject::UpdateStyler(const model::BlockDataCRef& model)
 {
     m_styler->UpdateProperties(model);
 }

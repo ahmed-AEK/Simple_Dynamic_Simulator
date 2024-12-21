@@ -14,7 +14,7 @@ TEST(testSceneLoader, testSaveLoadBlock)
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	BlockModel original_block{ block_id, Rect{1,1,10,10} };
+	BlockModel original_block{ block_id, BlockType::Functional, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -36,7 +36,7 @@ TEST(testSceneLoader, DISABLED_testSaveModifyLoadBlock)
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	BlockModel block1{ block_id, Rect{1,1,10,10} };
+	BlockModel block1{ block_id, BlockType::Functional, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -68,7 +68,7 @@ TEST(testSceneLoader, DISABLED_testSaveDeleteLoadNode)
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	BlockModel block1{ block_id, Rect{1,1,10,10} };
+	BlockModel block1{ block_id, BlockType::Functional, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 
@@ -95,7 +95,7 @@ TEST(testSceneLoader, DISABLED_testNextIndex)
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	BlockModel block1{ block_id, Rect{1,1,10,10} };
+	BlockModel block1{ block_id, BlockType::Functional, Rect{1,1,10,10} };
 
 	SQLSceneLoader loader(":memory:");
 

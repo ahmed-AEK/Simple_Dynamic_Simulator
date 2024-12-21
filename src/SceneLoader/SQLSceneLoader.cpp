@@ -61,10 +61,25 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load(Su
         }
         std::optional<node::model::NodeSceneModel> scene{ std::in_place };
         SQLBlockLoader nodeLoader{ m_dbname, *m_db , id};
-        auto blocks = nodeLoader.GetBlocks();
+
+        std::vector<model::BlockModel> blocks;
+        auto success = nodeLoader.GetBlocks(blocks);
+        if (!success)
+        {
+            return std::nullopt;
+        }
+
         scene->ReserveBlocks(blocks.size());
         for (auto&& block : blocks)
         {
+            if (block.GetType() == model::BlockType::Functional)
+            {
+                auto data = nodeLoader.GetBlockData(block.GetId(), block.GetType());
+                if (data && data->GetFunctionalData())
+                {
+                    scene->GetFunctionalBlocksManager().SetDataForId(block.GetId(), std::move(*data->GetFunctionalData()));
+                }
+            }
             scene->AddBlock(std::move(block));
         }
 
@@ -140,7 +155,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     w INTEGER NOT NULL, 
                     h INTEGER NOT NULL,
                     orientation INTEGER NOT NULL,
-                    class_name TEXT NOT NULL,
+                    block_type INTEGER NOT NULL,
                     styler_name TEXT NOT NULL);)");
 
         m_db->exec(R"(CREATE TABLE sockets_)"
@@ -154,7 +169,12 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     PRIMARY KEY (id, parentid)
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
 
-        m_db->exec(R"(CREATE TABLE blockProperties_)"
+        m_db->exec(R"(CREATE TABLE functionalBlockClass_)"
+            + std::to_string(id.value) + R"((
+                    blockid INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL);)");
+
+        m_db->exec(R"(CREATE TABLE functionalBlockProperties_)"
                     + std::to_string(id.value) + R"((
                     id INTEGER NOT NULL,
                     parentid INTEGER NOT NULL,
@@ -201,6 +221,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
         for (const auto& block : scene.GetBlocks())
         {
             nodeLoader.AddBlock(block);
+            nodeLoader.AddBlockData(block.GetId(), block.GetType(), scene);
         }
 
         SQLNetLoader netLoader{ m_dbname, *m_db, id };

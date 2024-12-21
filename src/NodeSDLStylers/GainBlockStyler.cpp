@@ -1,12 +1,20 @@
 #include "GainBlockStyler.hpp"
+#include "NodeModels/NodeScene.hpp"
+#include "NodeModels/BlockData.hpp"
+
 #include <algorithm>
 #include <array>
 #include <charconv>
 
-static std::string GetBlockGain(const node::model::BlockModel& model)
+static std::string GetBlockGain(const node::model::FunctionalBlockData* data)
 {
 	using namespace node; 
-	const auto& properties = model.GetProperties();
+	if (!data)
+	{
+		return "NO DATA";
+	}
+
+	const auto& properties = data->properties;
 	auto it = std::find_if(properties.begin(), properties.end(), [](const model::BlockProperty& prop) { return prop.name == "Multiplier"; });
 	if (it != properties.end())
 	{
@@ -19,8 +27,8 @@ static std::string GetBlockGain(const node::model::BlockModel& model)
 	return {};
 }
 
-node::GainBlockStyler::GainBlockStyler(const model::BlockModel& model, TTF_Font* font)
-	:TextBlockStyler{ GetBlockGain(model), font}
+node::GainBlockStyler::GainBlockStyler(const model::BlockDataCRef& model, TTF_Font* font)
+	:TextBlockStyler{ GetBlockGain(model.GetFunctionalData()), font}
 {
 
 }
@@ -118,7 +126,7 @@ void node::GainBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model
 
 }
 
-void node::GainBlockStyler::UpdateProperties(const model::BlockModel& model)
+void node::GainBlockStyler::UpdateProperties(const model::BlockDataCRef& model)
 {
-	SetText(GetBlockGain(model));
+	SetText(GetBlockGain(model.GetFunctionalData()));
 }

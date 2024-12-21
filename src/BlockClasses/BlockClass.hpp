@@ -1,7 +1,10 @@
 #pragma once
 
 #include "NodeModels/BlockModel.hpp"
+#include "NodeModels/FunctionalBlocksManager.hpp"
+
 #include <any>
+#include <variant>
 
 namespace opt
 {
@@ -49,7 +52,8 @@ public:
 	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>>;
 	virtual GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) = 0;
 
-	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, std::any& simulation_data);
+	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, 
+		model::FunctionalBlockData& data, std::any& simulation_data);
 	virtual bool HasBlockDialog() const { return false; }
 private:
 	std::string m_name;

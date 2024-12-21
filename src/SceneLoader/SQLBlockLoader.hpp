@@ -15,11 +15,14 @@ public:
 	SQLBlockLoader(std::string dbname, SQLite::Database& db, SubSceneId scene_id)
 		: m_dbname{ dbname }, m_db{ db }, m_scene_id{scene_id} {}
 	bool AddBlock(const node::model::BlockModel& block) override;
+	bool AddBlockData(const node::model::BlockId& block_id, node::model::BlockType block_type,
+		const node::model::NodeSceneModel& scene) override;
 	bool DeleteBlockAndSockets(const node::model::BlockId& block_id) override;
 	bool UpdateBlockPosition(const node::model::BlockId& block_id,
 		const node::model::Point& position) override;
 	std::optional<node::model::BlockModel>
 		GetBlock(const node::model::BlockId& block_id) override;
+	std::optional<model::BlockData> GetBlockData(model::BlockId block_id, model::BlockType block_type) override;
 	bool UpdateBlockBounds(const node::model::BlockId& block_id,
 		const node::model::Rect& bounds) override;
 
@@ -30,9 +33,8 @@ public:
 	bool UpdateSocketPosition(const node::model::SocketUniqueId& socket_id,
 		const node::model::Point& position) override;
 	node::model::BlockId GetNextBlockId() override;
-	std::vector<node::model::BlockModel> GetBlocks() override;
+	bool GetBlocks(std::vector<node::model::BlockModel>& blocks) override;
 	void LoadSocketsForBlock(node::model::BlockModel& block);
-	bool LoadPropertiesForBlock(node::model::BlockModel& block);
 	bool LoadStylerProperties(node::model::BlockModel& block);
 private:
 	std::optional<node::model::BlockModel> GetBlock_internal(SQLite::Statement& query);

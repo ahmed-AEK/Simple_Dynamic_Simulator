@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NodeModels/NodeScene.hpp"
+#include "NodeModels/BlockData.hpp"
 
 namespace node::loader
 {
@@ -10,11 +11,15 @@ class BlockLoader
 {
 public:
 	virtual bool AddBlock(const node::model::BlockModel& block) = 0;
+	virtual bool AddBlockData(const node::model::BlockId& block_id, node::model::BlockType block_type, 
+		const node::model::NodeSceneModel& scene) = 0;
 	virtual bool DeleteBlockAndSockets(const node::model::BlockId& block_id) = 0;
 	virtual bool UpdateBlockPosition(const node::model::BlockId& block_id,
 		const node::model::Point& position) = 0;
 	virtual	std::optional<node::model::BlockModel>
 		GetBlock(const node::model::BlockId& block_id) = 0;
+
+	virtual std::optional<model::BlockData> GetBlockData(model::BlockId block_id, model::BlockType block_type) = 0;
 	virtual bool UpdateBlockBounds(const node::model::BlockId& block_id,
 		const node::model::Rect& bounds) = 0;
 
@@ -26,7 +31,7 @@ public:
 		const node::model::Point& position) = 0;
 
 	virtual node::model::BlockId GetNextBlockId() = 0;
-	virtual std::vector<node::model::BlockModel> GetBlocks() = 0;
+	virtual bool GetBlocks(std::vector<node::model::BlockModel>& blocks) = 0;
 
 	virtual ~BlockLoader() = default;
 	BlockLoader() = default;

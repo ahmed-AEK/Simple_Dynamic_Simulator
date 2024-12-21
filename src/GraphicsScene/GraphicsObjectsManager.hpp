@@ -42,7 +42,8 @@ protected:
 	void OnNotify(BlockObjectDropped& object) override;
 private:
 	void HandleNetUpdate(NetModificationReport& report);
-
+	void UpdateBlockStyler(BlockObject& block, const model::BlockModel& model);
+	std::unique_ptr<node::BlockStyler> GetBlockStyler(const std::string& styler, const model::BlockModel& model);
 
 	HandlePtr<Widget> m_scene;
 	SubScenesManager* m_parent_manager = nullptr;

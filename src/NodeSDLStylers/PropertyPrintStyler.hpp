@@ -5,13 +5,17 @@
 
 namespace node
 {
+namespace model
+{
+	class NodeSceneModel;
+}
 
 class PropertyPrintStyler : public TextBlockStyler
 {
 public:
 	static inline const std::string printed_key_text = "Property";
-	static std::unique_ptr<PropertyPrintStyler> Create(const model::BlockModel& model, TTF_Font* font);
-	PropertyPrintStyler(std::string name, TTF_Font* font);
-	void UpdateProperties(const model::BlockModel& model) override;
+	PropertyPrintStyler(const model::BlockDataCRef& model, TTF_Font* font);
+	void UpdateProperties(const model::BlockDataCRef& model) override;
+private:
 };
 }

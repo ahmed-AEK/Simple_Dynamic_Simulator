@@ -85,11 +85,23 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(MouseButtonEvent& e)
 	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
 
 	auto&& selected_element = pallete_elements[selected_item_index];
-	GetApp()->GetScene()->StartDragObject(DragDropObject{ selected_element->block_template,
-		model::BlockModel{selected_element->block},
-		std::shared_ptr<BlockStyler>{m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), 
-			selected_element->block)}
+	auto block_data_ref = model::BlockDataCRef{ selected_element->block};
+	if (auto functional_data = selected_element->data.GetFunctionalData())
+	{
+		block_data_ref = model::BlockDataCRef{ selected_element->block,
+			model::BlockDataCRef::FunctionalRef{*functional_data} 
+		};
+	}
+	
+	GetApp()->GetScene()->StartDragObject(
+		DragDropObject{ selected_element->block_template,
+			model::BlockModel{selected_element->block},
+			std::shared_ptr<BlockStyler>{
+				m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), block_data_ref)
+			},
+			model::BlockData{selected_element->data}
 		});
+	
 	return MI::ClickEvent::NONE;
 }
 

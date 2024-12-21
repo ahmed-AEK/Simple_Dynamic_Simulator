@@ -1,6 +1,7 @@
 #pragma once
 
 #include "toolgui/Dialog.hpp"
+#include "NodeModels/FunctionalBlocksManager.hpp"
 
 class SDLFont;
 

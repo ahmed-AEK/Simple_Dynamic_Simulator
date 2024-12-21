@@ -15,7 +15,7 @@ public:
 	SVGBlockStyler(const node::model::BlockModel& block);
 	void DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds,
 		const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected) override;
-	virtual void UpdateProperties(const model::BlockModel& model);
+	virtual void UpdateProperties(const model::BlockDataCRef& model);
 
 private:
 	std::optional<SVGRasterizer> m_svg_rasterizer;
