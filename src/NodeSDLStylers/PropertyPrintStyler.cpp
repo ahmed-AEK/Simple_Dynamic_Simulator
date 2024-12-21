@@ -1,9 +1,11 @@
 #include "PropertyPrintStyler.hpp"
+#include "NodeModels/NodeScene.hpp"
+#include "NodeModels/BlockData.hpp"
 
 #include <algorithm>
 #include <charconv>
 
-static std::string GetPrintedBlockPropertyValue(const node::model::BlockModel& model)
+static std::string GetPrintedBlockPropertyValue(const node::model::BlockModel& model, const node::model::FunctionalBlockData* data)
 {
 	using namespace node;
 	auto it = model.GetStylerProperties().properties.find(PropertyPrintStyler::printed_key_text);
@@ -11,7 +13,15 @@ static std::string GetPrintedBlockPropertyValue(const node::model::BlockModel& m
 	{
 		return {};
 	}
-	const auto& properties = model.GetProperties();
+
+	if (!data)
+	{
+		SDL_Log("invalid block data!");
+		return "error!";
+	}
+	
+	const auto& properties = data->properties;
+
 	auto it2 = std::find_if(properties.begin(), properties.end(), [&](const model::BlockProperty& prop) { return prop.name == it->second; });
 	if (it2 != properties.end())
 	{
@@ -20,18 +30,13 @@ static std::string GetPrintedBlockPropertyValue(const node::model::BlockModel& m
 	return {};
 }
 
-std::unique_ptr<node::PropertyPrintStyler> node::PropertyPrintStyler::Create(const model::BlockModel& model, TTF_Font* font)
-{
-	using namespace node;
-	return std::make_unique<PropertyPrintStyler>(GetPrintedBlockPropertyValue(model), font);
-}
 
-node::PropertyPrintStyler::PropertyPrintStyler(std::string name, TTF_Font* font)
-	:TextBlockStyler{std::move(name),font}
+node::PropertyPrintStyler::PropertyPrintStyler(const model::BlockDataCRef& model, TTF_Font* font)
+	:TextBlockStyler{GetPrintedBlockPropertyValue(model.block, model.GetFunctionalData()),font}
 {
 }
 
-void node::PropertyPrintStyler::UpdateProperties(const model::BlockModel& model)
+void node::PropertyPrintStyler::UpdateProperties(const model::BlockDataCRef& model)
 {
-	SetText(GetPrintedBlockPropertyValue(model));
+	SetText(GetPrintedBlockPropertyValue(model.block, model.GetFunctionalData()));
 }

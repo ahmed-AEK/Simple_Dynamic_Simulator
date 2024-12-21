@@ -26,11 +26,11 @@ TEST(testNet, testCreate)
 
 
     ASSERT_EQ(scene.GetNetNodes().size(), 2);
-    EXPECT_TRUE(scene.GetNetNodeById(node1_id).has_value());
-    EXPECT_TRUE(scene.GetNetNodeById(node2_id).has_value());
-    EXPECT_FALSE(scene.GetNetNodeById(NetNodeId{ 3 }).has_value());
+    EXPECT_TRUE(scene.GetNetNodeById(node1_id));
+    EXPECT_TRUE(scene.GetNetNodeById(node2_id));
+    EXPECT_FALSE(scene.GetNetNodeById(NetNodeId{ 3 }));
 
     ASSERT_EQ(scene.GetNetSegments().size(), 1);
     EXPECT_TRUE(scene.GetNetSegmentById(segment1_id));
-    EXPECT_FALSE(scene.GetNetSegmentById(NetSegmentId{ 2 }).has_value());
+    EXPECT_FALSE(scene.GetNetSegmentById(NetSegmentId{ 2 }));
 }

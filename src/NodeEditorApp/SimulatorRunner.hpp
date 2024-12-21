@@ -67,13 +67,9 @@ public:
 	SimulatorRunner& operator=(const SimulatorRunner&) = default;
 	SimulatorRunner& operator=(SimulatorRunner&&) = default;
 
-	std::optional<std::reference_wrapper<SimulationEvent>> GetResult() { 
-		if (m_evt)
-		{
-			return *m_evt;
-		}
-		return std::nullopt;
-		}
+	std::optional<SimulationEvent>& GetResult() {
+		return m_evt;
+	}
 
 	void Run();
 	void Stop();

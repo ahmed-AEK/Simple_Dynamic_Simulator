@@ -9,6 +9,11 @@
 namespace node
 {
 
+namespace model
+{
+	struct BlockDataCRef;
+}
+
 class BlockStyler
 {
 public:
@@ -29,7 +34,7 @@ public:
 	virtual void DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds,
 		const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected);
 
-	virtual void UpdateProperties(const model::BlockModel& model);
+	virtual void UpdateProperties(const model::BlockDataCRef& model);
 
 	virtual ~BlockStyler();
 };

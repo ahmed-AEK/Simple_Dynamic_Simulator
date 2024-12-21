@@ -102,7 +102,7 @@ void node::BlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model::Re
 	UNUSED_PARAM(selected);
 }
 
-void node::BlockStyler::UpdateProperties(const model::BlockModel& model)
+void node::BlockStyler::UpdateProperties(const model::BlockDataCRef& model)
 {
 	UNUSED_PARAM(model);
 }

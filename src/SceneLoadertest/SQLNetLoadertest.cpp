@@ -30,7 +30,7 @@ TEST(testNetLoader, testSaveLoadNetNode)
 	ASSERT_TRUE(loaded_node_opt);
 	ASSERT_EQ(new_scene->GetNetNodes().size(), 1);
 
-	auto&& loaded_node = loaded_node_opt->get();
+	auto&& loaded_node = *loaded_node_opt;
 	EXPECT_EQ(loaded_node.GetId(), node_id);
 	Point expected_pos{ 10,10 };
 	EXPECT_EQ(loaded_node.GetPosition(), expected_pos);
@@ -66,7 +66,7 @@ TEST(testNetLoader, testSaveLoadNetNode2)
 	ASSERT_TRUE(loaded_node_opt);
 	ASSERT_EQ(new_scene->GetNetNodes().size(), 1);
 
-	auto&& loaded_node = loaded_node_opt->get();
+	auto&& loaded_node = *loaded_node_opt;
 	EXPECT_EQ(loaded_node.GetId(), node_id);
 	Point expected_pos{ 20,20 };
 	EXPECT_EQ(loaded_node.GetPosition(), expected_pos);
@@ -103,7 +103,7 @@ TEST(testNetLoader, testSaveLoadNetSegment)
 	ASSERT_TRUE(loaded_segment_opt);
 	ASSERT_EQ(new_scene->GetNetSegments().size(), 1);
 
-	auto&& loaded_segment = loaded_segment_opt->get();
+	auto&& loaded_segment = *loaded_segment_opt;
 	EXPECT_EQ(loaded_segment.GetId(), segment_id);
 	EXPECT_EQ(loaded_segment.m_firstNodeId, node1);
 	EXPECT_EQ(loaded_segment.m_secondNodeId, node2);
@@ -136,7 +136,7 @@ TEST(testNetLoader, testSaveLoadNetSegment2)
 	ASSERT_TRUE(loaded_segment_opt);
 	ASSERT_EQ(new_scene->GetNetSegments().size(), 1);
 
-	auto&& loaded_segment = loaded_segment_opt->get();
+	auto&& loaded_segment = *loaded_segment_opt;
 	EXPECT_EQ(loaded_segment.GetId(), segment_id);
 	EXPECT_EQ(loaded_segment.m_firstNodeId, node1);
 	EXPECT_EQ(loaded_segment.m_secondNodeId, node2);
@@ -168,7 +168,7 @@ TEST(testNetLoader, testSaveLoadSocketConnection)
 	ASSERT_TRUE(loaded_connection_opt);
 	ASSERT_EQ(new_scene->GetSocketConnections().size(), 1);
 
-	auto&& loaded_connection = loaded_connection_opt->get();
+	auto&& loaded_connection = *loaded_connection_opt;
 	EXPECT_EQ(loaded_connection.NodeId, node_id);
 	EXPECT_EQ(loaded_connection.socketId.socket_id, socket_id);
 	EXPECT_EQ(loaded_connection.socketId.block_id, block_id);
@@ -211,7 +211,7 @@ TEST(testNetLoader, testSaveLoadSocketConnection2)
 	ASSERT_TRUE(loaded_connection_opt);
 	ASSERT_EQ(new_scene->GetSocketConnections().size(), 2);
 
-	auto&& loaded_connection = loaded_connection_opt->get();
+	auto&& loaded_connection = *loaded_connection_opt;
 	EXPECT_EQ(loaded_connection.NodeId, node_id);
 	EXPECT_EQ(loaded_connection.socketId.socket_id, socket_id);
 	EXPECT_EQ(loaded_connection.socketId.block_id, block_id);

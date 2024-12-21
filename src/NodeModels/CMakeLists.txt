@@ -8,6 +8,8 @@ NetModel.cpp NetModel.hpp
 Observer.hpp
 SceneModelManager.hpp SceneModelManager.cpp
 IdTypes.hpp
+FunctionalBlocksManager.hpp FunctionalBlocksManager.cpp
+BlockData.hpp
 )
 
 target_include_directories(NodeModels PRIVATE ".")

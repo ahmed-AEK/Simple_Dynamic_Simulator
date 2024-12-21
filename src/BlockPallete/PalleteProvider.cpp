@@ -18,21 +18,35 @@ node::PalleteProvider::PalleteProvider(std::shared_ptr<BlockClassesManager> mana
 void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 {
 	assert(m_classesManager);
-	auto block_class = m_classesManager->GetBlockClassByName(temp.class_name);
+	if (temp.data.GetFunctionalData())
+	{
+		AddFunctionalElemnt(temp);
+	}
+	else
+	{
+		SDL_Log("unknown block template !");
+	}
+}
+
+void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
+{
+	auto block_data_ptr = temp.data.GetFunctionalData();
+	assert(block_data_ptr);
+	auto block_class = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	assert(block_class);
 	if (!block_class)
 	{
 		return;
 	}
 
-	assert(block_class->ValidateClassProperties(temp.default_properties));
-	if (!block_class->ValidateClassProperties(temp.default_properties))
+	assert(block_class->ValidateClassProperties(block_data_ptr->properties));
+	if (!block_class->ValidateClassProperties(block_data_ptr->properties))
 	{
 		return;
 	}
 
-	auto sockets_types = block_class->CalculateSockets(temp.default_properties);
-	auto block = model::BlockModel{ model::BlockId{0}, {0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight} };
+	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Functional, {0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight} };
 	model::id_int socket_id = 0;
 	for (const auto& sock_type : sockets_types)
 	{
@@ -40,13 +54,10 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 		socket_id++;
 	}
 
-	block.SetClass(temp.class_name);
 	block.SetStyler(temp.styler_name);
 	block.SetStylerProperties(temp.style_properties);
-	auto& properties = block.GetProperties();
-	properties = temp.default_properties;
 
-	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, block);
+	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, model::BlockDataCRef{ block, model::BlockDataCRef::FunctionalRef{*block_data_ptr} });
 
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
@@ -55,6 +66,7 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 		std::make_unique<PalleteElement>(PalleteElement{
 			temp.template_name,
 			std::move(block),
+			model::BlockData{*block_data_ptr},
 			std::move(styler),
 			std::make_shared<TextPainter>(nullptr),
 			}

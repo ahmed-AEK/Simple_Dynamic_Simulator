@@ -13,6 +13,7 @@
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "optimizer/NLDiffSolver.hpp"
 #include "optimizer/SourceEq.hpp"
+#include "NodeModels/FunctionalBlocksManager.hpp"
 
 struct Net
 {
@@ -61,32 +62,43 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr)
 {
+	using namespace node;
 	BlocksFunctions funcs;
+	auto& functinalBlocksManager = scene.GetFunctionalBlocksManager();
 	for (const auto& block : scene.GetBlocks())
 	{
-		auto block_class = mgr.GetBlockClassByName(block.GetClass());
-		assert(block_class);
-		auto functor = block_class->GetFunctor(block.GetProperties());
+		if (block.GetType() == model::BlockType::Functional)
+		{
+			auto block_data_ptr = functinalBlocksManager.GetDataForId(block.GetId());
+			assert(block_data_ptr);
+			auto block_class = mgr.GetBlockClassByName(block_data_ptr->block_class);
+			assert(block_class);
+			auto functor = block_class->GetFunctor(block_data_ptr->properties);
 
-		auto block_adder = [&](node::BlockFunctor& functor) {
+			auto block_adder = [&](node::BlockFunctor& functor) {
+				std::visit(overloaded{
+				[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
+				[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
+				[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
+				[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
+				[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
+					}, functor);
+				};
+
 			std::visit(overloaded{
-			[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
-			[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
-			[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
-			[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
-			[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
-				}, functor);
-			};
-
-		std::visit(overloaded{ 
-			block_adder, 
-			[&](std::vector<node::BlockFunctor>& blocks) 
-			{
-				for (auto& block : blocks)
+				block_adder,
+				[&](std::vector<node::BlockFunctor>& blocks)
 				{
-					block_adder(block);
-				}
-			} }, functor);
+					for (auto& block : blocks)
+					{
+						block_adder(block);
+					}
+				} }, functor);
+		}
+		else
+		{
+			assert(false); // other modes not supported!
+		}
 		
 	}
 	return funcs;
@@ -124,16 +136,16 @@ static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
 			auto conn = scene.GetSocketConnectionForNode(node_id);
 			if (conn)
 			{
-				result.socket_mapping.emplace(conn->get().socketId, current_net_id);
+				result.socket_mapping.emplace(conn->socketId, current_net_id);
 			}
 			for (int i = 0; i < 4; i++)
 			{
-				auto segment_id = node->get().GetSegmentAt(static_cast<ConnectedSegmentSide>(i));
+				auto segment_id = node->GetSegmentAt(static_cast<ConnectedSegmentSide>(i));
 				if (segment_id)
 				{
 					auto segment = scene.GetNetSegmentById(*segment_id);
 					assert(segment);
-					auto node_id_next = segment->get().m_firstNodeId == node_id ? segment->get().m_secondNodeId : segment->get().m_firstNodeId;
+					auto node_id_next = segment->m_firstNodeId == node_id ? segment->m_secondNodeId : segment->m_firstNodeId;
 					auto it = unvisited_nodes.find(node_id_next);
 					if (it != unvisited_nodes.end())
 					{
@@ -377,7 +389,7 @@ static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vect
 				{
 					auto socket = block->get().GetSocketById(socket_id.socket_id);
 					assert(socket);
-					if (socket->get().GetType() == model::BlockSocketModel::SocketType::output)
+					if (socket->GetType() == model::BlockSocketModel::SocketType::output)
 					{
 						output_sockets.push_back(socket_id);
 					}

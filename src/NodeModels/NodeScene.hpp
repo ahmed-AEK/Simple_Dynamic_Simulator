@@ -2,6 +2,7 @@
 
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/NetModel.hpp"
+#include "NodeModels/FunctionalBlocksManager.hpp"
 #include <memory>
 
 namespace node::model
@@ -24,10 +25,10 @@ public:
 	void AddNetNode(NetNodeModel&& netNode) { m_nodes.push_back(std::move(netNode)); }
 	void RemoveNetNodeById(const NetNodeId& id);
 
-	std::optional<std::reference_wrapper<const NetNodeModel>>
+	const NetNodeModel*
 		GetNetNodeById(const NetNodeId& id) const;
 
-	std::optional<std::reference_wrapper<NetNodeModel>>
+	NetNodeModel*
 		GetNetNodeById(const NetNodeId& id);
 
 	std::span<NetNodeModel>
@@ -38,9 +39,9 @@ public:
 	void AddNetSegment(NetSegmentModel&& netSegment) { m_segments.push_back(std::move(netSegment)); }
 	void RemoveNetSegmentById(const NetSegmentId& id);
 
-	std::optional<std::reference_wrapper<const NetSegmentModel>>
+	const NetSegmentModel*
 		GetNetSegmentById(const NetSegmentId& id) const;
-	std::optional<std::reference_wrapper<NetSegmentModel>>
+	NetSegmentModel*
 		GetNetSegmentById(const NetSegmentId& id);
 	std::span<NetSegmentModel>
 		GetNetSegments() { return m_segments; }
@@ -54,21 +55,26 @@ public:
 		m_SocketConnections.push_back(connection);
 	}
 	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
-	std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>>
+	const node::model::SocketNodeConnection*
 		GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const;
-	std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>>
+	const node::model::SocketNodeConnection*
 		GetSocketConnectionForNode(const model::NetNodeId& node_id) const;
-	std::optional<std::reference_wrapper<node::model::SocketNodeConnection>>
+	node::model::SocketNodeConnection*
 		GetSocketConnectionForNode(const model::NetNodeId& node_id);
 
 	void ReserveBlocks(size_t size) { m_blocks.reserve(size); }
 	void ReserveNetSegments(size_t size) { m_segments.reserve(size); }
 	void ReserveNetNodes(size_t size) { m_nodes.reserve(size); }
+
+	FunctionalBlocksManager& GetFunctionalBlocksManager() { return m_functionalBlocksManager; }
+	const FunctionalBlocksManager& GetFunctionalBlocksManager() const { return m_functionalBlocksManager; }
+
 private:
 	std::vector<BlockModel> m_blocks;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
 	std::vector<SocketNodeConnection> m_SocketConnections;
+	FunctionalBlocksManager m_functionalBlocksManager;
 };
 
 

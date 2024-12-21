@@ -14,6 +14,7 @@ class BlockSocketObject;
 namespace model
 {
     class BlockModel;
+    struct BlockDataCRef;
 }
 class BlockStyler;
 class BlockResizeObject;
@@ -32,9 +33,9 @@ public:
 
     std::optional<model::BlockId> GetModelId();
     const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
-    std::optional<std::reference_wrapper<node::BlockSocketObject>> GetSocketById(model::SocketId id);
+    node::BlockSocketObject* GetSocketById(model::SocketId id);
 
-    void UpdateStyler(const model::BlockModel& model);
+    void UpdateStyler(const model::BlockDataCRef& model);
     const BlockStyler& GetStyler() const { return *m_styler; }
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
     void SetResizeHandles(BlockResizeObject& resize_object);

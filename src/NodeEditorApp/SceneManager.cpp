@@ -80,6 +80,8 @@ void node::SceneManager::SetLastSimulationResults(std::vector<BlockResult> resul
 void node::SceneManager::AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id)
 {
 	UNUSED_PARAM(parent_id);
+	UNUSED_PARAM(model);
+	/*
 	auto& properties = model.GetProperties();
 	auto it = std::find_if(properties.begin(), properties.end(), [&](const node::model::BlockProperty& p) { return p.name == "SubSceneId"; });
 	assert(it != properties.end());
@@ -90,4 +92,5 @@ void node::SceneManager::AddNewSubSceneToScene(node::model::BlockModel& model, n
 	manager->SetParentSceneId(parent_id);
 	m_models.emplace(id, std::move(manager));
 	m_next_subscene_id.value++;
+	*/
 }

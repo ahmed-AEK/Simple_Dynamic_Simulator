@@ -9,7 +9,7 @@ TEST(testScene, testCreate)
 	NodeSceneModel scene;
 	BlockId block_id = BlockId{ 1 };
 	SocketId sock_id = SocketId{ 2 };
-	BlockModel node1{ block_id, Rect{1,1,10,10} };
+	BlockModel node1{ block_id, BlockType::Functional, Rect{1,1,10,10} };
 	BlockSocketModel sock1{ BlockSocketModel::SocketType::input, sock_id };
 
 	node1.AddSocket(std::move(sock1));
@@ -18,6 +18,6 @@ TEST(testScene, testCreate)
 	ASSERT_EQ(scene.GetBlocks().size(), 1);
 	EXPECT_TRUE(scene.GetBlockById(block_id) != std::nullopt);
 	EXPECT_TRUE(scene.GetBlockById(BlockId{ block_id.value + 1 }) == std::nullopt);
-	EXPECT_TRUE(scene.GetBlockById(block_id)->get().GetSocketById(sock_id).has_value());
-	EXPECT_FALSE(scene.GetBlockById(block_id)->get().GetSocketById(SocketId{ sock_id.value + 1 }).has_value());
+	EXPECT_TRUE(scene.GetBlockById(block_id)->get().GetSocketById(sock_id));
+	EXPECT_FALSE(scene.GetBlockById(block_id)->get().GetSocketById(SocketId{ sock_id.value + 1 }));
 }

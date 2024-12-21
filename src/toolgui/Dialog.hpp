@@ -1,9 +1,10 @@
 #pragma once
 
 #include "toolgui/Widget.hpp"
-#include <functional>
 #include "SDL_Framework/Utility.hpp"
 
+#include <functional>
+#include <variant>
 namespace node
 {
 class Dialog;

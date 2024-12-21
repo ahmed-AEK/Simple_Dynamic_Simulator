@@ -3,6 +3,7 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "toolgui/NodeMacros.h"
 #include "NodeModels/BlockModel.hpp"
+#include "NodeModels/BlockData.hpp"
 
 namespace node
 {
@@ -13,6 +14,7 @@ namespace node
 		std::string blockTemplateName;
 		model::BlockModel block;
 		std::shared_ptr<BlockStyler> styler;
+		model::BlockData data;
 
 		void Draw(SDL_Renderer* renderer, const SDL_FPoint& p) const
 		{

@@ -42,26 +42,26 @@ void node::model::NodeSceneModel::RemoveNetNodeById(const NetNodeId& id)
 	m_nodes.erase(it);
 }
 
-std::optional<std::reference_wrapper<const node::model::NetNodeModel>> node::model::NodeSceneModel::GetNetNodeById(const NetNodeId& id) const
+const node::model::NetNodeModel* node::model::NodeSceneModel::GetNetNodeById(const NetNodeId& id) const
 {
 	auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
 		[id](const NetNodeModel& node) {return id == node.GetId(); });
 	if (iter != m_nodes.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<node::model::NetNodeModel>> node::model::NodeSceneModel::GetNetNodeById(const NetNodeId& id)
+node::model::NetNodeModel* node::model::NodeSceneModel::GetNetNodeById(const NetNodeId& id)
 {
 	auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
 		[id](const NetNodeModel& node) {return id == node.GetId(); });
 	if (iter != m_nodes.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
 void node::model::NodeSceneModel::RemoveNetSegmentById(const NetSegmentId& id)
@@ -73,26 +73,26 @@ void node::model::NodeSceneModel::RemoveNetSegmentById(const NetSegmentId& id)
 	m_segments.erase(it);
 }
 
-std::optional<std::reference_wrapper<const node::model::NetSegmentModel>> node::model::NodeSceneModel::GetNetSegmentById(const NetSegmentId& id) const
+const node::model::NetSegmentModel* node::model::NodeSceneModel::GetNetSegmentById(const NetSegmentId& id) const
 {
 	auto iter = std::find_if(m_segments.begin(), m_segments.end(),
 		[id](const NetSegmentModel& segment) {return id == segment.GetId(); });
 	if (iter != m_segments.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<node::model::NetSegmentModel>> node::model::NodeSceneModel::GetNetSegmentById(const NetSegmentId& id)
+node::model::NetSegmentModel* node::model::NodeSceneModel::GetNetSegmentById(const NetSegmentId& id)
 {
 	auto iter = std::find_if(m_segments.begin(), m_segments.end(),
 		[id](const NetSegmentModel& segment) {return id == segment.GetId(); });
 	if (iter != m_segments.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
 void node::model::NodeSceneModel::RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket)
@@ -108,7 +108,7 @@ void node::model::NodeSceneModel::RemoveSocketConnectionForSocket(const model::S
 	}
 }
 
-std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>> node::model::NodeSceneModel::GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const
+const node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const
 {
 	auto iter = std::find_if(m_SocketConnections.begin(), m_SocketConnections.end(),
 		[&](const SocketNodeConnection& conn) {
@@ -116,12 +116,12 @@ std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>> n
 		});
 	if (iter != m_SocketConnections.end())
 	{
-		return *iter;
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>> node::model::NodeSceneModel::GetSocketConnectionForNode(const model::NetNodeId& node_id) const
+const node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForNode(const model::NetNodeId& node_id) const
 {
 	auto iter = std::find_if(m_SocketConnections.begin(), m_SocketConnections.end(),
 		[&](const SocketNodeConnection& conn) {
@@ -129,12 +129,12 @@ std::optional<std::reference_wrapper<const node::model::SocketNodeConnection>> n
 		});
 	if (iter != m_SocketConnections.end())
 	{
-		return *iter;
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<node::model::SocketNodeConnection>> node::model::NodeSceneModel::GetSocketConnectionForNode(const model::NetNodeId& node_id)
+node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForNode(const model::NetNodeId& node_id)
 {
 	auto iter = std::find_if(m_SocketConnections.begin(), m_SocketConnections.end(),
 		[&](const SocketNodeConnection& conn) {
@@ -142,7 +142,7 @@ std::optional<std::reference_wrapper<node::model::SocketNodeConnection>> node::m
 		});
 	if (iter != m_SocketConnections.end())
 	{
-		return *iter;
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }

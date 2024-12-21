@@ -17,10 +17,14 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 	assert(parent);
 	assert(m_scene_manager);
 	assert(m_classesManager);
+	assert(block.GetType() == model::BlockType::Functional);
+
+	auto block_data_ptr = m_scene_manager->GetSceneModel()->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
+	assert(block_data_ptr);
 	TTF_Font* font_title = GetApp()->getFont().get();
 	int font_height = TTF_GetFontHeight(font_title);
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block.GetClass() + " Block"}, SDL_FRect{ 0.0f,0.0f,100.0f,static_cast<float>(font_height) }, font_title, this));
-	auto class_ptr = m_classesManager->GetBlockClassByName(block.GetClass());
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{block_data_ptr->block_class + " Block"}, SDL_FRect{ 0.0f,0.0f,100.0f,static_cast<float>(font_height) }, font_title, this));
+	auto class_ptr = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	assert(class_ptr);
 	if (class_ptr)
 	{
@@ -31,12 +35,12 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 		AddControl(std::make_unique<DialogLabel>(std::move(lines), SDL_FRect{ 0.0f,0.0f,500.0f, static_cast<float>(line_height * static_cast<int>(lines.size()) + lines_gap) }, font, this));
 	}
 
-	if (block.GetProperties().size())
+	if (block_data_ptr->properties.size())
 	{
 		AddControl(std::make_unique<SeparatorControl>(SDL_FRect{ 0.0f,0.0f,500.0f, 2.0f }, this));
 	}
 
-	for (const auto& property : block.GetProperties())
+	for (const auto& property : block_data_ptr->properties)
 	{
 		std::string initial_value = property.to_string();
 		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), SDL_FRect{ 0.0f,0.0f,500.0f, static_cast<float>(font_height + 5) }, this);
@@ -82,7 +86,15 @@ void node::BlockPropertiesDialog::OnOk()
 		SDL_Log("Update Failed!");
 		return;
 	}
-	auto block_class = m_classesManager->GetBlockClassByName(block->get().GetClass());
+
+	auto block_data_ptr = m_scene_manager->GetSceneModel()->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
+	if (!block_data_ptr)
+	{
+		Dialog::OnOk();
+		SDL_Log("Update Failed! data not found!");
+		return;
+	}
+	auto block_class = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	if (!block_class)
 	{
 		Dialog::OnOk();

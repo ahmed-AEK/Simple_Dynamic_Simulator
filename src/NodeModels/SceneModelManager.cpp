@@ -1,4 +1,6 @@
 #include "SceneModelManager.hpp"
+#include "BlockData.hpp"
+
 #include <iterator>
 
 static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, const node::model::Point& point,
@@ -24,10 +26,10 @@ static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, con
 			auto segment_model = model.GetNetSegmentById(*east_segment);
 			if (segment_model)
 			{
-				other_side = segment_model->get().m_firstNodeId;
+				other_side = segment_model->m_firstNodeId;
 				if (other_side == node_Id)
 				{
-					other_side = segment_model->get().m_secondNodeId;
+					other_side = segment_model->m_secondNodeId;
 				}
 			}
 		}
@@ -36,7 +38,7 @@ static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, con
 			auto other_node = model.GetNetNodeById(*other_side);
 			if (other_node)
 			{
-				other_node->get().SetPosition({ other_node->get().GetPosition().x, point.y });
+				other_node->SetPosition({ other_node->GetPosition().x, point.y });
 			}
 		}
 		};
@@ -220,12 +222,13 @@ struct ResizeBlockAction : public ModelAction
 };
 
 
-struct AddBlockAction : public ModelAction
+struct AddFuncitonalBlockAction : public ModelAction
 {
-	explicit AddBlockAction(model::BlockModel block)
-		:block{ block } {}
+	explicit AddFuncitonalBlockAction(model::BlockModel&& block, model::FunctionalBlockData&& data)
+		:block{ std::move(block) }, data{ std::move(data) } {}
 	const model::BlockModel block;
 	std::optional<model::BlockId> stored_id;
+	const model::FunctionalBlockData data;
 
 	bool DoUndo(SceneModelManager& manager) override
 	{
@@ -241,8 +244,11 @@ struct AddBlockAction : public ModelAction
 		{
 			return false;
 		}
-		manager.GetModel().RemoveBlockById(*stored_id);
-		manager.UnRegisterSubSystem(*stored_id);
+		auto& scene_model = manager.GetModel();
+		scene_model.RemoveBlockById(*stored_id);
+		[[maybe_unused]] auto success = scene_model.GetFunctionalBlocksManager().EraseDataForId(*stored_id);
+		assert(success);
+
 		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{*stored_id} });
 
 		return true;
@@ -261,14 +267,11 @@ struct AddBlockAction : public ModelAction
 		model::BlockModel temp_block = block;
 		temp_block.SetId(block_id);
 
-		manager.GetModel().AddBlock(std::move(temp_block));
-
+		auto& scene_model = manager.GetModel();
+		scene_model.AddBlock(std::move(temp_block));
+		scene_model.GetFunctionalBlocksManager().SetDataForId(block_id, model::FunctionalBlockData{ data });
 		auto block_ref = manager.GetModel().GetBlockById(block_id);
 		assert(block_ref);
-		if (block_ref->get().GetClass() == "SubSystem")
-		{
-			manager.RegisterSubSystem(block_ref->get());
-		}
 		manager.Notify(SceneModification{ SceneModificationType::BlockAdded, SceneModification::data_t{*block_ref} });
 		
 		return true;
@@ -283,12 +286,22 @@ struct RemoveBlockAction : public ModelAction
 	const model::BlockId id;
 	std::optional<model::BlockModel> stored_block;
 	std::vector<model::SocketNodeConnection> stored_connections;
+	model::BlockData block_data;
 
 	bool DoUndo(SceneModelManager& manager) override
 	{
 		assert(stored_block);
 		manager.GetModel().AddBlock(model::BlockModel{ *stored_block });
 
+		if (stored_block->GetType() == model::BlockType::Functional)
+		{
+			auto functional_data = block_data.GetFunctionalData();
+			assert(functional_data);
+			if (functional_data)
+			{
+				manager.GetModel().GetFunctionalBlocksManager().SetDataForId(stored_block->GetId(), model::FunctionalBlockData{ *functional_data });
+			}
+		}
 		auto block_ref = manager.GetModel().GetBlockById(stored_block->GetId());
 		assert(block_ref);
 		if (!block_ref)
@@ -299,10 +312,6 @@ struct RemoveBlockAction : public ModelAction
 		for (auto&& connection : stored_connections)
 		{
 			manager.GetModel().AddSocketNodeConnection(connection);
-		}
-		if (block_ref->get().GetClass() == "SubSystem")
-		{
-			manager.RegisterSubSystem(block_ref->get());
 		}
 		manager.Notify(SceneModification{ SceneModificationType::BlockAddedWithConnections, SceneModification::data_t{BlockAddWithConnectionsReport{*block_ref,stored_connections} } });
 
@@ -329,8 +338,19 @@ struct RemoveBlockAction : public ModelAction
 			}
 		}
 		stored_block = block;
+
+		if (block->get().GetType() == model::BlockType::Functional)
+		{
+			auto data_ptr = manager.GetModel().GetFunctionalBlocksManager().GetDataForId(block->get().GetId());
+			assert(data_ptr);
+			if (data_ptr)
+			{
+				block_data = model::BlockData{ std::move(*data_ptr) };
+				manager.GetModel().GetFunctionalBlocksManager().EraseDataForId(block->get().GetId());
+			}
+		}
+		
 		manager.GetModel().RemoveBlockById(id);
-		manager.UnRegisterSubSystem(id);
 		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
 		return true;
 	}
@@ -352,8 +372,19 @@ struct ModifyBlockPropertiesAction : public ModelAction
 		{
 			return false;
 		}
+		if (block->get().GetType() != model::BlockType::Functional)
+		{
+			return false;
+		}
 
-		block->get().GetProperties() = old_properties;
+		auto functional_blocks_manager = manager.GetModel().GetFunctionalBlocksManager();
+		auto block_data = functional_blocks_manager.GetDataForId(block_id);
+		if (!block_data)
+		{
+			return false;
+		}
+		block_data->properties = old_properties;
+
 		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesModified , SceneModification::data_t{*block} });
 		
 		return true;
@@ -367,8 +398,21 @@ struct ModifyBlockPropertiesAction : public ModelAction
 		{
 			return false;
 		}
-		old_properties = block->get().GetProperties();
-		block->get().GetProperties() = new_properties;
+
+		if (block->get().GetType() != model::BlockType::Functional)
+		{
+			return false;
+		}
+
+		auto functional_blocks_manager = manager.GetModel().GetFunctionalBlocksManager();
+		auto block_data = functional_blocks_manager.GetDataForId(block_id);
+		if (!block_data)
+		{
+			return false;
+		}
+
+		old_properties = block_data->properties;
+		block_data->properties = new_properties;
 		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesModified , SceneModification::data_t{*block} });
 		
 		return true;
@@ -395,7 +439,20 @@ struct ModifyBlockPropertiesAndSocketsAction : public ModelAction
 		{
 			return false;
 		}
-		block->get().GetProperties() = old_properties;
+
+		if (block->get().GetType() != model::BlockType::Functional)
+		{
+			return false;
+		}
+
+		auto functional_blocks_manager = manager.GetModel().GetFunctionalBlocksManager();
+		auto block_data = functional_blocks_manager.GetDataForId(block_id);
+		if (!block_data)
+		{
+			return false;
+		}
+
+		block_data->properties = old_properties;
 
 		for (auto&& connection : stored_connections)
 		{
@@ -423,8 +480,20 @@ struct ModifyBlockPropertiesAndSocketsAction : public ModelAction
 			return false;
 		}
 
-		old_properties = block->get().GetProperties();
-		block->get().GetProperties() = new_properties;
+		if (block->get().GetType() != model::BlockType::Functional)
+		{
+			return false;
+		}
+
+		auto functional_blocks_manager = manager.GetModel().GetFunctionalBlocksManager();
+		auto block_data = functional_blocks_manager.GetDataForId(block_id);
+		if (!block_data)
+		{
+			return false;
+		}
+
+		old_properties = block_data->properties;
+		block_data->properties = new_properties;
 
 		for (const auto& socket : block->get().GetSockets())
 		{
@@ -516,7 +585,7 @@ struct UpdateNetAction : public ModelAction
 			}
 			auto socket = block->get().GetSocketById(connection.socketId.socket_id);
 			assert(socket);
-			socket->get().SetConnectedNetNode(std::nullopt);
+			socket->SetConnectedNetNode(std::nullopt);
 			scene.RemoveSocketConnectionForSocket(connection.socketId);
 		}
 
@@ -530,17 +599,17 @@ struct UpdateNetAction : public ModelAction
 				return false;
 			}
 
-			auto node1 = scene.GetNetNodeById(segment->get().m_firstNodeId);
+			auto node1 = scene.GetNetNodeById(segment->m_firstNodeId);
 			assert(node1);
-			auto node2 = scene.GetNetNodeById(segment->get().m_secondNodeId);
+			auto node2 = scene.GetNetNodeById(segment->m_secondNodeId);
 			assert(node2);
 			if (!node1 || !node2)
 			{
 				return false;
 			}
 			scene.RemoveNetSegmentById(segment_info.id);
-			node1->get().SetSegmentAt(segment_info.first_side,std::nullopt);
-			node2->get().SetSegmentAt(segment_info.second_side, std::nullopt);
+			node1->SetSegmentAt(segment_info.first_side,std::nullopt);
+			node2->SetSegmentAt(segment_info.second_side, std::nullopt);
 		}
 
 		// undo updated segments
@@ -555,28 +624,28 @@ struct UpdateNetAction : public ModelAction
 
 			{
 				// disconnect from old node
-				auto node_id = updated_segment->get().m_firstNodeId;
+				auto node_id = updated_segment->m_firstNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && *segment == segment_request.id)
 					{
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
 			}
 			{
 				// disconnect from old node
-				auto node_id = updated_segment->get().m_secondNodeId;
+				auto node_id = updated_segment->m_secondNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && (*segment) == segment_request.id)
 					{
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
@@ -595,11 +664,11 @@ struct UpdateNetAction : public ModelAction
 					return false;
 				}
 
-				updated_segment->get().m_firstNodeId = segment_request.old_node1;
-				updated_segment->get().m_secondNodeId = segment_request.old_node2;
+				updated_segment->m_firstNodeId = segment_request.old_node1;
+				updated_segment->m_secondNodeId = segment_request.old_node2;
 
-				node1->get().SetSegmentAt(segment_request.old_first_side, updated_segment->get().GetId());
-				node2->get().SetSegmentAt(segment_request.old_second_side, updated_segment->get().GetId());
+				node1->SetSegmentAt(segment_request.old_first_side, updated_segment->GetId());
+				node2->SetSegmentAt(segment_request.old_second_side, updated_segment->GetId());
 			}
 		}
 
@@ -610,7 +679,7 @@ struct UpdateNetAction : public ModelAction
 			assert(node);
 			if (node)
 			{
-				node->get().SetPosition(node_request.old_position);
+				node->SetPosition(node_request.old_position);
 			}
 		}
 
@@ -639,7 +708,7 @@ struct UpdateNetAction : public ModelAction
 				{
 					return false;
 				}
-				node->get().SetSegmentAt(deleted_segment_report.first_side, deleted_segment_report.segment.GetId());
+				node->SetSegmentAt(deleted_segment_report.first_side, deleted_segment_report.segment.GetId());
 			}
 			
 			{
@@ -650,7 +719,7 @@ struct UpdateNetAction : public ModelAction
 				{
 					return false;
 				}
-				node->get().SetSegmentAt(deleted_segment_report.second_side, deleted_segment_report.segment.GetId());
+				node->SetSegmentAt(deleted_segment_report.second_side, deleted_segment_report.segment.GetId());
 			}
 		}
 
@@ -670,7 +739,7 @@ struct UpdateNetAction : public ModelAction
 				return false;
 			}
 			scene.AddSocketNodeConnection(model::SocketNodeConnection{deleted_connection_report.socketId, deleted_connection_report.NodeId});
-			socket->get().SetConnectedNetNode(deleted_connection_report.NodeId);
+			socket->SetConnectedNetNode(deleted_connection_report.NodeId);
 		}
 		
 		// setup notification
@@ -755,7 +824,7 @@ struct UpdateNetAction : public ModelAction
 			}
 			auto socket = block->get().GetSocketById(deleted_connection.socket_id);
 			assert(socket);
-			socket->get().SetConnectedNetNode(std::nullopt);
+			socket->SetConnectedNetNode(std::nullopt);
 			model::SocketNodeConnection stored_conn = *conn;
 			scene.RemoveSocketConnectionForSocket(deleted_connection);
 			edits.stored_deleted_connections.push_back(std::move(stored_conn));
@@ -773,29 +842,29 @@ struct UpdateNetAction : public ModelAction
 			StoredSegment stored_segment{ *deleted_segment , {}, {}};
 
 			{
-				auto node_id = deleted_segment->get().m_firstNodeId;
+				auto node_id = deleted_segment->m_firstNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && *segment == deleted_segment_id)
 					{
 						stored_segment.first_side = static_cast<model::ConnectedSegmentSide>(i);
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
 			}
 			{
-				auto node_id = deleted_segment->get().m_secondNodeId;
+				auto node_id = deleted_segment->m_secondNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && (*segment) == deleted_segment_id)
 					{
 						stored_segment.second_side = static_cast<model::ConnectedSegmentSide>(i);
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
@@ -813,13 +882,13 @@ struct UpdateNetAction : public ModelAction
 			{
 				return false;
 			}
-			auto conn = scene.GetSocketConnectionForNode(node->get().GetId());
+			auto conn = scene.GetSocketConnectionForNode(node->GetId());
 			if (conn)
 			{
 				edits.stored_deleted_connections.push_back(*conn);
-				scene.RemoveSocketConnectionForSocket(conn->get().socketId);
+				scene.RemoveSocketConnectionForSocket(conn->socketId);
 			}
-			model::NetNodeModel stored_node = node->get();
+			model::NetNodeModel stored_node = *node;
 			scene.RemoveNetNodeById(deleted_node);
 			edits.stored_deleted_nodes.push_back(std::move(stored_node));
 		}
@@ -847,8 +916,8 @@ struct UpdateNetAction : public ModelAction
 			assert(node);
 			if (node)
 			{
-				model::Point old_position = node->get().GetPosition();
-				node->get().SetPosition(node_request.new_position);
+				model::Point old_position = node->GetPosition();
+				node->SetPosition(node_request.new_position);
 				edits.stored_node_updates.push_back(StoredNodeUpdates{ node_request.node_id, old_position });
 			}
 		}
@@ -863,35 +932,35 @@ struct UpdateNetAction : public ModelAction
 				return false;
 			}
 
-			StoredSegmentUpdate segment_update{ updated_segment->get().GetId(), model::NetNodeId{0}, model::NetNodeId{0} , {}, {}};
+			StoredSegmentUpdate segment_update{ updated_segment->GetId(), model::NetNodeId{0}, model::NetNodeId{0} , {}, {}};
 			{
 				// disconnect from old node
-				auto node_id = updated_segment->get().m_firstNodeId;
+				auto node_id = updated_segment->m_firstNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && *segment == segment_request.segment_id)
 					{
 						segment_update.old_first_side = static_cast<model::ConnectedSegmentSide>(i);
-						segment_update.old_node1 = node->get().GetId();
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						segment_update.old_node1 = node->GetId();
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
 			}
 			{
 				// disconnect from old node
-				auto node_id = updated_segment->get().m_secondNodeId;
+				auto node_id = updated_segment->m_secondNodeId;
 				auto node = scene.GetNetNodeById(node_id);
 				for (int i = 0; i < 4; i++)
 				{
-					auto segment = node->get().GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
+					auto segment = node->GetSegmentAt(static_cast<model::ConnectedSegmentSide>(i));
 					if (segment && (*segment) == segment_request.segment_id)
 					{
 						segment_update.old_second_side = static_cast<model::ConnectedSegmentSide>(i);
-						segment_update.old_node2 = node->get().GetId();
-						node->get().SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
+						segment_update.old_node2 = node->GetId();
+						node->SetSegmentAt(static_cast<model::ConnectedSegmentSide>(i), std::nullopt);
 						break;
 					}
 				}
@@ -901,34 +970,34 @@ struct UpdateNetAction : public ModelAction
 
 			if (segment_request.node1_type == NetModificationRequest::NodeIdType::existing_id)
 			{
-				updated_segment->get().m_firstNodeId = segment_request.node1;
+				updated_segment->m_firstNodeId = segment_request.node1;
 			}
 			else
 			{
 				assert(static_cast<size_t>(segment_request.node1.value) < new_nodes.size());
 				if (static_cast<size_t>(segment_request.node1.value) < new_nodes.size())
 				{
-					updated_segment->get().m_firstNodeId = new_nodes[segment_request.node1.value];
+					updated_segment->m_firstNodeId = new_nodes[segment_request.node1.value];
 				}
 			}
 			if (segment_request.node2_type == NetModificationRequest::NodeIdType::existing_id)
 			{
-				updated_segment->get().m_secondNodeId = segment_request.node2;
+				updated_segment->m_secondNodeId = segment_request.node2;
 			}
 			else
 			{
 				assert(static_cast<size_t>(segment_request.node2.value) < new_nodes.size());
 				if (static_cast<size_t>(segment_request.node2.value) < new_nodes.size())
 				{
-					updated_segment->get().m_secondNodeId = new_nodes[segment_request.node2.value];
+					updated_segment->m_secondNodeId = new_nodes[segment_request.node2.value];
 				}
 			}
 
 			{
-				auto node_id1 = updated_segment->get().m_firstNodeId;
+				auto node_id1 = updated_segment->m_firstNodeId;
 				auto node1 = scene.GetNetNodeById(node_id1);
 				assert(node1);
-				auto node_id2 = updated_segment->get().m_secondNodeId;
+				auto node_id2 = updated_segment->m_secondNodeId;
 				auto node2 = scene.GetNetNodeById(node_id2);
 				assert(node2);
 
@@ -937,8 +1006,8 @@ struct UpdateNetAction : public ModelAction
 					return false;
 				}
 
-				node1->get().SetSegmentAt(segment_request.node1_side, updated_segment->get().GetId());
-				node2->get().SetSegmentAt(segment_request.node2_side, updated_segment->get().GetId());
+				node1->SetSegmentAt(segment_request.node1_side, updated_segment->GetId());
+				node2->SetSegmentAt(segment_request.node2_side, updated_segment->GetId());
 			}
 			edits.stored_segment_updates.push_back(std::move(segment_update));
 		}
@@ -1002,8 +1071,8 @@ struct UpdateNetAction : public ModelAction
 				new_segments.push_back(id);
 				edits.stored_new_segments.push_back(StoredAddedSegment{ id, segment_request.node1_side, segment_request.node2_side });
 			}
-			node1->get().SetSegmentAt(segment_request.node1_side, id);
-			node2->get().SetSegmentAt(segment_request.node2_side, id);
+			node1->SetSegmentAt(segment_request.node1_side, id);
+			node2->SetSegmentAt(segment_request.node2_side, id);
 		}
 
 		// handle added connections
@@ -1022,7 +1091,7 @@ struct UpdateNetAction : public ModelAction
 				}
 				auto socket = block->get().GetSocketById(connection.socket.socket_id);
 				assert(socket);
-				socket->get().SetConnectedNetNode(node_id);
+				socket->SetConnectedNetNode(node_id);
 				scene.AddSocketNodeConnection(model::SocketNodeConnection{ connection.socket , node_id });
 				edits.stored_new_connections.push_back({ connection.socket, node_id });
 			}
@@ -1091,13 +1160,6 @@ node::SceneModelManager::SceneModelManager(std::shared_ptr<model::NodeSceneModel
 	:m_scene(std::move(scene))
 {
 	assert(m_scene);
-	for (const auto& block : m_scene->GetBlocks())
-	{
-		if (block.GetClass() == "SubSystem")
-		{
-			RegisterSubSystem(block);
-		}
-	}
 }
 
 node::SceneModelManager::~SceneModelManager()
@@ -1109,9 +1171,9 @@ std::span<node::model::BlockModel> node::SceneModelManager::GetBlocks()
 	return m_scene->GetBlocks();
 }
 
-void node::SceneModelManager::AddNewBlock(model::BlockModel&& block)
+void node::SceneModelManager::AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data)
 {
-	auto action = std::make_unique<AddBlockAction>(std::move(block));
+	auto action = std::make_unique<AddFuncitonalBlockAction>(std::move(block), std::move(data));
 	PushAction(std::move(action));
 }
 
@@ -1191,28 +1253,5 @@ void node::SceneModelManager::PushAction(std::unique_ptr<ModelAction> action)
 	{
 		m_undo_stack.push(std::move(action));
 		while (m_redo_stack.size()) { m_redo_stack.pop(); }
-	}
-}
-
-
-void node::SceneModelManager::RegisterSubSystem(const model::BlockModel& model)
-{
-	auto& properties = model.GetProperties();
-	auto it = std::find_if(properties.begin(), properties.end(), [&](const model::BlockProperty& p) { return p.name == "SubSceneId"; });
-	if (it == properties.end())
-	{
-		assert(false);
-		return;
-	}
-	auto value = static_cast<int32_t>(std::get<uint64_t>(it->prop));
-	m_subsystem_ids[model.GetId()] = SubSceneId{ value };
-}
-
-void node::SceneModelManager::UnRegisterSubSystem(const model::BlockId& id)
-{
-	auto it = m_subsystem_ids.find(id);
-	if (it != m_subsystem_ids.end())
-	{
-		m_subsystem_ids.erase(it);
 	}
 }

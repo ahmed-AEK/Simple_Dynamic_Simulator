@@ -1,3 +1,4 @@
+#include "NodeModels/BlockData.hpp"
 #include "GraphicsObjectsManager.hpp"
 
 #include "NodeSDLStylers/BlockStyler.hpp"
@@ -32,7 +33,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     m_sceneModel->Attach(*this);
     for (auto&& block : m_sceneModel->GetBlocks())
     {
-        auto styler = m_blockStylerFactory->GetStyler(block.GetStyler(), block);
+        auto styler = GetBlockStyler(block.GetStyler(), block);
         styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), block, std::move(styler));
         auto ptr = obj.get();
@@ -81,7 +82,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
             SDL_Log("broken scene socket!");
             return;
         }
-        socket->get().SetConnectedNode(it_node->second);
+        socket->SetConnectedNode(it_node->second);
     }
 }
 
@@ -92,7 +93,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     case SceneModification::type_t::BlockAdded:
     {
         auto& model_ref = std::get<model::BlockModelConstRef>(e.data);
-        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
+        auto styler = GetBlockStyler(model_ref.get().GetStyler(), model_ref);
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
@@ -105,16 +106,16 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
         auto& report = std::get<BlockAddWithConnectionsReport>(e.data);
         auto& model_ref = report.block;
-        auto styler = m_blockStylerFactory->GetStyler(model_ref.get().GetStyler(), model_ref);
+        auto styler = GetBlockStyler(model_ref.get().GetStyler(), model_ref);
         std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
         for (auto& conn : report.connections)
         {
-            auto socket_optional = ptr->GetSocketById(conn.socketId.socket_id);
-            assert(socket_optional);
-            if (!socket_optional)
+            auto socket_ptr = ptr->GetSocketById(conn.socketId.socket_id);
+            assert(socket_ptr);
+            if (!socket_ptr)
             {
                 continue;
             }
@@ -124,7 +125,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             {
                 continue;
             }
-            node_it->second->SetConnectedSocket(&(socket_optional->get()));
+            node_it->second->SetConnectedSocket(socket_ptr);
         }
         GetGraphicsScene()->ClearCurrentSelection();
         GetGraphicsScene()->AddSelection(ptr->GetFocusHandlePtr());
@@ -172,7 +173,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
             {
                 assert(socket->GetId());
                 auto&& block_socket = block_ref.GetSocketById(*socket->GetId());
-                socket->SetCenterInBlock(block_socket->get().GetPosition());
+                socket->SetCenterInBlock(block_socket->GetPosition());
             }
             it->second->SetOrientation(block_ref.GetOrienation());
             it->second->SetSpaceRect(new_bounds);
@@ -186,7 +187,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         assert(it != m_blocks.end());
         if (it != m_blocks.end())
         {
-            it->second->UpdateStyler(model);
+            UpdateBlockStyler(*it->second, model.get());
         }
         break;
     }
@@ -198,7 +199,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         if (it != m_blocks.end())
         {
             it->second->RenewSockets(model.get().GetSockets());
-            it->second->UpdateStyler(model);
+            UpdateBlockStyler(*it->second, model.get());
         }
         break;
     }
@@ -213,14 +214,17 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
 void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 {
     model::BlockModel block{ model::BlockModel{ object.object.block } };
-    if (block.GetClass() == "SubSystem")
+    if (block.GetType() == model::BlockType::SubSystem)
     {
         m_parent_manager->AddNewSubSceneToScene(block, m_sceneModel->GetSubSceneId());
     }
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     block.SetPosition(GetGraphicsScene()->QuantizePoint(GetGraphicsScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
-    m_sceneModel->AddNewBlock(std::move(block));
+    if (auto functional_data = object.object.data.GetFunctionalData())
+    {
+        m_sceneModel->AddNewFunctionalBlock(std::move(block), std::move(*functional_data));
+    }
 }
 
 void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report)
@@ -368,3 +372,44 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     }
 
 }
+
+void node::GraphicsObjectsManager::UpdateBlockStyler(BlockObject& block, const model::BlockModel& model)
+{
+    if (model.GetType() == model::BlockType::Functional)
+    {
+        auto data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
+        assert(data_ptr);
+        if (!data_ptr)
+        {
+            SDL_Log("update styler data for block id not found!: %d", model.GetId().value);
+            return;
+        }
+        block.UpdateStyler(model::BlockDataCRef{ model, model::BlockDataCRef::FunctionalRef{*data_ptr} });
+    }
+    else
+    {
+        SDL_Log("unsupported styler update for block type requested!");
+    }
+}
+
+std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(const std::string& styler, const model::BlockModel& model)
+{
+    if (model.GetType() == model::BlockType::Functional)
+    {
+        auto data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
+        assert(data_ptr);
+        if (!data_ptr)
+        {
+            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            return nullptr;
+        }
+        return m_blockStylerFactory->GetStyler(styler, 
+            model::BlockDataCRef{model, model::BlockDataCRef::FunctionalRef{*data_ptr}});
+    }
+    else
+    {
+        SDL_Log("unsupported styler for block type requested!");
+    }
+    return nullptr;
+}
+

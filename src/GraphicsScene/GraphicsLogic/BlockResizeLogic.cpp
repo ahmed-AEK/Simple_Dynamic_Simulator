@@ -30,7 +30,7 @@ static void SetBlockToRect(node::BlockObject& block, const node::model::Rect& ne
 		auto sock = block.GetSocketById(socket.GetId());
 		if (sock)
 		{
-			sock->get().SetCenterInBlock(socket.GetPosition());
+			sock->SetCenterInBlock(socket.GetPosition());
 		}
 	}
 	block.SetSpaceRect(new_rect);

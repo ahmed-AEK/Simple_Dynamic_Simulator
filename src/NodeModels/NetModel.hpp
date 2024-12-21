@@ -59,11 +59,10 @@ public:
 	const NetId& GetId() const noexcept { return m_Id; }
 	void SetId(NetId id) { m_Id = id; }
 
-	const std::optional<std::reference_wrapper<const std::string>> GetName() const noexcept { 
-		return m_name.has_value() ? 
-			*m_name :
-			std::optional<std::reference_wrapper<const std::string>>{};
+	const std::string* GetName() const noexcept { 
+		return m_name.has_value() ? &*m_name : nullptr;
 	}
+
 	void SetName(std::optional<std::string> name) { m_name = std::move(name); }
 
 private:
