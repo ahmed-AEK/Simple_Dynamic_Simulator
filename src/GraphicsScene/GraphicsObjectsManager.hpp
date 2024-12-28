@@ -16,7 +16,7 @@ class SubScenesManager
 {
 public:
 	SubScenesManager() = default;
-	virtual void AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id) = 0;
+	virtual SubSceneId AddNewSubSceneToScene(node::SubSceneId parent_id) = 0;
 
 	SubScenesManager(const SubScenesManager&) = delete;
 	SubScenesManager& operator=(const SubScenesManager&) = delete;

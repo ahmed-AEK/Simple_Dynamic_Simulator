@@ -22,6 +22,10 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	{
 		AddFunctionalElemnt(temp);
 	}
+	else if (temp.data.GetSubsystemData())
+	{
+		AddSubsystemElement(temp);
+	}
 	else
 	{
 		SDL_Log("unknown block template !");
@@ -30,7 +34,7 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 
 void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 {
-	auto block_data_ptr = temp.data.GetFunctionalData();
+	auto* block_data_ptr = temp.data.GetFunctionalData();
 	assert(block_data_ptr);
 	auto block_class = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	assert(block_class);
@@ -58,6 +62,33 @@ void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	block.SetStylerProperties(temp.style_properties);
 
 	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, model::BlockDataCRef{ block, model::BlockDataCRef::FunctionalRef{*block_data_ptr} });
+
+	assert(styler);
+	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
+
+	m_elements.push_back(
+		std::make_unique<PalleteElement>(PalleteElement{
+			temp.template_name,
+			std::move(block),
+			model::BlockData{*block_data_ptr},
+			std::move(styler),
+			std::make_shared<TextPainter>(nullptr),
+			}
+			)
+	);
+}
+
+void node::PalleteProvider::AddSubsystemElement(const BlockTemplate& temp)
+{
+	auto* block_data_ptr = temp.data.GetSubsystemData();
+	assert(block_data_ptr);
+
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::SubSystem, {0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight} };
+
+	block.SetStyler(temp.styler_name);
+	block.SetStylerProperties(temp.style_properties);
+
+	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, model::BlockDataCRef{ block, model::BlockDataCRef::SubsytemRef{*block_data_ptr} });
 
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());

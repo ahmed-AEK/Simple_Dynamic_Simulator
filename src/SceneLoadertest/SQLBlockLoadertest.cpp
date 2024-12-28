@@ -337,3 +337,42 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 	EXPECT_EQ(loaded_socket2.GetPosition(), socket_pos2);
 	EXPECT_EQ(loaded_socket2.GetType(), socket_type2);
 }
+
+
+TEST(testBlockLoader, testSaveLoadBlockSubSystem)
+{
+	NodeSceneModel scene;
+	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
+	Rect block_rect{ 1,1,10,10 };
+	BlockModel original_block{ block_id, model::BlockType::SubSystem, block_rect };
+	std::string_view property_name = "Multiplier";
+	std::string class_name{ "test1" };
+	model::SubsystemBlockData block_data;
+	std::string block_url = "FOO";
+	SubSceneId subsystem_id{ 1 };
+	block_data.URL = block_url;
+	block_data.scene_id = subsystem_id;
+	scene.GetSubsystemBlocksManager().SetDataForId(block_id, std::move(block_data));
+
+	SQLSceneLoader loader(":memory:");
+
+	scene.AddBlock(BlockModel{ original_block });
+
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
+
+	ASSERT_TRUE(result);
+
+	auto loaded_scene = loader.Load(subscene_id);
+	ASSERT_TRUE(loaded_scene.has_value());
+	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	ASSERT_TRUE(loaded_block);
+	auto loaded_block_data = loaded_scene->GetSubsystemBlocksManager().GetDataForId(block_id);
+	ASSERT_TRUE(loaded_block_data);
+
+	EXPECT_EQ(loaded_block_data->URL, block_url);
+	EXPECT_EQ(loaded_block_data->scene_id, subsystem_id);
+}

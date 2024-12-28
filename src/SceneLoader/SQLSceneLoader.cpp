@@ -75,10 +75,24 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load(Su
             if (block.GetType() == model::BlockType::Functional)
             {
                 auto data = nodeLoader.GetBlockData(block.GetId(), block.GetType());
+                assert(data);
                 if (data && data->GetFunctionalData())
                 {
                     scene->GetFunctionalBlocksManager().SetDataForId(block.GetId(), std::move(*data->GetFunctionalData()));
                 }
+            }
+            else if (block.GetType() == model::BlockType::SubSystem)
+            {
+                auto data = nodeLoader.GetBlockData(block.GetId(), block.GetType());
+                assert(data);
+                if (data && data->GetSubsystemData())
+                {
+                    scene->GetSubsystemBlocksManager().SetDataForId(block.GetId(), std::move(*data->GetSubsystemData()));
+                }
+            }
+            else
+            {
+                assert(false);
             }
             scene->AddBlock(std::move(block));
         }
@@ -183,6 +197,13 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     value TEXT NOT NULL,
                     PRIMARY KEY (id, parentid),
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
+
+        m_db->exec(R"(CREATE TABLE SubsystemBlockData_)"
+            + std::to_string(id.value) + R"((
+                    blockid INTEGER NOT NULL,
+                    URL TEXT NOT NULL,
+                    subsceneid INTEGER NOT NULL,
+                    FOREIGN KEY (blockid) REFERENCES blocks(id) );)");
 
         m_db->exec(R"(CREATE TABLE blockStylerProperties_)"
                     + std::to_string(id.value) + R"((

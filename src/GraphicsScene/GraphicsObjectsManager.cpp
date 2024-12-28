@@ -214,16 +214,29 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
 void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 {
     model::BlockModel block{ model::BlockModel{ object.object.block } };
-    if (block.GetType() == model::BlockType::SubSystem)
-    {
-        m_parent_manager->AddNewSubSceneToScene(block, m_sceneModel->GetSubSceneId());
-    }
     model::Rect bounds = object.object.block.GetBounds();
     model::Point offset = { -bounds.w / 2, -bounds.h / 2 };
     block.SetPosition(GetGraphicsScene()->QuantizePoint(GetGraphicsScene()->GetSpaceScreenTransformer().ScreenToSpacePoint(object.p) + offset));
-    if (auto functional_data = object.object.data.GetFunctionalData())
+    if (auto* subststem_data = object.object.data.GetSubsystemData())
+    {
+        if (subststem_data->URL == "Local")
+        {
+            auto subscene_id = m_parent_manager->AddNewSubSceneToScene(m_sceneModel->GetSubSceneId());
+            subststem_data->scene_id = subscene_id;
+            m_sceneModel->AddNewSubsystemBlock(std::move(block), std::move(*subststem_data));
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+    else if (auto* functional_data = object.object.data.GetFunctionalData())
     {
         m_sceneModel->AddNewFunctionalBlock(std::move(block), std::move(*functional_data));
+    }
+    else
+    {
+        assert(false); // unknown block type
     }
 }
 
@@ -396,7 +409,7 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
 {
     if (model.GetType() == model::BlockType::Functional)
     {
-        auto data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
+        auto* data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
         assert(data_ptr);
         if (!data_ptr)
         {
@@ -405,6 +418,18 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
         }
         return m_blockStylerFactory->GetStyler(styler, 
             model::BlockDataCRef{model, model::BlockDataCRef::FunctionalRef{*data_ptr}});
+    }
+    else if (model.GetType() == model::BlockType::SubSystem)
+    {
+        auto* data_ptr = m_sceneModel->GetModel().GetSubsystemBlocksManager().GetDataForId(model.GetId());
+        assert(data_ptr);
+        if (!data_ptr)
+        {
+            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            return nullptr;
+        }
+        return m_blockStylerFactory->GetStyler(styler,
+            model::BlockDataCRef{ model, model::BlockDataCRef::SubsytemRef{*data_ptr} });
     }
     else
     {

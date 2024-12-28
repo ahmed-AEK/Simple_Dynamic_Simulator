@@ -8,7 +8,8 @@ NetModel.cpp NetModel.hpp
 Observer.hpp
 SceneModelManager.hpp SceneModelManager.cpp
 IdTypes.hpp
-FunctionalBlocksManager.hpp FunctionalBlocksManager.cpp
+FunctionalBlocksDataManager.hpp FunctionalBlocksDataManager.cpp
+SubSystemBlocksDataManager.hpp SubSystemBlocksDataManager.cpp
 BlockData.hpp
 )
 

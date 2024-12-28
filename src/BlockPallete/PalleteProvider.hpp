@@ -1,7 +1,7 @@
 #pragma once
 
 #include "NodeModels/BlockModel.hpp"
-#include "NodeModels/FunctionalBlocksManager.hpp"
+#include "NodeModels/FunctionalBlocksDataManager.hpp"
 #include "toolgui/NodeMacros.h"
 #include "SDL_Framework/SDL_headers.h"
 #include "NodeSDLStylers/BlockStyler.hpp"
@@ -45,6 +45,7 @@ public:
 	const std::vector<std::unique_ptr<PalleteElement>>& GetElements() const { return m_elements; }
 private:
 	void AddFunctionalElemnt(const BlockTemplate& temp);
+	void AddSubsystemElement(const BlockTemplate& temp);
 
 	std::vector<std::unique_ptr<PalleteElement>> m_elements;
 	std::shared_ptr<BlockClassesManager> m_classesManager;

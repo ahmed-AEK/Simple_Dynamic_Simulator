@@ -69,8 +69,7 @@ public:
     const std::vector<BlockResult>& GetLastSimulationResults() const { return m_last_sim_results; }
     void SetLastSimulationResults(std::vector<BlockResult> results);
 
-    void AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id) override;
-
+    SubSceneId AddNewSubSceneToScene(node::SubSceneId parent_id) override;
 
 private:
     SubSceneId m_next_subscene_id{ 2 };

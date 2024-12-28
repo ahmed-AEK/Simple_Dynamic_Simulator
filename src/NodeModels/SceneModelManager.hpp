@@ -2,7 +2,7 @@
 
 #include "NodeModels/NodeScene.hpp"
 #include "NodeModels/Observer.hpp"
-#include "NodeModels/FunctionalBlocksManager.hpp"
+#include "NodeModels/FunctionalBlocksDataManager.hpp"
 #include <variant>
 #include <stack>
 
@@ -146,6 +146,8 @@ public:
 	~SceneModelManager() override;
 
 	std::span<model::BlockModel> GetBlocks();
+
+	void AddNewSubsystemBlock(model::BlockModel&& block, model::SubsystemBlockData&& data);
 	void AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data);
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "NodeModels/BlockModel.hpp"
-#include "NodeModels/FunctionalBlocksManager.hpp"
+#include "NodeModels/FunctionalBlocksDataManager.hpp"
 
 #include <any>
 #include <variant>

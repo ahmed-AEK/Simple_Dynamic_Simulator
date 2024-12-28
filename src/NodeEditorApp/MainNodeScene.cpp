@@ -231,6 +231,7 @@ void node::MainNodeScene::LoadScene(std::string name)
             return;
         }
         auto model = std::make_shared<SceneModelManager>(std::move(main_scene_it->second));
+        new_scenes->erase(main_scene_it);
         mgr->SetSceneModel(model);
         component.manager->SetModel(subscene_id, std::move(model));
         for (auto&& [id, child_scene] : *new_scenes)
@@ -280,11 +281,14 @@ static bool SaveSubSceneAndChildren(node::loader::SceneLoader& db_conn, node::Sc
     {
         return false;
     }
-    for (auto&& [block_id, scene_id] : ModelManager->GetSubsystemIds())
+    for (auto&& [block_id, subsystemData] : ModelManager->GetModel().GetSubsystemBlocksManager().GetData())
     {
-        if (!SaveSubSceneAndChildren(db_conn, components, scene_id, id))
+        if (subsystemData.URL == "Local")
         {
-            return false;
+            if (!SaveSubSceneAndChildren(db_conn, components, subsystemData.scene_id, id))
+            {
+                return false;
+            }
         }
     }
     return true;
@@ -532,34 +536,30 @@ void node::MainNodeScene::InitializeSidePanel()
 
 
     auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager, m_blockStylerFactory);
-    auto block_template = BlockTemplate{
-        "Gain",
-        model::FunctionalBlockData{
-            "Gain",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
-            }
-        },
-        "Gain",
-        model::BlockStyleProperties{}
-    };
 
     auto SubScene_block = BlockTemplate
     {
         "SubSystem",
-        model::FunctionalBlockData{
-            "SubSystem",
-            std::vector<model::BlockProperty>{
-            node::model::BlockProperty{"Storage", node::model::BlockPropertyType::String, std::string{"Inner"}},
-            node::model::BlockProperty{"SubSceneId", node::model::BlockPropertyType::UnsignedInteger, uint64_t{0}},
-            }
+        model::SubsystemBlockData{
+            "Local",
+            SubSceneId{0}
         },
         "Default",
-
         model::BlockStyleProperties{}
     };
     pallete_provider->AddElement(std::move(SubScene_block));
 
+    auto block_template = BlockTemplate{
+    "Gain",
+    model::FunctionalBlockData{
+        "Gain",
+        std::vector<model::BlockProperty>{
+            model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
+        }
+    },
+    "Gain",
+    model::BlockStyleProperties{}
+    };
     for (int i = 0; i < 1; i++)
     {
         pallete_provider->AddElement(block_template);

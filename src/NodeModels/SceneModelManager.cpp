@@ -221,6 +221,61 @@ struct ResizeBlockAction : public ModelAction
 
 };
 
+struct AddSubsystemBlockAction : public ModelAction
+{
+	explicit AddSubsystemBlockAction(model::BlockModel&& block, model::SubsystemBlockData&& data)
+		:block{ std::move(block) }, data{ std::move(data) } {}
+	const model::BlockModel block;
+	std::optional<model::BlockId> stored_id;
+	const model::SubsystemBlockData data;
+
+	bool DoUndo(SceneModelManager& manager) override
+	{
+		assert(stored_id);
+		if (!stored_id)
+		{
+			return false;
+		}
+
+		auto block_ref = manager.GetModel().GetBlockById(*stored_id);
+		assert(block_ref);
+		if (!block_ref)
+		{
+			return false;
+		}
+		auto& scene_model = manager.GetModel();
+		scene_model.RemoveBlockById(*stored_id);
+		[[maybe_unused]] auto success = scene_model.GetSubsystemBlocksManager().EraseDataForId(*stored_id);
+		assert(success);
+
+		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{*stored_id} });
+
+		return true;
+	}
+
+	bool DoRedo(SceneModelManager& manager) override
+	{
+		model::id_int max_id = 0;
+		for (auto&& it_block : manager.GetModel().GetBlocks())
+		{
+			max_id = std::max(max_id, it_block.GetId().value);
+		}
+		model::BlockId block_id{ max_id + 1 };
+		stored_id = block_id;
+
+		model::BlockModel temp_block = block;
+		temp_block.SetId(block_id);
+
+		auto& scene_model = manager.GetModel();
+		scene_model.AddBlock(std::move(temp_block));
+		scene_model.GetSubsystemBlocksManager().SetDataForId(block_id, model::SubsystemBlockData{ data });
+		auto block_ref = manager.GetModel().GetBlockById(block_id);
+		assert(block_ref);
+		manager.Notify(SceneModification{ SceneModificationType::BlockAdded, SceneModification::data_t{*block_ref} });
+
+		return true;
+	}
+};
 
 struct AddFuncitonalBlockAction : public ModelAction
 {
@@ -1169,6 +1224,12 @@ node::SceneModelManager::~SceneModelManager()
 std::span<node::model::BlockModel> node::SceneModelManager::GetBlocks()
 {
 	return m_scene->GetBlocks();
+}
+
+void node::SceneModelManager::AddNewSubsystemBlock(model::BlockModel&& block, model::SubsystemBlockData&& data)
+{
+	auto action = std::make_unique<AddSubsystemBlockAction>(std::move(block), std::move(data));
+	PushAction(std::move(action));
 }
 
 void node::SceneModelManager::AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data)

@@ -13,7 +13,7 @@
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "optimizer/NLDiffSolver.hpp"
 #include "optimizer/SourceEq.hpp"
-#include "NodeModels/FunctionalBlocksManager.hpp"
+#include "NodeModels/FunctionalBlocksDataManager.hpp"
 
 struct Net
 {

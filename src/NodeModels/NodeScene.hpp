@@ -2,7 +2,8 @@
 
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/NetModel.hpp"
-#include "NodeModels/FunctionalBlocksManager.hpp"
+#include "NodeModels/FunctionalBlocksDataManager.hpp"
+#include "NodeModels/SubsystemBlocksDataManager.hpp"
 #include <memory>
 
 namespace node::model
@@ -66,15 +67,19 @@ public:
 	void ReserveNetSegments(size_t size) { m_segments.reserve(size); }
 	void ReserveNetNodes(size_t size) { m_nodes.reserve(size); }
 
-	FunctionalBlocksManager& GetFunctionalBlocksManager() { return m_functionalBlocksManager; }
-	const FunctionalBlocksManager& GetFunctionalBlocksManager() const { return m_functionalBlocksManager; }
+	FunctionalBlocksDataManager& GetFunctionalBlocksManager() { return m_functionalBlocksManager; }
+	const FunctionalBlocksDataManager& GetFunctionalBlocksManager() const { return m_functionalBlocksManager; }
+
+	SubsystemBlocksDataManager& GetSubsystemBlocksManager() { return m_subsystemBlocksManager; }
+	const SubsystemBlocksDataManager& GetSubsystemBlocksManager() const { return m_subsystemBlocksManager; }
 
 private:
 	std::vector<BlockModel> m_blocks;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
 	std::vector<SocketNodeConnection> m_SocketConnections;
-	FunctionalBlocksManager m_functionalBlocksManager;
+	FunctionalBlocksDataManager m_functionalBlocksManager;
+	SubsystemBlocksDataManager m_subsystemBlocksManager;
 };
 
 

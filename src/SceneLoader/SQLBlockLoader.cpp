@@ -20,18 +20,6 @@ bool node::loader::SQLBlockLoader::AddBlock(const node::model::BlockModel& block
 		query.exec();
 	}
 
-	/*
-	{
-		auto&& properties = std::as_const(block).GetProperties();
-		int32_t prop_id = 0;
-		if (!std::all_of(properties.begin(), properties.end(),
-			[&](const auto& property) { auto ret = AddProperty(block.GetId(), property, prop_id); prop_id++; return ret; }))
-		{
-			return false;
-		}
-	}
-	*/
-
 	{
 		auto&& styler_properties = std::as_const(block).GetStylerProperties();
 		int32_t prop_id = 0;
@@ -54,36 +42,15 @@ bool node::loader::SQLBlockLoader::AddBlock(const node::model::BlockModel& block
 
 bool node::loader::SQLBlockLoader::AddBlockData(const node::model::BlockId& block_id, node::model::BlockType block_type, const node::model::NodeSceneModel& scene)
 {
-	if (block_type != model::BlockType::Functional)
+	if (block_type == model::BlockType::Functional)
 	{
-		return false;
+		return AddFunctionalBlockData(block_id, scene);
 	}
-	auto* block_data = scene.GetFunctionalBlocksManager().GetDataForId(block_id);
-	if (!block_data)
+	if (block_type == model::BlockType::SubSystem)
 	{
-		return false;
+		return AddSubsystemBlockData(block_id, scene);
 	}
-
-	{
-		SQLite::Statement query{ m_db, "INSERT INTO functionalBlockClass_" + std::to_string(m_scene_id.value) + " VALUES (?,?)" };
-		query.bind(1, block_id.value);
-		query.bindNoCopy(2, block_data->block_class);
-		query.exec();
-	}
-
-	int32_t property_id = 0;
-	for (const auto& property : block_data->properties)
-	{
-		SQLite::Statement query{ m_db, "INSERT INTO functionalBlockProperties_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?)" };
-		query.bind(1, property_id);
-		query.bind(2, block_id.value);
-		query.bind(3, property.name.c_str());
-		query.bind(4, static_cast<int>(property.type));
-		auto property_str = property.to_string();
-		query.bind(5, property_str);
-		query.exec();
-		property_id++;
-	}
+	
 	return true;
 }
 
@@ -118,41 +85,16 @@ node::loader::SQLBlockLoader::GetBlock(const node::model::BlockId& block_id)
 
 std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetBlockData(model::BlockId block_id, model::BlockType block_type)
 {
-	if (block_type != model::BlockType::Functional)
+	if (block_type == model::BlockType::Functional)
 	{
-		return std::nullopt;
+		return GetFunctionalBlockData(block_id);
 	}
-	model::FunctionalBlockData data;
 	
+	if (block_type == model::BlockType::SubSystem)
 	{
-		SQLite::Statement query{ m_db, "SELECT * FROM functionalBlockClass_" + std::to_string(m_scene_id.value) + " WHERE blockid = ?" };
-		query.bind(1, block_id.value);
-		if (query.executeStep())
-		{
-			data.block_class = query.getColumn(1).getString();
-		}
+		return GetSubsytemBlockData(block_id);
 	}
-
-	{
-		SQLite::Statement query{ m_db, "SELECT * FROM functionalBlockProperties_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
-		query.bind(1, block_id.value);
-		while (query.executeStep())
-		{
-			std::string name{ query.getColumn(2).getText() };
-			int type_int{ query.getColumn(3) };
-			assert(static_cast<size_t>(type_int) < std::variant_size_v<model::BlockProperty::property_t>);
-			std::string property{ query.getColumn(4).getText() };
-			auto type = static_cast<model::BlockPropertyType>(type_int);
-			auto prop = model::BlockProperty::from_string(type, std::move(property));
-			if (!prop)
-			{
-				return std::nullopt;
-			}
-			data.properties.push_back(model::BlockProperty{ std::move(name), type, std::move(*prop) });
-		}
-	}
-	return node::model::BlockData{ data };
-
+	return std::nullopt;
 }
 
 
@@ -309,6 +251,104 @@ bool node::loader::SQLBlockLoader::LoadStylerProperties(node::model::BlockModel&
 	}
 	block.SetStylerProperties(properties);
 	return true;
+}
+
+bool node::loader::SQLBlockLoader::AddFunctionalBlockData(const node::model::BlockId& block_id, const node::model::NodeSceneModel& scene)
+{
+	auto* block_data = scene.GetFunctionalBlocksManager().GetDataForId(block_id);
+	if (!block_data)
+	{
+		return false;
+	}
+
+	{
+		SQLite::Statement query{ m_db, "INSERT INTO functionalBlockClass_" + std::to_string(m_scene_id.value) + " VALUES (?,?)" };
+		query.bind(1, block_id.value);
+		query.bindNoCopy(2, block_data->block_class);
+		query.exec();
+	}
+
+	int32_t property_id = 0;
+	for (const auto& property : block_data->properties)
+	{
+		SQLite::Statement query{ m_db, "INSERT INTO functionalBlockProperties_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?)" };
+		query.bind(1, property_id);
+		query.bind(2, block_id.value);
+		query.bind(3, property.name.c_str());
+		query.bind(4, static_cast<int>(property.type));
+		auto property_str = property.to_string();
+		query.bind(5, property_str);
+		query.exec();
+		property_id++;
+	}
+	return true;
+}
+
+bool node::loader::SQLBlockLoader::AddSubsystemBlockData(const node::model::BlockId& block_id, const node::model::NodeSceneModel& scene)
+{
+	auto* block_data = scene.GetSubsystemBlocksManager().GetDataForId(block_id);
+	if (!block_data)
+	{
+		return false;
+	}
+
+	{
+		SQLite::Statement query{ m_db, "INSERT INTO SubsystemBlockData_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?)" };
+		query.bind(1, block_id.value);
+		query.bindNoCopy(2, block_data->URL);
+		query.bind(3, block_data->scene_id.value);
+		query.exec();
+	}
+	return true;
+}
+
+std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetFunctionalBlockData(model::BlockId block_id)
+{
+	model::FunctionalBlockData data;
+
+	{
+		SQLite::Statement query{ m_db, "SELECT * FROM functionalBlockClass_" + std::to_string(m_scene_id.value) + " WHERE blockid = ?" };
+		query.bind(1, block_id.value);
+		if (query.executeStep())
+		{
+			data.block_class = query.getColumn(1).getString();
+		}
+	}
+
+	{
+		SQLite::Statement query{ m_db, "SELECT * FROM functionalBlockProperties_" + std::to_string(m_scene_id.value) + " WHERE parentid = ?" };
+		query.bind(1, block_id.value);
+		while (query.executeStep())
+		{
+			std::string name{ query.getColumn(2).getText() };
+			int type_int{ query.getColumn(3) };
+			assert(static_cast<size_t>(type_int) < std::variant_size_v<model::BlockProperty::property_t>);
+			std::string property{ query.getColumn(4).getText() };
+			auto type = static_cast<model::BlockPropertyType>(type_int);
+			auto prop = model::BlockProperty::from_string(type, std::move(property));
+			if (!prop)
+			{
+				return std::nullopt;
+			}
+			data.properties.push_back(model::BlockProperty{ std::move(name), type, std::move(*prop) });
+		}
+	}
+	return node::model::BlockData{ data };
+}
+
+std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetSubsytemBlockData(model::BlockId block_id)
+{
+	model::SubsystemBlockData data;
+	{
+		SQLite::Statement query{ m_db, "SELECT * FROM SubsystemBlockData_" + std::to_string(m_scene_id.value) + " WHERE blockid = ?" };
+		query.bind(1, block_id.value);
+		if (query.executeStep())
+		{
+			data.URL = query.getColumn(1).getString();
+			data.scene_id = SubSceneId{ query.getColumn(2) };
+		}
+	}
+	return node::model::BlockData{ data };
 }
 
 std::optional<node::model::BlockModel> node::loader::SQLBlockLoader::GetBlock_internal(SQLite::Statement& query)

@@ -41,16 +41,56 @@ struct FunctionalBlockData
 	std::vector<BlockProperty> properties;
 };
 
-class FunctionalBlocksManager
+template <typename T>
+class BlocksDataManager
 {
 public:
-	FunctionalBlockData* GetDataForId(BlockId id);
-	const FunctionalBlockData* GetDataForId(BlockId id) const;
-	void SetDataForId(BlockId id, FunctionalBlockData&& data);
-	bool EraseDataForId(BlockId id);
+	T* GetDataForId(BlockId id)
+	{
+		auto it = m_data.find(id);
+		if (it != m_data.end())
+		{
+			return &(it->second);
+		}
+		return nullptr;
+	}
+
+	const T* GetDataForId(BlockId id) const
+	{
+		auto it = m_data.find(id);
+		if (it != m_data.end())
+		{
+			return &(it->second);
+		}
+		return nullptr;
+	}
+
+	void SetDataForId(BlockId id, T&& data)
+	{
+		m_data[id] = std::move(data);
+	}
+
+	bool EraseDataForId(BlockId id)
+	{
+		auto it = m_data.find(id);
+		if (it != m_data.end())
+		{
+			m_data.erase(it);
+			return true;
+		}
+		return false;
+	}
+
+	const std::unordered_map<BlockId, T>& GetData() const
+	{
+		return m_data;
+	}
+
 private:
-	std::unordered_map<BlockId, FunctionalBlockData> m_data;
+	std::unordered_map<BlockId, T> m_data;
 };
+
+using FunctionalBlocksDataManager = BlocksDataManager<FunctionalBlockData>;
 
 }
 

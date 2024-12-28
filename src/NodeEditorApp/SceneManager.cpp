@@ -29,6 +29,10 @@ void node::SceneManager::SetModel(SubSceneId subscene_id, std::shared_ptr<SceneM
 {
 	assert(m_models.find(subscene_id) == m_models.end());
 	m_models[subscene_id] = model;
+	if (m_next_subscene_id.value <= subscene_id.value)
+	{
+		m_next_subscene_id = SubSceneId{ subscene_id.value + 1 };
+	}
 }
 
 std::shared_ptr<node::SceneModelManager> node::SceneManager::GetModel(SubSceneId subscene_id) const
@@ -77,20 +81,13 @@ void node::SceneManager::SetLastSimulationResults(std::vector<BlockResult> resul
 	m_last_sim_results = std::move(results);
 }
 
-void node::SceneManager::AddNewSubSceneToScene(node::model::BlockModel& model, node::SubSceneId parent_id)
+node::SubSceneId node::SceneManager::AddNewSubSceneToScene(node::SubSceneId parent_id)
 {
-	UNUSED_PARAM(parent_id);
-	UNUSED_PARAM(model);
-	/*
-	auto& properties = model.GetProperties();
-	auto it = std::find_if(properties.begin(), properties.end(), [&](const node::model::BlockProperty& p) { return p.name == "SubSceneId"; });
-	assert(it != properties.end());
 	auto id = m_next_subscene_id;
-	it->prop = static_cast<uint64_t>(id.value);
 	auto manager = std::make_shared<SceneModelManager>(std::make_shared<model::NodeSceneModel>());
 	manager->SetSubSceneId(id);
 	manager->SetParentSceneId(parent_id);
 	m_models.emplace(id, std::move(manager));
 	m_next_subscene_id.value++;
-	*/
+	return id;
 }
