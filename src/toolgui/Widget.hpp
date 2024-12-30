@@ -16,7 +16,19 @@ namespace MI
     template<>
     struct MouseHoverEvent<node::Widget>
     {
-        const SDL_MouseMotionEvent& e;
+        MouseHoverEvent(const SDL_MouseMotionEvent& e)
+            :e{e.x, e.y} {}
+
+        MouseHoverEvent(const SDL_FPoint p)
+            :e{ p.x,p.y } {}
+
+        struct MouseHoverInfo
+        {
+            float x;
+            float y;
+        };
+
+        const MouseHoverInfo e;
         SDL_FPoint point()
         {
             return { e.x,e.y };

@@ -36,7 +36,10 @@ public:
 	SimulationManager& operator=(const SimulationManager&) = delete;
 	~SimulationManager();
 
-	void RunSimulator(SceneManagerId scene_session_id, model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app);
+	void RunSimulator(SceneManagerId scene_session_id, 
+		std::vector<std::reference_wrapper<const model::NodeSceneModel>> scene_models, 
+		SubSceneId main_subscene_id,
+		std::shared_ptr<BlockClassesManager> classes_manager, Application& app);
 	void StopSimulator();
 	void CheckSimulatorEnded();
 	bool IsSimulationRunning() const { return m_current_running_simulator != nullptr; }

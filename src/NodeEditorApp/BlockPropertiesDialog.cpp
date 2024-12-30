@@ -105,7 +105,7 @@ void node::BlockPropertiesDialog::OnOk()
 	bool renew_sockets = false;
 	std::vector<model::BlockSocketModel> new_sockets;
 	auto new_sockets_type = block_class->CalculateSockets(new_properties);
-	auto old_sockets = block->get().GetSockets();
+	auto old_sockets = block->GetSockets();
 	if (new_sockets_type.size() != old_sockets.size())
 	{
 		renew_sockets = true;
@@ -133,7 +133,7 @@ void node::BlockPropertiesDialog::OnOk()
 		assert(it != block_registry.end());
 		if (it != block_registry.end())
 		{
-			it->second->GetStyler().PositionSockets(new_sockets, block->get().GetBounds(), block->get().GetOrienation());
+			it->second->GetStyler().PositionSockets(new_sockets, block->GetBounds(), block->GetOrienation());
 		}
 	}
 	

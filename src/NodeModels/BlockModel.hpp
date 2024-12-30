@@ -15,16 +15,18 @@ namespace node::model
 
 class BlockModel;
 
+enum class SocketType
+{
+	input = 0,
+	output = 1,
+};
+
 class BlockSocketModel
 {
 public:
 	friend class BlockModel;
 
-	enum class SocketType
-	{
-		input = 0,
-		output= 1,
-	};
+	using SocketType = model::SocketType;
 
 	explicit BlockSocketModel(
 		SocketType type, SocketId id, const Point& position = {},
@@ -69,6 +71,7 @@ enum class BlockType: uint8_t
 {
 	Functional,
 	SubSystem,
+	Port,
 };
 
 class BlockModel

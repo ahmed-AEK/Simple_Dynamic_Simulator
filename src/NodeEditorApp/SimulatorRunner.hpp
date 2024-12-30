@@ -44,7 +44,12 @@ struct SimulationEvent
 		std::vector<BlockResult> result;
 	};
 
-	using Event_t = typename std::variant<Success, Stopped, NetFloatingError, OutputSocketsConflict, FloatingInput>;
+	struct RequestedBadScene
+	{
+		SubSceneId subscene_id;
+	};
+
+	using Event_t = typename std::variant<Success, Stopped, NetFloatingError, OutputSocketsConflict, FloatingInput, RequestedBadScene>;
 	Event_t e;
 };
 
@@ -60,7 +65,10 @@ class BlockClassesManager;
 class SimulatorRunner
 {
 public:
-	SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, SimulationSettings settings);
+	SimulatorRunner(std::vector<std::reference_wrapper<const model::NodeSceneModel>> models,
+		SubSceneId main_subscene_id,
+		std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, 
+		SimulationSettings settings);
 	~SimulatorRunner();
 	SimulatorRunner(const SimulatorRunner&) = default;
 	SimulatorRunner(SimulatorRunner&&) = default;
@@ -82,7 +90,8 @@ private:
 	std::function<void()> m_end_callback;
 	std::atomic_bool m_ended;
 	std::atomic_bool m_stopped;
-	std::unique_ptr<model::NodeSceneModel> m_model;
+	SubSceneId m_main_subscene_id;
+	std::vector<std::unique_ptr<model::NodeSceneModel>> m_models;
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;
 	std::thread m_thread;
 	std::optional<SimulationEvent> m_evt;

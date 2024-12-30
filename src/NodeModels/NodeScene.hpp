@@ -4,6 +4,7 @@
 #include "NodeModels/NetModel.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
 #include "NodeModels/SubsystemBlocksDataManager.hpp"
+#include "NodeModels/PortBlocksDataManager.hpp"
 #include <memory>
 
 namespace node::model
@@ -19,8 +20,8 @@ public:
 	void AddBlock(BlockModel&& block)
 	{ m_blocks.push_back(std::move(block)); }
 
-	std::optional<node::model::BlockModelRef> GetBlockById(const BlockId& id);
-	std::optional<node::model::BlockModelConstRef> GetBlockById(const BlockId& id) const;
+	node::model::BlockModel* GetBlockById(const BlockId& id);
+	const node::model::BlockModel* GetBlockById(const BlockId& id) const;
 	void RemoveBlockById(const BlockId& id);
 
 	void AddNetNode(NetNodeModel&& netNode) { m_nodes.push_back(std::move(netNode)); }
@@ -73,13 +74,21 @@ public:
 	SubsystemBlocksDataManager& GetSubsystemBlocksManager() { return m_subsystemBlocksManager; }
 	const SubsystemBlocksDataManager& GetSubsystemBlocksManager() const { return m_subsystemBlocksManager; }
 
+	PortBlocksDataManager& GetPortBlocksManager() { return m_portBlocksManager; }
+	const PortBlocksDataManager& GetPortBlocksManager() const { return m_portBlocksManager; }
+
+	SubSceneId GetSubSceneId() const { return m_id; };
+	void SetSubSceneId(SubSceneId id) { m_id = id; }
+
 private:
+	SubSceneId m_id;
 	std::vector<BlockModel> m_blocks;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
 	std::vector<SocketNodeConnection> m_SocketConnections;
 	FunctionalBlocksDataManager m_functionalBlocksManager;
 	SubsystemBlocksDataManager m_subsystemBlocksManager;
+	PortBlocksDataManager m_portBlocksManager;
 };
 
 

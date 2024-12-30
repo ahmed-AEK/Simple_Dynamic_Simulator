@@ -18,7 +18,7 @@ void node::TabbedView::OnSetRect(const SDL_FRect& rect)
 	Widget::OnSetRect(rect);
 
 	m_bar.SetRect({ rect.x, rect.y, rect.w, static_cast<float>(GetTabsBarHeight()) });
-	if (m_tabs.size() > m_current_tab_index)
+	if (TabsCount() > m_current_tab_index)
 	{
 		int tab_bar_height = GetTabsBarHeight();
 		SDL_FRect new_rect{ rect.x, rect.y + tab_bar_height, rect.w, rect.h - tab_bar_height };
@@ -37,7 +37,7 @@ node::Widget* node::TabbedView::OnGetInteractableAtPoint(const SDL_FPoint& point
 		return ptr;
 	}
 
-	if (m_tabs.size() > m_current_tab_index)
+	if (m_current_tab_index != -1 && TabsCount() > m_current_tab_index)
 	{
 		if (auto ptr = m_tabs[m_current_tab_index].widget->GetInteractableAtPoint(point))
 		{
@@ -55,7 +55,7 @@ int node::TabbedView::GetTabsBarHeight() const
 void node::TabbedView::Draw(SDL_Renderer* renderer)
 {
 	m_bar.Draw(renderer);
-	if (m_tabs.size() > m_current_tab_index)
+	if (m_current_tab_index != -1 && TabsCount() > m_current_tab_index)
 	{
 		m_tabs[m_current_tab_index].widget->Draw(renderer);
 	}
@@ -66,7 +66,7 @@ void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
 	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const TabData& tab) {return tab.widget.get() == ptr; });
 	if (it != m_tabs.end())
 	{
-		SetCurrentTabIndex(std::distance(m_tabs.begin(), it));
+		SetCurrentTabIndex(static_cast<int32_t>(std::distance(m_tabs.begin(), it)));
 	}
 }
 
@@ -102,10 +102,10 @@ void node::TabBar::AddTab(std::string name)
 	ReCalcLayout();
 }
 
-void node::TabBar::DeleteTab(size_t index)
+void node::TabBar::DeleteTab(int32_t index)
 {
-	assert(index < m_buttons.size());
-	if (!(index < m_buttons.size()))
+	assert(index < TabsCount());
+	if (!(index < TabsCount()))
 	{
 		return;
 	}
@@ -113,16 +113,16 @@ void node::TabBar::DeleteTab(size_t index)
 	ReCalcLayout();
 }
 
-void node::TabBar::SetActiveTabIndex(size_t index)
+void node::TabBar::SetActiveTabIndex(int32_t index)
 {
-	assert(index < m_buttons.size());
-	size_t old_active_index = m_active_tab;
+	assert(index < TabsCount());
+	int32_t old_active_index = m_active_tab;
 	m_active_tab = index;
-	if (old_active_index < m_buttons.size())
+	if (old_active_index < TabsCount() && old_active_index != -1)
 	{
 		m_buttons[old_active_index]->SetActive(false);
 	}
-	if (index < m_buttons.size())
+	if (index < TabsCount() && index != -1)
 	{
 		m_buttons[index]->SetActive(true);
 	}
@@ -133,7 +133,7 @@ void node::TabBar::ButtonClicked(TabButton* btn)
 	auto it = std::find_if(m_buttons.begin(), m_buttons.end(), [&](auto&& other) { return other.get() == btn; });
 	if (it != m_buttons.end())
 	{
-		m_parent->SetCurrentTabIndex(std::distance(m_buttons.begin(), it));
+		m_parent->SetCurrentTabIndex(static_cast<int32_t>( std::distance(m_buttons.begin(), it) ));
 	}
 }
 
@@ -142,7 +142,7 @@ void node::TabBar::ButtonXClicked(TabButton* btn)
 	auto it = std::find_if(m_buttons.begin(), m_buttons.end(), [&](auto&& other) { return other.get() == btn; });
 	if (it != m_buttons.end())
 	{
-		m_parent->RequestDeleteTab(std::distance(m_buttons.begin(), it));
+		m_parent->RequestDeleteTab(static_cast<int32_t>( std::distance(m_buttons.begin(), it) ));
 	}
 }
 
@@ -176,30 +176,38 @@ void node::TabBar::ReCalcLayout()
 	}
 }
 
-void node::TabbedView::SetCurrentTabIndex(size_t index)
+void node::TabbedView::SetCurrentTabIndex(int32_t index)
 {
-	assert(index < m_tabs.size());
-	if (!(index < m_tabs.size()))
+
+	assert(index < TabsCount());
+	if (!(index < TabsCount()))
 	{
 		return;
 	}
+
 	auto old_idx = m_current_tab_index;
-
 	m_current_tab_index = index;
+	
 	m_bar.SetActiveTabIndex(index);
-	SetFocusProxy(m_tabs[m_current_tab_index].widget.get());
-	m_bar.SetFocusProxy(m_tabs[m_current_tab_index].widget.get());
 
-	auto&& rect = GetRect();
-	SDL_FRect new_rect{ rect.x, rect.y + GetTabsBarHeight(), rect.w, rect.h - GetTabsBarHeight()};
-	m_tabs[m_current_tab_index].widget->SetRect(new_rect);
-	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, m_tabs[m_current_tab_index].widget.get()} });
+	Widget* new_tab = index != -1 ? m_tabs[index].widget.get() : nullptr;
+
+	if (new_tab)
+	{
+		SetFocusProxy(new_tab);
+		m_bar.SetFocusProxy(new_tab);
+		auto&& rect = GetRect();
+		SDL_FRect new_rect{ rect.x, rect.y + GetTabsBarHeight(), rect.w, rect.h - GetTabsBarHeight() };
+		new_tab->SetRect(new_rect);
+	}
+
+	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, new_tab} });
 }
 
-void node::TabbedView::RequestDeleteTab(size_t index)
+void node::TabbedView::RequestDeleteTab(int32_t index)
 {
-	assert(index < m_tabs.size());
-	if (!(index < m_tabs.size()))
+	assert(index < TabsCount());
+	if (!(index < TabsCount()))
 	{
 		return;
 	}
@@ -207,42 +215,57 @@ void node::TabbedView::RequestDeleteTab(size_t index)
 	Notify(TabsChangeEvent{ TabCloseRequestEvent{index, m_tabs[index].widget.get()} });
 }
 
-void node::TabbedView::DeleteTab(size_t index)
+void node::TabbedView::DeleteTab(int32_t index)
 {
-	assert(index < m_tabs.size());
-	if (!(index < m_tabs.size()))
+	assert(index < TabsCount());
+	if (!(index < TabsCount()))
 	{
 		return;
 	}
 	m_tabs.erase(m_tabs.begin() + index);
 	m_bar.DeleteTab(index);
-	if (m_tabs.size() && m_current_tab_index >= m_tabs.size())
+	
+	if (TabsCount() && m_current_tab_index >= TabsCount())
 	{
-		SetCurrentTabIndex(m_tabs.size() - 1);
+		// closing last tab
+		SetCurrentTabIndex(TabsCount() - 1);
 	}
 	else if (m_current_tab_index > index)
 	{
+		// closing tab before this one
 		SetCurrentTabIndex(m_current_tab_index - 1);
 	}
-	else if (m_current_tab_index == index)
+	else if (m_current_tab_index == index && TabsCount())
 	{
 		// the current widget changed
 		SetCurrentTabIndex(m_current_tab_index);
 	}
+	else if (TabsCount() == 0)
+	{
+		SetCurrentTabIndex(-1);
+	}
 }
 
-node::Widget* node::TabbedView::GetTabWidget(size_t index)
+node::Widget* node::TabbedView::GetTabWidget(int32_t index)
 {
-	assert(m_tabs.size() > index);
-	return m_tabs[index].widget.get();
+	assert(TabsCount() > index);
+	if (index == -1)
+	{
+		return nullptr;
+	}
+	if (index < TabsCount())
+	{
+		return m_tabs[index].widget.get();
+	}
+	return nullptr;
 }
 
-std::optional<size_t> node::TabbedView::GetWidgetIndex(Widget* widget)
+std::optional<int32_t> node::TabbedView::GetWidgetIndex(Widget* widget)
 {
 	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const auto& tab) { return tab.widget.get() == widget; });
 	if (it != m_tabs.end())
 	{
-		return std::distance(m_tabs.begin(), it);
+		return static_cast<int32_t>(std::distance(m_tabs.begin(), it));
 	}
 	return std::nullopt;
 }

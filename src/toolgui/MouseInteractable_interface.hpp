@@ -64,6 +64,7 @@ namespace MI {
 
         const Rect& GetRectImpl() const noexcept { return m_rect; }
         void SetRectImpl(const Rect& rect) noexcept { m_rect = rect; }
+
     protected:
         virtual T* OnGetInteractableAtPoint(const Point& point) = 0;
 

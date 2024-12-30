@@ -45,8 +45,8 @@ public:
     void SaveScene();
     void SaveScene(std::string name);
     void MaybeSaveScene(std::string name);
-    void OnCenterTabChanged(size_t new_tab);
-    void CloseTabRequest(size_t tab_idx);
+    void OnCenterTabChanged(int32_t new_tab);
+    void CloseTabRequest(int32_t tab_idx);
 protected:
     virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
     TabbedView* m_tabbedView = nullptr;
@@ -65,7 +65,8 @@ private:
     void NewScenePressed();
     void LoadSceneButtonPressed();
     void SaveSceneButtonPressed();
-    void CreateNewScene(SceneManagerId manager_id);
+    SceneManagerId CreateNewScene();
+    bool CreateSceneForSubsystem(SceneId scene_id);
 
     void OnUndo();
     void OnRedo();
@@ -79,7 +80,7 @@ private:
         return new_id;
     }
 
-    std::optional<node::SceneId> GetSceneIdForTab(size_t index);
+    std::optional<node::SceneId> GetSceneIdForTab(int32_t index);
 
     struct SceneComponents
     {

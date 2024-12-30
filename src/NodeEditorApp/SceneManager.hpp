@@ -18,6 +18,11 @@ namespace loader
     class SceneLoader;
 }
 
+namespace model
+{
+    struct BlockPortsUpdate;
+}
+
 class GraphicsObjectsManager;
 class BlockObject;
 class SceneModelManager;
@@ -41,7 +46,7 @@ struct DBConnector
     std::unique_ptr<node::loader::SceneLoader> connector;
 };
 
-class SceneManager : public SubScenesManager
+class SceneManager : public SubScenesManager, public MultiObserver<model::BlockPortsUpdate>
 {
 public:
 
@@ -55,12 +60,13 @@ public:
     std::shared_ptr<GraphicsObjectsManager> GetManager(SubSceneId id);
     node::SceneManager::DialogStore& GetDialogs(SubSceneId id);
 
-    void SetModel(SubSceneId subscene_id, std::shared_ptr<SceneModelManager> model);
+    void AddModel(std::shared_ptr<SceneModelManager> model);
     std::shared_ptr<SceneModelManager> GetModel(SubSceneId subscene_id) const;
 
     void SetMainSceneManager(std::shared_ptr<GraphicsObjectsManager> manager);
-    void SetMainSceneModel(std::shared_ptr<SceneModelManager> manager);
-    
+
+    void SetSubSceneManager(SubSceneId scene_id, std::shared_ptr<GraphicsObjectsManager> manager);
+
     void SetDBConnector(std::optional<DBConnector> conn);
     std::optional<node::DBConnector>& GetDBConnector();
     
@@ -69,11 +75,23 @@ public:
     const std::vector<BlockResult>& GetLastSimulationResults() const { return m_last_sim_results; }
     void SetLastSimulationResults(std::vector<BlockResult> results);
 
-    SubSceneId AddNewSubSceneToScene(node::SubSceneId parent_id) override;
+    SubSceneId AddNewSubSceneToScene() override;
+    
+    void OnNotify(model::BlockPortsUpdate& report) override;
+
+    void SetBlockStylerFactory(std::shared_ptr<BlockStylerFactory> blockStyleFactory)
+    {
+        m_blockStyleFactory = blockStyleFactory;
+    }
+
+    const auto& GetModels() const
+    {
+        return m_models;
+    }
 
 private:
     SubSceneId m_next_subscene_id{ 2 };
-
+    std::shared_ptr<BlockStylerFactory> m_blockStyleFactory;
     std::unordered_map<SubSceneId, std::shared_ptr<SceneModelManager>> m_models;
     std::unordered_map<SubSceneId, std::shared_ptr<GraphicsObjectsManager>> m_managers;
     std::unordered_map<SubSceneId, std::unordered_map<BlockObject*, DialogSlot>> m_objects_dialogs;

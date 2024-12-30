@@ -50,7 +50,11 @@ bool node::loader::SQLBlockLoader::AddBlockData(const node::model::BlockId& bloc
 	{
 		return AddSubsystemBlockData(block_id, scene);
 	}
-	
+	if (block_type == model::BlockType::Port)
+	{
+		return AddPortBlockData(block_id, scene);
+	}
+
 	return true;
 }
 
@@ -93,6 +97,11 @@ std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetBlockData
 	if (block_type == model::BlockType::SubSystem)
 	{
 		return GetSubsytemBlockData(block_id);
+	}
+
+	if (block_type == model::BlockType::Port)
+	{
+		return GetPortBlockData(block_id);
 	}
 	return std::nullopt;
 }
@@ -302,6 +311,24 @@ bool node::loader::SQLBlockLoader::AddSubsystemBlockData(const node::model::Bloc
 	return true;
 }
 
+bool node::loader::SQLBlockLoader::AddPortBlockData(const node::model::BlockId& block_id, const node::model::NodeSceneModel& scene)
+{
+	auto* block_data = scene.GetPortBlocksManager().GetDataForId(block_id);
+	if (!block_data)
+	{
+		return false;
+	}
+
+	{
+		SQLite::Statement query{ m_db, "INSERT INTO PortBlockData_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?)" };
+		query.bind(1, block_id.value);
+		query.bind(2, block_data->id.value);
+		query.bind(3, static_cast<int32_t>(block_data->port_type));
+		query.exec();
+	}
+	return true;
+}
+
 std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetFunctionalBlockData(model::BlockId block_id)
 {
 	model::FunctionalBlockData data;
@@ -346,6 +373,21 @@ std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetSubsytemB
 		{
 			data.URL = query.getColumn(1).getString();
 			data.scene_id = SubSceneId{ query.getColumn(2) };
+		}
+	}
+	return node::model::BlockData{ data };
+}
+
+std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetPortBlockData(model::BlockId block_id)
+{
+	model::PortBlockData data;
+	{
+		SQLite::Statement query{ m_db, "SELECT * FROM PortBlockData_" + std::to_string(m_scene_id.value) + " WHERE blockid = ?" };
+		query.bind(1, block_id.value);
+		if (query.executeStep())
+		{
+			data.id = model::SocketId{ query.getColumn(1) };
+			data.port_type = model::SocketType{ static_cast<int>(query.getColumn(2)) };
 		}
 	}
 	return node::model::BlockData{ data };

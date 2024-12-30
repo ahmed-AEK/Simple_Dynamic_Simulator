@@ -3,26 +3,26 @@
 #include <algorithm>
 
 
-std::optional<node::model::BlockModelRef> node::model::NodeSceneModel::GetBlockById(const BlockId& id)
+node::model::BlockModel* node::model::NodeSceneModel::GetBlockById(const BlockId& id)
 {
 	auto iter = std::find_if(m_blocks.begin(), m_blocks.end(),
 		[id](const BlockModel& node) {return id == node.GetId(); });
 	if (iter != m_blocks.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
-std::optional<node::model::BlockModelConstRef> node::model::NodeSceneModel::GetBlockById(const BlockId& id) const
+const node::model::BlockModel* node::model::NodeSceneModel::GetBlockById(const BlockId& id) const
 {
 	auto iter = std::find_if(m_blocks.begin(), m_blocks.end(),
 		[id](const BlockModel& node) {return id == node.GetId(); });
 	if (iter != m_blocks.end())
 	{
-		return { *iter };
+		return &*iter;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
 void node::model::NodeSceneModel::RemoveBlockById(const BlockId& id) {

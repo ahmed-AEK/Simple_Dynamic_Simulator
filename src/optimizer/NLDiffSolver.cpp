@@ -56,6 +56,11 @@ void opt::NLDiffSolver::AddNLStatefulEquation(NLStatefulEquation eq)
 	m_NLSolver.AddStatefulEquation(std::move(eq));
 }
 
+void opt::NLDiffSolver::AddBufferEquation(BufferEquation eq)
+{
+	m_NLSolver.AddBufferEquation(std::move(eq));
+}
+
 size_t opt::NLDiffSolver::AddObserver(Observer obs)
 {
 	size_t new_id = 0;

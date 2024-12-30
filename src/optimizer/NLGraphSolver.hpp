@@ -23,6 +23,7 @@ public:
 	void UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquation eq);
 	void AddStatefulEquation(NLStatefulEquation eq);
+	void AddBufferEquation(BufferEquation eq);
 	
 	std::vector<NLStatefulEquation>& GetStatefulEquations();
 private:

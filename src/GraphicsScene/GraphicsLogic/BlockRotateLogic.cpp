@@ -28,17 +28,17 @@ MI::ClickEvent node::logic::BlockRotateLogic::OnLMBUp(const model::Point& curren
 
 	model::BlockOrientation new_orientation = static_cast<model::BlockOrientation>((static_cast<int>(block.GetOrienation()) + 1) % 4);
 	auto&& styler = block.GetStyler();
-	auto block_model_ref = GetObjectsManager()->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
+	auto* block_model_ref = GetObjectsManager()->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
 	if (!block_model_ref)
 	{
 		return MI::ClickEvent::CAPTURE_END;
 	}
 	std::vector<model::BlockSocketModel> new_sockets;
 	{
-		auto sockets_span = block_model_ref->get().GetSockets();
+		auto sockets_span = block_model_ref->GetSockets();
 		new_sockets = std::vector<model::BlockSocketModel>{ sockets_span.begin(), sockets_span.end() };
 	} 
-	model::Rect new_rect = block_model_ref->get().GetBounds();
+	model::Rect new_rect = block_model_ref->GetBounds();
 	model::Point center_point{ new_rect.x + new_rect.w / 2, new_rect.y + new_rect.h / 2 };
 	std::swap(new_rect.w, new_rect.h);
 	new_rect.x = center_point.x - new_rect.w / 2;

@@ -30,10 +30,10 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation)
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetBounds(), block_rect);
-	EXPECT_EQ(loaded_block->get().GetOrienation(), orienation);
+	EXPECT_EQ(loaded_block->GetBounds(), block_rect);
+	EXPECT_EQ(loaded_block->GetOrienation(), orienation);
 }
 
 TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
@@ -66,10 +66,10 @@ TEST(testBlockLoader, testSaveLoadBlockIdAndBoundsAndOrientation2)
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 2);
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetBounds(), block_rect);
-	EXPECT_EQ(loaded_block->get().GetOrienation(), orienation);
+	EXPECT_EQ(loaded_block->GetBounds(), block_rect);
+	EXPECT_EQ(loaded_block->GetOrienation(), orienation);
 }
 
 TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
@@ -99,9 +99,9 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	auto loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
+	auto* loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
 	ASSERT_TRUE(loaded_block_data);
 
 	EXPECT_EQ(loaded_block_data->block_class, class_name);
@@ -144,10 +144,10 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
 
-	auto loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
+	auto* loaded_block_data = loaded_scene->GetFunctionalBlocksManager().GetDataForId(block_id);
 	ASSERT_TRUE(loaded_block_data);
 
 	EXPECT_EQ(loaded_block_data->block_class, class_name);
@@ -194,11 +194,11 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties)
 
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetStyler(), styler_name);
+	EXPECT_EQ(loaded_block->GetStyler(), styler_name);
 
-	auto&& loaded_properties = loaded_block->get().GetStylerProperties();
+	auto&& loaded_properties = loaded_block->GetStylerProperties();
 	ASSERT_EQ(loaded_properties.properties.size(), 1);
 	ASSERT_TRUE(loaded_properties.properties.contains(property_name));
 	EXPECT_EQ(loaded_properties.properties.find(property_name)->second, property_value);
@@ -235,11 +235,11 @@ TEST(testBlockLoader, testSaveLoadBlockStylerAndProperties2)
 
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	EXPECT_EQ(loaded_block->get().GetStyler(), styler_name);
+	EXPECT_EQ(loaded_block->GetStyler(), styler_name);
 
-	auto&& loaded_properties = loaded_block->get().GetStylerProperties();
+	auto&& loaded_properties = loaded_block->GetStylerProperties();
 	ASSERT_EQ(loaded_properties.properties.size(), 2);
 	ASSERT_TRUE(loaded_properties.properties.contains(property_name));
 	EXPECT_EQ(loaded_properties.properties.find(property_name)->second, property_value);
@@ -276,10 +276,10 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
-	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
 
 	ASSERT_TRUE(loaded_block_opt);
-	auto&& loaded_block = loaded_block_opt->get();
+	auto&& loaded_block = *loaded_block_opt;
 	ASSERT_EQ(loaded_block.GetSockets().size(), 1);
 
 	auto&& loaded_socket = loaded_block.GetSockets()[0];
@@ -321,10 +321,10 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
 	EXPECT_EQ(loaded_scene.value().GetBlocks().size(), 1);
-	auto loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block_opt = loaded_scene.value().GetBlockById(block_id);
 
 	ASSERT_TRUE(loaded_block_opt);
-	auto&& loaded_block = loaded_block_opt->get();
+	auto&& loaded_block = *loaded_block_opt;
 	ASSERT_EQ(loaded_block.GetSockets().size(), 2);
 
 	auto&& loaded_socket = loaded_block.GetSockets()[0];
@@ -349,7 +349,6 @@ TEST(testBlockLoader, testSaveLoadBlockSubSystem)
 
 	Rect block_rect{ 1,1,10,10 };
 	BlockModel original_block{ block_id, model::BlockType::SubSystem, block_rect };
-	std::string_view property_name = "Multiplier";
 	std::string class_name{ "test1" };
 	model::SubsystemBlockData block_data;
 	std::string block_url = "FOO";
@@ -368,11 +367,49 @@ TEST(testBlockLoader, testSaveLoadBlockSubSystem)
 
 	auto loaded_scene = loader.Load(subscene_id);
 	ASSERT_TRUE(loaded_scene.has_value());
-	auto loaded_block = loaded_scene.value().GetBlockById(block_id);
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
 	ASSERT_TRUE(loaded_block);
-	auto loaded_block_data = loaded_scene->GetSubsystemBlocksManager().GetDataForId(block_id);
+	auto* loaded_block_data = loaded_scene->GetSubsystemBlocksManager().GetDataForId(block_id);
 	ASSERT_TRUE(loaded_block_data);
 
 	EXPECT_EQ(loaded_block_data->URL, block_url);
 	EXPECT_EQ(loaded_block_data->scene_id, subsystem_id);
+}
+
+
+TEST(testBlockLoader, testSaveLoadBlockPort)
+{
+	NodeSceneModel scene;
+	BlockId block_id{ 1 };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
+	model::SocketId socket_id{ 2 };
+	Rect block_rect{ 1,1,10,10 };
+	BlockModel original_block{ block_id, model::BlockType::Port, block_rect };
+	std::string class_name{ "test1" };
+	model::PortBlockData block_data;
+	SubSceneId subsystem_id{ 1 };
+	block_data.port_type = model::SocketType::input;
+	block_data.id = socket_id;
+	scene.GetPortBlocksManager().SetDataForId(block_id, std::move(block_data));
+
+	SQLSceneLoader loader(":memory:");
+
+	scene.AddBlock(BlockModel{ original_block });
+
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
+
+	ASSERT_TRUE(result);
+
+	auto loaded_scene = loader.Load(subscene_id);
+	ASSERT_TRUE(loaded_scene.has_value());
+	auto* loaded_block = loaded_scene.value().GetBlockById(block_id);
+	ASSERT_TRUE(loaded_block);
+	auto* loaded_block_data = loaded_scene->GetPortBlocksManager().GetDataForId(block_id);
+	ASSERT_TRUE(loaded_block_data);
+
+	EXPECT_EQ(loaded_block_data->id, socket_id);
+	EXPECT_EQ(loaded_block_data->port_type, model::SocketType::input);
 }

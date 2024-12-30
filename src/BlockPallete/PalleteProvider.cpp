@@ -26,6 +26,10 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	{
 		AddSubsystemElement(temp);
 	}
+	else if (temp.data.GetPortData())
+	{
+		AddPortElement(temp);
+	}
 	else
 	{
 		SDL_Log("unknown block template !");
@@ -89,6 +93,43 @@ void node::PalleteProvider::AddSubsystemElement(const BlockTemplate& temp)
 	block.SetStylerProperties(temp.style_properties);
 
 	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, model::BlockDataCRef{ block, model::BlockDataCRef::SubsytemRef{*block_data_ptr} });
+
+	assert(styler);
+	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
+
+	m_elements.push_back(
+		std::make_unique<PalleteElement>(PalleteElement{
+			temp.template_name,
+			std::move(block),
+			model::BlockData{*block_data_ptr},
+			std::move(styler),
+			std::make_shared<TextPainter>(nullptr),
+			}
+			)
+	);
+}
+
+void node::PalleteProvider::AddPortElement(const BlockTemplate& temp)
+{
+	auto* block_data_ptr = temp.data.GetPortData();
+	assert(block_data_ptr);
+
+	auto sockets_types = std::vector<model::SocketType>{};
+	sockets_types.push_back(
+		block_data_ptr->port_type == model::SocketType::input ? 
+		model::SocketType::output : model::SocketType::input);
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Port, {0,0,BlockPallete::ElementWidth, BlockPallete::ElementHeight} };
+	model::id_int socket_id = 0;
+	for (const auto& sock_type : sockets_types)
+	{
+		block.AddSocket(model::BlockSocketModel{ sock_type, model::SocketId{socket_id} });
+		socket_id++;
+	}
+
+	block.SetStyler(temp.styler_name);
+	block.SetStylerProperties(temp.style_properties);
+
+	auto styler = m_blockStyleFactory->GetStyler(temp.styler_name, model::BlockDataCRef{ block, model::BlockDataCRef::PortRef{*block_data_ptr} });
 
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());

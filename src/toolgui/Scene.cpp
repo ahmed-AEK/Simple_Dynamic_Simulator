@@ -201,6 +201,7 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
     }
 }
 
+
 node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
 {
     if (m_pContextMenu)
@@ -387,15 +388,12 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
 MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
-    if (m_current_mouse_hover.isAlive())
     {
-        current_hover = m_current_mouse_hover.GetObjectPtr();   
+        MouseHoverEvent move_evt{ e.point() };
+        OnMouseMove(move_evt);
     }
-    else
-    {
-        current_hover = this->OnGetInteractableAtPoint(p);
-    }
+    node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
+
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
@@ -456,15 +454,12 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
-    if (m_current_mouse_hover.isAlive())
     {
-        current_hover = m_current_mouse_hover.GetObjectPtr();   
+        MouseHoverEvent move_evt{ e.point() };
+        OnMouseMove(move_evt);
     }
-    else
-    {
-        current_hover = this->OnGetInteractableAtPoint(p);
-    }
+    node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
+
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
@@ -505,15 +500,8 @@ MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
-    if (m_current_mouse_hover.isAlive())
-    {
-        current_hover = m_current_mouse_hover.GetObjectPtr();   
-    }
-    else
-    {
-        current_hover = this->OnGetInteractableAtPoint(p);
-    }
+    node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
+
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();
@@ -554,15 +542,8 @@ MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
-    if (m_current_mouse_hover.isAlive())
-    {
-        current_hover = m_current_mouse_hover.GetObjectPtr();
-    }
-    else
-    {
-        current_hover = this->OnGetInteractableAtPoint(p);
-    }
+    node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
+
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
     {
         DestroyContextMenu();

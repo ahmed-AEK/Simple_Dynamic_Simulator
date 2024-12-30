@@ -85,7 +85,7 @@ MI::ClickEvent node::BlockPallete::OnLMBDown(MouseButtonEvent& e)
 	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
 
 	auto&& selected_element = pallete_elements[selected_item_index];
-	auto block_data_ref = model::BlockDataCRef{ selected_element->block};
+	auto block_data_ref = model::BlockDataCRef{ selected_element->block, {}};
 	if (auto functional_data = selected_element->data.GetFunctionalData())
 	{
 		block_data_ref = model::BlockDataCRef{ selected_element->block,

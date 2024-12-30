@@ -41,9 +41,12 @@ private:
 		const node::model::NodeSceneModel& scene);
 	bool AddSubsystemBlockData(const node::model::BlockId& block_id,
 		const node::model::NodeSceneModel& scene);
+	bool AddPortBlockData(const node::model::BlockId& block_id,
+		const node::model::NodeSceneModel& scene);
 
 	std::optional<model::BlockData> GetFunctionalBlockData(model::BlockId block_id);
 	std::optional<model::BlockData> GetSubsytemBlockData(model::BlockId block_id);
+	std::optional<model::BlockData> GetPortBlockData(model::BlockId block_id);
 
 	std::optional<node::model::BlockModel> GetBlock_internal(SQLite::Statement& query);
 	std::string m_dbname;

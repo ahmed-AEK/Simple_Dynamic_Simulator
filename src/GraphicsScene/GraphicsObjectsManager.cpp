@@ -221,7 +221,7 @@ void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
     {
         if (subststem_data->URL == "Local")
         {
-            auto subscene_id = m_parent_manager->AddNewSubSceneToScene(m_sceneModel->GetSubSceneId());
+            auto subscene_id = m_parent_manager->AddNewSubSceneToScene();
             subststem_data->scene_id = subscene_id;
             m_sceneModel->AddNewSubsystemBlock(std::move(block), std::move(*subststem_data));
         }
@@ -233,6 +233,10 @@ void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
     else if (auto* functional_data = object.object.data.GetFunctionalData())
     {
         m_sceneModel->AddNewFunctionalBlock(std::move(block), std::move(*functional_data));
+    }
+    else if (auto* port_data = object.object.data.GetPortData())
+    {
+        m_sceneModel->AddNewPortBlock(std::move(block), std::move(*port_data));
     }
     else
     {
@@ -390,7 +394,7 @@ void node::GraphicsObjectsManager::UpdateBlockStyler(BlockObject& block, const m
 {
     if (model.GetType() == model::BlockType::Functional)
     {
-        auto data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
+        auto* data_ptr = m_sceneModel->GetModel().GetFunctionalBlocksManager().GetDataForId(model.GetId());
         assert(data_ptr);
         if (!data_ptr)
         {
@@ -430,6 +434,18 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
         }
         return m_blockStylerFactory->GetStyler(styler,
             model::BlockDataCRef{ model, model::BlockDataCRef::SubsytemRef{*data_ptr} });
+    }
+    else if (model.GetType() == model::BlockType::Port)
+    {
+        auto* data_ptr = m_sceneModel->GetModel().GetPortBlocksManager().GetDataForId(model.GetId());
+        assert(data_ptr);
+        if (!data_ptr)
+        {
+            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            return nullptr;
+        }
+        return m_blockStylerFactory->GetStyler(styler,
+            model::BlockDataCRef{ model, model::BlockDataCRef::PortRef{*data_ptr} });
     }
     else
     {

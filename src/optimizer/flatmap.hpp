@@ -3,8 +3,8 @@
 #include <vector>
 #include <optional>
 #include <span>
-#include <boost/container/flat_map.hpp>
 #include <string>
+#include <cassert>
 
 namespace opt
 {
