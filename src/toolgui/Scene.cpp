@@ -201,6 +201,7 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
     }
 }
 
+
 node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
 {
     if (m_pContextMenu)
@@ -387,12 +388,12 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
 MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
+    node::Widget* current_hover = nullptr;
     if (m_current_mouse_hover.isAlive())
     {
         current_hover = m_current_mouse_hover.GetObjectPtr();   
     }
-    else
+    if (current_hover == nullptr || !current_hover->IsVisible())
     {
         current_hover = this->OnGetInteractableAtPoint(p);
     }
@@ -456,12 +457,12 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
+    node::Widget* current_hover = nullptr;
     if (m_current_mouse_hover.isAlive())
     {
         current_hover = m_current_mouse_hover.GetObjectPtr();   
     }
-    else
+    if (current_hover == nullptr || !current_hover->IsVisible())
     {
         current_hover = this->OnGetInteractableAtPoint(p);
     }
@@ -505,12 +506,12 @@ MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
+    node::Widget* current_hover = nullptr;
     if (m_current_mouse_hover.isAlive())
     {
         current_hover = m_current_mouse_hover.GetObjectPtr();   
     }
-    else
+    if (current_hover == nullptr)
     {
         current_hover = this->OnGetInteractableAtPoint(p);
     }
@@ -554,12 +555,12 @@ MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 {
     SDL_FPoint p{ e.point() };
-    node::Widget* current_hover;
+    node::Widget* current_hover = nullptr;
     if (m_current_mouse_hover.isAlive())
     {
         current_hover = m_current_mouse_hover.GetObjectPtr();
     }
-    else
+    if (current_hover == nullptr)
     {
         current_hover = this->OnGetInteractableAtPoint(p);
     }

@@ -16,7 +16,7 @@ class SubScenesManager
 {
 public:
 	SubScenesManager() = default;
-	virtual SubSceneId AddNewSubSceneToScene(node::SubSceneId parent_id) = 0;
+	virtual SubSceneId AddNewSubSceneToScene() = 0;
 
 	SubScenesManager(const SubScenesManager&) = delete;
 	SubScenesManager& operator=(const SubScenesManager&) = delete;

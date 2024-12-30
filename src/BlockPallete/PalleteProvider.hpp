@@ -46,6 +46,7 @@ public:
 private:
 	void AddFunctionalElemnt(const BlockTemplate& temp);
 	void AddSubsystemElement(const BlockTemplate& temp);
+	void AddPortElement(const BlockTemplate& temp);
 
 	std::vector<std::unique_ptr<PalleteElement>> m_elements;
 	std::shared_ptr<BlockClassesManager> m_classesManager;

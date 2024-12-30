@@ -32,6 +32,30 @@ TEST(testNLGraphSolver, testAddStateful)
 	EXPECT_NEAR(state.get(0), 1, 1e-4);
 }
 
+TEST(testNLGraphSolver, testAddBuffer)
+{
+	opt::NLGraphSolver solver;
+	solver.AddBufferEquation({0, 1});
+	solver.Initialize();
+	opt::FlatMap state(2);
+	state.modify(0, 5);
+	state.modify(1, 0);
+	
+	solver.Solve(state, 1);
+	solver.UpdateState(state, 1);
+
+	auto first_output = state.get(1);
+	state.modify(0, 7);
+
+	solver.Solve(state, 1);
+	solver.UpdateState(state, 1);
+
+	auto second_output = state.get(1);
+
+	EXPECT_EQ(first_output, 5);
+	EXPECT_EQ(second_output, 7);
+}
+
 TEST(testNLGraphSolver, testStateful_runs)
 {
 	opt::NLGraphSolver solver;

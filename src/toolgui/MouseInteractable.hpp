@@ -26,7 +26,7 @@ T* MouseInteractable<T, Rect, Point>::GetInteractableAtPoint(const Point& point)
 {
     SDL_FPoint SDLpoint{ static_cast<float>(point.x), static_cast<float>(point.y) };
     SDL_FRect SDLrect{ static_cast<float>(m_rect.x), static_cast<float>(m_rect.y), static_cast<float>(m_rect.w), static_cast<float>(m_rect.h) };
-    if (SDL_PointInRectFloat(&SDLpoint, &SDLrect))
+    if (m_isVisible && SDL_PointInRectFloat(&SDLpoint, &SDLrect))
     {
         return this->OnGetInteractableAtPoint(point);
     }

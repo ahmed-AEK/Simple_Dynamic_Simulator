@@ -33,7 +33,6 @@
 #include "BlockClasses/SineSourceClass.hpp"
 #include "BlockClasses/StepSourceClass.hpp"
 #include "BlockClasses/ComparatorClass.hpp"
-#include "BlockClasses/SubSystemClass.hpp"
 
 #include "BlockClasses/BlockDialog.hpp"
 
@@ -59,7 +58,7 @@
 
 #define USE_SDL_DIALOGS 1
 
-static void AddInitialNodes_forScene(node::SceneManager& manager, node::SubSceneId subscene_id)
+static void AddInitialNodes_forScene(node::SceneManager& manager)
 {
     using namespace node;
     auto sceneModel = std::make_shared<model::NodeSceneModel>();
@@ -111,8 +110,8 @@ static void AddInitialNodes_forScene(node::SceneManager& manager, node::SubScene
     }
 
     auto model = std::make_shared<SceneModelManager>(std::move(sceneModel));
-    manager.SetModel(subscene_id, model);
-    manager.GetManager(subscene_id)->SetSceneModel(std::move(model));
+    model->SetSubSceneId(manager.GetMainSubSceneId());
+    manager.AddModel(model);
 }
 
 
@@ -124,8 +123,14 @@ void node::MainNodeScene::RunSimulator()
     }
     assert(GetApp());
     assert(m_classesManager);
-    auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
-    m_sim_mgr.RunSimulator(m_current_scene_id->manager, graphicsObjectsManager->GetSceneModel()->GetModel(), m_classesManager, *GetApp());
+    std::vector<std::reference_wrapper<const model::NodeSceneModel>> scene_models;
+    auto& scene_manager = m_sceneComponents[m_current_scene_id->manager].manager;
+    for (auto&& subscene : scene_manager->GetModels())
+    {
+        scene_models.push_back(subscene.second->GetModel());
+    }
+    m_sim_mgr.RunSimulator(m_current_scene_id->manager, scene_models, scene_manager->GetMainSubSceneId(), 
+        m_classesManager, *GetApp());
 }
 
 void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* handler)
@@ -150,16 +155,21 @@ void node::MainNodeScene::NewScene()
 
     CloseAllDialogs();
 
-    auto manager_id = GetNewManagerId();
-    CreateNewScene(manager_id);
+    auto model = std::make_shared<SceneModelManager>(std::make_shared<model::NodeSceneModel>());
+    
+    auto manager_id = CreateNewScene();
     assert(m_sceneComponents.find(manager_id) != m_sceneComponents.end());
     auto& component = m_sceneComponents[manager_id];
     auto subscene_id = component.manager->GetMainSubSceneId();
     m_current_scene_id = SceneId{ manager_id, subscene_id };
+    
+    model->SetSubSceneId(subscene_id);
+    
+    component.manager->AddModel(std::move(model));
+    
+    CreateSceneForSubsystem(*m_current_scene_id);
+
     auto mgr = component.manager->GetManager(subscene_id);
-    auto model = std::make_shared<SceneModelManager>(std::make_shared<model::NodeSceneModel>());
-    mgr->SetSceneModel(model);
-    component.manager->SetModel(subscene_id, std::move(model));
     m_tabbedView->SetCurrentTabIndex(mgr->GetGraphicsScene());
 }
 
@@ -213,17 +223,15 @@ void node::MainNodeScene::LoadScene(std::string name)
 
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
-    auto manager_id = GetNewManagerId();
     if (auto new_scenes = LoadSceneAndSubscenes(*connector.connector,SubSceneId{1}))
     {
         CloseAllDialogs();
-        CreateNewScene(manager_id);
+        auto manager_id = CreateNewScene();
         assert(m_sceneComponents.find(manager_id) != m_sceneComponents.end());
         auto& component = m_sceneComponents[manager_id];
         auto subscene_id = component.manager->GetMainSubSceneId();
         m_current_scene_id = SceneId{ manager_id, subscene_id };
         component.manager->SetDBConnector(std::move(connector));
-        auto mgr = component.manager->GetManager(subscene_id);
         auto main_scene_it = new_scenes->find(subscene_id);
         assert(main_scene_it != new_scenes->end());
         if (main_scene_it == new_scenes->end())
@@ -231,17 +239,19 @@ void node::MainNodeScene::LoadScene(std::string name)
             return;
         }
         auto model = std::make_shared<SceneModelManager>(std::move(main_scene_it->second));
+        assert(model->GetSubSceneId() == component.manager->GetMainSubSceneId());
         new_scenes->erase(main_scene_it);
-        mgr->SetSceneModel(model);
-        component.manager->SetModel(subscene_id, std::move(model));
+        component.manager->AddModel(std::move(model));
         for (auto&& [id, child_scene] : *new_scenes)
         {
             if (child_scene)
             {
-                component.manager->SetModel(id, std::make_shared<SceneModelManager>(std::move(child_scene)));
+                component.manager->AddModel(std::make_shared<SceneModelManager>(std::move(child_scene)));
             }
         }
         SDL_Log("Loading Scene successful!");
+        CreateSceneForSubsystem({ manager_id, component.manager->GetMainSubSceneId() });
+        auto mgr = component.manager->GetManager(component.manager->GetMainSubSceneId());
         m_tabbedView->SetCurrentTabIndex(mgr->GetGraphicsScene());
     }
     else
@@ -365,31 +375,13 @@ void node::MainNodeScene::MaybeSaveScene(std::string name)
     }
 }
 
-void node::MainNodeScene::OnCenterTabChanged(size_t new_tab)
+void node::MainNodeScene::OnCenterTabChanged(int32_t new_tab)
 {
-    m_current_scene_id = std::nullopt;
     m_current_scene_id = GetSceneIdForTab(new_tab);
 }
 
-void node::MainNodeScene::CloseTabRequest(size_t tab_idx)
+void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
 {
-    if (m_sceneComponents.size() == 1)
-    {
-        SDL_Log("Closing Tab with only 1 left");
-        return;
-    }
-
-    assert(tab_idx < m_sceneComponents.size());
-    if (!(tab_idx < m_sceneComponents.size()))
-    {
-        return;
-    }
-
-    if (m_sceneComponents.size() <= 1)
-    {
-        return; // don't support 0 tabs right now
-    }
-
     auto sceneId_opt = GetSceneIdForTab(tab_idx);
     assert(sceneId_opt);
     if (!sceneId_opt)
@@ -414,7 +406,11 @@ void node::MainNodeScene::CloseTabRequest(size_t tab_idx)
             }
         }
         m_sceneComponents.erase(sceneId.manager);
-    }    
+    }
+    else
+    {
+        m_sceneComponents[sceneId.manager].manager->SetSubSceneManager(sceneId.subscene, nullptr);
+    }
 }
 
 namespace
@@ -548,6 +544,30 @@ void node::MainNodeScene::InitializeSidePanel()
         model::BlockStyleProperties{}
     };
     pallete_provider->AddElement(std::move(SubScene_block));
+
+    auto input_block = BlockTemplate
+    {
+        "Input",
+        model::PortBlockData{
+            model::SocketId{0},
+            model::SocketType::input
+        },
+        "Default",
+        model::BlockStyleProperties{}
+    };
+    pallete_provider->AddElement(std::move(input_block));
+
+    auto output_block = BlockTemplate
+    {
+        "Output",
+        model::PortBlockData{
+            model::SocketId{0},
+            model::SocketType::output
+        },
+        "Default",
+        model::BlockStyleProperties{}
+    };
+    pallete_provider->AddElement(std::move(output_block));
 
     auto block_template = BlockTemplate{
     "Gain",
@@ -745,7 +765,7 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
         return;
     }
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
-    auto block = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
+    auto* block = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
     if (!block)
     {
         SDL_Log("couldn't find the block model!");
@@ -803,20 +823,20 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
 
     assert(block.GetModelId());
-    auto block_model_opt = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
-    if (!block_model_opt)
+    auto* block_model_ptr = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*block.GetModelId());
+    assert(block_model_ptr);
+    if (!block_model_ptr)
     {
-        assert(false);
         return;
     }
-    auto& block_model = block_model_opt->get();
+    auto& block_model = *block_model_ptr;
     if (block_model.GetType() == model::BlockType::Functional)
     {
 
-        auto block_data = manager.GetModel(m_current_scene_id->subscene)->GetModel().GetFunctionalBlocksManager().GetDataForId(block_model.GetId());
+        auto* block_data = manager.GetModel(m_current_scene_id->subscene)->GetModel().GetFunctionalBlocksManager().GetDataForId(block_model.GetId());
+        assert(block_data);
         if (!block_data)
         {
-            assert(false);
             return;
         }
 
@@ -852,6 +872,40 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         {
             OpenPropertiesDialog(block);
         }
+    }
+    else if (block_model.GetType() == model::BlockType::SubSystem)
+    {
+        auto* subsystem_block_data = manager.GetModel(m_current_scene_id->subscene)->GetModel().GetSubsystemBlocksManager().GetDataForId(block_model.GetId());
+        assert(subsystem_block_data);
+        if (!subsystem_block_data)
+        {
+            return;
+        }
+
+        if (subsystem_block_data->URL != "Local")
+        {
+            SDL_Log("Can only handle local blocks");
+            return;
+        }
+
+        auto subsystem_id = subsystem_block_data->scene_id;
+        
+        
+        // try getting the subscene if it exists
+        auto new_subscene_mgr = manager.GetManager(subsystem_id);
+        if (!new_subscene_mgr)
+        {
+            // scene is not displayed
+            if (!CreateSceneForSubsystem({ m_current_scene_id->manager, subsystem_id }))
+            {
+                SDL_Log("Failed to create scene for subsystem %d,%d", 
+                    m_current_scene_id->manager.value, subsystem_id.value);
+                assert(false);
+                return;
+            }
+            new_subscene_mgr = manager.GetManager(subsystem_id);
+        }
+        m_tabbedView->SetCurrentTabIndex(new_subscene_mgr->GetGraphicsScene());
     }
     else
     {
@@ -930,8 +984,30 @@ void node::MainNodeScene::SaveSceneButtonPressed()
 #endif
 }
 
-void node::MainNodeScene::CreateNewScene(SceneManagerId manager_id)
+node::SceneManagerId node::MainNodeScene::CreateNewScene()
 {
+    auto scene_mgr = std::make_unique<SceneManager>();
+    scene_mgr->SetBlockStylerFactory(m_blockStylerFactory);
+    auto new_id = SceneManagerId{ m_next_manager_id };
+    m_sceneComponents.emplace(
+        new_id,
+        SceneComponents{
+            std::move(scene_mgr),
+        });
+    m_next_manager_id++;
+    return new_id;
+}
+
+bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
+{
+
+    auto scene_mgr_it = m_sceneComponents.find(scene_id.manager);
+    if (scene_mgr_it == m_sceneComponents.end())
+    {
+        return false;
+    }
+    
+    auto& scene_mgr = *scene_mgr_it->second.manager;
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetRect(), m_tabbedView);
     auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
     gScene->Attach(*graphicsObjectsManager);
@@ -940,16 +1016,11 @@ void node::MainNodeScene::CreateNewScene(SceneManagerId manager_id)
     auto handler = std::make_shared<GraphicsToolHandler>(*gScene, graphicsObjectsManager, m_toolsManager);
     gScene->SetTool(std::move(handler));
 
-    auto scene_mgr = std::make_unique<SceneManager>();
-    scene_mgr->SetMainSceneManager(graphicsObjectsManager);
-    m_sceneComponents.emplace(
-        manager_id,
-        SceneComponents{
-            std::move(scene_mgr),
-        });
-    m_next_manager_id++;
+    scene_mgr.SetSubSceneManager(scene_id.subscene, graphicsObjectsManager);
+    
 
     m_tabbedView->AddTab("scene", std::move(gScene));
+    return true;
 }
 
 void node::MainNodeScene::OnUndo()
@@ -994,7 +1065,7 @@ bool node::MainNodeScene::CanUndo()
     }
 
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
-
+    assert(graphicsObjectsManager);
     return graphicsObjectsManager->GetSceneModel()->CanUndo();
 }
 
@@ -1005,12 +1076,16 @@ bool node::MainNodeScene::CanRedo()
         return false;
     }
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
-
+    assert(graphicsObjectsManager);
     return graphicsObjectsManager->GetSceneModel()->CanRedo();
 }
 
-std::optional<node::SceneId> node::MainNodeScene::GetSceneIdForTab(size_t index)
+std::optional<node::SceneId> node::MainNodeScene::GetSceneIdForTab(int32_t index)
 {
+    if (index == -1)
+    {
+        return std::nullopt;
+    }
     auto tab_widget = m_tabbedView->GetTabWidget(index);
     for (auto&& component : m_sceneComponents)
     {
@@ -1094,21 +1169,22 @@ void node::MainNodeScene::OnInit()
     m_classesManager->RegisterBlockClass(std::make_shared<SineSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<StepSourceClass>());
     m_classesManager->RegisterBlockClass(std::make_shared<ComparatorBlockClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<SubSystemClass>());
 
     InitializeSidePanel();
 
     InitializeTools();
 
-    auto scene_id = GetNewManagerId();
-    CreateNewScene(scene_id);
+    auto scene_id = CreateNewScene();
     m_current_scene_id = {scene_id, m_sceneComponents[scene_id].manager->GetMainSubSceneId()};
-    m_tabbedView->SetCurrentTabIndex(size_t{0});
+
+    AddInitialNodes_forScene(*m_sceneComponents[m_current_scene_id->manager].manager);
+
+    CreateSceneForSubsystem(*m_current_scene_id);
+    m_tabbedView->SetCurrentTabIndex(0);
 
     m_tab_change_notifier = std::make_unique<TabChangeNotifier>(*this);
     m_tabbedView->Attach(*m_tab_change_notifier);
 
-    AddInitialNodes_forScene(*m_sceneComponents[m_current_scene_id->manager].manager, m_current_scene_id->subscene);
 
     GetToolBar()->SetFocusProxy(m_tabbedView);
     SetFocus(GetCenterWidget());
@@ -1141,6 +1217,10 @@ void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
         [](const SimulationEvent::FloatingInput&)
         {
            SDL_Log("Floating Input!");
+        },
+        [](const SimulationEvent::RequestedBadScene& e)
+        {
+            SDL_Log("requested bad scene with id: %d", e.subscene_id.value);
         },
         [&](const SimulationEvent::Success&)
         {

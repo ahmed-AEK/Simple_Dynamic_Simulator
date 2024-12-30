@@ -28,6 +28,7 @@ public:
 	void AddDiffEquation(DiffEquation eq);
 	void AddNLEquation(NLEquation eq);
 	void AddNLStatefulEquation(NLStatefulEquation eq);
+	void AddBufferEquation(BufferEquation eq);
 	size_t AddObserver(Observer obs);
 	void AddSource(SourceEq source);
 	void Initialize(double start_time, double end_time);

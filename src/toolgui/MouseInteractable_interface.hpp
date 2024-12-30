@@ -64,6 +64,9 @@ namespace MI {
 
         const Rect& GetRectImpl() const noexcept { return m_rect; }
         void SetRectImpl(const Rect& rect) noexcept { m_rect = rect; }
+
+        bool IsVisible() const { return m_isVisible; }
+        void SetVisible(bool value) { m_isVisible = value; }
     protected:
         virtual T* OnGetInteractableAtPoint(const Point& point) = 0;
 
@@ -77,6 +80,7 @@ namespace MI {
         virtual ClickEvent OnRMBUp(MouseButtonEvent& e);
     private:
         Rect m_rect{ 0,0,0,0 };
+        bool m_isVisible = true;
         node::HandleOwnigPtr<T> MI_handle_ptr = node::HandleAllocator<T>::CreateHandle(static_cast<T*>(this));
     };
 }

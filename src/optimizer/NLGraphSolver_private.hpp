@@ -18,6 +18,7 @@ public:
 	void UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquation eq);
 	void AddStatefulEquation(NLStatefulEquation eq);
+	void AddBufferEq(BufferEquation eq);
 	std::vector<NLStatefulEquation>& GetStatefulEquations();
 protected:
 	[[nodiscard]] double SolveInternal(std::span<const double> x, std::span<double> grad);
@@ -31,6 +32,7 @@ private:
 
 	std::vector<NLEquation> m_equations;
 	std::vector<NLStatefulEquation> m_stateful_equations;
+	std::vector<BufferEquation> m_buffer_equations;
 	double m_last_state_time = 0;
 	opt::FlatMap m_current_state;
 	double m_current_time = 0;
@@ -40,6 +42,7 @@ private:
 	{
 		NLEquation,
 		statefulNLEquation,
+		BufferEquation,
 	};
 	struct EquationIndex
 	{

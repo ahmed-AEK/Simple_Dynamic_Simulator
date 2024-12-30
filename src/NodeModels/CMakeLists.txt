@@ -9,8 +9,10 @@ Observer.hpp
 SceneModelManager.hpp SceneModelManager.cpp
 IdTypes.hpp
 FunctionalBlocksDataManager.hpp FunctionalBlocksDataManager.cpp
-SubSystemBlocksDataManager.hpp SubSystemBlocksDataManager.cpp
+SubsystemBlocksDataManager.hpp SubsystemBlocksDataManager.cpp
 BlockData.hpp
+PortBlocksDataManager.hpp PortBlocksDataManager.cpp
+BlockPortsUpdate.hpp
 )
 
 target_include_directories(NodeModels PRIVATE ".")

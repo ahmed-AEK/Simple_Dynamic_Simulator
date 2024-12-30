@@ -9,6 +9,11 @@
 namespace node
 {
 
+namespace model
+{
+	struct BlockPortsUpdate;
+}
+
 class SceneModelManager;
 
 struct LeafNodeMovedReport
@@ -139,9 +144,16 @@ protected:
 
 };
 
-class SceneModelManager : public MultiPublisher<SceneModification>
+class SceneModelManager : public MultiPublisher<SceneModification>, public SinglePublisher<model::BlockPortsUpdate>
 {
 public:
+	using MultiPublisher<SceneModification>::Notify;
+	using MultiPublisher<SceneModification>::Detach;
+	using MultiPublisher<SceneModification>::Attach;
+	using SinglePublisher<model::BlockPortsUpdate>::Notify;
+	using SinglePublisher<model::BlockPortsUpdate>::Detach;
+	using SinglePublisher<model::BlockPortsUpdate>::Attach;
+
 	explicit SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene);
 	~SceneModelManager() override;
 
@@ -149,13 +161,14 @@ public:
 
 	void AddNewSubsystemBlock(model::BlockModel&& block, model::SubsystemBlockData&& data);
 	void AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data);
+	void AddNewPortBlock(model::BlockModel&& block, model::PortBlockData&& data);
 	void RemoveBlockById(const model::BlockId& id);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
 	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions);
 
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
 	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);
-
+	void ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets);
 	void UpdateNet(NetModificationRequest& update_request);
 	model::NodeSceneModel& GetModel() { return *m_scene; }
 	const model::NodeSceneModel& GetModel() const { return *m_scene; }
@@ -166,20 +179,13 @@ public:
 	void Redo();
 	void PushAction(std::unique_ptr<ModelAction> action);
 
-	SubSceneId GetSubSceneId() const { return m_id; };
-	void SetSubSceneId(SubSceneId id) { m_id = id; }
+	SubSceneId GetSubSceneId() const { return m_scene->GetSubSceneId(); };
+	void SetSubSceneId(SubSceneId id) { m_scene->SetSubSceneId(id); }
 
-	SubSceneId GetParentSceneId() const { return m_id; };
-	void SetParentSceneId(SubSceneId id) { m_id = id; }
-
-	const auto& GetSubsystemIds() const { return m_subsystem_ids; }
 private:
-	SubSceneId m_id;
-	SubSceneId m_parent_id;
 	std::shared_ptr<model::NodeSceneModel> m_scene;
 	std::stack<std::unique_ptr<ModelAction>> m_undo_stack;
 	std::stack<std::unique_ptr<ModelAction>> m_redo_stack;
-	std::unordered_map<model::BlockId, SubSceneId> m_subsystem_ids;
 };
 
 }

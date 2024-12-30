@@ -21,12 +21,16 @@ node::SimulationManager::~SimulationManager()
     StopSimulator();
 }
 
-void node::SimulationManager::RunSimulator(SceneManagerId scene_session_id, model::NodeSceneModel& scene_model, std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
+void node::SimulationManager::RunSimulator(SceneManagerId scene_session_id, 
+    std::vector<std::reference_wrapper<const model::NodeSceneModel>> scene_models, 
+    SubSceneId main_subscene_id,
+    std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
 {
     if (!m_current_running_simulator)
     {
         auto runner = std::make_shared<SimulatorRunner>(
-            scene_model,
+            scene_models,
+            main_subscene_id,
             std::move(classes_manager),
             std::function<void()>{
             [app = &app, this] { app->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); }); } },
@@ -89,6 +93,9 @@ void node::SimulationManager::OnSimulationEnd(SimulationEvent& evt)
         {
         },
         [](SimulationEvent::FloatingInput&)
+        {
+        },
+        [](SimulationEvent::RequestedBadScene&)
         {
         },
         [&](SimulationEvent::Success& e)

@@ -14,6 +14,7 @@
 #include "optimizer/NLDiffSolver.hpp"
 #include "optimizer/SourceEq.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
+#include <queue>
 
 struct Net
 {
@@ -39,8 +40,26 @@ struct SocketMappings
 
 struct NetSplitResult
 {
-	std::vector<Net> nets;
-	std::unordered_map<node::model::SocketUniqueId, size_t> socket_mapping;
+	std::unordered_map<int32_t, Net> nets;
+	std::unordered_map<node::model::SocketUniqueId, int32_t> socket_mapping;
+};
+
+struct PortSimulationDescriptor
+{
+	node::model::SocketId socket_id;
+	node::model::SocketType socket_type;
+};
+
+struct SubsystemSimulationDescriptor
+{
+	const node::model::SubsystemBlockData& subystem_data;
+	int32_t subsystemRequestId;
+	std::vector<std::pair<int32_t, PortSimulationDescriptor>> sockets;
+};
+struct PortBlockSimulationDescriptor
+{
+	int32_t net_id;
+	PortSimulationDescriptor port_data;
 };
 
 struct BlocksFunctions
@@ -50,6 +69,51 @@ struct BlocksFunctions
 	std::vector<std::pair<opt::DiffEquation, node::model::BlockId>> diff_eqs;
 	std::vector<std::pair<opt::Observer, node::model::BlockId>> observers;
 	std::vector<std::pair<opt::SourceEq, node::model::BlockId>> sources;
+	std::vector<std::pair<SubsystemSimulationDescriptor, node::model::BlockId>> subsystem_blocks;
+	std::vector<std::pair<PortBlockSimulationDescriptor, node::model::BlockId>> ports_blocks;
+};
+
+struct SimulationSubsystemsManager
+{
+	struct SimulationSubsystemData
+	{
+		int32_t request_id;
+		std::reference_wrapper<const node::model::SubsystemBlockData> subsystem_data;
+	};
+	std::vector<SimulationSubsystemData> simulationSubsystemsMapping;
+	std::queue<int32_t> remaining_block_requests;
+	int32_t next_block_id = 0;
+
+	SimulationSubsystemsManager::SimulationSubsystemData* GetRequestData(int32_t request_id)
+	{
+		auto it = std::find_if(simulationSubsystemsMapping.begin(),
+			simulationSubsystemsMapping.end(),
+			[&](const auto& mapping) {return mapping.request_id == request_id; });
+		if (it != simulationSubsystemsMapping.end())
+		{
+			return &(*it);
+		}
+		return nullptr;
+	}
+
+	int32_t AddRequest(const node::model::SubsystemBlockData& subsystem_data)
+	{
+		int32_t request_id = next_block_id;
+		simulationSubsystemsMapping.push_back({ request_id, subsystem_data });
+		remaining_block_requests.push(request_id);
+		next_block_id++;
+		return request_id;
+	}
+	std::optional<int32_t> GetNextRequest()
+	{
+		if (remaining_block_requests.size())
+		{
+			auto id = remaining_block_requests.front();
+			remaining_block_requests.pop();
+			return id;
+		}
+		return std::nullopt;
+	}
 };
 
 // helper type for the visitor #4
@@ -60,52 +124,130 @@ template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 
-static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr)
+static void AddFunctionalBlock(node::BlockClassesManager& mgr, 
+	BlocksFunctions& funcs, const node::model::FunctionalBlocksDataManager& functionalBlocksManager, 
+	const node::model::BlockModel& block)
+{
+	auto block_data_ptr = functionalBlocksManager.GetDataForId(block.GetId());
+	assert(block_data_ptr);
+	auto block_class = mgr.GetBlockClassByName(block_data_ptr->block_class);
+	assert(block_class);
+	auto functor = block_class->GetFunctor(block_data_ptr->properties);
+
+	auto block_adder = [&](node::BlockFunctor& functor) {
+		std::visit(overloaded{
+		[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
+			}, functor);
+		};
+
+	std::visit(overloaded{
+		block_adder,
+		[&](std::vector<node::BlockFunctor>& blocks)
+		{
+			for (auto& block : blocks)
+			{
+				block_adder(block);
+			}
+		} }, functor);
+}
+
+static void AddSubSystemBlock(BlocksFunctions& funcs, 
+	const node::model::SubsystemBlocksDataManager& subsystemBlocksManager,
+	SimulationSubsystemsManager& simulationSubsystemsManager,
+	const node::model::BlockModel& block)
 {
 	using namespace node;
+	auto* subsystem_data_ptr = subsystemBlocksManager.GetDataForId(block.GetId());
+	assert(subsystem_data_ptr);
+	std::vector<std::pair<int32_t, PortSimulationDescriptor>> sockets;
+	sockets.reserve(block.GetSockets().size());
+	for (auto&& socket : block.GetSockets())
+	{
+		sockets.push_back({ socket.GetId().value, PortSimulationDescriptor{ socket.GetId(), socket.GetType() } });
+	}
+	auto request_id = simulationSubsystemsManager.AddRequest(*subsystem_data_ptr);
+	funcs.subsystem_blocks.push_back({ 
+		SubsystemSimulationDescriptor{*subsystem_data_ptr, request_id, std::move(sockets)}, 
+		block.GetId() });
+}
+
+
+static void AddPortBlock(BlocksFunctions& funcs,
+	const node::model::PortBlocksDataManager& PortBlocksManager,
+	const node::model::BlockModel& block)
+{
+	using namespace node;
+	auto* port_data_ptr = PortBlocksManager.GetDataForId(block.GetId());
+	assert(port_data_ptr);
+	funcs.ports_blocks.push_back({ 
+		PortBlockSimulationDescriptor{0,
+		PortSimulationDescriptor{port_data_ptr->id, port_data_ptr->port_type}},
+		block.GetId()});
+}
+
+static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr,
+	SimulationSubsystemsManager& simulationSubsystemsManager)
+{
+	/*
+	goes over all blocks
+	creates simulator functions and subsystems and ports 
+	those will be later mapped to nets in other functions
+	*/
+	using namespace node;
 	BlocksFunctions funcs;
-	auto& functinalBlocksManager = scene.GetFunctionalBlocksManager();
+	using namespace node;
+	auto& functionalBlocksManager = scene.GetFunctionalBlocksManager();
+	auto& subsystemBlocksManager = scene.GetSubsystemBlocksManager();
+	auto& portBlocksManager = scene.GetPortBlocksManager();
 	for (const auto& block : scene.GetBlocks())
 	{
 		if (block.GetType() == model::BlockType::Functional)
 		{
-			auto block_data_ptr = functinalBlocksManager.GetDataForId(block.GetId());
-			assert(block_data_ptr);
-			auto block_class = mgr.GetBlockClassByName(block_data_ptr->block_class);
-			assert(block_class);
-			auto functor = block_class->GetFunctor(block_data_ptr->properties);
-
-			auto block_adder = [&](node::BlockFunctor& functor) {
-				std::visit(overloaded{
-				[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
-				[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
-				[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
-				[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
-				[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
-					}, functor);
-				};
-
-			std::visit(overloaded{
-				block_adder,
-				[&](std::vector<node::BlockFunctor>& blocks)
-				{
-					for (auto& block : blocks)
-					{
-						block_adder(block);
-					}
-				} }, functor);
+			AddFunctionalBlock(mgr, funcs, functionalBlocksManager, block);
+		}
+		else if (block.GetType() == model::BlockType::SubSystem)
+		{
+			AddSubSystemBlock(funcs, subsystemBlocksManager, simulationSubsystemsManager, block);
+		}
+		else if (block.GetType() == model::BlockType::Port)
+		{
+			AddPortBlock(funcs, portBlocksManager, block);
 		}
 		else
 		{
 			assert(false); // other modes not supported!
 		}
-		
+
 	}
 	return funcs;
 }
 
-static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
+static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene, int32_t& next_net_id)
 {	
+	/*
+	goes over all nodes
+	combines nodes into nets, with net_id
+	maps socket_id to net_id
+
+	algorithm:
+	add all nodes to unvisited nodes
+	starts from the net nodes at a source in to_visit_nodes
+	collect connected socket in socket_mapping with its net id and add it to Net
+	for each of the 4 connected nodes:
+	if they are in unvisited, pop them, and add them to to_visit_nodes
+	repeat till to_visit_nodes is empty
+
+	repeat for other nets
+
+	socket_mapping: socket_id -> net_id
+	Net: net_id -> nodes.
+	sockets are not added to Net yet, 
+	because we only visit node to socket connections, not sockets
+	*/
 	using namespace node::model;
 	NetSplitResult result;
 	auto&& nets = result.nets;
@@ -116,11 +258,9 @@ static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
 	{
 		unvisited_nodes.insert(node.GetId());
 	}
-	size_t current_net_id = 0;
 	while (unvisited_nodes.size())
 	{
-		nets.push_back({});
-		auto& net = nets.back();
+		auto& net = nets[next_net_id];
 		{
 			auto node_id = *unvisited_nodes.begin();
 			unvisited_nodes.erase(unvisited_nodes.begin());
@@ -136,7 +276,7 @@ static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
 			auto conn = scene.GetSocketConnectionForNode(node_id);
 			if (conn)
 			{
-				result.socket_mapping.emplace(conn->socketId, current_net_id);
+				result.socket_mapping.emplace(conn->socketId, next_net_id);
 			}
 			for (int i = 0; i < 4; i++)
 			{
@@ -155,8 +295,7 @@ static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
 				}
 			}
 		}
-		current_net_id += 1;
-
+		next_net_id += 1;
 	}
 	
 	
@@ -167,6 +306,18 @@ static NetSplitResult SplitToNets(const node::model::NodeSceneModel& scene)
 
 static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel& scene, NetSplitResult& nets)
 {
+	/*
+	go over all blocks
+	uses the map of socket_id to net_id to fill Net with socket
+	and fill SocketMappings, which maps block -> Nets
+
+	for each socket, increment the Net input and output sockets counts
+	for each socket, add it to the Net, with its type now known
+	for each socket, add it to the SocketMappings of this block
+
+	Net: net_id -> SocketIds and counts for debugging
+	SocketMappings: Block -> net_ids
+	*/
 	using namespace node::model;
 	auto&& socket_mapping = nets.socket_mapping;
 	std::vector<SocketMappings> mappings;
@@ -201,8 +352,14 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 	return mappings;
 }
 
-static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappings>& mappings, int32_t& max_net)
+static void RemapFunctions(BlocksFunctions& funcs, 
+	const std::vector<SocketMappings>& mappings, int32_t& max_net)
 {
+	/*
+	goes over all created functions.
+
+	uses the SocketMappings to map SocketId -> net_id
+	*/
 	using namespace node::model;
 	struct FunctorTerminalsMapping
 	{
@@ -269,6 +426,17 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 						id_mapper(id);
 					}
 				}
+				if constexpr (requires {func.sockets; })
+				{
+					for (auto& [socket_id, socket_data] : func.sockets)
+					{
+						id_mapper(socket_id);
+					}
+				}
+				if constexpr (requires {func.net_id; })
+				{
+					id_mapper(func.net_id);
+				}
 			}
 		};
 	remap(funcs.nl_eqs);
@@ -276,6 +444,8 @@ static void RemapFunctions(BlocksFunctions& funcs, const std::vector<SocketMappi
 	remap(funcs.diff_eqs);
 	remap(funcs.observers);
 	remap(funcs.sources);
+	remap(funcs.subsystem_blocks);
+	remap(funcs.ports_blocks);
 }
 
 struct ObserverMapping
@@ -331,8 +501,66 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	}
 	return result;
 }
-node::SimulatorRunner::SimulatorRunner(const model::NodeSceneModel& model, std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, SimulationSettings settings)
-	:m_end_callback{ std::move(end_callback) }, m_model{std::make_unique<model::NodeSceneModel>(model)}, m_classes_mgr{std::move(classes_mgr)}, m_settings{settings}
+
+static void AddPortsToSolver(opt::NLDiffSolver& solver,
+	const std::unordered_map<int32_t, BlocksFunctions>& subsystems)
+{
+	/*
+	loops over all subsystems
+	looks into each contained subsystem block
+	looks for its ports in another subsystem
+	adds buffer nodes between the subsystem block sockets nets and the port nets
+	*/
+	using namespace node;
+
+	for (auto&& [request_id, subsystem] : subsystems)
+	{
+		for (auto&& [subsystem_data, block_id] : subsystem.subsystem_blocks)
+		{
+			auto it_target_subsystem = subsystems.find(subsystem_data.subsystemRequestId);
+			assert(it_target_subsystem != subsystems.end());
+
+			for (auto&& [net_id, socket_data] : subsystem_data.sockets)
+			{
+				auto& port_blocks = it_target_subsystem->second.ports_blocks;
+				auto socket_it = std::find_if(port_blocks.begin(), port_blocks.end(),
+					[&](const std::pair<PortBlockSimulationDescriptor, node::model::BlockId>& obj) 
+					{ return obj.first.port_data.socket_id == socket_data.socket_id; });
+				assert(socket_it != port_blocks.end());
+				if (socket_data.socket_type == model::SocketType::input)
+				{
+					solver.AddBufferEquation({ net_id, socket_it->first.net_id });
+				}
+				else
+				{
+					solver.AddBufferEquation({ socket_it->first.net_id, net_id });
+				}
+			}
+		}
+	}
+}
+
+static std::vector<std::unique_ptr<node::model::NodeSceneModel>> CopyScenes(
+	std::vector<std::reference_wrapper<const node::model::NodeSceneModel>> models)
+{
+	using namespace node;
+	std::vector<std::unique_ptr<node::model::NodeSceneModel>> out_models;
+	out_models.reserve(models.size());
+	for (auto&& model : models)
+	{
+		out_models.push_back(std::make_unique<model::NodeSceneModel>(model.get()));
+	}
+	return out_models;
+}
+
+node::SimulatorRunner::SimulatorRunner(
+	std::vector<std::reference_wrapper<const model::NodeSceneModel>> models, 
+	SubSceneId main_subscene_id,
+	std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, 
+	SimulationSettings settings)
+	:m_end_callback{ std::move(end_callback) }, m_main_subscene_id{ main_subscene_id },
+	m_models{CopyScenes(models)},
+	m_classes_mgr{std::move(classes_mgr)}, m_settings{settings}
 {
 }
 
@@ -373,8 +601,14 @@ using ValidationResult = std::optional<ErrorsVariant>;
 
 static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vector<SocketMappings>& socket_mappings, const node::model::NodeSceneModel& model)
 {
+	/*
+	goes over all nets
+	makes sure outputs = 1 if inputs > 0
+	errors when outputs > 1
+	errors when ouputs = 0 if inputs > 0
+	*/
 	using namespace node;
-	for (auto& net : nets.nets)
+	for (auto& [net_id, net] : nets.nets)
 	{
 		if (net.in_sockets_count > 0 && net.out_sockets_count == 0)
 		{
@@ -385,9 +619,9 @@ static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vect
 			std::vector<model::SocketUniqueId> output_sockets;
 			for (const auto& socket_id : net.sockets)
 			{
-				if (auto block = model.GetBlockById(socket_id.block_id))
+				if (auto* block = model.GetBlockById(socket_id.block_id))
 				{
-					auto socket = block->get().GetSocketById(socket_id.socket_id);
+					auto socket = block->GetSocketById(socket_id.socket_id);
 					assert(socket);
 					if (socket->GetType() == model::BlockSocketModel::SocketType::output)
 					{
@@ -415,30 +649,60 @@ static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vect
 	}
 	return std::nullopt;
 }
+
 node::SimulationEvent node::SimulatorRunner::DoSimulation()
 {
-	auto nets = SplitToNets(*m_model);
-	auto socket_mappings = MapSockets(*m_model, nets);
-
-	assert(m_classes_mgr);
-	auto blocks = CreateBlocks(*m_model, *m_classes_mgr);
-	int32_t max_net = static_cast<int32_t>(nets.nets.size());
-	RemapFunctions(blocks, socket_mappings, max_net);
-	
-	assert(m_model);
-	auto validation_result = ValidateNets(nets, socket_mappings, *m_model);
-	if (validation_result)
+	SimulationSubsystemsManager simulationSubsystemsManager;
+	std::unordered_map<int32_t, BlocksFunctions> subsystems;
+	model::SubsystemBlockData main_block_subsystem{ "Local", m_main_subscene_id };
+	simulationSubsystemsManager.AddRequest(main_block_subsystem);
+	int32_t next_net_id = 0;
+	while (auto next_request = simulationSubsystemsManager.GetNextRequest())
 	{
-		return std::visit([](auto& val) {return SimulationEvent{std::move(val)}; }, *validation_result);
+		assert(simulationSubsystemsManager.GetRequestData(*next_request));
+		auto* next_request_data = simulationSubsystemsManager.GetRequestData(*next_request);
+
+		assert(next_request_data->subsystem_data.get().URL == "Local");
+		auto model_it = std::find_if(m_models.begin(), m_models.end(),
+			[&](const std::unique_ptr<model::NodeSceneModel>& model)
+			{return model->GetSubSceneId() == next_request_data->subsystem_data.get().scene_id; });
+		if (model_it == m_models.end())
+		{
+			return SimulationEvent{ SimulationEvent::RequestedBadScene{ next_request_data->subsystem_data.get().scene_id } };
+		}
+
+		auto nets = SplitToNets(**model_it, next_net_id);
+		auto socket_mappings = MapSockets(**model_it, nets);
+
+		assert(m_classes_mgr);
+		auto blocks = CreateBlocks(**model_it, *m_classes_mgr, simulationSubsystemsManager);
+		RemapFunctions(blocks, socket_mappings, next_net_id);
+
+		auto validation_result = ValidateNets(nets, socket_mappings, **model_it);
+		if (validation_result)
+		{
+			return std::visit([](auto& val) {return SimulationEvent{ std::move(val) }; }, *validation_result);
+		}
+
+		subsystems.emplace(*next_request, std::move(blocks));
 	}
 	
 	opt::NLDiffSolver solver;
-	auto observer_mapping = AddFuncs(solver, blocks);
+	std::vector<ObserverMapping> observer_mapping;
+	for (auto& [request_id, subsystem_blocks] : subsystems)
+	{
+		auto observer_mapping_local = AddFuncs(solver, subsystem_blocks);
+		for (auto&& observer_mapping_obj : observer_mapping_local)
+		{
+			observer_mapping.push_back(std::move(observer_mapping_obj));
+		}
+	}
+	AddPortsToSolver(solver, subsystems);
 	
 	solver.SetMaxStep(m_settings.max_step);
 	solver.Initialize(m_settings.t_start, m_settings.t_end);
 
-	opt::FlatMap simulation_nets{ max_net };
+	opt::FlatMap simulation_nets{ next_net_id };
 	opt::StepResult step_result = opt::StepResult::Success;
 	
 	solver.CalculateInitialConditions(simulation_nets);

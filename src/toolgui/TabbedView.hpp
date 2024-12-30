@@ -41,11 +41,12 @@ public:
 	TabBar(TTF_Font* font, const SDL_FRect& rect, TabbedView* parent);
 	void Draw(SDL_Renderer* renderer) override;
 	void AddTab(std::string name);
-	void DeleteTab(size_t index);
+	void DeleteTab(int32_t index);
 	int GetTabWidth() const { return tab_width; }
-	void SetActiveTabIndex(size_t index);
+	void SetActiveTabIndex(int32_t index);
 	void ButtonClicked(TabButton* btn);
 	void ButtonXClicked(TabButton* btn);
+	int32_t TabsCount() const { return static_cast<int32_t>(m_buttons.size()); }
 protected:
 	void OnSetRect(const SDL_FRect& rect) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
@@ -55,20 +56,20 @@ private:
 	TTF_Font* m_font;
 	TabbedView* m_parent;
 	std::vector<std::unique_ptr<TabButton>> m_buttons;
-	size_t m_active_tab = 0;
+	int32_t m_active_tab = -1;
 	static constexpr int tab_width = 100;
 };
 
 struct TabIndexChangeEvent
 {
-	size_t old_tab_idx;
-	size_t new_tab_idx;
+	int32_t old_tab_idx;
+	int32_t new_tab_idx;
 	Widget* new_tab;
 };
 
 struct TabCloseRequestEvent
 {
-	size_t tab_idx;
+	int32_t tab_idx;
 	Widget* widget;
 };
 
@@ -89,11 +90,12 @@ public:
 	size_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
 	void Draw(SDL_Renderer* renderer) override;
 	void SetCurrentTabIndex(Widget* ptr);
-	void SetCurrentTabIndex(size_t index);
-	void RequestDeleteTab(size_t index);
-	void DeleteTab(size_t index);
-	Widget* GetTabWidget(size_t index);
-	std::optional<size_t> GetWidgetIndex(Widget* widget);
+	void SetCurrentTabIndex(int32_t index);
+	void RequestDeleteTab(int32_t index);
+	void DeleteTab(int32_t index);
+	Widget* GetTabWidget(int32_t index);
+	std::optional<int32_t> GetWidgetIndex(Widget* widget);
+	int32_t TabsCount() const { return static_cast<int32_t>(m_tabs.size()); }
 protected:
 	void OnSetRect(const SDL_FRect& rect) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
@@ -107,6 +109,6 @@ private:
 	};
 	TabBar m_bar;
 	std::vector<TabData> m_tabs;
-	size_t m_current_tab_index = 0;
+	int32_t m_current_tab_index = -1;
 };
 }

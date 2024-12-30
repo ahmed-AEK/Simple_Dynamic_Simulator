@@ -2,6 +2,7 @@
 #include "toolgui/NodeMacros.h"
 #include "SQLBlockLoader.hpp"
 #include "SQLNetLoader.hpp"
+#include "SQLiteCpp/Transaction.h"
 #include <iostream>
 
 node::loader::SQLSceneLoader::SQLSceneLoader(std::string dbname)
@@ -90,6 +91,15 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load(Su
                     scene->GetSubsystemBlocksManager().SetDataForId(block.GetId(), std::move(*data->GetSubsystemData()));
                 }
             }
+            else if (block.GetType() == model::BlockType::Port)
+            {
+                auto data = nodeLoader.GetBlockData(block.GetId(), block.GetType());
+                assert(data);
+                if (data && data->GetPortData())
+                {
+                    scene->GetPortBlocksManager().SetDataForId(block.GetId(), std::move(*data->GetPortData()));
+                }
+            }
             else
             {
                 assert(false);
@@ -110,6 +120,7 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load(Su
         {
             scene->AddSocketNodeConnection(std::move(socket_connection));
         }
+        scene->SetSubSceneId(id);
         return scene;
     }
     catch (SQLite::Exception& e)
@@ -153,7 +164,8 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
         }
 
         m_db->exec("PRAGMA synchronous = OFF;");
-        
+        SQLite::Transaction transaction(*m_db);
+
         {
             SQLite::Statement query{ *m_db, "INSERT INTO SubSystems VALUES (?, ?)" };
             query.bind(1, id.value);
@@ -203,6 +215,13 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     blockid INTEGER NOT NULL,
                     URL TEXT NOT NULL,
                     subsceneid INTEGER NOT NULL,
+                    FOREIGN KEY (blockid) REFERENCES blocks(id) );)");
+
+        m_db->exec(R"(CREATE TABLE PortBlockData_)"
+            + std::to_string(id.value) + R"((
+                    blockid INTEGER NOT NULL,
+                    socket_id INTEGER NOT NULL,
+                    socket_type INTEGER NOT NULL,
                     FOREIGN KEY (blockid) REFERENCES blocks(id) );)");
 
         m_db->exec(R"(CREATE TABLE blockStylerProperties_)"
@@ -258,6 +277,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
         {
             netLoader.AddSocketNodeConnection(connection);
         }
+        transaction.commit();
         return true;
     }
     catch (std::exception& e)

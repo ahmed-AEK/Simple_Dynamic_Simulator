@@ -8,6 +8,14 @@
 
 namespace opt
 {
+
+class BufferEquation
+{
+public:
+	int32_t input_id;
+	int32_t output_id;
+};
+
 class NLEquation : public InputEquation, public OutputEquation
 {
 public:

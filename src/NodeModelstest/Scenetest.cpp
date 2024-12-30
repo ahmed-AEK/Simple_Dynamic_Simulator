@@ -16,8 +16,8 @@ TEST(testScene, testCreate)
 	scene.AddBlock(std::move(node1));
 
 	ASSERT_EQ(scene.GetBlocks().size(), 1);
-	EXPECT_TRUE(scene.GetBlockById(block_id) != std::nullopt);
-	EXPECT_TRUE(scene.GetBlockById(BlockId{ block_id.value + 1 }) == std::nullopt);
-	EXPECT_TRUE(scene.GetBlockById(block_id)->get().GetSocketById(sock_id));
-	EXPECT_FALSE(scene.GetBlockById(block_id)->get().GetSocketById(SocketId{ sock_id.value + 1 }));
+	EXPECT_TRUE(scene.GetBlockById(block_id) != nullptr);
+	EXPECT_TRUE(scene.GetBlockById(BlockId{ block_id.value + 1 }) == nullptr);
+	EXPECT_TRUE(scene.GetBlockById(block_id)->GetSocketById(sock_id));
+	EXPECT_FALSE(scene.GetBlockById(block_id)->GetSocketById(SocketId{ sock_id.value + 1 }));
 }

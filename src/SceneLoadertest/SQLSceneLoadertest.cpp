@@ -7,6 +7,27 @@ using namespace node::loader;
 using namespace node::model;
 using namespace node;
 
+
+TEST(testSceneLoader, testSaveLoadId)
+{
+	NodeSceneModel scene;
+	auto subscene_id = SubSceneId{ 2 };
+	scene.SetSubSceneId(subscene_id);
+	SubSceneId parent_subscene_id{ 0 };
+
+
+	SQLSceneLoader loader(":memory:");
+
+	auto result = loader.Save(scene, subscene_id, parent_subscene_id);
+
+	ASSERT_TRUE(result);
+
+	auto loaded_scene = loader.Load(subscene_id);
+	ASSERT_TRUE(loaded_scene.has_value());
+	EXPECT_EQ(loaded_scene.value().GetSubSceneId(), subscene_id);
+}
+
+
 TEST(testSceneLoader, testSaveLoadBlock)
 {
 	NodeSceneModel scene;

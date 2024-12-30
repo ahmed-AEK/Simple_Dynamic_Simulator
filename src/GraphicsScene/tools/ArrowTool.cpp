@@ -41,7 +41,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
                 SDL_Log("Double Click Started!");
                 BlockDoubleClickedEvent ev{ static_cast<BlockObject*>(current_hover) };
                 Notify(ev);
-                return MI::ClickEvent::NONE;
+                return MI::ClickEvent::CLICKED;
             }
             else
             {
