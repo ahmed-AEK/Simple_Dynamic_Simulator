@@ -368,10 +368,13 @@ SDL_FRect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
     return text_rect;
 }
 
-void TextPainter::SetText(std::string text)
+void TextPainter::SetText(std::string_view text)
 {
-    m_text = std::move(text);
-    m_text_texture.DropTexture();
+    if (text != m_text)
+    {
+        m_text = std::string{ text };
+        m_text_texture.DropTexture();
+    }
 }
 
 void TextPainter::ReCreateTexture(SDL_Renderer* renderer)

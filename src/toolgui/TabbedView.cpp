@@ -1,16 +1,20 @@
 #include "TabbedView.hpp"
 
+#include <cmath>
+
 node::TabbedView::TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* parent)
-	:Widget{rect, parent}, m_bar{font, {0,0,0,0},this}
+	:Widget{rect, parent}, m_stacked_widget{{0,0,0,0}, this}, m_bar{font, {0,0,0,0}, this}
 {
+	SetFocusProxy(&m_stacked_widget);
+	m_bar.SetFocusProxy(&m_stacked_widget);
 }
 
-size_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
+int32_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
 {
-	m_tabs.emplace_back(std::move(tab_name), std::move(widget));
-	m_tabs.back().widget->SetParent(this);
-	m_bar.AddTab(m_tabs.back().name);
-	return m_tabs.size() - 1;
+	m_stacked_widget.AddWidget(std::move(widget));
+	m_tab_names.emplace_back(std::move(tab_name));
+	m_bar.AddTab(m_tab_names.back());
+	return static_cast<int32_t>(m_tab_names.size() - 1);
 }
 
 void node::TabbedView::OnSetRect(const SDL_FRect& rect)
@@ -18,16 +22,9 @@ void node::TabbedView::OnSetRect(const SDL_FRect& rect)
 	Widget::OnSetRect(rect);
 
 	m_bar.SetRect({ rect.x, rect.y, rect.w, static_cast<float>(GetTabsBarHeight()) });
-	if (TabsCount() > m_current_tab_index)
-	{
-		int tab_bar_height = GetTabsBarHeight();
-		SDL_FRect new_rect{ rect.x, rect.y + tab_bar_height, rect.w, rect.h - tab_bar_height };
-		if (new_rect.h < 0)
-		{
-			new_rect.h = 0;
-		}
-		m_tabs[m_current_tab_index].widget->SetRect(new_rect);
-	}
+	int tab_bar_height = GetTabsBarHeight();
+	SDL_FRect middle_rect{ rect.x, rect.y + tab_bar_height, rect.w, rect.h - tab_bar_height };
+	m_stacked_widget.SetRect(middle_rect);
 }
 
 node::Widget* node::TabbedView::OnGetInteractableAtPoint(const SDL_FPoint& point)
@@ -36,13 +33,9 @@ node::Widget* node::TabbedView::OnGetInteractableAtPoint(const SDL_FPoint& point
 	{
 		return ptr;
 	}
-
-	if (m_current_tab_index != -1 && TabsCount() > m_current_tab_index)
+	if (auto* ptr = m_stacked_widget.GetInteractableAtPoint(point))
 	{
-		if (auto ptr = m_tabs[m_current_tab_index].widget->GetInteractableAtPoint(point))
-		{
-			return ptr;
-		}
+		return ptr;
 	}
 	return this;
 }
@@ -55,19 +48,12 @@ int node::TabbedView::GetTabsBarHeight() const
 void node::TabbedView::Draw(SDL_Renderer* renderer)
 {
 	m_bar.Draw(renderer);
-	if (m_current_tab_index != -1 && TabsCount() > m_current_tab_index)
-	{
-		m_tabs[m_current_tab_index].widget->Draw(renderer);
-	}
+	m_stacked_widget.Draw(renderer);
 }
 
 void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
 {
-	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const TabData& tab) {return tab.widget.get() == ptr; });
-	if (it != m_tabs.end())
-	{
-		SetCurrentTabIndex(static_cast<int32_t>(std::distance(m_tabs.begin(), it)));
-	}
+	SetCurrentTabIndex(m_stacked_widget.GetWidgetIndex(ptr));
 }
 
 
@@ -78,14 +64,12 @@ node::TabBar::TabBar(TTF_Font* font, const SDL_FRect& rect, TabbedView* parent)
 
 void node::TabBar::Draw(SDL_Renderer* renderer)
 {
+	
 	SDL_FRect rect = GetRect();
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &rect);
-	rect.x += 2;
-	rect.w -= 4;
-	rect.h -= 2;
-	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_RenderFillRect(renderer, &rect);
+	SDL_Color outlineColor{ 50,50,50,255 };
+	SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, 255);
+	SDL_FRect lower_rect{ rect.x, rect.y + rect.h - 2, rect.w, 2 };
+	SDL_RenderFillRect(renderer, &lower_rect);
 
 	for (auto&& btn : m_buttons)
 	{
@@ -172,36 +156,24 @@ void node::TabBar::ReCalcLayout()
 	for (auto&& btn : m_buttons)
 	{
 		btn->SetRect(SDL_FRect(x_val, y_val, static_cast<float>(GetTabWidth()), height));
-		x_val += GetTabWidth();
+		x_val += GetTabWidth() + 2;
 	}
 }
 
 void node::TabbedView::SetCurrentTabIndex(int32_t index)
 {
+	auto old_idx = m_stacked_widget.GetCurrentIndex();
 
-	assert(index < TabsCount());
-	if (!(index < TabsCount()))
+	if (!m_stacked_widget.SetCurrentIndex(index))
 	{
 		return;
 	}
-
-	auto old_idx = m_current_tab_index;
-	m_current_tab_index = index;
 	
 	m_bar.SetActiveTabIndex(index);
 
-	Widget* new_tab = index != -1 ? m_tabs[index].widget.get() : nullptr;
+	auto* widget = m_stacked_widget.GetCurrentWidget();
 
-	if (new_tab)
-	{
-		SetFocusProxy(new_tab);
-		m_bar.SetFocusProxy(new_tab);
-		auto&& rect = GetRect();
-		SDL_FRect new_rect{ rect.x, rect.y + GetTabsBarHeight(), rect.w, rect.h - GetTabsBarHeight() };
-		new_tab->SetRect(new_rect);
-	}
-
-	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, new_tab} });
+	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, index, widget} });
 }
 
 void node::TabbedView::RequestDeleteTab(int32_t index)
@@ -212,63 +184,36 @@ void node::TabbedView::RequestDeleteTab(int32_t index)
 		return;
 	}
 
-	Notify(TabsChangeEvent{ TabCloseRequestEvent{index, m_tabs[index].widget.get()} });
+	Notify(TabsChangeEvent{ TabCloseRequestEvent{index, m_stacked_widget.GetCurrentWidget()}});
 }
 
 void node::TabbedView::DeleteTab(int32_t index)
-{
-	assert(index < TabsCount());
-	if (!(index < TabsCount()))
+{	
+	auto old_idx = m_stacked_widget.GetCurrentIndex();
+	if (!m_stacked_widget.DeleteWidget(index))
 	{
 		return;
 	}
-	m_tabs.erase(m_tabs.begin() + index);
+
+	auto new_idx = m_stacked_widget.GetCurrentIndex();
 	m_bar.DeleteTab(index);
-	
-	if (TabsCount() && m_current_tab_index >= TabsCount())
-	{
-		// closing last tab
-		SetCurrentTabIndex(TabsCount() - 1);
-	}
-	else if (m_current_tab_index > index)
-	{
-		// closing tab before this one
-		SetCurrentTabIndex(m_current_tab_index - 1);
-	}
-	else if (m_current_tab_index == index && TabsCount())
-	{
-		// the current widget changed
-		SetCurrentTabIndex(m_current_tab_index);
-	}
-	else if (TabsCount() == 0)
-	{
-		SetCurrentTabIndex(-1);
-	}
+	m_bar.SetActiveTabIndex(new_idx);
+
+	m_tab_names.erase(m_tab_names.begin() + index);
+
+	Notify(TabsChangeEvent{ TabIndexChangeEvent{old_idx, new_idx, m_stacked_widget.GetCurrentWidget()} });
 }
 
 node::Widget* node::TabbedView::GetTabWidget(int32_t index)
 {
-	assert(TabsCount() > index);
-	if (index == -1)
-	{
-		return nullptr;
-	}
-	if (index < TabsCount())
-	{
-		return m_tabs[index].widget.get();
-	}
-	return nullptr;
+	return m_stacked_widget.GetTabWidget(index);
 }
 
-std::optional<int32_t> node::TabbedView::GetWidgetIndex(Widget* widget)
+int32_t node::TabbedView::GetWidgetIndex(Widget* widget)
 {
-	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const auto& tab) { return tab.widget.get() == widget; });
-	if (it != m_tabs.end())
-	{
-		return static_cast<int32_t>(std::distance(m_tabs.begin(), it));
-	}
-	return std::nullopt;
+	return m_stacked_widget.GetWidgetIndex(widget);
 }
+
 node::TabButton::TabButton(TTF_Font* font, const SDL_FRect& rect, TabBar* parent)
 	:Widget{rect, parent}, m_tab_text{font}, m_X_painter{font}, m_parent{parent}
 {
@@ -279,32 +224,56 @@ void node::TabButton::Draw(SDL_Renderer* renderer)
 {
 	auto rect = GetRect();
 
+	SDL_Color background_color{ 255,255,255,255 };
+	if (!GetActive())
+	{
+		if (m_mouse_hovered)
+		{
+			background_color = SDL_Color{ 240,240,240,255 };
+		}
+		else
+		{
+			background_color = SDL_Color{ 210,210,210,255 };
+		}
+	}
+
+
+	SDL_Color outlineColor{ 50,50,50,255 };
 	if (GetActive())
 	{
-		rect.h += 2;
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		SDL_RenderFillRect(renderer, &rect);
-		SDL_FRect btn_bar_rect{ rect.x, rect.y + rect.h - 2, rect.w, 2 };
-		SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
-		SDL_RenderFillRect(renderer, &btn_bar_rect);
+		m_outer_painter.Draw(renderer, rect, 8, outlineColor);
+		SDL_FRect lower_rect{ rect.x, std::floor(rect.y + rect.h / 2), rect.w,std::ceil(rect.h / 2) };
+		SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
+		SDL_RenderFillRect(renderer, &lower_rect);
+
+		SDL_FRect inner_rect{ rect };
+		inner_rect.x += 2;
+		inner_rect.w -= 4;
+		inner_rect.h -= 2;
+		inner_rect.y += 2;
+		m_inner_painter.Draw(renderer, inner_rect, 6, background_color);
+		lower_rect.x += 2;
+		lower_rect.w -= 4;
+		SDL_SetRenderDrawColor(renderer, 
+			background_color.r, background_color.g, background_color.b, background_color.a);
+		SDL_RenderFillRect(renderer, &lower_rect);
 	}
-	else if (m_mouse_hovered)
+	else
 	{
-		SDL_SetRenderDrawColor(renderer, 240, 240, 240, 255);
-		SDL_RenderFillRect(renderer, &rect);
+		m_outer_painter.Draw(renderer, rect, 8, background_color);
+		SDL_FRect lower_rect{ rect.x, std::floor(rect.y + rect.h / 2), rect.w,std::ceil(rect.h / 2) };
+		SDL_SetRenderDrawColor(renderer,
+			background_color.r, background_color.g, background_color.b, background_color.a);
+		SDL_RenderFillRect(renderer, &lower_rect);
 	}
 
 	SDL_Color Black{ 50,50,50,255 };
-	m_tab_text.Draw(renderer, { rect.x + 2, rect.y }, Black);
-	SDL_FRect sep_rect{ rect.x + rect.w - 2, rect.y, 2, rect.h };
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &sep_rect);
+	m_tab_text.Draw(renderer, { rect.x + 4, rect.y + 2}, Black);
 
 	if (m_mouse_hovered)
 	{
 		auto X_Rect = GetXBtnRect();
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-		SDL_RenderRect(renderer, &X_Rect);
+		ThickFilledRoundRect(renderer, X_Rect, 6, 1, { 180,180,180,255 }, background_color, m_outer_painter, m_inner_painter);
 		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer, Black);
 		m_X_painter.Draw(renderer, { X_Rect.x + X_Rect.w / 2 - X_Rect_inner.w / 2 , X_Rect.y + X_Rect.h / 2 - X_Rect_inner.h / 2 }, Black);
 	}
@@ -374,7 +343,7 @@ SDL_FRect node::TabButton::GetXBtnRect() const
 	auto rect = GetRect();
 	rect.x = rect.x + rect.w - 30;
 	rect.w = 25;
-	rect.y += 2;
-	rect.h -= 4;
+	rect.y += 4;
+	rect.h -= 6;
 	return rect;
 }

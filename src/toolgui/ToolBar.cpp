@@ -85,15 +85,11 @@ node::ToolBarButton* node::ToolBar::GetButton(const std::string& name)
 
 void node::ToolBar::Draw(SDL_Renderer * renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &GetRect());
 	SDL_FRect inner_rect = GetRect();
 	inner_rect.x += 2;
 	inner_rect.y += 2;
 	inner_rect.w -= 4;
 	inner_rect.h -= 4;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &inner_rect);
 	for (auto&& button : m_buttons)
 	{
 		if (isButton(button))
@@ -172,14 +168,13 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 {
 	const int thickness = 2;
 	{
-		SDL_Color color_outer = b_hovered ? SDL_Color{ 255,150,0,255 } : SDL_Color{ 180, 180, 180, 255 };
-		const int radius = 10;
-		SDL_Color inactive_color = b_held_down ? SDL_Color{ 230, 230, 230, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color color_inner = IsDisabled() ? SDL_Color{230, 230, 230, 255} : inactive_color;
-		ThickFilledRoundRect(renderer, GetRect(), radius, thickness, color_outer, color_inner, 
-			*m_painter_outer, *m_painter_inner);
+		const int radius = 8;
+		SDL_Color outline_color{190, 190, 190, 255};
+		SDL_Color inactive_color = b_held_down ? SDL_Color{ 210, 210, 210, 255 } : (b_hovered ? SDL_Color{ 230, 230, 230, 235 } : SDL_Color{ 255, 255, 255, 255 });
+		SDL_Color color_inner = IsDisabled() ? SDL_Color{190, 190, 190, 255} : inactive_color;
+		ThickFilledRoundRect(renderer, GetRect(), radius, 2, outline_color, color_inner, *m_painter_outer, *m_painter_inner);
 	}
-
+	
 
 	SDL_FRect inner_rect = GetRect();
 	inner_rect.x += thickness;

@@ -100,10 +100,10 @@ public:
     void Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL_Color color);
     SDL_FRect GetRect(SDL_Renderer* renderer, const SDL_Color color);
 
-    void SetText(std::string text);
+    void SetText(std::string_view text);
     void SetFont(TTF_Font* font);
     TTF_Font* GetFont() const { return m_font; }
-
+    const std::string& GetText() const { return m_text; }
 private:
     void ReCreateTexture(SDL_Renderer* renderer);
     void AssureTexture(SDL_Renderer* renderer, const SDL_Color& color);

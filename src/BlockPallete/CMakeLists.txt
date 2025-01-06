@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.11)
 add_library(BlockPallete 
 BlockPallete.hpp BlockPallete.cpp
 PalleteProvider.hpp PalleteProvider.cpp
+PalleteCategoryPicker.hpp PalleteCategoryPicker.cpp
+PalleteBlocksViewer.hpp PalleteBlocksViewer.cpp
 )
 
 target_include_directories(BlockPallete PRIVATE ".")

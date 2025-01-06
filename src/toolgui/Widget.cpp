@@ -29,13 +29,13 @@ void node::Widget::SetBaseRect(const SDL_FRect& rect) noexcept
 
 node::Widget* node::Widget::GetFocusable()
 {
-    if (IsFocusable())
-    {
-        return this;
-    }
     if (m_focus_proxy)
     {
         return m_focus_proxy->GetFocusable();
+    }
+    if (IsFocusable())
+    {
+        return this;
     }
     return nullptr;
 }

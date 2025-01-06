@@ -3,6 +3,8 @@
 #include "toolgui/Widget.hpp"
 #include "SDL_Framework/Utility.hpp"
 #include "NodeModels/Observer.hpp"
+#include "toolgui/StackedWidget.hpp"
+
 #include <variant>
 
 namespace node
@@ -29,6 +31,10 @@ private:
 	SDL_FRect GetXBtnRect() const;
 	TextPainter m_tab_text;
 	TextPainter m_X_painter;
+	RoundRectPainter m_outer_painter;
+	RoundRectPainter m_inner_painter;
+	RoundRectPainter m_X_btn_painter_outer;
+	RoundRectPainter m_X_btn_painter_inner;
 	TabBar* m_parent;
 	bool m_active = false;
 	bool m_mouse_hovered = false;
@@ -87,28 +93,25 @@ class TabbedView : public Widget, public MultiPublisher<TabsChangeEvent>
 {
 public:
 	TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* parent);
-	size_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
+	int32_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
 	void Draw(SDL_Renderer* renderer) override;
 	void SetCurrentTabIndex(Widget* ptr);
 	void SetCurrentTabIndex(int32_t index);
 	void RequestDeleteTab(int32_t index);
 	void DeleteTab(int32_t index);
 	Widget* GetTabWidget(int32_t index);
-	std::optional<int32_t> GetWidgetIndex(Widget* widget);
-	int32_t TabsCount() const { return static_cast<int32_t>(m_tabs.size()); }
+	int32_t GetWidgetIndex(Widget* widget);
+	int32_t TabsCount() const { return m_stacked_widget.WidgetsCount(); }
+
+	static constexpr auto npos = StackedWidget::npos;
 protected:
 	void OnSetRect(const SDL_FRect& rect) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
 
 private:
 	int GetTabsBarHeight() const;
-	struct TabData
-	{
-		std::string name;
-		std::unique_ptr<Widget> widget;
-	};
+	StackedWidget m_stacked_widget;
+	std::vector<std::string> m_tab_names;
 	TabBar m_bar;
-	std::vector<TabData> m_tabs;
-	int32_t m_current_tab_index = -1;
 };
 }

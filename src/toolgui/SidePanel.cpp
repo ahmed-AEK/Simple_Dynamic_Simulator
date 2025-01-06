@@ -7,7 +7,9 @@
 static double easeOut(double val) { return 2 * val - val * val; }
 
 node::SidePanel::SidePanel(PanelSide side, const SDL_FRect& rect, Widget* parent)
-	: Widget(rect, parent), m_side(side)
+	: Widget(rect, parent), 
+	m_knob_drawer_left{"assets/arrow_left.svg", 30,knob_height*3/5}, 
+	m_knob_drawer_right{"assets/arrow_right.svg", 30, knob_height * 3 / 5 }, m_side(side)
 {
 	RepositionWidget();
 }
@@ -111,7 +113,7 @@ node::Widget* node::SidePanel::OnGetInteractableAtPoint(const SDL_FPoint& point)
 	if (m_contained_widget &&
 		SDL_PointInRectFloat(&point, &m_contained_widget->GetRect()))
 	{
-		return m_contained_widget.get();
+		return m_contained_widget->GetInteractableAtPoint(point);
 	}
 	else
 	{
@@ -197,11 +199,22 @@ SDL_FRect node::SidePanel::GetKnobRect()
 void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 {
 	SDL_FRect knob_rect = GetKnobRect();
-	ThickFilledRoundRect(renderer, knob_rect, 15, 2, SDL_Color{ 0,0,0,255 }, SDL_Color{ 220,220,220,255 },
+	SDL_Color outerColor{ 0,0,0,255 };
+	SDL_Color innerColor{ 220,220,220,255 };
+	ThickFilledRoundRect(renderer, knob_rect, 15, 2, outerColor, innerColor,
 		m_outer_painter, m_inner_painter);
+
+	// redraw right part to remove the roundrect there
+	SDL_FRect right_rect{ std::floor(knob_rect.x + knob_rect.w / 2), knob_rect.y, std::ceil(knob_rect.w / 2), knob_rect.h };
+	SDL_SetRenderDrawColor(renderer, outerColor.r, outerColor.g, outerColor.b, 255);
+	SDL_RenderFillRect(renderer, &right_rect);
+	right_rect.y += 2;
+	right_rect.h -= 4;
+	SDL_SetRenderDrawColor(renderer, innerColor.r, innerColor.g, innerColor.b, 255);
+	SDL_RenderFillRect(renderer, &right_rect);
+
 	// draw arrow
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	std::array<SDL_Vertex, 3> arrow_verts;
+	SVGRasterizer* knob_rasterizer = nullptr;
 
 	switch (m_side)
 	{
@@ -213,29 +226,13 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 		case PanelState::closed:
 		case PanelState::openning:
 		{
-			arrow_verts =
-				std::array<SDL_Vertex, 3>{
-				SDL_Vertex{ static_cast<float>(knob_rect.x + 5), static_cast<float>(knob_rect.y + knob_height / 2)
-				, {0,0,0,0}, {0,0} },
-					SDL_Vertex{ static_cast<float>(knob_rect.x + knob_rect.w - 5),
-					static_cast<float>(knob_rect.y + knob_height / 5), {0,0,0,0}, {0,0} },
-					SDL_Vertex{ static_cast<float>(knob_rect.x + knob_rect.w - 5),
-					static_cast<float>(knob_rect.y + knob_height * 4 / 5), {0,0,0,0}, {0,0} },
-			};
+			knob_rasterizer = &m_knob_drawer_left;
 			break;
 		}
 		case PanelState::open:
 		case PanelState::closing:
 		{
-			arrow_verts =
-				std::array<SDL_Vertex, 3>{
-				SDL_Vertex{ static_cast<float>(knob_rect.x + knob_rect.w - 5) , static_cast<float>(knob_rect.y + knob_height / 2)
-				, {0,0,0,0}, {0,0} },
-					SDL_Vertex{ static_cast<float>(knob_rect.x + 5),
-					static_cast<float>(knob_rect.y + knob_height / 5), {0,0,0,0}, {0,0} },
-					SDL_Vertex{ static_cast<float>(knob_rect.x + 5),
-					static_cast<float>(knob_rect.y + knob_height * 4 / 5), {0,0,0,0}, {0,0} },
-			};
+			knob_rasterizer = &m_knob_drawer_right;
 			break;
 		}
 		}
@@ -246,8 +243,7 @@ void node::SidePanel::DrawKnob(SDL_Renderer* renderer)
 		assert(0);
 		break;
 	}
-	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-	SDL_RenderGeometry(renderer, nullptr, arrow_verts.data(), 3, nullptr, 0);
+	knob_rasterizer->Draw(renderer, knob_rect.x + 5, knob_rect.y + knob_height * 1 / 5);
 }
 
 void node::SidePanel::RepositionWidget()

@@ -37,6 +37,7 @@
 #include "BlockClasses/BlockDialog.hpp"
 
 #include "BlockPallete/BlockPallete.hpp"
+#include "BlockPallete/PalleteProvider.hpp"
 
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
@@ -399,9 +400,9 @@ void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
         {
             if (manager.second->GetGraphicsScene())
             {
-                if (auto idx = m_tabbedView->GetWidgetIndex(manager.second->GetGraphicsScene()))
+                if (auto idx = m_tabbedView->GetWidgetIndex(manager.second->GetGraphicsScene()); idx != -1)
                 {
-                    m_tabbedView->DeleteTab(*idx);
+                    m_tabbedView->DeleteTab(idx);
                 }
             }
         }
@@ -535,6 +536,7 @@ void node::MainNodeScene::InitializeSidePanel()
 
     auto SubScene_block = BlockTemplate
     {
+        "All",
         "SubSystem",
         model::SubsystemBlockData{
             "Local",
@@ -547,6 +549,7 @@ void node::MainNodeScene::InitializeSidePanel()
 
     auto input_block = BlockTemplate
     {
+        "All",
         "Input",
         model::PortBlockData{
             model::SocketId{0},
@@ -559,6 +562,7 @@ void node::MainNodeScene::InitializeSidePanel()
 
     auto output_block = BlockTemplate
     {
+        "All",
         "Output",
         model::PortBlockData{
             model::SocketId{0},
@@ -570,15 +574,16 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(output_block));
 
     auto block_template = BlockTemplate{
-    "Gain",
-    model::FunctionalBlockData{
+        "All",
         "Gain",
-        std::vector<model::BlockProperty>{
-            model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
-        }
-    },
-    "Gain",
-    model::BlockStyleProperties{}
+        model::FunctionalBlockData{
+            "Gain",
+            std::vector<model::BlockProperty>{
+                model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
+            }
+        },
+        "Gain",
+        model::BlockStyleProperties{}
     };
     for (int i = 0; i < 1; i++)
     {
@@ -586,6 +591,7 @@ void node::MainNodeScene::InitializeSidePanel()
     }
 
     auto add_block = BlockTemplate{
+        "All",
         "Add",
         model::FunctionalBlockData{
             "Add Simple", {}
@@ -596,6 +602,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(add_block));
 
     auto integrate_block = BlockTemplate{
+        "All",
         "Integration",
         model::FunctionalBlockData{
             "Integration", {}
@@ -606,6 +613,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(integrate_block));
 
     auto deriv_block = BlockTemplate{
+        "All",
         "Derivative",
         model::FunctionalBlockData{
             "Derivative", {}
@@ -616,6 +624,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(deriv_block));
 
     auto constant_block = BlockTemplate{
+        "All",
         "Constant Source",
         model::FunctionalBlockData{
             "Constant Source",
@@ -629,6 +638,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(constant_block));
 
     auto ramp_block = BlockTemplate{
+        "All",
         "Ramp",
         model::FunctionalBlockData{
             "Ramp",
@@ -642,6 +652,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(ramp_block));
 
     auto scope_block = BlockTemplate{
+        "All",
         "Scope",
         model::FunctionalBlockData {
             "Scope Display",
@@ -655,6 +666,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(scope_block));
 
     auto multiply_block = BlockTemplate{
+        "All",
         "Multiply",
         model::FunctionalBlockData{
             "Multiply", {}
@@ -665,6 +677,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(multiply_block));
 
     auto sine_block = BlockTemplate{
+        "All",
         "Sine",
         model::FunctionalBlockData{
             "Sine",
@@ -679,6 +692,7 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(sine_block));
 
     auto step_block = BlockTemplate{
+        "All",
         "Step",
         model::FunctionalBlockData{
             "Step",
@@ -695,21 +709,22 @@ void node::MainNodeScene::InitializeSidePanel()
     pallete_provider->AddElement(std::move(step_block));
 
     auto comparator_block = BlockTemplate{
-    "Comparator",
-    model::FunctionalBlockData{
+        "All",
         "Comparator",
-        std::vector<model::BlockProperty>{
-            node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
-            node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
-        }
-    },
-    "SVG Styler",
-    model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
+        model::FunctionalBlockData{
+            "Comparator",
+            std::vector<model::BlockProperty>{
+                node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
+                node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+            }
+        },
+        "SVG Styler",
+        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
     };
     pallete_provider->AddElement(std::move(comparator_block));
 
     sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_FRect{ 0.0f,0.0f,200.0f,200.0f },
-        std::move(pallete_provider), sidePanel.get()));
+        std::move(pallete_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
     SetSidePanel(std::move(sidePanel));
 }
 

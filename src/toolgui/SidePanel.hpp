@@ -4,6 +4,7 @@
 #include <cassert>
 #include <array>
 #include "SDL_Framework/Utility.hpp"
+#include "SDL_Framework/SVGRasterizer.hpp"
 
 namespace node
 {
@@ -54,6 +55,8 @@ namespace node
 		};
 		RoundRectPainter m_outer_painter;
 		RoundRectPainter m_inner_painter;
+		SVGRasterizer m_knob_drawer_left;
+		SVGRasterizer m_knob_drawer_right;
 
 		std::unique_ptr<Widget> m_contained_widget;
 		PanelSide m_side = PanelSide::right;

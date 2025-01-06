@@ -1,42 +1,51 @@
 #pragma once
 
 #include "toolgui/Widget.hpp"
-#include "BlockPallete/PalleteProvider.hpp"
-#include <string_view>
+#include "toolgui/StackedWidget.hpp"
+#include "NodeModels/Observer.hpp"
 
 namespace node
 {
 
-	class BlockPallete : public Widget
+class PalleteProvider;
+class PalleteBlocksViewer;
+class PalleteCategoryPicker;
+
+namespace detail
+{
+	struct BlockCategoryClicked
 	{
-	public:
-		BlockPallete(const SDL_FRect& rect,
-			std::shared_ptr<PalleteProvider> provider, Widget* parent);
-		
-		void Draw(SDL_Renderer* renderer) override;
-		std::shared_ptr<PalleteProvider> GetProvider() const { return m_palleteProvider; }
-		void SetProvider(std::shared_ptr<PalleteProvider> provider) 
-		{
-			m_palleteProvider = provider;
-		}
-
-		static constexpr int ElementHeight = 100;
-		static constexpr int ElementWidth = 100;
-	protected:
-		bool OnScroll(const double amount, const SDL_FPoint& p) override;
-		virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
-
-	private:
-		SDL_FRect DrawPanelBorder(SDL_Renderer* renderer);
-		void DrawScrollBar(SDL_Renderer* renderer, const SDL_FRect& area);
-		void DrawElements(SDL_Renderer* renderer, const SDL_FRect& area);
-		void DrawElement(SDL_Renderer* renderer, const PalleteElement& element, const SDL_FRect& area);
-		void DrawElementText(SDL_Renderer* renderer, const PalleteElement& element, const SDL_FRect& area);
-
-
-		std::shared_ptr<PalleteProvider> m_palleteProvider;
-		float m_scrollPos = 0;
+		std::string category_name;
 	};
 
+	struct BlockViewerBackClicked
+	{
+
+	};
+}
+
+class BlockPallete : public Widget, public SingleObserver<detail::BlockCategoryClicked>,
+	public SingleObserver<detail::BlockViewerBackClicked>
+{
+public:
+	BlockPallete(const SDL_FRect& rect,
+		std::shared_ptr<PalleteProvider> provider, TTF_Font* font, Widget* parent);
+		
+	void Draw(SDL_Renderer* renderer) override;
+	std::shared_ptr<PalleteProvider> GetProvider() const { return m_palleteProvider; }
+	void SetProvider(std::shared_ptr<PalleteProvider> provider);
+	void OnNotify(detail::BlockCategoryClicked& e) override;
+	void OnNotify(detail::BlockViewerBackClicked& e) override;
+
+protected:
+	void OnSetRect(const SDL_FRect& rect) override;
+	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
+
+private:
+	StackedWidget m_stacked_widget;
+	std::shared_ptr<PalleteProvider> m_palleteProvider;
+	PalleteBlocksViewer* m_palleteBlocksViewer = nullptr;
+	PalleteCategoryPicker* m_palleteCategoryPicker = nullptr;
+};
 
 }

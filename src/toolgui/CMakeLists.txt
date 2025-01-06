@@ -18,6 +18,7 @@ MessageBox.hpp MessageBox.cpp
 LineEditControl.hpp LineEditControl.cpp
 DialogControls.hpp DialogControls.cpp
 ToolTipWidget.hpp ToolTipWidget.cpp
+StackedWidget.hpp StackedWidget.cpp
 TabbedView.cpp TabbedView.hpp
 )
 

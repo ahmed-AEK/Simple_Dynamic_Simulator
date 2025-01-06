@@ -387,7 +387,6 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
 
 MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
-    SDL_FPoint p{ e.point() };
     {
         MouseHoverEvent move_evt{ e.point() };
         OnMouseMove(move_evt);
@@ -453,7 +452,6 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
-    SDL_FPoint p{ e.point() };
     {
         MouseHoverEvent move_evt{ e.point() };
         OnMouseMove(move_evt);
@@ -499,7 +497,6 @@ MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 {
-    SDL_FPoint p{ e.point() };
     node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
 
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
