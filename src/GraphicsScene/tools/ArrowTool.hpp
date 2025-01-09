@@ -24,7 +24,7 @@ public:
 	bool InternalSelectObject(GraphicsObject* object, GraphicsScene& scene);
 	void OnExit() override; // when tool is changed
 private:
-	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block, GraphicsScene& scene, GraphicsObjectsManager& manager);
+	std::unique_ptr<BlockResizeObject> CreateResizeObject(BlockObject& block, GraphicsObjectsManager& manager);
 
 	HandlePtr<GraphicsObject> m_last_clicked_block = nullptr;
 

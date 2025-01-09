@@ -2,17 +2,18 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 
-node::LineEditControl::LineEditControl(std::string initial_value, const SDL_FRect& rect, Widget* parent)
-	:Widget{ rect,parent }, m_value{ std::move(initial_value) }, m_painter{ parent ? parent->GetApp()->getFont().get() : nullptr }, m_cursor_position{m_value.size()}
+node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSize& size, Widget* parent)
+	:Widget{ size, parent }, m_value{ std::move(initial_value) }, 
+	m_painter{ parent ? parent->GetApp()->getFont().get() : nullptr }, m_cursor_position{m_value.size()}
 {
 	SetFocusable(true);
 	m_painter.SetText(m_value);
 	ReCalculateCursorPixelPosition();
 }
 
-void node::LineEditControl::Draw(SDL_Renderer* renderer)
+void node::LineEditControl::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_FRect edit_box = GetRect();
+	SDL_FRect edit_box = GetSize().ToRect();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &edit_box);
 	SDL_FRect inner_rect{ edit_box };
@@ -51,7 +52,7 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 		return MI::ClickEvent::CLICKED;
 	}
 	SDL_FPoint current_mouse_point{ e.point() };
-	int click_pos_x = static_cast<int>(current_mouse_point.x - GetRect().x - H_Margin);
+	int click_pos_x = static_cast<int>(current_mouse_point.x - H_Margin);
 	int extent = 0;
 	size_t count = 0;
 	if (!TTF_MeasureString(m_painter.GetFont(), m_value.c_str(), m_value.size(), click_pos_x, &extent, &count))

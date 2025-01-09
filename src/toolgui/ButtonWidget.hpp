@@ -1,25 +1,30 @@
 #pragma once
 
 #include "toolgui/Widget.hpp"
-
+#include "toolgui/ToolTipWidgetMixin.hpp"
 #include "SDL_Framework/SDLCPP.hpp"
+#include "SDL_Framework/SVGRasterizer.hpp"
+
 #include <functional>
 
 namespace node
 {
-    class ButtonWidget: public Widget
+    class ButtonWidget: public Widget, public mixin::TooltipMixin<ButtonWidget>
     {
     public:
-        ButtonWidget(const SDL_FRect& rect, std::string label, std::function<void(void)> action, node::Widget* parent);
-        void Draw(SDL_Renderer* renderer) override;
+        ButtonWidget(const WidgetSize& size, std::string label, std::string svg_path, std::function<void(void)> action, node::Widget* parent);
+        void OnDraw(SDL::Renderer& renderer) override;
+        void SetAction(std::function<void()> action) { m_action = action; }
     protected:
+        void OnMouseOut(MouseHoverEvent& e) override;
+        void OnMouseIn(MouseHoverEvent& e) override;
+        void OnMouseMove(MouseHoverEvent& e) override;
         virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
     private:
         constexpr static int w_margin = 5;
         constexpr static int h_margin = 5;
-        std::string m_label;
-        SDLSurface m_textSurface;
-        SDLTexture m_textTexture;
+        SVGRasterizer m_btn_painter;
         std::function<void(void)> m_action;
+        bool m_hovered{};
     };
 }

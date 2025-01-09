@@ -18,14 +18,14 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSo
 		int layer = 1000;
 		for (auto&& segment : segments)
 		{
-			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr,scene);
+			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
 			segment = new_segmet.get();
 			scene->AddObject(std::move(new_segmet), layer);
 			layer++;
 		}
 		for (auto&& node : nodes)
 		{
-			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 }, scene);
+			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
 			node = new_node.get();
 			scene->AddObject(std::move(new_node), layer);
 			layer++;
@@ -64,14 +64,14 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSe
 		int layer = 1000;
 		for (auto&& segment : segments)
 		{
-			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr, scene);
+			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
 			segment = new_segmet.get();
 			scene->AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer + layer);
 			layer++;
 		}
 		for (auto&& node : nodes)
 		{
-			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 }, scene);
+			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
 			node = new_node.get();
 			scene->AddObject(std::move(new_node), GraphicsScene::NetNodeLayer + layer);
 			layer++;
@@ -365,7 +365,7 @@ node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Poin
 		const auto& sockets = block_it.second->GetSockets();
 		auto it = std::find_if(sockets.begin(), sockets.end(), [&](const auto& socket)
 			{
-				auto socket_rect = ToSDLRect(socket->GetSpaceRect());
+				auto socket_rect = ToSDLRect(socket->GetSceneRect());
 				if (SDL_PointInRectFloat(&current_mouse_point_SDL, &socket_rect))
 				{
 					return true;

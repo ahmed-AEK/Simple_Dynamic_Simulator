@@ -25,12 +25,12 @@ namespace node
     class TOOLGUI_API Scene: public Widget
     {
     public:
-        Scene(SDL_FRect rect, Application* parent);
+        Scene(const WidgetSize& size, Application* parent);
         
         Scene(Scene&&) = delete;
         Scene& operator=(Scene&&) = delete;
 
-        void Draw(SDL_Renderer* renderer);
+        void Draw(SDL::Renderer& renderer) override;
         virtual ~Scene();
         Application* GetApp() { return p_parent; }
 
@@ -72,8 +72,8 @@ namespace node
     protected:
         virtual void OnStart() {};
 
-        virtual void OnSetRect(const SDL_FRect& rect);
-        virtual void OnDraw(SDL_Renderer* renderer);
+        virtual void OnSetSize(const WidgetSize& size);
+        void OnDraw(SDL::Renderer& renderer) override;
 
         void OnMouseMove(MouseHoverEvent& e) override;
         MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;

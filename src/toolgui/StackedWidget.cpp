@@ -1,14 +1,19 @@
 #include "StackedWidget.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
+#include "SDL_Framework/SDL_Math.hpp"
 
-node::StackedWidget::StackedWidget(const SDL_FRect& rect, Widget* parent)
-	:Widget{rect, parent}
+#include <algorithm>
+
+node::StackedWidget::StackedWidget(const WidgetSize& size, Widget* parent)
+	:Widget{size, parent}
 {
 }
 
-void node::StackedWidget::Draw(SDL_Renderer* renderer)
+void node::StackedWidget::Draw(SDL::Renderer& renderer)
 {
 	if (auto* widget = GetCurrentWidget())
 	{
+		auto clip = renderer.ClipRect(Widget::WidgetRect(*widget));
 		widget->Draw(renderer);
 	}
 }
@@ -45,8 +50,8 @@ bool node::StackedWidget::SetCurrentIndex(int32_t index)
 	if (new_tab)
 	{
 		SetFocusProxy(new_tab);
-		auto&& rect = GetRect();
-		new_tab->SetRect(rect);
+		auto&& size = GetSize();
+		new_tab->SetSize(size);
 	}
 	return true;
 }
@@ -116,12 +121,12 @@ node::Widget* node::StackedWidget::GetCurrentWidget() const
 	return nullptr;
 }
 
-void node::StackedWidget::OnSetRect(const SDL_FRect& rect)
+void node::StackedWidget::OnSetSize(const WidgetSize& size)
 {
-	Widget::OnSetRect(rect);
+	Widget::OnSetSize(size);
 	if (auto* widget = GetCurrentWidget())
 	{
-		widget->SetRect(GetRect());
+		widget->SetSize(GetSize());
 	}
 }
 
@@ -129,7 +134,7 @@ node::Widget* node::StackedWidget::OnGetInteractableAtPoint(const SDL_FPoint& po
 {
 	if (auto* widget = GetCurrentWidget())
 	{
-		return widget->GetInteractableAtPoint(point);
+		return widget->GetInteractableAtPoint(point - widget->GetPosition());
 	}
 	return this;
 }

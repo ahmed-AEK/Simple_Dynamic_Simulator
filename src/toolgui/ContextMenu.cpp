@@ -4,13 +4,12 @@
 #include "Application.hpp"
 
 node::ContextMenu::ContextMenu(node::Widget* parent, TTF_Font* font)
-: Widget({0,0,0,0},parent), m_font{font}
+: Widget({0,0},parent), m_font{font}
 {
     SDL_assert(m_font);
     int other;
     std::string_view s = "A";
     TTF_GetStringSize(m_font, s.data(), s.size(), &other, &m_element_height);
-    
 }
 
 bool node::ContextMenu::OnElementSelected(uint64_t element)
@@ -20,10 +19,12 @@ bool node::ContextMenu::OnElementSelected(uint64_t element)
 }
 
 
-void node::ContextMenu::Draw(SDL_Renderer* renderer)
+void node::ContextMenu::OnDraw(SDL::Renderer& renderer)
 {
     SDL_SetRenderDrawColor(renderer, 42, 46, 50, 255);
-    SetRect({ GetRect().x, GetRect().y, 100, static_cast<float>(m_items.size() * m_element_height) });
+    // SDL_FRect rect = GetSize().ToRect();
+    /*
+    SetRect({ rect.x, rect.y, 100, static_cast<float>(m_items.size() * m_element_height) });
     SDL_RenderFillRect(renderer, &GetRect());
     SDL_FRect inside_rect{ GetRect().x +2, GetRect().y + 2, GetRect().w - 4, GetRect().h-4};
     SDL_SetRenderDrawColor(renderer, 242, 242, 242, 255);
@@ -45,7 +46,7 @@ void node::ContextMenu::Draw(SDL_Renderer* renderer)
         SDL_RenderTexture(renderer, tex.get(), nullptr, &target_rect);
         position++;
     }
-    
+    */
 }
 
 void node::ContextMenu::OnMouseMove(MouseHoverEvent& e)
@@ -56,7 +57,7 @@ void node::ContextMenu::OnMouseMove(MouseHoverEvent& e)
 MI::ClickEvent node::ContextMenu::OnLMBDown(MouseButtonEvent& e)
 {
     SDL_FPoint current_mouse_point{ e.point() };
-    int clicked_item = static_cast<int>((current_mouse_point.y - GetRect().y) / m_element_height);
+    int clicked_item = static_cast<int>(current_mouse_point.y / m_element_height);
     element_being_clicked = clicked_item;
     return MI::ClickEvent::NONE;
 }
@@ -64,7 +65,7 @@ MI::ClickEvent node::ContextMenu::OnLMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::ContextMenu::OnLMBUp(MouseButtonEvent& e)
 {
     SDL_FPoint current_mouse_point{ e.point() };
-    int clicked_item = static_cast<int>((current_mouse_point.y - GetRect().y) / m_element_height);
+    int clicked_item = static_cast<int>(current_mouse_point.y / m_element_height);
     if (clicked_item != element_being_clicked)
     {
         return MI::ClickEvent::NONE;

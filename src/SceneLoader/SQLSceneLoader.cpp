@@ -300,3 +300,31 @@ std::shared_ptr<node::loader::NetLoader> node::loader::SQLSceneLoader::GetNetLoa
     assert(false);
     return nullptr;
 }
+
+std::string node::loader::SQLSceneLoader::GetSceneName() const
+{
+    auto name = m_dbname;
+    
+    {
+        auto last_sep = name.rfind('/');
+        if (last_sep != name.npos)
+        {
+            name = name.substr(last_sep + 1);
+        }
+    }
+    {
+        auto last_sep = name.rfind('\\');
+        if (last_sep != name.npos)
+        {
+            name = name.substr(last_sep + 1);
+        }
+    }
+    {
+        auto ext_dot = name.rfind('.');
+        if (ext_dot != name.npos)
+        {
+            name = name.substr(0, ext_dot);
+        }
+    }
+    return name;
+}

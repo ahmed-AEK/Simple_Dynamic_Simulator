@@ -15,8 +15,6 @@ namespace node::model
 class NetNodeModel
 {
 public:
-
-
 	explicit NetNodeModel(const NetNodeId& id, const Point& position = {})
 		:m_Id{ id }, m_position{ position } {}
 	const NetNodeId& GetId() const noexcept { return m_Id; }

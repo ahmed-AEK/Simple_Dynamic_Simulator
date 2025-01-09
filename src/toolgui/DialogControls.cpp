@@ -39,14 +39,14 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 	return lines;
 }
 
-node::DialogLabel::DialogLabel(std::vector<std::string> lines, const SDL_FRect& rect, TTF_Font* font, Dialog* parent)
-	:DialogControl{ rect, parent }, m_lines{ std::move(lines) }, m_font{ font }
+node::DialogLabel::DialogLabel(std::vector<std::string> lines, const WidgetSize& size, TTF_Font* font, Dialog* parent)
+	:DialogControl{ size, parent }, m_lines{ std::move(lines) }, m_font{ font }
 {
 	assert(m_font);
 	assert(parent);
 }
 
-void node::DialogLabel::Draw(SDL_Renderer* renderer)
+void node::DialogLabel::OnDraw(SDL::Renderer& renderer)
 {
 	int y = 0;
 
@@ -69,48 +69,38 @@ void node::DialogLabel::Draw(SDL_Renderer* renderer)
 		SDL_Color Black = { 50, 50, 50, 255 };
 		painter.SetText(line);
 
-		SDL_FPoint text_start{ GetRect().x, GetRect().y + y };
+		SDL_FPoint text_start{ 0 , static_cast<float>(y) };
 		painter.Draw(renderer, text_start, Black);
 		y += font_height + LinesMargin;
 	}
 
 }
 
-node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, std::string initial_value, const SDL_FRect& rect, Dialog* parent)
-	:DialogControl{ rect, parent },
-	m_edit{ std::move(initial_value), {rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h}, parent },
+node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, 
+	std::string initial_value, const WidgetSize& size, Dialog* parent)
+	:DialogControl{ size, parent },
+	m_edit{ std::move(initial_value), {size.w - name_width, size.h}, this },
 	m_name{ std::move(name) },
 	m_painter{ GetApp()->getFont().get() },
 	m_name_width{ name_width }
 {
+	m_edit.SetPosition({ static_cast<float>(m_name_width), 0 });
 	m_painter.SetText(m_name);
 	SetFocusProxy(&m_edit);
 	assert(parent);
 }
 
-void node::PropertyEditControl::Draw(SDL_Renderer* renderer)
+void node::PropertyEditControl::OnDraw(SDL::Renderer& renderer)
 {
-	{
-		SDL_Color Black = { 50, 50, 50, 255 };
-		SDL_FPoint text_start{ GetRect().x, GetRect().y };
-		m_painter.Draw(renderer, text_start, Black);
-	}
-	m_edit.Draw(renderer);
+	SDL_Color Black = { 50, 50, 50, 255 };
+	SDL_FPoint text_start{};
+	m_painter.Draw(renderer, text_start, Black);	
 }
 
-void node::PropertyEditControl::OnSetRect(const SDL_FRect& rect)
+void node::PropertyEditControl::OnSetSize(const WidgetSize& size)
 {
-	DialogControl::OnSetRect(rect);
-	m_edit.SetRect({ rect.x + m_name_width, rect.y, rect.w - m_name_width, rect.h });
-}
-
-node::Widget* node::PropertyEditControl::OnGetInteractableAtPoint(const SDL_FPoint& point)
-{
-	if (auto ptr = m_edit.GetInteractableAtPoint(point))
-	{
-		return ptr;
-	}
-	return this;
+	DialogControl::OnSetSize(size);
+	m_edit.SetSize({ GetSize().w - m_name_width, GetSize().h});
 }
 
 MI::ClickEvent node::PropertyEditControl::OnLMBDown(MouseButtonEvent& e)
@@ -119,8 +109,9 @@ MI::ClickEvent node::PropertyEditControl::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::CLICKED;
 }
 
-void node::SeparatorControl::Draw(SDL_Renderer* renderer)
+void node::SeparatorControl::OnDraw(SDL::Renderer& renderer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &GetRect());
+	auto rect = GetSize().ToRect();
+	SDL_RenderFillRect(renderer, &rect);
 }

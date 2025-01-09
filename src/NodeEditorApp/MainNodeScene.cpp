@@ -1,6 +1,5 @@
 #include "MainNodeScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include "toolgui/ButtonWidget.hpp"
 #include "toolgui/SidePanel.hpp"
 #include "toolgui/ToolBar.hpp"
 #include "toolgui/Application.hpp"
@@ -36,8 +35,8 @@
 
 #include "BlockClasses/BlockDialog.hpp"
 
-#include "BlockPallete/BlockPallete.hpp"
-#include "BlockPallete/PalleteProvider.hpp"
+#include "BlockPalette/BlockPalette.hpp"
+#include "BlockPalette/PaletteProvider.hpp"
 
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
@@ -347,6 +346,14 @@ void node::MainNodeScene::SaveScene(std::string name)
     {
         db_connector = std::move(connector);
         SDL_Log("saving Scene Success!");
+
+        auto scene_widget = mgr->GetManager(mgr->GetMainSubSceneId())->GetGraphicsScene();
+        auto tab_idx = m_tabbedView->GetWidgetIndex(scene_widget);
+        assert(tab_idx != m_tabbedView->npos);
+        if (tab_idx != m_tabbedView->npos)
+        {
+            m_tabbedView->SetTabName(tab_idx, db_connector->connector->GetSceneName());
+        }
     }
     else
     {
@@ -367,7 +374,8 @@ void node::MainNodeScene::MaybeSaveScene(std::string name)
     SDL_Log("scene Maybe Saved to %s", name.c_str());
     if (std::filesystem::is_regular_file(name))
     {
-        auto dialog = std::make_unique<ConfirmOverwriteSaveSceneDialog>(std::move(name), SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this);
+        auto dialog = std::make_unique<ConfirmOverwriteSaveSceneDialog>(std::move(name), WidgetSize{ 0.0f,0.0f }, this);
+        dialog->SetPosition({ 100.0f,100.0f });
         SetModalDialog(std::move(dialog));
     }
     else
@@ -431,21 +439,21 @@ struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public no
 
 void node::MainNodeScene::InitializeTools()
 {
-    auto toolbar = std::make_unique<ToolBar>(SDL_FRect{ 0.0f,0.0f,0.0f,0.0f }, this);
+    auto toolbar = std::make_unique<ToolBar>(WidgetSize{ 0.0f, ToolBar::height }, this);
     {
-        auto new_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
+        auto new_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
         new_btn->SetSVGPath("assets/new_file.svg");
         new_btn->SetDescription("New");
         toolbar->AddButton(std::move(new_btn));
     }
     {
-        auto load_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
+        auto load_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
         load_btn->SetSVGPath("assets/load_file.svg");
         load_btn->SetDescription("Load");
         toolbar->AddButton(std::move(load_btn));
     }
     {
-        auto save_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
+        auto save_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
         save_btn->SetDescription("Save");
         save_btn->SetSVGPath("assets/save_file.svg");
         toolbar->AddButton(std::move(save_btn));
@@ -462,33 +470,33 @@ void node::MainNodeScene::InitializeTools()
     m_toolsManager->AddTool("D", std::make_shared<DeleteTool>());
     m_toolsManager->AddTool("N", std::make_shared<NetTool>());
     {
-        auto arrow_btn = std::make_unique<ToolButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "A", m_toolsManager);
+        auto arrow_btn = std::make_unique<ToolButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "A", m_toolsManager);
         arrow_btn->SetDescription("Arrow Tool");
         arrow_btn->SetSVGPath("assets/arrow.svg");
         toolbar->AddButton(std::move(arrow_btn));
     }
     {
-        auto net_tool = std::make_unique<ToolButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "N", m_toolsManager);
+        auto net_tool = std::make_unique<ToolButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "N", m_toolsManager);
         net_tool->SetDescription("Net Tool");
         net_tool->SetSVGPath("assets/net_tool.svg");
         toolbar->AddButton(std::move(net_tool));        
     }
     {
-        auto delete_tool = std::make_unique<ToolButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "D", m_toolsManager);
+        auto delete_tool = std::make_unique<ToolButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "D", m_toolsManager);
         delete_tool->SetDescription("Delete Tool");
         delete_tool->SetSVGPath("assets/delete_tool.svg");
         toolbar->AddButton(std::move(delete_tool));
     }
     toolbar->AddSeparator();
     {
-        auto undo_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "U",
+        auto undo_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "U",
             [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
         undo_btn->SetDescription("Undo");
         undo_btn->SetSVGPath("assets/undo.svg");
         toolbar->AddButton(std::move(undo_btn));
     }
     {
-        auto redo_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "R",
+        auto redo_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "R",
             [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
         redo_btn->SetDescription("Redo");
         redo_btn->SetSVGPath("assets/redo.svg");
@@ -497,28 +505,28 @@ void node::MainNodeScene::InitializeTools()
 
     toolbar->AddSeparator();
     {
-        auto prop_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "P",
+        auto prop_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "P",
             [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); });
         prop_btn->SetDescription("Properties");
         prop_btn->SetSVGPath("assets/properties.svg");
         toolbar->AddButton(std::move(prop_btn));
     }
     {
-        auto run_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
+        auto run_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
             [this]() { return !this->m_sim_mgr.IsSimulationRunning(); });
         run_btn->SetDescription("Run Simulation");
         run_btn->SetSVGPath("assets/run.svg");
         toolbar->AddButton(std::move(run_btn));
     }
     {
-        auto stop_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
+        auto stop_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
             [this]() { return this->m_sim_mgr.IsSimulationRunning(); });
         stop_btn->SetDescription("Stop Simulation");
         stop_btn->SetSVGPath("assets/stop_sim.svg");
         toolbar->AddButton(std::move(stop_btn));
     }
     {
-        auto settings_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,40.0f,40.0f }, toolbar.get(), "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
+        auto settings_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
         settings_btn->SetDescription("Settings");
         settings_btn->SetSVGPath("assets/settings.svg");
         toolbar->AddButton(std::move(settings_btn));
@@ -529,15 +537,16 @@ void node::MainNodeScene::InitializeTools()
 
 void node::MainNodeScene::InitializeSidePanel()
 {
-    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, SDL_FRect{ 0.0f,0.0f,300.0f,GetRect().h}, this);
+    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, 
+        WidgetSize{ 300.0f,GetSize().h}, this);
 
 
-    auto&& pallete_provider = std::make_shared<PalleteProvider>(m_classesManager, m_blockStylerFactory);
+    auto&& palette_provider = std::make_shared<PaletteProvider>(m_classesManager, m_blockStylerFactory);
 
     auto SubScene_block = BlockTemplate
     {
-        "All",
-        "SubSystem",
+        "Subsystem",
+        "Subsystem",
         model::SubsystemBlockData{
             "Local",
             SubSceneId{0}
@@ -545,11 +554,11 @@ void node::MainNodeScene::InitializeSidePanel()
         "Default",
         model::BlockStyleProperties{}
     };
-    pallete_provider->AddElement(std::move(SubScene_block));
+    palette_provider->AddElement(std::move(SubScene_block));
 
     auto input_block = BlockTemplate
     {
-        "All",
+        "Subsystem",
         "Input",
         model::PortBlockData{
             model::SocketId{0},
@@ -558,11 +567,11 @@ void node::MainNodeScene::InitializeSidePanel()
         "Default",
         model::BlockStyleProperties{}
     };
-    pallete_provider->AddElement(std::move(input_block));
+    palette_provider->AddElement(std::move(input_block));
 
     auto output_block = BlockTemplate
     {
-        "All",
+        "Subsystem",
         "Output",
         model::PortBlockData{
             model::SocketId{0},
@@ -571,10 +580,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "Default",
         model::BlockStyleProperties{}
     };
-    pallete_provider->AddElement(std::move(output_block));
+    palette_provider->AddElement(std::move(output_block));
 
     auto block_template = BlockTemplate{
-        "All",
+        "Math",
         "Gain",
         model::FunctionalBlockData{
             "Gain",
@@ -587,11 +596,11 @@ void node::MainNodeScene::InitializeSidePanel()
     };
     for (int i = 0; i < 1; i++)
     {
-        pallete_provider->AddElement(block_template);
+        palette_provider->AddElement(block_template);
     }
 
     auto add_block = BlockTemplate{
-        "All",
+        "Math",
         "Add",
         model::FunctionalBlockData{
             "Add Simple", {}
@@ -599,10 +608,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "Text",
         model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
     };
-    pallete_provider->AddElement(std::move(add_block));
+    palette_provider->AddElement(std::move(add_block));
 
     auto integrate_block = BlockTemplate{
-        "All",
+        "Math",
         "Integration",
         model::FunctionalBlockData{
             "Integration", {}
@@ -610,10 +619,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/integral.svg"}}}
     };
-    pallete_provider->AddElement(std::move(integrate_block));
+    palette_provider->AddElement(std::move(integrate_block));
 
     auto deriv_block = BlockTemplate{
-        "All",
+        "Math",
         "Derivative",
         model::FunctionalBlockData{
             "Derivative", {}
@@ -621,10 +630,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/derivative.svg"}}}
     };
-    pallete_provider->AddElement(std::move(deriv_block));
+    palette_provider->AddElement(std::move(deriv_block));
 
     auto constant_block = BlockTemplate{
-        "All",
+        "Sources",
         "Constant Source",
         model::FunctionalBlockData{
             "Constant Source",
@@ -635,10 +644,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "Property Printer",
         model::BlockStyleProperties{{{PropertyPrintStyler::printed_key_text, "Value"}}}
     };
-    pallete_provider->AddElement(std::move(constant_block));
+    palette_provider->AddElement(std::move(constant_block));
 
     auto ramp_block = BlockTemplate{
-        "All",
+        "Sources",
         "Ramp",
         model::FunctionalBlockData{
             "Ramp",
@@ -649,10 +658,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}}}
     };
-    pallete_provider->AddElement(std::move(ramp_block));
+    palette_provider->AddElement(std::move(ramp_block));
 
     auto scope_block = BlockTemplate{
-        "All",
+        "Sinks",
         "Scope",
         model::FunctionalBlockData {
             "Scope Display",
@@ -663,10 +672,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",        
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}}}
     };
-    pallete_provider->AddElement(std::move(scope_block));
+    palette_provider->AddElement(std::move(scope_block));
 
     auto multiply_block = BlockTemplate{
-        "All",
+        "Math",
         "Multiply",
         model::FunctionalBlockData{
             "Multiply", {}
@@ -674,10 +683,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "Text",
         model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
     };
-    pallete_provider->AddElement(std::move(multiply_block));
+    palette_provider->AddElement(std::move(multiply_block));
 
     auto sine_block = BlockTemplate{
-        "All",
+        "Sources",
         "Sine",
         model::FunctionalBlockData{
             "Sine",
@@ -689,10 +698,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
     };
-    pallete_provider->AddElement(std::move(sine_block));
+    palette_provider->AddElement(std::move(sine_block));
 
     auto step_block = BlockTemplate{
-        "All",
+        "Sources",
         "Step",
         model::FunctionalBlockData{
             "Step",
@@ -706,10 +715,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
     };
-    pallete_provider->AddElement(std::move(step_block));
+    palette_provider->AddElement(std::move(step_block));
 
     auto comparator_block = BlockTemplate{
-        "All",
+        "Math",
         "Comparator",
         model::FunctionalBlockData{
             "Comparator",
@@ -721,10 +730,10 @@ void node::MainNodeScene::InitializeSidePanel()
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
     };
-    pallete_provider->AddElement(std::move(comparator_block));
+    palette_provider->AddElement(std::move(comparator_block));
 
-    sidePanel->SetWidget(std::make_unique<BlockPallete>(SDL_FRect{ 0.0f,0.0f,200.0f,200.0f },
-        std::move(pallete_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
+    sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{ 200.0f,200.0f },
+        std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
     SetSidePanel(std::move(sidePanel));
 }
 
@@ -766,8 +775,7 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
-            SDL_FRect dialog_rect = dialog->GetRect();
-            dialog->SetRect({ 100.0f,100.0f,dialog_rect.w, dialog_rect.h });
+            dialog->SetPosition({ 100.0f,100.0f});
             return;
         }
     }
@@ -788,7 +796,9 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     }
 
     assert(m_classesManager);
-    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, graphicsObjectsManager, m_classesManager, SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this);
+    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, graphicsObjectsManager, 
+        m_classesManager, WidgetSize{ 0.0f,0.0f }, this);
+    dialog->SetPosition({ 100.0f,100.0f });
     objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
     auto dialog_ptr = dialog.get();
     AddNormalDialog(std::move(dialog));
@@ -829,8 +839,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         {
             Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
             BumpDialogToTop(dialog);
-            SDL_FRect dialog_rect = dialog->GetRect();
-            dialog->SetRect({ 100.0f,100.0f,dialog_rect.w, dialog_rect.h });
+            dialog->SetPosition({ 100.0f,100.0f });
             return;
         }
     }
@@ -1023,7 +1032,7 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
     }
     
     auto& scene_mgr = *scene_mgr_it->second.manager;
-    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetRect(), m_tabbedView);
+    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetSize(), m_tabbedView);
     auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
     gScene->Attach(*graphicsObjectsManager);
     gScene->SetToolsManager(m_toolsManager);
@@ -1032,9 +1041,17 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
     gScene->SetTool(std::move(handler));
 
     scene_mgr.SetSubSceneManager(scene_id.subscene, graphicsObjectsManager);
-    
+    std::string scene_name;
+    if (scene_id.subscene == scene_mgr.GetMainSubSceneId())
+    {
+        scene_name = scene_mgr.GetDBConnector() ? scene_mgr.GetDBConnector()->connector->GetSceneName() : "untitled";
+    }
+    else
+    {
+        scene_name = "Subsystem";
+    }
 
-    m_tabbedView->AddTab("scene", std::move(gScene));
+    m_tabbedView->AddTab(scene_name, std::move(gScene));
     return true;
 }
 
@@ -1120,8 +1137,8 @@ std::optional<node::SceneId> node::MainNodeScene::GetSceneIdForTab(int32_t index
     return std::nullopt;
 }
 
-node::MainNodeScene::MainNodeScene(SDL_FRect rect, node::Application* parent)
-:Scene(rect, parent)
+node::MainNodeScene::MainNodeScene(const WidgetSize& size, node::Application* parent)
+:Scene(size, parent)
 {
 }
 
@@ -1167,7 +1184,8 @@ void node::MainNodeScene::OnInit()
         { return std::make_unique<SVGBlockStyler>(model.block); });
 
     {
-        std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont().get(), SDL_FRect{ 0,0,0,0 }, this);
+        std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont(FontType::Label).get(), 
+            WidgetSize{ 0,0 }, this);
         m_tabbedView = view.get();
         SetCenterWidget(std::move(view));
     }
@@ -1276,8 +1294,10 @@ void node::MainNodeScene::OnSettingsClicked()
 {
     if (!m_settings_dialog.isAlive())
     {
-        auto dialog = std::make_unique<SimulationSettingsDialog>([this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
-            m_sim_mgr.GetSimulationSettings(), SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this);
+        auto dialog = std::make_unique<SimulationSettingsDialog>(
+            [this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
+            m_sim_mgr.GetSimulationSettings(), WidgetSize{ 0.0f,0.0f }, this);
+        dialog->SetPosition({ 100.0f, 100.0f });
         m_settings_dialog = dialog->GetMIHandlePtr();
         auto dialog_ptr = dialog.get();
         AddNormalDialog(std::move(dialog));
@@ -1286,8 +1306,7 @@ void node::MainNodeScene::OnSettingsClicked()
     else
     {
         auto* dialog = static_cast<SimulationSettingsDialog*>(m_settings_dialog.GetObjectPtr());
-        const auto& rect = dialog->GetRect();
-        dialog->SetRect({ 100, 100, rect.w, rect.h });
+        dialog->SetPosition({ 100, 100 });
         BumpDialogToTop(dialog);
     }
 }

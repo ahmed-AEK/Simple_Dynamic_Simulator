@@ -7,8 +7,8 @@
 #include "GraphicsScene/ToolsManager.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 
-node::NodeGraphicsScene::NodeGraphicsScene(SDL_FRect rect, node::Widget* parent)
-    : node::GraphicsScene{ rect, parent }
+node::NodeGraphicsScene::NodeGraphicsScene(const WidgetSize& size, node::Widget* parent)
+    : node::GraphicsScene{ size, parent }
 {
     SetFocusable(true);
 }
@@ -43,9 +43,9 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
     {
         dot_width = 3;
     }
-    for (int i = static_cast<int>(start_point_screen.x); i < GetRect().x + GetRect().w; i += step_screen.x)
+    for (int i = static_cast<int>(start_point_screen.x); i < GetSize().w; i += step_screen.x)
     {
-        for (int j = static_cast<int>(start_point_screen.y + 5); j < GetRect().y + GetRect().h; j += step_screen.y)
+        for (int j = static_cast<int>(start_point_screen.y + 5); j < GetSize().h; j += step_screen.y)
         {
             SDL_FRect rect{ static_cast<float>(i),static_cast<float>(j),dot_width,dot_width };
             rects.push_back(rect);
@@ -164,7 +164,7 @@ void node::NodeGraphicsScene::OnKeyboardFocusIn()
     GetApp()->StopTextInput();
 }
 
-void node::NodeGraphicsScene::OnDraw(SDL_Renderer* renderer)
+void node::NodeGraphicsScene::OnDraw(SDL::Renderer& renderer)
 {
     DrawDots(renderer);
     GraphicsScene::OnDraw(renderer);
@@ -182,8 +182,8 @@ void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const
     SDLTexture Message = SDLTexture{ SDL_CreateTextureFromSurface(renderer, message_surface.get()) };
 
     SDL_FRect Message_rect; //create a rect
-    Message_rect.x = GetRect().x + GetRect().w * 2 / 5;  //controls the rect's x coordinate 
-    Message_rect.y = GetRect().y + GetRect().h * 4 / 5;; // controls the rect's y coordinte
+    Message_rect.x = GetSize().w * 2 / 5;  //controls the rect's x coordinate 
+    Message_rect.y = GetSize().h * 4 / 5;; // controls the rect's y coordinte
     Message_rect.w = 400; // controls the width of the rect
     Message_rect.h = 100; // controls the height of the rect
 

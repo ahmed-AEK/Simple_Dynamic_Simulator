@@ -56,8 +56,7 @@ private:
 class PlotWidget : public DialogControl
 {
 public:
-	PlotWidget(TTF_Font* font, const SDL_FRect& rect, Dialog* parent);
-	void Draw(SDL_Renderer* renderer) override;
+	PlotWidget(TTF_Font* font, const WidgetSize& size, Dialog* parent);
 	void SetData(XYSeries data);
 	void ResetZoom();
 	void SetTool(std::shared_ptr<ScopeDisplayTool> tool);
@@ -65,10 +64,11 @@ public:
 	void SetExtend(const SDL_FRect& rect);
 	SDL_Rect GetDrawingRect();
 protected:
+	void OnDraw(SDL::Renderer& renderer) override;
 	void OnMouseMove(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
-	void OnMouseOut() override;
+	void OnMouseOut(MouseHoverEvent& e) override;
 private:
 	void DrawAxes(SDL_Renderer* renderer);
 	void DrawData(SDL_Renderer* renderer);
@@ -97,7 +97,7 @@ private:
 class ScopeDiplayDialog : public BlockDialog
 {
 public:
-	ScopeDiplayDialog(const SDL_FRect& rect, Scene* parent);
+	ScopeDiplayDialog(const WidgetSize& size, Scene* parent);
 	void SetData(XYSeries data);
 	void UpdateResults(std::any new_result) override;
 

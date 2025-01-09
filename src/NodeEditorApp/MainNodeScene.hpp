@@ -33,7 +33,7 @@ struct TabChangeNotifier;
 class MainNodeScene: public node::Scene
 {
 public:
-    MainNodeScene(SDL_FRect rect, node::Application* parent);
+    MainNodeScene(const WidgetSize& size, node::Application* parent);
     void OnInit() override;
     ~MainNodeScene() override;
     ToolsManager* GetToolsManager() const { return m_toolsManager.get(); }

@@ -8,8 +8,8 @@ namespace node
 class StackedWidget : public Widget
 {
 public:
-	StackedWidget(const SDL_FRect& rect, Widget* parent);
-	void Draw(SDL_Renderer* renderer) override;
+	StackedWidget(const WidgetSize& size, Widget* parent);
+	void Draw(SDL::Renderer& renderer) override;
 
 	int32_t AddWidget(std::unique_ptr<Widget> widget);
 	bool DeleteWidget(int32_t index);
@@ -26,7 +26,7 @@ public:
 
 	static constexpr int32_t npos = -1;
 protected:
-	void OnSetRect(const SDL_FRect& rect) override;
+	void OnSetSize(const WidgetSize& size) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
 private:
 	std::vector<std::unique_ptr<Widget>> m_widgets;

@@ -8,8 +8,8 @@ namespace node
 class LineEditControl : public Widget
 {
 public:
-	LineEditControl(std::string initial_value, const SDL_FRect& rect, Widget* parent);
-	void Draw(SDL_Renderer* renderer) override;
+	LineEditControl(std::string initial_value, const WidgetSize& size, Widget* parent);
+	void OnDraw(SDL::Renderer& renderer) override;
 	const std::string& GetValue() const { return m_value; }
 	~LineEditControl() override;
 protected:

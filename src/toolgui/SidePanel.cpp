@@ -1,13 +1,14 @@
 #include "SidePanel.hpp"
 #include "toolgui/Scene.hpp"
 #include "SDL_Framework/Utility.hpp"
+#include "SDL_Framework/SDL_Math.hpp"
 #include "toolgui/Application.hpp"
 #include <cmath>
 
 static double easeOut(double val) { return 2 * val - val * val; }
 
-node::SidePanel::SidePanel(PanelSide side, const SDL_FRect& rect, Widget* parent)
-	: Widget(rect, parent), 
+node::SidePanel::SidePanel(PanelSide side, const WidgetSize& size, Widget* parent)
+	: Widget(size, parent),
 	m_knob_drawer_left{"assets/arrow_left.svg", 30,knob_height*3/5}, 
 	m_knob_drawer_right{"assets/arrow_right.svg", 30, knob_height * 3 / 5 }, m_side(side)
 {
@@ -41,13 +42,15 @@ void node::SidePanel::SetWidget(std::unique_ptr<Widget> widget)
 	m_contained_widget = std::move(widget);
 	if (m_contained_widget)
 	{
-		m_contained_widget->SetRect(CalculateChildWidgetRect());
+		auto widget_rect = CalculateChildWidgetRect();
+		m_contained_widget->SetPosition({ widget_rect.x, widget_rect.y });
+		m_contained_widget->SetSize({widget_rect.w, widget_rect.h});
 	}
 }
 
-void node::SidePanel::Draw(SDL_Renderer* renderer)
+void node::SidePanel::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_FRect draw_area = GetRect();
+	SDL_FRect draw_area = GetSize().ToRect();
 	draw_area.x += knob_width;
 	draw_area.w -= knob_width;
 	// draw main widget part
@@ -59,13 +62,6 @@ void node::SidePanel::Draw(SDL_Renderer* renderer)
 
 	// draw side knob
 	DrawKnob(renderer);
-
-	// draw inner widget
-	if (m_state != PanelState::closed && m_contained_widget)
-	{
-		m_contained_widget->Draw(renderer);
-	}
-
 }
 
 MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
@@ -89,17 +85,25 @@ MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::NONE;
 }
 
-void node::SidePanel::UpdateWindowSize(const SDL_FRect& rect)
+void node::SidePanel::OnSetSize(const WidgetSize& size)
+{
+	Widget::OnSetSize(size);
+	auto widget_rect = CalculateChildWidgetRect();
+	m_contained_widget->SetSize({ widget_rect.w, widget_rect.h });
+}
+
+void node::SidePanel::UpdateWindowSize(const WidgetSize& size)
 {
 	if (PanelSide::right == m_side)
 	{
-		m_corner_position = rect.x + rect.w;
+		m_corner_position = size.w;
 	}
 	else
 	{
-		m_corner_position = rect.x;
+		m_corner_position = 0;
 	}
-	SetRect({ GetRect().x, rect.y, GetRect().w, rect.h });
+	SetPosition({ GetPosition().x, 0 });
+	SetSize({ GetSize().w, size.h});
 	RepositionWidget();
 }
 
@@ -110,30 +114,32 @@ node::Widget* node::SidePanel::OnGetInteractableAtPoint(const SDL_FPoint& point)
 	{
 		return this;
 	}
-	if (m_contained_widget &&
-		SDL_PointInRectFloat(&point, &m_contained_widget->GetRect()))
-	{
-		return m_contained_widget->GetInteractableAtPoint(point);
-	}
-	else
-	{
-		SDL_FRect inner_rect = GetRect();
-		switch (m_side)
-		{
-		case PanelSide::right:
-			inner_rect.x += knob_width;
-			break;
-		case PanelSide::left:
-			inner_rect.x -= knob_width;
-			break;
-		}
-		inner_rect.w -= knob_width;
-		if (SDL_PointInRectFloat(&point, &inner_rect))
-		{
-			return this;
-		}
 
+	
+	if (m_contained_widget)
+	{
+		if (auto* result = m_contained_widget->GetInteractableAtPoint(point - m_contained_widget->GetPosition()))
+		{
+			return result;
+		}
 	}
+
+	
+	SDL_FRect inner_rect = GetSize().ToRect();
+	switch (m_side)
+	{
+	case PanelSide::right:
+		inner_rect.x += knob_width;
+		break;
+	case PanelSide::left:
+		break;
+	}
+	inner_rect.w -= knob_width;
+	if (SDL_PointInRectFloat(&point, &inner_rect))
+	{
+		return this;
+	}
+
 	return nullptr;
 }
 
@@ -174,7 +180,7 @@ SDL_FRect node::SidePanel::CalculateChildWidgetRect()
 	switch (m_side)
 	{
 	case PanelSide::right:
-		return { GetRect().x + knob_width + widget_margin, GetRect().y + widget_margin, GetRect().w - knob_width - 2 * widget_margin, GetRect().h - 2 * widget_margin };
+		return { knob_width + widget_margin, widget_margin, GetSize().w - knob_width - 2 * widget_margin, GetSize().h - 2 * widget_margin };
 		break;
 	case PanelSide::left:
 		assert(false);
@@ -188,7 +194,7 @@ SDL_FRect node::SidePanel::GetKnobRect()
 	switch (m_side)
 	{
 	case PanelSide::right:
-		return { GetRect().x, std::floor(GetRect().y + GetRect().h / 2 - knob_height / 2), knob_width, knob_height };
+		return { 0, std::floor(GetSize().h / 2 - knob_height / 2), knob_width, knob_height };
 	case PanelSide::left:
 		assert(false);
 		return {};
@@ -252,13 +258,9 @@ void node::SidePanel::RepositionWidget()
 	{
 	case PanelSide::right:
 	{
-		auto width = GetRect().w - knob_width;
-		SetRect({ static_cast<float>(m_corner_position - width * easeOut(m_expand_percent) - knob_width),
-			0.0f, GetRect().w, GetRect().h });
-		if (m_contained_widget)
-		{
-			m_contained_widget->SetRect(CalculateChildWidgetRect());
-		}
+		auto width = GetSize().w - knob_width;
+		SetPosition({ static_cast<float>(m_corner_position - width * easeOut(m_expand_percent) - knob_width),
+			0.0f });
 		break;
 	}
 	case PanelSide::left:

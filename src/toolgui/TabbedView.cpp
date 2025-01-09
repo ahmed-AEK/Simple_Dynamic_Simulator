@@ -1,12 +1,15 @@
 #include "TabbedView.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 
 #include <cmath>
 
-node::TabbedView::TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* parent)
-	:Widget{rect, parent}, m_stacked_widget{{0,0,0,0}, this}, m_bar{font, {0,0,0,0}, this}
+node::TabbedView::TabbedView(TTF_Font* font, const WidgetSize& size, Widget* parent)
+	:Widget{size, parent}, m_stacked_widget{{0,0}, this}, 
+	m_bar{font, {0,static_cast<float>(GetTabsBarHeight())}, this}
 {
 	SetFocusProxy(&m_stacked_widget);
 	m_bar.SetFocusProxy(&m_stacked_widget);
+	m_stacked_widget.SetPosition({ 0, static_cast<float>(GetTabsBarHeight()) });
 }
 
 int32_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
@@ -17,38 +20,18 @@ int32_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> w
 	return static_cast<int32_t>(m_tab_names.size() - 1);
 }
 
-void node::TabbedView::OnSetRect(const SDL_FRect& rect)
+void node::TabbedView::OnSetSize(const WidgetSize& size)
 {
-	Widget::OnSetRect(rect);
+	Widget::OnSetSize(size);
 
-	m_bar.SetRect({ rect.x, rect.y, rect.w, static_cast<float>(GetTabsBarHeight()) });
-	int tab_bar_height = GetTabsBarHeight();
-	SDL_FRect middle_rect{ rect.x, rect.y + tab_bar_height, rect.w, rect.h - tab_bar_height };
-	m_stacked_widget.SetRect(middle_rect);
-}
-
-node::Widget* node::TabbedView::OnGetInteractableAtPoint(const SDL_FPoint& point)
-{
-	if (auto ptr = m_bar.GetInteractableAtPoint(point))
-	{
-		return ptr;
-	}
-	if (auto* ptr = m_stacked_widget.GetInteractableAtPoint(point))
-	{
-		return ptr;
-	}
-	return this;
+	m_bar.SetSize({ size.w, static_cast<float>(GetTabsBarHeight()) });
+	int tab_bar_height = GetTabsBarHeight();	
+	m_stacked_widget.SetSize({ size.w, size.h - tab_bar_height });
 }
 
 int node::TabbedView::GetTabsBarHeight() const
 {
 	return 30;
-}
-
-void node::TabbedView::Draw(SDL_Renderer* renderer)
-{
-	m_bar.Draw(renderer);
-	m_stacked_widget.Draw(renderer);
 }
 
 void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
@@ -57,30 +40,25 @@ void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
 }
 
 
-node::TabBar::TabBar(TTF_Font* font, const SDL_FRect& rect, TabbedView* parent)
-	:Widget{rect, parent}, m_font{font}, m_parent{parent}
+node::TabBar::TabBar(TTF_Font* font, const WidgetSize& size, TabbedView* parent)
+	:Widget{size, parent}, m_font{font}, m_parent{parent}
 {
 }
 
-void node::TabBar::Draw(SDL_Renderer* renderer)
+void node::TabBar::OnDraw(SDL::Renderer& renderer)
 {
-	
-	SDL_FRect rect = GetRect();
+	SDL_FRect rect = GetSize().ToRect();
 	SDL_Color outlineColor{ 50,50,50,255 };
 	SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, 255);
 	SDL_FRect lower_rect{ rect.x, rect.y + rect.h - 2, rect.w, 2 };
 	SDL_RenderFillRect(renderer, &lower_rect);
-
-	for (auto&& btn : m_buttons)
-	{
-		btn->Draw(renderer);
-	}
-
 }
 
 void node::TabBar::AddTab(std::string name)
 {
-	m_buttons.push_back(std::make_unique<TabButton>(m_font, SDL_FRect{0,0, static_cast<float>(GetTabWidth()), GetRect().h - 4}, this));
+	m_buttons.push_back(
+		std::make_unique<TabButton>(m_font, 
+			WidgetSize{static_cast<float>(GetTabWidth()), GetSize().h - 2 }, this));
 	m_buttons.back()->SetText(std::move(name));
 	m_buttons.back()->SetFocusProxy(this);
 	ReCalcLayout();
@@ -130,32 +108,24 @@ void node::TabBar::ButtonXClicked(TabButton* btn)
 	}
 }
 
-void node::TabBar::OnSetRect(const SDL_FRect& rect)
+void node::TabBar::SetTabName(int32_t idx, std::string_view name)
 {
-	Widget::OnSetRect(rect);
-	ReCalcLayout();
-}
-
-node::Widget* node::TabBar::OnGetInteractableAtPoint(const SDL_FPoint& point)
-{
-	for (auto&& btn : m_buttons)
+	assert(idx != npos);
+	if (idx == npos)
 	{
-		if (auto ptr = btn->GetInteractableAtPoint(point))
-		{
-			return ptr;
-		}
+		return;
 	}
-	return nullptr;
+
+	m_buttons[idx]->SetText(std::string{ name });
 }
 
 void node::TabBar::ReCalcLayout()
 {
-	float x_val = GetRect().x + 2;
-	float y_val = GetRect().y;
-	float height = GetRect().h - 2;
+	float x_val = 2;
+	float y_val = 0;
 	for (auto&& btn : m_buttons)
 	{
-		btn->SetRect(SDL_FRect(x_val, y_val, static_cast<float>(GetTabWidth()), height));
+		btn->SetPosition({ x_val, y_val });
 		x_val += GetTabWidth() + 2;
 	}
 }
@@ -214,15 +184,27 @@ int32_t node::TabbedView::GetWidgetIndex(Widget* widget)
 	return m_stacked_widget.GetWidgetIndex(widget);
 }
 
-node::TabButton::TabButton(TTF_Font* font, const SDL_FRect& rect, TabBar* parent)
-	:Widget{rect, parent}, m_tab_text{font}, m_X_painter{font}, m_parent{parent}
+void node::TabbedView::SetTabName(int32_t idx, std::string_view name)
+{
+	assert(idx != npos);
+	if (idx == npos)
+	{
+		return;
+	}
+
+	m_tab_names[idx] = std::string{ name };
+	m_bar.SetTabName(idx, name);
+}
+
+node::TabButton::TabButton(TTF_Font* font, const WidgetSize& size, TabBar* parent)
+	:Widget{size, parent}, m_tab_text{font}, m_X_painter{font}, m_parent{parent}
 {
 	m_X_painter.SetText("X");
 }
 
-void node::TabButton::Draw(SDL_Renderer* renderer)
+void node::TabButton::OnDraw(SDL::Renderer& renderer)
 {
-	auto rect = GetRect();
+	auto rect = GetSize().ToRect();
 
 	SDL_Color background_color{ 255,255,255,255 };
 	if (!GetActive())
@@ -268,7 +250,7 @@ void node::TabButton::Draw(SDL_Renderer* renderer)
 	}
 
 	SDL_Color Black{ 50,50,50,255 };
-	m_tab_text.Draw(renderer, { rect.x + 4, rect.y + 2}, Black);
+	m_tab_text.Draw(renderer, { rect.x + 6, rect.y + 6}, Black);
 
 	if (m_mouse_hovered)
 	{
@@ -281,6 +263,20 @@ void node::TabButton::Draw(SDL_Renderer* renderer)
 
 void node::TabButton::SetText(std::string name)
 {
+	int measured_width = 0;
+	size_t measured_length = 0;
+	auto success = TTF_MeasureString(m_tab_text.GetFont(), name.c_str(), name.size(), 
+		static_cast<int>(GetXBtnStart() - 6), &measured_width, &measured_length);
+	if (!success)
+	{
+		SDL_Log("Failed to size string in tab!");
+		m_tab_text.SetText("Error!");
+		return;
+	}
+	if (measured_length != name.size())
+	{
+		name = name.substr(0, measured_length) + "....";
+	}
 	m_tab_text.SetText(std::move(name));
 }
 
@@ -289,13 +285,13 @@ void node::TabButton::SetActive(bool value)
 	m_active = value;
 }
 
-void node::TabButton::OnMouseOut()
+void node::TabButton::OnMouseOut(MouseHoverEvent&)
 {
 	m_mouse_hovered = false;
 	m_exit_initiated = false;
 }
 
-void node::TabButton::OnMouseIn()
+void node::TabButton::OnMouseIn(MouseHoverEvent&)
 {
 	m_mouse_hovered = true;
 	m_exit_initiated = false;
@@ -340,10 +336,15 @@ MI::ClickEvent node::TabButton::OnLMBUp(MouseButtonEvent& e)
 
 SDL_FRect node::TabButton::GetXBtnRect() const
 {
-	auto rect = GetRect();
-	rect.x = rect.x + rect.w - 30;
+	auto rect = GetSize().ToRect();
+	rect.x = GetXBtnStart();
 	rect.w = 25;
 	rect.y += 4;
 	rect.h -= 6;
 	return rect;
+}
+
+float node::TabButton::GetXBtnStart() const
+{
+	return GetSize().w - 30;
 }

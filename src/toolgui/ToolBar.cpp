@@ -2,12 +2,16 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 #include "SDL_Framework/Utility.hpp"
-#include "ToolTipWidget.hpp"
-#include <algorithm>
-node::ToolBar::ToolBar(const SDL_FRect& rect, Widget* parent)
-	:Widget(rect, parent)
-{
+#include "SDL_Framework/SDL_Math.hpp"
+#include "toolgui/ToolTipWidgetMixin_impl.hpp"
 
+#include <algorithm>
+
+template class node::mixin::TooltipMixin<node::ToolBarButton>;
+
+node::ToolBar::ToolBar(const WidgetSize& size, Widget* parent)
+	:Widget(size, parent)
+{
 }
 
 static bool isButton(const node::ToolBar::ToolBarElement& element)
@@ -44,9 +48,9 @@ void node::ToolBar::AddButton(std::unique_ptr<ToolBarButton> button, int positio
 	{
 		m_buttons.push_back(std::move(button));
 	}
+	ptr->SetParent(this);
 	ptr->SetFocusProxy(this);
 	RepositionButtons();
-
 }
 
 void node::ToolBar::AddSeparator(int position)
@@ -83,9 +87,9 @@ node::ToolBarButton* node::ToolBar::GetButton(const std::string& name)
 	return nullptr;
 }
 
-void node::ToolBar::Draw(SDL_Renderer * renderer)
+void node::ToolBar::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_FRect inner_rect = GetRect();
+	SDL_FRect inner_rect = GetSize().ToRect();
 	inner_rect.x += 2;
 	inner_rect.y += 2;
 	inner_rect.w -= 4;
@@ -94,7 +98,7 @@ void node::ToolBar::Draw(SDL_Renderer * renderer)
 	{
 		if (isButton(button))
 		{
-			AsButton(button)->Draw(renderer);
+			// button draws itself
 		}
 		else
 		{
@@ -107,38 +111,15 @@ void node::ToolBar::Draw(SDL_Renderer * renderer)
 	}
 }
 
-node::Widget* node::ToolBar::OnGetInteractableAtPoint(const SDL_FPoint& point)
-{
-	for (auto&& button : m_buttons)
-	{
-		if (!isButton(button))
-		{
-			continue;
-		}
-		if (auto result = AsButton(button)->GetInteractableAtPoint(point))
-		{
-			return result;
-		}
-	}
-	return Widget::OnGetInteractableAtPoint(point);
-}
-
-void node::ToolBar::OnSetRect(const SDL_FRect& rect)
-{
-	Widget::OnSetRect(rect);
-	RepositionButtons();
-	
-}
-
 void node::ToolBar::RepositionButtons()
 {
-	float position_x = ToolBarButton::Hmargin + GetRect().x;
-	float position_y = GetRect().y;
+	float position_x = ToolBarButton::Hmargin;
+	float position_y = 0;
 	for (auto&& button : m_buttons)
 	{
 		if (isButton(button))
 		{
-			AsButton(button)->SetRect({ position_x, position_y + 4, ToolBarButton::width, ToolBarButton::height });
+			AsButton(button)->SetPosition({ position_x, position_y + 4 });
 			position_x += ToolBarButton::Hmargin + ToolBarButton::width;
 		}
 		else
@@ -146,13 +127,12 @@ void node::ToolBar::RepositionButtons()
 			AsSeparator(button).position_x = position_x;
 			position_x += ToolBarSeparator::width + ToolBarButton::Hmargin;
 		}
-
 	}
 }
 
 
-node::ToolBarButton::ToolBarButton(const SDL_FRect& rect, ToolBar* parent, std::string name)
-	:Widget(rect, parent), m_name{std::move(name)}, 
+node::ToolBarButton::ToolBarButton(const WidgetSize& size, ToolBar* parent, std::string name)
+	:Widget(size, parent), m_name{std::move(name)}, 
 	m_painter_outer{std::make_unique<RoundRectPainter>()},
 	m_painter_inner{ std::make_unique<RoundRectPainter>() },
 	m_parent_toolbar{parent}
@@ -161,10 +141,9 @@ node::ToolBarButton::ToolBarButton(const SDL_FRect& rect, ToolBar* parent, std::
 
 node::ToolBarButton::~ToolBarButton()
 {
-	HideToolTip();
 }
 
-void node::ToolBarButton::Draw(SDL_Renderer* renderer)
+void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 {
 	const int thickness = 2;
 	{
@@ -172,11 +151,11 @@ void node::ToolBarButton::Draw(SDL_Renderer* renderer)
 		SDL_Color outline_color{190, 190, 190, 255};
 		SDL_Color inactive_color = b_held_down ? SDL_Color{ 210, 210, 210, 255 } : (b_hovered ? SDL_Color{ 230, 230, 230, 235 } : SDL_Color{ 255, 255, 255, 255 });
 		SDL_Color color_inner = IsDisabled() ? SDL_Color{190, 190, 190, 255} : inactive_color;
-		ThickFilledRoundRect(renderer, GetRect(), radius, 2, outline_color, color_inner, *m_painter_outer, *m_painter_inner);
+		ThickFilledRoundRect(renderer, GetSize().ToRect(), radius, 2, outline_color, color_inner, *m_painter_outer, *m_painter_inner);
 	}
 	
 
-	SDL_FRect inner_rect = GetRect();
+	SDL_FRect inner_rect = GetSize().ToRect();
 	inner_rect.x += thickness;
 	inner_rect.y += thickness;
 	inner_rect.w -= 2 * thickness;
@@ -223,7 +202,7 @@ void node::ToolBarButton::SetSVGPath(std::string path)
 
 void node::ToolBarButton::SetDescription(std::string description)
 {
-	m_description = description;
+	SetToolTipDescription(std::move(description));
 }
 
 void node::ToolBarButton::SetToolBar(ToolBar* toolbar)
@@ -232,31 +211,22 @@ void node::ToolBarButton::SetToolBar(ToolBar* toolbar)
 	SetParent(toolbar);
 }
 
-void node::ToolBarButton::OnMouseOut()
+void node::ToolBarButton::OnMouseOut(MouseHoverEvent& e)
 {
 	b_hovered = false;
 	b_held_down = false;
-	HideToolTip();
-	if (m_updateTaskId)
-	{
-		GetApp()->RemoveUpdateTask(m_updateTaskId);
-		m_updateTaskId = 0;
-	}
+	ToolTipMouseOut(e);
 }
 
-void node::ToolBarButton::OnMouseIn()
+void node::ToolBarButton::OnMouseIn(MouseHoverEvent& e)
 {
 	b_hovered = true;
-	m_last_action_time = SDL_GetTicks();
-	if (!m_updateTaskId && m_description.size())
-	{
-		m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() {this->InternalUpdateToolTip(); }));
-	}
+	ToolTipMouseIn(e);
 }
 
 void node::ToolBarButton::OnMouseMove(MouseHoverEvent& e)
 {
-	m_last_mouse_pos = e.point();
+	ToolTipMouseMove(e);
 }
 
 void node::ToolBarButton::OnButonClicked()
@@ -281,34 +251,9 @@ MI::ClickEvent node::ToolBarButton::OnLMBUp(MouseButtonEvent& e)
 	return MI::ClickEvent::CLICKED;
 }
 
-
-void node::ToolBarButton::InternalUpdateToolTip()
-{
-	uint64_t current_time = SDL_GetTicks();
-	if (current_time - m_last_action_time > 500 && m_updateTaskId)
-	{
-		constexpr float tooltip_y_offset = 15;
-		auto toolTipWidget = std::make_unique<ToolTipWidget>(GetApp()->getFont().get(), m_description, SDL_FRect{ m_last_mouse_pos.x, m_last_mouse_pos.y + tooltip_y_offset, 1.0f,1.0f }, this);
-		m_toolTipWidget = toolTipWidget->GetMIHandlePtr();
-		GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget));
-		GetApp()->RemoveUpdateTask(m_updateTaskId);
-		m_updateTaskId = 0;
-	}
-}
-
-void node::ToolBarButton::HideToolTip()
-{
-	auto* scene = GetApp()->GetScene();
-	if (scene && m_toolTipWidget)
-	{
-		scene->HideToolTip(m_toolTipWidget.GetObjectPtr());
-		m_toolTipWidget = nullptr;
-	}
-}
-
-node::ToolBarCommandButton::ToolBarCommandButton(const SDL_FRect& rect, ToolBar* parent, 
+node::ToolBarCommandButton::ToolBarCommandButton(const WidgetSize& size, ToolBar* parent, 
 	std::string name, std::function<void()> func, std::function<bool()> Active)
-	:ToolBarButton{rect, parent, name}, m_action{std::move(func)}, m_isActive{Active}
+	:ToolBarButton{size, parent, name}, m_action{std::move(func)}, m_isActive{Active}
 {
 }
 

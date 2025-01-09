@@ -1,7 +1,8 @@
 #include "MessageBox.hpp"
 
-node::MessageBoxDialog::MessageBoxDialog(std::string title, std::string content, const SDL_FRect& rect, Scene* parent)
-	:Dialog{std::move(title),rect, parent}, m_content{std::move(content)}
+node::MessageBoxDialog::MessageBoxDialog(std::string title, std::string content, 
+	const WidgetSize& size, Scene* parent)
+	:Dialog{std::move(title),size, parent}, m_content{std::move(content)}
 {
 }
 

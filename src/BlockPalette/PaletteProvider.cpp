@@ -1,21 +1,21 @@
-#include "PalleteProvider.hpp"
+#include "PaletteProvider.hpp"
 
 #include "BlockClasses/BlockClass.hpp"
 #include "BlockClasses/BlockClassesManager.hpp"
 
-#include "PalleteBlocksViewer.hpp"
+#include "PaletteBlocksViewer.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 #include <algorithm>
 #include <iterator>
 
-node::PalleteProvider::PalleteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
+node::PaletteProvider::PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
 	:m_classesManager{ manager }, m_blockStyleFactory{std::move(style_factory)}
 {
 	assert(m_classesManager);
 	assert(m_blockStyleFactory);
 }
 
-void node::PalleteProvider::AddElement(const BlockTemplate& temp)
+void node::PaletteProvider::AddElement(const BlockTemplate& temp)
 {
 	assert(m_classesManager);
 	assert(temp.category.size());
@@ -37,13 +37,13 @@ void node::PalleteProvider::AddElement(const BlockTemplate& temp)
 	}
 }
 
-void node::PalleteProvider::AddElement(const std::string& category, std::unique_ptr<PalleteElement> element)
+void node::PaletteProvider::AddElement(const std::string& category, std::unique_ptr<PaletteElement> element)
 {
 	m_elements[category].push_back(std::move(element));
 }
 
 
-const std::vector<std::unique_ptr<node::PalleteElement>>* node::PalleteProvider::GetCategoryElements(const std::string& category) const
+const std::vector<std::unique_ptr<node::PaletteElement>>* node::PaletteProvider::GetCategoryElements(const std::string& category) const
 {
 	auto it = m_elements.find(category);
 	if (it != m_elements.end())
@@ -53,7 +53,7 @@ const std::vector<std::unique_ptr<node::PalleteElement>>* node::PalleteProvider:
 	return nullptr;
 }
 
-std::vector<std::string_view> node::PalleteProvider::GetCategories() const
+std::vector<std::string_view> node::PaletteProvider::GetCategories() const
 {
 	auto result = std::vector<std::string_view>();
 	for (auto&& [category, vec] : m_elements)
@@ -63,7 +63,7 @@ std::vector<std::string_view> node::PalleteProvider::GetCategories() const
 	return result;
 }
 
-void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
+void node::PaletteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetFunctionalData();
 	assert(block_data_ptr);
@@ -81,7 +81,7 @@ void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	}
 
 	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);
-	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Functional, {0,0,PalleteBlocksViewer::ElementWidth, PalleteBlocksViewer::ElementHeight} };
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Functional, {0,0,PaletteBlocksViewer::ElementWidth, PaletteBlocksViewer::ElementHeight} };
 	model::id_int socket_id = 0;
 	for (const auto& sock_type : sockets_types)
 	{
@@ -98,7 +98,7 @@ void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
 	m_elements[temp.category].push_back(
-		std::make_unique<PalleteElement>(PalleteElement{
+		std::make_unique<PaletteElement>(PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},
@@ -109,12 +109,12 @@ void node::PalleteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	);
 }
 
-void node::PalleteProvider::AddSubsystemElement(const BlockTemplate& temp)
+void node::PaletteProvider::AddSubsystemElement(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetSubsystemData();
 	assert(block_data_ptr);
 
-	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::SubSystem, {0,0,PalleteBlocksViewer::ElementWidth, PalleteBlocksViewer::ElementHeight} };
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::SubSystem, {0,0,PaletteBlocksViewer::ElementWidth, PaletteBlocksViewer::ElementHeight} };
 
 	block.SetStyler(temp.styler_name);
 	block.SetStylerProperties(temp.style_properties);
@@ -125,7 +125,7 @@ void node::PalleteProvider::AddSubsystemElement(const BlockTemplate& temp)
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
 	m_elements[temp.category].push_back(
-		std::make_unique<PalleteElement>(PalleteElement{
+		std::make_unique<PaletteElement>(PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},
@@ -136,7 +136,7 @@ void node::PalleteProvider::AddSubsystemElement(const BlockTemplate& temp)
 	);
 }
 
-void node::PalleteProvider::AddPortElement(const BlockTemplate& temp)
+void node::PaletteProvider::AddPortElement(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetPortData();
 	assert(block_data_ptr);
@@ -145,7 +145,7 @@ void node::PalleteProvider::AddPortElement(const BlockTemplate& temp)
 	sockets_types.push_back(
 		block_data_ptr->port_type == model::SocketType::input ? 
 		model::SocketType::output : model::SocketType::input);
-	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Port, {0,0,PalleteBlocksViewer::ElementWidth, PalleteBlocksViewer::ElementHeight} };
+	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Port, {0,0,PaletteBlocksViewer::ElementWidth, PaletteBlocksViewer::ElementHeight} };
 	model::id_int socket_id = 0;
 	for (const auto& sock_type : sockets_types)
 	{
@@ -162,7 +162,7 @@ void node::PalleteProvider::AddPortElement(const BlockTemplate& temp)
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
 	m_elements[temp.category].push_back(
-		std::make_unique<PalleteElement>(PalleteElement{
+		std::make_unique<PaletteElement>(PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},

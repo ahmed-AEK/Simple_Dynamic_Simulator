@@ -9,7 +9,8 @@ namespace node
 class MessageBoxDialog : public Dialog
 {
 public:
-	MessageBoxDialog(std::string title, std::string content, const SDL_FRect& rect = {300,300,300,200}, Scene* parent = nullptr);
+	MessageBoxDialog(std::string title, std::string content, 
+		const WidgetSize& size = {300,200}, Scene* parent = nullptr);
 
 	bool SetOnOk(std::function<void()> callback);
 private:

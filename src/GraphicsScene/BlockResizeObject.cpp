@@ -3,6 +3,7 @@
 #include "BlockObject.hpp"
 #include "GraphicsLogic/BlockResizeLogic.hpp"
 #include "GraphicsLogic/BlockRotateLogic.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 
 node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& rect)
 {
@@ -14,13 +15,13 @@ node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& r
 	return resizer_rect;
 }
 
-node::BlockResizeObject::BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, model::Rect sceneRect, GraphicsScene* scene)
-	:GraphicsObject{sceneRect, ObjectType::interactive, scene}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
+node::BlockResizeObject::BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size)
+	:GraphicsObject{size, ObjectType::interactive, nullptr}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
 {
-	b_aligned = false;
+	SetAligned(false);
 }
 
-void node::BlockResizeObject::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
+void node::BlockResizeObject::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
 	if (!IsVisible())
 	{
@@ -44,7 +45,7 @@ void node::BlockResizeObject::Draw(SDL_Renderer* renderer, const SpaceScreenTran
 	SDL_FRect rect4{ screen_rect.x + screen_rect.w - width, screen_rect.y + screen_rect.h - width, width, width };
 	SDL_RenderFillRect(renderer, &rect4);
 
-	model::Rect rotate_button = GetSpaceRect();
+	model::Rect rotate_button = GetSize().ToRect();
 	rotate_button.h = 36;
 	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
 	rotate_button.w = 36;
@@ -79,31 +80,31 @@ node::GraphicsObject* node::BlockResizeObject::OnGetInteractableAtPoint(const mo
 	model::Rect rect = GetInnerRect();
 	SDL_Point point_sdl{ point.x, point.y };
 
-	SDL_Rect rect1{ rect.x, rect.y, corner_width, corner_width };
-	if (SDL_PointInRect(&point_sdl, &rect1))
+	SDL_Rect top_left{ rect.x, rect.y, corner_width, corner_width };
+	if (SDL_PointInRect(&point_sdl, &top_left))
 	{
 		return this;
 	}
 
-	SDL_Rect rect2{ rect.x, rect.y + rect.h - corner_width, corner_width, corner_width };
-	if (SDL_PointInRect(&point_sdl, &rect2))
+	SDL_Rect top_right{ rect.x, rect.y + rect.h - corner_width, corner_width, corner_width };
+	if (SDL_PointInRect(&point_sdl, &top_right))
 	{
 		return this;
 	}
 
-	SDL_Rect rect3{ rect.x + rect.w - corner_width, rect.y, corner_width, corner_width };
-	if (SDL_PointInRect(&point_sdl, &rect3))
+	SDL_Rect bottom_right{ rect.x + rect.w - corner_width, rect.y, corner_width, corner_width };
+	if (SDL_PointInRect(&point_sdl, &bottom_right))
 	{
 		return this;
 	}
 
-	SDL_Rect rect4{ rect.x + rect.w - corner_width, rect.y + rect.h - corner_width, corner_width, corner_width };
-	if (SDL_PointInRect(&point_sdl, &rect4))
+	SDL_Rect bottom_left{ rect.x + rect.w - corner_width, rect.y + rect.h - corner_width, corner_width, corner_width };
+	if (SDL_PointInRect(&point_sdl, &bottom_left))
 	{
 		return this;
 	}
 
-	model::Rect rotate_button = GetSpaceRect();
+	model::Rect rotate_button = GetSize().ToRect();
 	rotate_button.h = 36;
 	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
 	rotate_button.w = 36;
@@ -160,7 +161,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 		side = logic::BlockResizeLogic::DragSide::RightBottom;
 	}
 
-	model::Rect rotate_button = GetSpaceRect();
+	model::Rect rotate_button = GetSize().ToRect();
 	rotate_button.h = 36;
 	rotate_button.x = rotate_button.x + rotate_button.w / 2 - 18;
 	rotate_button.w = 36;
@@ -180,7 +181,11 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 	
 	if (rotate)
 	{
-		auto logic_obj = std::make_unique<logic::BlockRotateLogic>(rotate_button, static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), scene, m_manager);
+		auto rotate_btn_global = rotate_button;
+		const auto& global_pos = this->GetScenePosition();
+		rotate_btn_global.x += global_pos.x;
+		rotate_btn_global.y += global_pos.y;
+		auto logic_obj = std::make_unique<logic::BlockRotateLogic>(rotate_btn_global, static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), scene, m_manager);
 		SDL_Log("Clicked On Rotate Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;
@@ -192,7 +197,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 
 node::model::Rect node::BlockResizeObject::GetInnerRect()
 {
-	model::Rect draw_area = GetSpaceRect();
+	model::Rect draw_area = GetSize().ToRect();
 	draw_area.y += 36;
 	draw_area.h -= 36;
 	return draw_area;

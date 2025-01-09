@@ -9,12 +9,13 @@
 #include "NodeModels/SceneModelManager.hpp"
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 
-node::GraphicsScene::GraphicsScene(const SDL_FRect& rect, node::Widget* parent)
-:Widget(rect, parent), 
-m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * rect.h/rect.w)}, 
-m_spaceRect{0, 0, 200, static_cast<int>(200 * rect.h/rect.w)},
-m_spaceScreenTransformer(GetRect(), m_spaceRect)
+node::GraphicsScene::GraphicsScene(const WidgetSize& size, node::Widget* parent)
+:Widget(size, parent), 
+m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * size.h/size.w)}, 
+m_spaceRect{0, 0, 200, static_cast<int>(200 * size.h/ size.w)},
+m_spaceScreenTransformer(GetSize().ToRect(), m_spaceRect)
 {
     SetDropTarget(true);
 }
@@ -71,32 +72,29 @@ void node::GraphicsScene::BumpObjectInLayer(node::GraphicsObject* obj)
     }
 }
 
-void node::GraphicsScene::Draw(SDL_Renderer *renderer)
+void node::GraphicsScene::OnDraw(SDL::Renderer& renderer)
 {
-    SDL_Rect screen_rect_int = ToRect(GetRect());
-    SDL_Rect old_clip_rect;
-    SDL_GetRenderClipRect(renderer, &old_clip_rect);
-    SDL_SetRenderClipRect(renderer, &screen_rect_int);
-    OnDraw(renderer);
-    SDL_SetRenderClipRect(renderer, nullptr);
+    OnDrawObjects(renderer);
 }
 
-void node::GraphicsScene::OnDraw(SDL_Renderer* renderer)
+void node::GraphicsScene::OnDrawObjects(SDL::Renderer& renderer)
 {
     SDL_FRect screen_rect = ToSDLRect(GetSpaceRect());
 
     for (auto&& it = m_objects.rbegin(); it != m_objects.rend(); it++)
     {
         auto&& object = *it;
-        SDL_FRect obj_rect = ToSDLRect(object.m_ptr->GetSpaceRect());
+        SDL_FRect obj_rect = ToSDLRect(object.m_ptr->GetSceneRect());
         if (object.m_ptr->IsVisible() && SDL_HasRectIntersectionFloat(&screen_rect, &obj_rect))
         {
-            object.m_ptr->Draw(renderer, GetSpaceScreenTransformer());
+            auto object_rect_screen = GetSpaceScreenTransformer().SpaceToScreenRect(object.m_ptr->GetSceneRect());
+            auto r = renderer.ClipRect(ToRectCeil(object_rect_screen));
+            object.m_ptr->Draw(renderer, GetSpaceScreenTransformer().WithZeroOffset());
         }
     }
 }
 
-void node::GraphicsScene::SetCurrentHover(node::GraphicsObject* current_hover)
+void node::GraphicsScene::SetCurrentHover(node::GraphicsObject* current_hover, MI::MouseHoverEvent<GraphicsObject>& e)
 {
     node::GraphicsObject* old_hover = nullptr;
     if (m_current_mouse_hover.isAlive())
@@ -107,11 +105,11 @@ void node::GraphicsScene::SetCurrentHover(node::GraphicsObject* current_hover)
     {
         if (old_hover)
         {
-            old_hover->MouseOut();
+            old_hover->MouseOut(e);
         }
         if (current_hover)
         {
-            current_hover->MouseIn();
+            current_hover->MouseIn(e);
             m_current_mouse_hover = current_hover->GetMIHandlePtr();
         }
         else
@@ -129,8 +127,7 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
 {
     for (auto& object : m_objects)
     {
-        SDL_FRect object_space_rect = ToFRect({ object.m_ptr->GetSpaceRect().x, object.m_ptr->GetSpaceRect().y,
-            object.m_ptr->GetSpaceRect().w, object.m_ptr->GetSpaceRect().h });
+        SDL_FRect object_space_rect = ToSDLRect(object.m_ptr->GetSceneRect());
         SDL_FPoint space_point_sdl = ToSDLPoint(space_point);
         if (ObjectType::block == object.m_ptr->GetObjectType() && SDL_PointInRectFloat(&space_point_sdl, &object_space_rect))
         {
@@ -139,7 +136,7 @@ node::BlockSocketObject* node::GraphicsScene::GetSocketAt(const model::Point spa
             auto&& range = node_pointer->GetSockets();
             auto it = std::find_if(range.begin(), range.end(), 
                 [=](const auto& socket_ptr) { 
-                SDL_FRect socket_rect_sdl = ToSDLRect(socket_ptr->GetSpaceRect());
+                SDL_FRect socket_rect_sdl = ToSDLRect(socket_ptr->GetSceneRect());
                 return SDL_PointInRectFloat(&space_point_sdl, &socket_rect_sdl); 
                 });
             if (it != range.end())
@@ -201,7 +198,8 @@ void node::GraphicsScene::OnMouseMove(MouseHoverEvent& e)
     if (!m_tool || !m_tool->IsCapturingMouse())
     {
         node::GraphicsObject* current_hover = GetObjectAt(point);
-        SetCurrentHover(current_hover);
+        MI::MouseHoverEvent<GraphicsObject> ev{ point };
+        SetCurrentHover(current_hover, ev);
     }
     
     if (m_tool)
@@ -250,8 +248,9 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(MouseButtonEvent& e)
 void node::GraphicsScene::SetSpaceRect(const model::Rect& rect)
 {
     m_spaceRect = rect;
-    m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
+    m_spaceScreenTransformer = SpaceScreenTransformer{ GetSize().ToRect(), m_spaceRect};
 }
+
 const node::model::Rect& node::GraphicsScene::GetSpaceRect() const noexcept
 {
     return m_spaceRect;
@@ -348,9 +347,9 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_FPoint& p)
         return false;
     }
     model::Rect new_rect = GetSpaceRect();
-    SDL_FRect rect_base = GetBaseRect();
-    double x_ratio = static_cast<double>(GetRect().w) / rect_base.w;
-    double y_ratio = static_cast<double>(GetRect().h) / rect_base.h;
+    auto size_base = GetBaseSize();
+    double x_ratio = static_cast<double>(GetSize().w) / size_base.w;
+    double y_ratio = static_cast<double>(GetSize().h) / size_base.h;
     new_rect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
     new_rect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
     SetSpaceRect(new_rect);
@@ -360,16 +359,7 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_FPoint& p)
     new_rect.x = new_rect.x + old_position.x - new_position.x;
     new_rect.y = new_rect.y + old_position.y - new_position.y;
     SetSpaceRect(new_rect);
-    UpdateObjectsRect();
     return true;
-}
-
-void node::GraphicsScene::UpdateObjectsRect()
-{
-    for (auto& obj: m_objects)
-    {
-        obj.m_ptr->UpdateRect();
-    }
 }
 
 void node::GraphicsScene::SetGraphicsLogic(std::unique_ptr<logic::GraphicsLogic> logic)
@@ -396,22 +386,22 @@ void node::GraphicsScene::SetTool(std::shared_ptr<ToolHandler> ptr)
     m_tool = ptr;
 }
 
-void node::GraphicsScene::OnSetRect(const SDL_FRect& rect)
+void node::GraphicsScene::OnSetSize(const WidgetSize& size)
 {
-    Widget::OnSetRect(rect);
-    SDL_FRect rect_base = GetBaseRect();
-    double x_ratio = static_cast<double>(rect.w)/ rect_base.w;
-    double y_ratio = static_cast<double>(rect.h)/ rect_base.h;
+    Widget::OnSetSize(size);
+    auto size_base = GetBaseSize();
+    double x_ratio = static_cast<double>(size.w)/ size_base.w;
+    double y_ratio = static_cast<double>(size.h)/ size_base.h;
     m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
     m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
-    m_spaceScreenTransformer = SpaceScreenTransformer{ GetRect(), m_spaceRect };
+    m_spaceScreenTransformer = SpaceScreenTransformer{ GetSize().ToRect(), m_spaceRect};
 }
 
 node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) const
 {
     for (auto& object: m_objects)
     {
-        node::GraphicsObject* current_hover = object.m_ptr->GetInteractableAtPoint(p);
+        node::GraphicsObject* current_hover = object.m_ptr->GetInteractableAtPoint(p - object.m_ptr->GetPosition());
         if (current_hover)
         {
             return current_hover;

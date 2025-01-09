@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <optional>
+#include <cmath>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color& color);
 
@@ -18,6 +19,18 @@ inline SDL_FRect ToFRect(const SDL_Rect& rect)
     SDL_RectToFRect(&rect, &rect2);
     return rect2;
 }
+
+inline SDL_Rect ToRectCeil(const SDL_FRect& rect)
+{
+    return
+    {
+        static_cast<int>(rect.x),
+        static_cast<int>(rect.y),
+        static_cast<int>(std::ceil(rect.w)),
+        static_cast<int>(std::ceil(rect.h)),
+    };
+}
+
 inline SDL_Rect ToRect(const SDL_FRect& rect)
 {
     return

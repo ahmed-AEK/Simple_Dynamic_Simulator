@@ -5,13 +5,13 @@
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include <cassert>
 #include <algorithm>
+#include "SDL_Framework/SDLRenderer.hpp"
 
-node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, node::GraphicsScene* scene)
-	: GraphicsObject({0,0,0,0}, ObjectType::netSegment, scene),
+node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode)
+	: GraphicsObject(model::ObjectSize{ c_width, c_width }, ObjectType::netSegment, nullptr),
 	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation)
 {
-	b_draggable = false;
-	b_aligned = false;
+	SetAligned(false);
 	if (startNode && endNode)
 	{
 		Connect(startNode, endNode, orientation);
@@ -19,10 +19,10 @@ node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, Ne
 	
 }
 
-void node::NetSegment::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
+void node::NetSegment::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-	SDL_FRect ScreenRect = transformer.SpaceToScreenRect(GetSpaceRect());
+	SDL_FRect ScreenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &ScreenRect);
 }
 
@@ -80,27 +80,32 @@ void node::NetSegment::CalcRect()
 {
 	if (m_startNode && m_endNode)
 	{
-		SetSpaceRect(model::NetSegmentOrientation::horizontal == m_orientation ?
-			model::Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x),
-			std::min(m_startNode->getCenter().y, m_endNode->getCenter().y) - c_width/2,
-			std::abs(m_endNode->getCenter().x - m_startNode->getCenter().x),c_width} :
-			model::Rect{ std::min(m_startNode->getCenter().x, m_endNode->getCenter().x) - c_width/2, 
-			std::min(m_startNode->getCenter().y, m_endNode->getCenter().y),
-			c_width, std::abs(m_endNode->getCenter().y - m_startNode->getCenter().y) });
+		auto rect = model::NetSegmentOrientation::horizontal == m_orientation ?
+			model::Rect{ 
+				std::min(m_startNode->getCenter().x, m_endNode->getCenter().x),
+				std::min(m_startNode->getCenter().y, m_endNode->getCenter().y) - c_width / 2,
+				std::abs(m_endNode->getCenter().x - m_startNode->getCenter().x),
+				c_width } :
+			model::Rect{ 
+				std::min(m_startNode->getCenter().x, m_endNode->getCenter().x) - c_width / 2,
+				std::min(m_startNode->getCenter().y, m_endNode->getCenter().y),
+				c_width, std::abs(m_endNode->getCenter().y - m_startNode->getCenter().y) };
+		SetPosition({rect.x, rect.y});
+		SetSize({ rect.w, rect.h });
 	}
 }
 
-node::NetNode::NetNode(const model::Point& center, GraphicsScene* scene)
-	: GraphicsObject({center.x - m_width/2, center.y - m_height/2, m_width, m_height}, ObjectType::netNode, scene), m_centerPoint(center)
+node::NetNode::NetNode(const model::Point& center)
+	: GraphicsObject({m_width, m_height}, ObjectType::netNode, nullptr)
 {
-	b_draggable = false;
-	b_aligned = false;
+	SetAligned(false);
+	setCenter(center);
 }
 
-void node::NetNode::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
+void node::NetNode::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_FRect screenRect = transformer.SpaceToScreenRect(GetSpaceRect());
+	SDL_FRect screenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &screenRect);
 }
 
@@ -137,7 +142,7 @@ node::BlockSocketObject* node::NetNode::GetConnectedSocket() noexcept
 	return m_socket;
 }
 
-uint8_t node::NetNode::GetConnectedSegmentsCount()
+uint8_t node::NetNode::GetConnectedSegmentsCount() const
 {
 	auto ret_val = std::count_if(m_connected_segments.begin(), m_connected_segments.end(), 
 		[](const auto& segment) { return segment != nullptr; });
@@ -164,11 +169,6 @@ std::optional<node::model::ConnectedSegmentSide> node::NetNode::GetSegmentSide(c
 		}
 	}
 	return std::nullopt;
-}
-
-void node::NetNode::OnSetSpaceRect(const model::Rect& rect)
-{
-	m_centerPoint = { rect.x + rect.w/2, rect.y + rect.h/2 };
 }
 
 void node::NetNode::setSegment(NetSegment* segment, model::ConnectedSegmentSide side)

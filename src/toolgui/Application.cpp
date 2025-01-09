@@ -137,7 +137,8 @@ namespace node
                     SDL_Rect rect(0,0, e.window.data1, e.window.data2);
                     this->m_rect = rect;
                     assert(m_scene);
-                    this->m_scene->SetRect(ToFRect(rect));
+                    this->m_scene->SetSize({ static_cast<float>(rect.w), 
+                        static_cast<float>(rect.h)});
                     b_redrawScene = true;
                     return true;
                 }
@@ -176,7 +177,8 @@ namespace node
         m_scene = std::move(scene);
         if (b_running)
         {
-            m_scene->SetRect(ToFRect(m_rect));
+            m_scene->SetSize({ static_cast<float>(m_rect.w),
+                        static_cast<float>(m_rect.h) });
         }
         m_scene->Start();
     }
@@ -186,7 +188,8 @@ namespace node
         if (m_scene)
         {
             m_scene->OnInit();
-            m_scene->SetRect(ToFRect(m_rect));
+            m_scene->SetSize({ static_cast<float>(m_rect.w),
+                        static_cast<float>(m_rect.h) });
         }
         
     }

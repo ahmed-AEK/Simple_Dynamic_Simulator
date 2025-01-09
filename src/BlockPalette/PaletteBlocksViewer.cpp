@@ -1,28 +1,30 @@
-#include "PalleteBlocksViewer.hpp"
+#include "PaletteBlocksViewer.hpp"
 #include <cassert>
 #include "SDL_Framework/SDLCPP.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/Application.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 
-namespace PalleteData {
+namespace PaletteData {
 	static constexpr int TopPadding = 20;
 	static constexpr int ElementHPadding = 50;
-	static constexpr int ElementTotalHeight = node::PalleteBlocksViewer::ElementHeight + ElementHPadding;
+	static constexpr int ElementTotalHeight = node::PaletteBlocksViewer::ElementHeight + ElementHPadding;
 	static constexpr int ElementWPadding = 10;
-	static constexpr int ElementTotalWidth = node::PalleteBlocksViewer::ElementWidth + ElementWPadding;
+	static constexpr int ElementTotalWidth = node::PaletteBlocksViewer::ElementWidth + ElementWPadding;
 	static constexpr int scrollbarWidth = 10;
 }
 
-node::PalleteBlocksViewer::PalleteBlocksViewer(const SDL_FRect& rect,
-	std::shared_ptr<PalleteProvider> provider, TTF_Font* font,  Widget* parent)
-	: Widget(rect, parent), m_palleteProvider{ provider },
-	m_back_btn_painter{"assets/arrow_left.svg", 26, 26}, m_title_painter{font}
+node::PaletteBlocksViewer::PaletteBlocksViewer(const WidgetSize& size,
+	std::shared_ptr<PaletteProvider> provider, TTF_Font* font,  Widget* parent)
+	: Widget(size, parent), m_paletteProvider{ provider },
+	m_back_btn{ WidgetSize{35,35}, "back", "assets/arrow_left.svg" , [this] { this->Notify(detail::BlockViewerBackClicked{});}, this },
+	m_title_painter{ font }
 {
+	m_back_btn.SetPosition({20, 5});
 	assert(font);
 }
 
-void node::PalleteBlocksViewer::Draw(SDL_Renderer* renderer)
+void node::PaletteBlocksViewer::OnDraw(SDL::Renderer& renderer)
 {
 	SDL_FRect inner_area = DrawPanelBorder(renderer);
 	DrawHeader(renderer);
@@ -32,16 +34,16 @@ void node::PalleteBlocksViewer::Draw(SDL_Renderer* renderer)
 	SDL_SetRenderClipRect(renderer, nullptr);
 }
 
-void node::PalleteBlocksViewer::SetCategory(std::string category)
+void node::PaletteBlocksViewer::SetCategory(std::string category)
 {
 	m_current_category = std::move(category); 
 	m_title_painter.SetText(m_current_category);
 	m_scrollPos = 0;
 }
 
-bool node::PalleteBlocksViewer::OnScroll(const double amount, const SDL_FPoint& p)
+bool node::PaletteBlocksViewer::OnScroll(const double amount, const SDL_FPoint& p)
 {
-	if (!m_palleteProvider)
+	if (!m_paletteProvider)
 	{
 		return false;
 	}
@@ -51,7 +53,7 @@ bool node::PalleteBlocksViewer::OnScroll(const double amount, const SDL_FPoint& 
 	if (SDL_PointInRectFloat(&p, &inner_rect))
 	{
 		float elements_height = static_cast<float>(
-			m_palleteProvider->GetCategoryElements(m_current_category)->size() * PalleteData::ElementTotalHeight + PalleteData::TopPadding);
+			m_paletteProvider->GetCategoryElements(m_current_category)->size() * PaletteData::ElementTotalHeight + PaletteData::TopPadding);
 		m_scrollPos -= static_cast<int>(amount * 30);
 		if (m_scrollPos > (elements_height - inner_rect.h))
 		{
@@ -66,21 +68,12 @@ bool node::PalleteBlocksViewer::OnScroll(const double amount, const SDL_FPoint& 
 	return true;
 }
 
-MI::ClickEvent node::PalleteBlocksViewer::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::PaletteBlocksViewer::OnLMBDown(MouseButtonEvent& e)
 {
 	SDL_FPoint current_mouse_point{ e.point() };
 
-	{
-		SDL_FRect back_btn_rect = GetBackBtnRect();
-		if (SDL_PointInRectFloat(&current_mouse_point, &back_btn_rect))
-		{
-			Notify(detail::BlockViewerBackClicked{});
-			return MI::ClickEvent::CLICKED;
-		}
-	}
-
 	SDL_FRect inner_area = GetInnerRect();
-	float Hpad_size = inner_area.w - PalleteData::ElementTotalWidth;
+	float Hpad_size = inner_area.w - PaletteData::ElementTotalWidth;
 	inner_area.x += Hpad_size / 2;
 	inner_area.w -= Hpad_size / 2;
 
@@ -89,14 +82,14 @@ MI::ClickEvent node::PalleteBlocksViewer::OnLMBDown(MouseButtonEvent& e)
 		return MI::ClickEvent::NONE;
 	}
 	float selected_y = current_mouse_point.y - inner_area.y + m_scrollPos -
-		PalleteData::TopPadding;
-	int selected_item_index = static_cast<int>(selected_y / PalleteData::ElementTotalHeight);
+		PaletteData::TopPadding;
+	int selected_item_index = static_cast<int>(selected_y / PaletteData::ElementTotalHeight);
 
-	auto&& pallete_elements = *m_palleteProvider->GetCategoryElements(m_current_category);
+	auto&& palette_elements = *m_paletteProvider->GetCategoryElements(m_current_category);
 	assert(selected_item_index >= 0);
-	assert(static_cast<size_t>(selected_item_index) < pallete_elements.size());
+	assert(static_cast<size_t>(selected_item_index) < palette_elements.size());
 
-	auto&& selected_element = pallete_elements[selected_item_index];
+	auto&& selected_element = palette_elements[selected_item_index];
 	auto block_data_ref = model::BlockDataCRef{ selected_element->block, {} };
 	if (auto functional_data = selected_element->data.GetFunctionalData())
 	{
@@ -109,7 +102,7 @@ MI::ClickEvent node::PalleteBlocksViewer::OnLMBDown(MouseButtonEvent& e)
 		DragDropObject{ selected_element->block_template,
 			model::BlockModel{selected_element->block},
 			std::shared_ptr<BlockStyler>{
-				m_palleteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), block_data_ref)
+				m_paletteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), block_data_ref)
 			},
 			model::BlockData{selected_element->data}
 		});
@@ -117,29 +110,29 @@ MI::ClickEvent node::PalleteBlocksViewer::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::NONE;
 }
 
-SDL_FRect node::PalleteBlocksViewer::GetOuterRect() const
+SDL_FRect node::PaletteBlocksViewer::GetOuterRect() const
 {
-	SDL_FRect ret = GetRect();
+	SDL_FRect ret = GetSize().ToRect();
 	ret.x += 5;
 	ret.w -= 10;
 	ret.y += 5 + 40;
-	ret.h -= 10;
+	ret.h -= 10 + 40;
 	return ret;
 }
 
-SDL_FRect node::PalleteBlocksViewer::GetInnerRect() const
+SDL_FRect node::PaletteBlocksViewer::GetInnerRect() const
 {
-	SDL_FRect ret = GetRect();
+	SDL_FRect ret = GetSize().ToRect();
 	ret.x += 7;
 	ret.w -= 14;
 	ret.y += 7 + 40;
-	ret.h -= 14;
+	ret.h -= 14 + 40;
 	return ret;
 }
 
-SDL_FRect node::PalleteBlocksViewer::GetBackBtnRect() const
+SDL_FRect node::PaletteBlocksViewer::GetBackBtnRect() const
 {
-	SDL_FRect btn_rect = GetRect();
+	SDL_FRect btn_rect = GetSize().ToRect();
 	btn_rect.x += 20;
 	btn_rect.y += 5;
 	btn_rect.w = 35;
@@ -147,21 +140,9 @@ SDL_FRect node::PalleteBlocksViewer::GetBackBtnRect() const
 	return btn_rect;
 }
 
-void node::PalleteBlocksViewer::DrawHeader(SDL_Renderer* renderer)
+void node::PaletteBlocksViewer::DrawHeader(SDL_Renderer* renderer)
 {
-	SDL_FRect btn_rect = GetBackBtnRect();
-
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &btn_rect);
-	btn_rect.x += 2;
-	btn_rect.y += 2;
-	btn_rect.w -= 4;
-	btn_rect.h -= 4;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &btn_rect);
-	m_back_btn_painter.Draw(renderer, btn_rect.x + 2, btn_rect.y + 2);
-	
-	SDL_FRect rect = GetRect();
+	SDL_FRect rect = GetSize().ToRect();
 
 	SDL_Color Black{ 50,50,50,255 };
 	SDL_FRect title_rect = m_title_painter.GetRect(renderer, Black);
@@ -170,9 +151,9 @@ void node::PalleteBlocksViewer::DrawHeader(SDL_Renderer* renderer)
 	m_title_painter.Draw(renderer, { title_rect.x, title_rect.y }, Black);
 }
 
-SDL_FRect node::PalleteBlocksViewer::DrawPanelBorder(SDL_Renderer* renderer)
+SDL_FRect node::PaletteBlocksViewer::DrawPanelBorder(SDL_Renderer* renderer)
 {
-	SDL_FRect draw_area = GetRect();
+	SDL_FRect draw_area = GetSize().ToRect();
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &draw_area);
 
@@ -184,20 +165,20 @@ SDL_FRect node::PalleteBlocksViewer::DrawPanelBorder(SDL_Renderer* renderer)
 	SDL_FRect inner_rect = draw_area;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &draw_area);
-	inner_rect.w -= PalleteData::scrollbarWidth;
+	inner_rect.w -= PaletteData::scrollbarWidth;
 	SDL_FRect scrollbar_rect = { inner_rect.x + inner_rect.w, inner_rect.y,
-	PalleteData::scrollbarWidth, inner_rect.h };
+	PaletteData::scrollbarWidth, inner_rect.h };
 	DrawScrollBar(renderer, scrollbar_rect);
 	return inner_rect;
 }
 
-void node::PalleteBlocksViewer::DrawScrollBar(SDL_Renderer* renderer, const SDL_FRect& area)
+void node::PaletteBlocksViewer::DrawScrollBar(SDL_Renderer* renderer, const SDL_FRect& area)
 {
 	SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
 	SDL_RenderFillRect(renderer, &area);
 	float total_height =
-		static_cast<float>(m_palleteProvider->GetCategoryElements(m_current_category)->size() *
-			PalleteData::ElementTotalHeight) + PalleteData::TopPadding;
+		static_cast<float>(m_paletteProvider->GetCategoryElements(m_current_category)->size() *
+			PaletteData::ElementTotalHeight) + PaletteData::TopPadding;
 	float view_area_height = area.h;
 	if (total_height < view_area_height)
 	{
@@ -210,25 +191,25 @@ void node::PalleteBlocksViewer::DrawScrollBar(SDL_Renderer* renderer, const SDL_
 	SDL_RenderFillRect(renderer, &draw_area);
 }
 
-void node::PalleteBlocksViewer::DrawElements(SDL_Renderer* renderer, const SDL_FRect& area)
+void node::PaletteBlocksViewer::DrawElements(SDL_Renderer* renderer, const SDL_FRect& area)
 {
-	if (!m_palleteProvider)
+	if (!m_paletteProvider)
 	{
 		return;
 	}
 
-	auto&& elements = *m_palleteProvider->GetCategoryElements(m_current_category);
-	int possible_elements_on_screen = static_cast<int>(area.h / PalleteData::ElementTotalHeight + 2);
-	int start_element = static_cast<int>(m_scrollPos / PalleteData::ElementTotalHeight);
+	auto&& elements = *m_paletteProvider->GetCategoryElements(m_current_category);
+	int possible_elements_on_screen = static_cast<int>(area.h / PaletteData::ElementTotalHeight + 2);
+	int start_element = static_cast<int>(m_scrollPos / PaletteData::ElementTotalHeight);
 	int max_element = std::min(possible_elements_on_screen + start_element,
 		static_cast<int>(elements.size()));
 	for (int i = start_element; i < max_element; i++)
 	{
-		int padding_left = static_cast<int>((area.w - PalleteData::ElementTotalWidth) / 2);
+		int padding_left = static_cast<int>((area.w - PaletteData::ElementTotalWidth) / 2);
 		SDL_FRect element_rect = { area.x + padding_left,
-			area.y + i * PalleteData::ElementTotalHeight - m_scrollPos +
-			PalleteData::TopPadding,
-			PalleteData::ElementTotalWidth, PalleteData::ElementTotalHeight };
+			area.y + i * PaletteData::ElementTotalHeight - m_scrollPos +
+			PaletteData::TopPadding,
+			PaletteData::ElementTotalWidth, PaletteData::ElementTotalHeight };
 		if (element_rect.y > area.y + area.h)
 		{
 			continue;
@@ -237,9 +218,9 @@ void node::PalleteBlocksViewer::DrawElements(SDL_Renderer* renderer, const SDL_F
 	}
 }
 
-void node::PalleteBlocksViewer::DrawElement(SDL_Renderer* renderer, const PalleteElement& element, const SDL_FRect& area)
+void node::PaletteBlocksViewer::DrawElement(SDL_Renderer* renderer, const PaletteElement& element, const SDL_FRect& area)
 {
-	SDL_FRect contained_rect = { area.x + PalleteData::ElementWPadding / 2,
+	SDL_FRect contained_rect = { area.x + PaletteData::ElementWPadding / 2,
 		area.y,
 		ElementWidth, ElementHeight };
 	node::SpaceScreenTransformer transformer{ contained_rect, element.block.GetBounds() };
@@ -249,8 +230,8 @@ void node::PalleteBlocksViewer::DrawElement(SDL_Renderer* renderer, const Pallet
 	DrawElementText(renderer, element, TextArea);
 }
 
-void node::PalleteBlocksViewer::DrawElementText(SDL_Renderer* renderer,
-	const PalleteElement& element, const SDL_FRect& area)
+void node::PaletteBlocksViewer::DrawElementText(SDL_Renderer* renderer,
+	const PaletteElement& element, const SDL_FRect& area)
 {
 	if (!element.text_painter->GetFont())
 	{

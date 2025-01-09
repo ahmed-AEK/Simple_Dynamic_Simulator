@@ -10,6 +10,23 @@
 
 #include <memory>
 
+template <typename T>
+concept Sized = requires (const T & obj)
+{
+    obj.GetSize();
+    obj.GetSize().w;
+    obj.GetSize().h;
+};
+
+template <typename T>
+concept Positioned = requires (const T & obj)
+{
+    obj.GetPosition();
+    obj.GetPosition().x;
+    obj.GetPosition().y;
+};
+
+
 namespace MI {
 
     enum class ClickEvent : int
@@ -29,7 +46,7 @@ namespace MI {
     template <typename T>
     struct MouseButtonEvent;
 
-    template <typename T, typename Rect, typename Point>
+    template <typename T, typename Size, typename Point>
     class TOOLGUI_API MouseInteractable
     {
     public:
@@ -38,8 +55,8 @@ namespace MI {
 
         T* GetInteractableAtPoint(const Point& point);
 
-        void MouseOut();
-        void MouseIn();
+        void MouseOut(MouseHoverEvent& e);
+        void MouseIn(MouseHoverEvent& e);
         void MouseMove(MouseHoverEvent& e);
         void MouseMove(MouseHoverEvent&& e);
 
@@ -56,20 +73,18 @@ namespace MI {
         node::HandlePtr<T> GetMIHandlePtr();
 
         MouseInteractable() = default;
-        MouseInteractable(const Rect& rect) : m_rect{ rect } {}
+        MouseInteractable(const MouseInteractable&) = delete;
+        MouseInteractable& operator=(const MouseInteractable&) = delete;
         ~MouseInteractable() = default;
 
         MouseInteractable(MouseInteractable&& other) noexcept;
-        MouseInteractable& operator=(MouseInteractable<T, Rect, Point>&& other) noexcept;
-
-        const Rect& GetRectImpl() const noexcept { return m_rect; }
-        void SetRectImpl(const Rect& rect) noexcept { m_rect = rect; }
+        MouseInteractable& operator=(MouseInteractable<T, Size, Point>&& other) noexcept;
 
     protected:
-        virtual T* OnGetInteractableAtPoint(const Point& point) = 0;
+        virtual T* OnGetInteractableAtPoint(const Point& point);
 
-        virtual void OnMouseOut();
-        virtual void OnMouseIn();
+        virtual void OnMouseOut(MouseHoverEvent& e);
+        virtual void OnMouseIn(MouseHoverEvent& e);
         virtual void OnMouseMove(MouseHoverEvent& e);
         
         virtual ClickEvent OnLMBDown(MouseButtonEvent& e);
@@ -77,7 +92,8 @@ namespace MI {
         virtual ClickEvent OnRMBDown(MouseButtonEvent& e);
         virtual ClickEvent OnRMBUp(MouseButtonEvent& e);
     private:
-        Rect m_rect{ 0,0,0,0 };
+        T& Self() requires Sized<T> && Positioned<T> { return *static_cast<T*>(this); }
+        const T& Self() const requires Sized<T>&& Positioned<T> { return *static_cast<const T*>(this); }
         node::HandleOwnigPtr<T> MI_handle_ptr = node::HandleAllocator<T>::CreateHandle(static_cast<T*>(this));
     };
 }

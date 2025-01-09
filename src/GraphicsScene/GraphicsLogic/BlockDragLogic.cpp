@@ -27,12 +27,10 @@ void node::logic::BlockDragLogic::OnMouseMove(const model::Point& current_mouse_
         current_mouse_point.y - m_startPointMouseSpace.y };
 
 
-    drag_object->SetSpaceOrigin(GetScene()->QuantizePoint({
+    drag_object->SetPosition(GetScene()->QuantizePoint({
         m_startObjectEdge.x + drag_vector.x,
         m_startObjectEdge.y + drag_vector.y
         }));
-    
-    GetScene()->UpdateObjectsRect();
 }
 
 void node::logic::BlockDragLogic::OnCancel()
@@ -42,7 +40,7 @@ void node::logic::BlockDragLogic::OnCancel()
     {
         return;
     }
-    drag_object->SetSpaceOrigin(GetScene()->QuantizePoint({
+    drag_object->SetPosition(GetScene()->QuantizePoint({
         m_startObjectEdge.x,
         m_startObjectEdge.y
         }));
@@ -63,7 +61,7 @@ MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_
     current_mouse_point.y - m_startPointMouseSpace.y };
 
     // undo motion for now
-    block->SetSpaceOrigin(GetScene()->QuantizePoint({
+    block->SetPosition(GetScene()->QuantizePoint({
     m_startObjectEdge.x,
     m_startObjectEdge.y
         }));

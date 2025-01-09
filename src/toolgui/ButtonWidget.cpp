@@ -3,34 +3,56 @@
 #include "toolgui/Scene.hpp"
 #include "toolgui/ContextMenu.hpp"
 #include "toolgui/Application.hpp"
+#include "toolgui/ToolTipWidgetMixin_impl.hpp"
 
-node::ButtonWidget::ButtonWidget(const SDL_FRect& rect, std::string label, std::function<void(void)> action, node::Widget* parent)
-: Widget(rect, parent), m_label(std::move(label)), m_action(std::move(action))
+template class node::mixin::TooltipMixin<node::ButtonWidget>;
+
+node::ButtonWidget::ButtonWidget(const WidgetSize& size, 
+    std::string label, std::string svg_path, std::function<void(void)> action, node::Widget* parent)
+: Widget(size, parent), m_btn_painter{svg_path, static_cast<int>(size.w - 9), static_cast<int>(size.h - 9)}, m_action(std::move(action))
 {
+    SetToolTipDescription(std::move(label));
 }
 
-void node::ButtonWidget::Draw(SDL_Renderer* renderer)
+void node::ButtonWidget::OnDraw(SDL::Renderer& renderer)
 {
-    if (!m_textSurface)
+    SDL_FRect btn_rect = GetSize().ToRect();
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &btn_rect);
+    btn_rect.x += 2;
+    btn_rect.y += 2;
+    btn_rect.w -= 4;
+    btn_rect.h -= 4;
+
+    if (!m_hovered)
     {
-        SDL_Color Black = { 50, 50, 50, 255 };
-        m_textSurface = SDLSurface{ TTF_RenderText_Solid(GetApp()->getFont().get(), m_label.c_str(), m_label.size(), Black)};
-        m_textTexture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, m_textSurface.get()) };
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     }
-    SDL_SetRenderDrawColor(renderer, 0,0,0,0);
-    SDL_RenderFillRect(renderer, &this->GetRect());
-    SDL_FRect inner_rect = GetRect();
-    inner_rect.x += w_margin;
-    inner_rect.y += h_margin;
-    inner_rect.w -= 2 * w_margin;
-    inner_rect.h -= 2 * h_margin;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &inner_rect);
-    SDL_FRect text_rect{};
-    SDL_GetTextureSize(m_textTexture.get(), &text_rect.w, &text_rect.h);
-    text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
-    text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;
-    SDL_RenderTexture(renderer, m_textTexture.get(), NULL, &text_rect);
+    else
+    {
+        SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
+    }
+
+    SDL_RenderFillRect(renderer, &btn_rect);
+    m_btn_painter.Draw(renderer, btn_rect.x + 2, btn_rect.y + 2);
+}
+
+void node::ButtonWidget::OnMouseOut(MouseHoverEvent& e)
+{
+    m_hovered = false;
+    ToolTipMouseOut(e);
+}
+
+void node::ButtonWidget::OnMouseIn(MouseHoverEvent& e)
+{
+    m_hovered = true;
+    ToolTipMouseIn(e);
+}
+
+void node::ButtonWidget::OnMouseMove(MouseHoverEvent& e)
+{
+    ToolTipMouseMove(e);
 }
 
 MI::ClickEvent node::ButtonWidget::OnLMBUp(MouseButtonEvent& e)

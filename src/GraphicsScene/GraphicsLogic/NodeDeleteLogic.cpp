@@ -17,7 +17,7 @@ void node::NodeDeleteLogic::OnMouseMove(const model::Point& current_mouse_point)
 	}
 
 	auto object_ptr = m_object.GetObjectPtr();
-	SDL_FRect objectSpaceRect = ToSDLRect(object_ptr->GetSpaceRect());
+	SDL_FRect objectSpaceRect = ToSDLRect(object_ptr->GetSceneRect());
 	SDL_FPoint current_mouse_sdl = ToSDLPoint(current_mouse_point);
 	if (!SDL_PointInRectFloat(&current_mouse_sdl, &objectSpaceRect))
 	{

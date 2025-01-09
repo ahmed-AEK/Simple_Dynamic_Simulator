@@ -18,6 +18,6 @@ target_include_directories(DynamicSimulator PRIVATE ".")
 target_include_directories(DynamicSimulator INTERFACE "..")
 
 target_link_libraries(DynamicSimulator PRIVATE 
-toolgui GraphicsScene BlockPallete BlockClasses SceneLoader)
+toolgui GraphicsScene BlockPalette BlockClasses SceneLoader)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

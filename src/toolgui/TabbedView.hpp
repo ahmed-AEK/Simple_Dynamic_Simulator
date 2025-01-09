@@ -16,19 +16,20 @@ class TabBar;
 class TabButton : public Widget
 {
 public:
-	TabButton(TTF_Font* font, const SDL_FRect& rect, TabBar* parent);
-	void Draw(SDL_Renderer* renderer) override;
+	TabButton(TTF_Font* font, const WidgetSize& size, TabBar* parent);
 	void SetText(std::string name);
 	void SetActive(bool value = true);
 	bool GetActive() const { return m_active; }
 protected:
-	void OnMouseOut() override;
-	void OnMouseIn() override;
+	void OnDraw(SDL::Renderer& renderer) override;
+	void OnMouseOut(MouseHoverEvent& e) override;
+	void OnMouseIn(MouseHoverEvent& e) override;
 	void OnMouseMove(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 private:
 	SDL_FRect GetXBtnRect() const;
+	float GetXBtnStart() const;
 	TextPainter m_tab_text;
 	TextPainter m_X_painter;
 	RoundRectPainter m_outer_painter;
@@ -44,8 +45,7 @@ private:
 class TabBar : public Widget
 {
 public:
-	TabBar(TTF_Font* font, const SDL_FRect& rect, TabbedView* parent);
-	void Draw(SDL_Renderer* renderer) override;
+	TabBar(TTF_Font* font, const WidgetSize& size, TabbedView* parent);
 	void AddTab(std::string name);
 	void DeleteTab(int32_t index);
 	int GetTabWidth() const { return tab_width; }
@@ -53,17 +53,19 @@ public:
 	void ButtonClicked(TabButton* btn);
 	void ButtonXClicked(TabButton* btn);
 	int32_t TabsCount() const { return static_cast<int32_t>(m_buttons.size()); }
+	void SetTabName(int32_t idx, std::string_view name);
+
+	static constexpr auto npos = StackedWidget::npos;
 protected:
-	void OnSetRect(const SDL_FRect& rect) override;
-	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
+	void OnDraw(SDL::Renderer& renderer) override;
 
 private:
 	void ReCalcLayout();
 	TTF_Font* m_font;
 	TabbedView* m_parent;
 	std::vector<std::unique_ptr<TabButton>> m_buttons;
-	int32_t m_active_tab = -1;
-	static constexpr int tab_width = 100;
+	int32_t m_active_tab = npos;
+	static constexpr int tab_width = 115;
 };
 
 struct TabIndexChangeEvent
@@ -92,9 +94,8 @@ struct TabsChangeEvent
 class TabbedView : public Widget, public MultiPublisher<TabsChangeEvent>
 {
 public:
-	TabbedView(TTF_Font* font, const SDL_FRect& rect, Widget* parent);
+	TabbedView(TTF_Font* font, const WidgetSize& size, Widget* parent);
 	int32_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
-	void Draw(SDL_Renderer* renderer) override;
 	void SetCurrentTabIndex(Widget* ptr);
 	void SetCurrentTabIndex(int32_t index);
 	void RequestDeleteTab(int32_t index);
@@ -103,10 +104,11 @@ public:
 	int32_t GetWidgetIndex(Widget* widget);
 	int32_t TabsCount() const { return m_stacked_widget.WidgetsCount(); }
 
+	void SetTabName(int32_t idx, std::string_view name);
+
 	static constexpr auto npos = StackedWidget::npos;
 protected:
-	void OnSetRect(const SDL_FRect& rect) override;
-	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
+	void OnSetSize(const WidgetSize& size) override;
 
 private:
 	int GetTabsBarHeight() const;

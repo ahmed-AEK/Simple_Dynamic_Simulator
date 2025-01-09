@@ -87,9 +87,9 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		return nullptr;
 	}
 
-	auto viewer_node1 = std::make_unique<NetNode>(node1.getCenter(), scene);
-	auto viewer_node2 = std::make_unique<NetNode>(node2.getCenter(), scene);
-	auto viewer_segment = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, viewer_node1.get(), viewer_node2.get(), scene);
+	auto viewer_node1 = std::make_unique<NetNode>(node1.getCenter());
+	auto viewer_node2 = std::make_unique<NetNode>(node2.getCenter());
+	auto viewer_segment = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, viewer_node1.get(), viewer_node2.get());
 	SegmentViewer viewer{ *viewer_node1.get(), *viewer_node2.get(), *viewer_segment.get() };
 	spare_nodes.push_back(viewer_node1.get());
 	spare_nodes.push_back(viewer_node2.get());

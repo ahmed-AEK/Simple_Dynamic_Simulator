@@ -5,154 +5,157 @@
 namespace MI
 {
 
-template <typename T, typename Rect, typename Point>
-MouseInteractable<T, Rect, Point>::MouseInteractable(MouseInteractable<T, Rect, Point>&& other) noexcept
-    : m_rect(other.m_rect), MI_handle_ptr(std::move(other.MI_handle_ptr.m_ptr))
+template <typename T, typename Size, typename Point>
+MouseInteractable<T, Size, Point>::MouseInteractable(MouseInteractable<T, Size, Point>&& other) noexcept
+    : MI_handle_ptr(std::move(other.MI_handle_ptr.m_ptr))
 {
     this->MI_handle_ptr.m_ptr->object = static_cast<T*>(this);
 }
     
-template <typename T, typename Rect, typename Point>
-MouseInteractable<T, Rect, Point>& MouseInteractable<T, Rect, Point>::operator=(MouseInteractable<T, Rect, Point>&& other) noexcept
+template <typename T, typename Size, typename Point>
+MouseInteractable<T, Size, Point>& MouseInteractable<T, Size, Point>::operator=(MouseInteractable<T, Size, Point>&& other) noexcept
 {
-    this->m_rect = other.m_rect;
     this->MI_handle_ptr.m_ptr = std::move(other.MI_handle_ptr.m_ptr);
     this->MI_handle_ptr.m_ptr->object = static_cast<T*>(this);
 	return *this;
 }
 
-template <typename T, typename Rect, typename Point>
-T* MouseInteractable<T, Rect, Point>::GetInteractableAtPoint(const Point& point)
+template <typename T, typename Size, typename Point>
+T* MouseInteractable<T, Size, Point>::GetInteractableAtPoint(const Point& point)
 {
-    SDL_FPoint SDLpoint{ static_cast<float>(point.x), static_cast<float>(point.y) };
-    SDL_FRect SDLrect{ static_cast<float>(m_rect.x), static_cast<float>(m_rect.y), static_cast<float>(m_rect.w), static_cast<float>(m_rect.h) };
-    if (SDL_PointInRectFloat(&SDLpoint, &SDLrect))
+    const auto& size = Self().GetSize();
+    if (point.x >= 0 && point.y >= 0 && size.w > point.x && size.h > point.y)
     {
         return this->OnGetInteractableAtPoint(point);
     }
-    else
-    {
-        return nullptr;
-    }
+    return nullptr;
 }
 
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::MouseOut()
+template <typename T, typename Size, typename Point>
+T* MouseInteractable<T, Size, Point>::OnGetInteractableAtPoint(const Point&)
 {
-    this->OnMouseOut();
+    return &Self();
 }
 
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::MouseIn()
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::MouseOut(MouseHoverEvent& e)
 {
-    this->OnMouseIn();
+    this->OnMouseOut(e);
 }
 
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::MouseMove(MouseHoverEvent& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::MouseIn(MouseHoverEvent& e)
 {
-    this->OnMouseMove(e);
+    this->OnMouseIn(e);
 }
 
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::MouseMove(MouseHoverEvent&& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::MouseMove(MouseHoverEvent& e)
 {
     this->OnMouseMove(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::MouseMove(MouseHoverEvent&& e)
+{
+    this->OnMouseMove(e);
+}
+
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::LMBDown(MouseButtonEvent& e)
 {
     return this->OnLMBDown(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBDown(MouseButtonEvent&& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::LMBDown(MouseButtonEvent&& e)
 {
     return this->OnLMBDown(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::RMBDown(MouseButtonEvent& e)
 {
     return this->OnRMBDown(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBDown(MouseButtonEvent&& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::RMBDown(MouseButtonEvent&& e)
 {
     return this->OnRMBDown(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::RMBUp(MouseButtonEvent& e)
 {
     return this->OnRMBUp(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::RMBUp(MouseButtonEvent&& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::RMBUp(MouseButtonEvent&& e)
 {
     return this->OnRMBUp(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::LMBUp(MouseButtonEvent& e)
 {
     return this->OnLMBUp(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::LMBUp(MouseButtonEvent&& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::LMBUp(MouseButtonEvent&& e)
 {
     return this->OnLMBUp(e);
 }
 
-template <typename T, typename Rect, typename Point>
-node::HandlePtr<T> MouseInteractable<T, Rect, Point>::GetMIHandlePtr()
+template <typename T, typename Size, typename Point>
+node::HandlePtr<T> MouseInteractable<T, Size, Point>::GetMIHandlePtr()
 {
     return this->MI_handle_ptr.GetHandlePtr();
 }
 
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::OnMouseOut()
-{
-}
-
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::OnMouseIn()
-{
-}
-
-template <typename T, typename Rect, typename Point>
-void MouseInteractable<T, Rect, Point>::OnMouseMove(MouseHoverEvent& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::OnMouseOut(MouseHoverEvent& e)
 {
     UNUSED_PARAM(e);
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnLMBDown(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::OnMouseIn(MouseHoverEvent& e)
 {
     UNUSED_PARAM(e);
-    return ClickEvent::NONE;
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnRMBDown(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+void MouseInteractable<T, Size, Point>::OnMouseMove(MouseHoverEvent& e)
+{
+    UNUSED_PARAM(e);
+}
+
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::OnLMBDown(MouseButtonEvent& e)
 {
     UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnLMBUp(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::OnRMBDown(MouseButtonEvent& e)
 {
     UNUSED_PARAM(e);
     return ClickEvent::NONE;
 }
 
-template <typename T, typename Rect, typename Point>
-ClickEvent MouseInteractable<T, Rect, Point>::OnRMBUp(MouseButtonEvent& e)
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::OnLMBUp(MouseButtonEvent& e)
+{
+    UNUSED_PARAM(e);
+    return ClickEvent::NONE;
+}
+
+template <typename T, typename Size, typename Point>
+ClickEvent MouseInteractable<T, Size, Point>::OnRMBUp(MouseButtonEvent& e)
 {
     UNUSED_PARAM(e);
     return ClickEvent::NONE;

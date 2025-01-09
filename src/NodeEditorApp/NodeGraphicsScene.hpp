@@ -8,7 +8,7 @@ namespace node
     class NodeGraphicsScene: public node::GraphicsScene
     {
     public:
-        NodeGraphicsScene(SDL_FRect rect, node::Widget* parent);
+        NodeGraphicsScene(const WidgetSize& size, node::Widget* parent);
         void SetDotSpacing(int new_spacing) { m_dotspace = new_spacing; }
         int GetDotSpacing() const { return m_dotspace; }
         void SetToolsManager(std::weak_ptr<ToolsManager> manager);
@@ -20,7 +20,7 @@ namespace node
         void DrawCurrentInsertMode(SDL_Renderer* renderer) const;
         bool OnKeyPress(KeyboardEvent& e) override;
         void OnKeyboardFocusIn() override;
-        void OnDraw(SDL_Renderer* renderer) override;
+        void OnDraw(SDL::Renderer& renderer) override;
     private:
         void DrawCoords(SDL_Renderer* renderer) const;
         int m_dotspace = 20;
