@@ -15,9 +15,9 @@ TEST(testBlockObject, testCreate)
 {
 	node::BlockObject block{};
 
-	auto ScreenRect = block.GetSpaceRect();
-	EXPECT_EQ(ScreenRect.x, 100);
-	EXPECT_EQ(ScreenRect.y, 100);
+	auto ScreenRect = block.GetSceneRect();
+	EXPECT_EQ(ScreenRect.x, 0);
+	EXPECT_EQ(ScreenRect.y, 0);
 	EXPECT_EQ(ScreenRect.w, 100);
 	EXPECT_EQ(ScreenRect.h, 100);
 }
@@ -29,7 +29,7 @@ TEST(testBlockObject, testAddSocket)
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0} });
 	model->AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 0 } });
 	auto styler = std::make_unique<node::DefaultBlockStyler>();
-	node::BlockObject block{ nullptr, model::Rect{0,0,0,0}, std::move(styler), model->GetId() };
+	node::BlockObject block{model::ObjectSize{ 0,0 }, std::move(styler), model->GetId() };
 }
 
 

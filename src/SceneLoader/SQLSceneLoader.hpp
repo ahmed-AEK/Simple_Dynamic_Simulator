@@ -19,6 +19,7 @@ public:
 	bool Save(const node::model::NodeSceneModel& scene, SubSceneId id, SubSceneId parent_id) override;
 	std::shared_ptr<BlockLoader> GetBlockLoader(SubSceneId id) override;
 	std::shared_ptr<NetLoader> GetNetLoader(SubSceneId id) override;
+	std::string GetSceneName() const override;
 
 private:
 	std::string m_dbname;

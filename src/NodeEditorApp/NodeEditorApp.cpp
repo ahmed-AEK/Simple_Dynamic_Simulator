@@ -9,7 +9,8 @@ namespace node
     NodeEditorApplication::NodeEditorApplication()
     : Application(800,600, "Dynamic Simulator")
     {
-        std::unique_ptr<MainNodeScene> scene = std::make_unique<MainNodeScene>(ToFRect(getRect()), this);
+        std::unique_ptr<MainNodeScene> scene = std::make_unique<MainNodeScene>(
+            WidgetSize{ static_cast<float>(getRect().w), static_cast<float>(getRect().h) }, this);
         m_scene = scene.get();
         SetScene(std::move(scene));
     }

@@ -9,8 +9,8 @@ namespace node
 class ToolTipWidget : public Widget
 {
 public:
-    ToolTipWidget(TTF_Font* font, std::string text, const SDL_FRect& rect, Widget* parent);
-    void Draw(SDL_Renderer* renderer) override;
+    ToolTipWidget(TTF_Font* font, std::string text, const WidgetSize& size, Widget* parent);
+    void OnDraw(SDL::Renderer& renderer) override;
 private:
     TextPainter m_painter;
 };

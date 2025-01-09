@@ -66,7 +66,7 @@ public:
     static constexpr int NetNodeLayer = 300;
     static constexpr int InteractiveLayer = 400;
 
-    GraphicsScene(const SDL_FRect& rect, node::Widget* parent);
+    GraphicsScene(const WidgetSize& size, node::Widget* parent);
     ~GraphicsScene() override;
 
     void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
@@ -78,8 +78,6 @@ public:
     void ClearAllObjects();
 
     void BumpObjectInLayer(node::GraphicsObject* obj);
-
-    void UpdateObjectsRect();
 
     void SetSpaceRect(const model::Rect& rect);
     const model::Rect& GetSpaceRect() const noexcept;
@@ -93,10 +91,8 @@ public:
     const SpaceScreenTransformer& GetSpaceScreenTransformer() const;
     model::Point QuantizePoint(const model::Point& p);
 
-    void Draw(SDL_Renderer* renderer) override;
-
     GraphicsObject* GetCurrentHover() noexcept { return m_current_mouse_hover.GetObjectPtr(); }
-    void SetCurrentHover(GraphicsObject* current_hover);
+    void SetCurrentHover(GraphicsObject* current_hover, MI::MouseHoverEvent<GraphicsObject>& e);
     bool IsMouseCaptured() const { return m_mouse_capture_mode != CAPTURE_MODE::NONE; }
     BlockSocketObject* GetSocketAt(const model::Point space_point);
 
@@ -109,7 +105,7 @@ public:
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 
 protected:
-    void OnSetRect(const SDL_FRect& rect) override;
+    void OnSetSize(const WidgetSize& size) override;
     void OnMouseMove(MouseHoverEvent& e) override;
     MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
     MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
@@ -120,7 +116,9 @@ protected:
         const DragDropObject& object, const SDL_FPoint& p) override;
     void OnDropEnter(const DragDropObject& object) override;
     void OnDropExit(const DragDropObject& object) override;
-    virtual void OnDraw(SDL_Renderer* renderer);
+
+    void OnDraw(SDL::Renderer& renderer) override;
+    virtual void OnDrawObjects(SDL::Renderer& renderer);
 
 private:
 

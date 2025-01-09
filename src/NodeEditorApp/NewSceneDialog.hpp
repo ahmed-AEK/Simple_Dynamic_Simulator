@@ -10,7 +10,8 @@ class PropertyEditControl;
 class OkCancelModalDialog : public Dialog
 {
 public:
-	OkCancelModalDialog(std::string title, std::vector<std::string> content, const SDL_FRect& rect, MainNodeScene* parent, bool hide_cancel = false);
+	OkCancelModalDialog(std::string title, std::vector<std::string> content, 
+		const WidgetSize& size, MainNodeScene* parent, bool hide_cancel = false);
 protected:
 	void OnOk() override;
 	void OnClose() override;
@@ -21,7 +22,8 @@ private:
 class SingleEntryDialog: public OkCancelModalDialog
 {
 public:
-	SingleEntryDialog(std::string title, std::vector<std::string> content, std::string initial_value, const SDL_FRect& rect, MainNodeScene* parent);
+	SingleEntryDialog(std::string title, std::vector<std::string> content, 
+		std::string initial_value, const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 	void OnClose() override;
@@ -33,7 +35,7 @@ private:
 class NewSceneDialog : public OkCancelModalDialog
 {
 public:
-	NewSceneDialog(const SDL_FRect& rect, MainNodeScene* parent);
+	NewSceneDialog(const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 };
@@ -41,7 +43,7 @@ protected:
 class LoadSceneDialog : public SingleEntryDialog
 {
 public:
-	LoadSceneDialog(const SDL_FRect& rect, MainNodeScene* parent);
+	LoadSceneDialog(const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 };
@@ -49,7 +51,7 @@ protected:
 class SaveSceneDialog : public SingleEntryDialog
 {
 public:
-	SaveSceneDialog(const SDL_FRect& rect, MainNodeScene* parent);
+	SaveSceneDialog(const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 };
@@ -57,7 +59,7 @@ protected:
 class ConfirmOverwriteSaveSceneDialog : public OkCancelModalDialog
 {
 public:
-	ConfirmOverwriteSaveSceneDialog(std::string name,const SDL_FRect& rect, MainNodeScene* parent);
+	ConfirmOverwriteSaveSceneDialog(std::string name, const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
 private:

@@ -1,40 +1,41 @@
-#include "PalleteCategoryPicker.hpp"
-#include "PalleteProvider.hpp"
+#include "PaletteCategoryPicker.hpp"
+#include "PaletteProvider.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 
-node::PalleteCategoryPicker::PalleteCategoryPicker(const SDL_FRect& rect, 
-	std::shared_ptr<PalleteProvider> provider, TTF_Font* font, Widget* parent)
-	:Widget{rect, parent}, m_palleteProvider{provider}, m_title_painter{font}
+node::PaletteCategoryPicker::PaletteCategoryPicker(const WidgetSize& size,
+	std::shared_ptr<PaletteProvider> provider, TTF_Font* font, Widget* parent)
+	:Widget{size, parent}, m_paletteProvider{provider}, m_title_painter{font}
 {
-	m_title_painter.SetText("Block Pallete");
+	m_title_painter.SetText("Block Palette");
 	assert(font);
-	if (m_palleteProvider)
+	if (m_paletteProvider)
 	{
-		m_palleteProvider->Attach(*this);
+		m_paletteProvider->Attach(*this);
 		ResetCategories();
 	}
 }
 
-void node::PalleteCategoryPicker::SetProvider(std::shared_ptr<PalleteProvider> provider)
+void node::PaletteCategoryPicker::SetProvider(std::shared_ptr<PaletteProvider> provider)
 {
-	if (m_palleteProvider)
+	if (m_paletteProvider)
 	{
-		m_palleteProvider->Detach(*this);
+		m_paletteProvider->Detach(*this);
 	}
-	m_palleteProvider = std::move(provider);
-	if (m_palleteProvider)
+	m_paletteProvider = std::move(provider);
+	if (m_paletteProvider)
 	{
-		m_palleteProvider->Attach(*this);
+		m_paletteProvider->Attach(*this);
 		ResetCategories();
 	}
 }
 
-void node::PalleteCategoryPicker::OnNotify(BlockPalleteChange& e)
+void node::PaletteCategoryPicker::OnNotify(BlockPaletteChange& e)
 {
 	UNUSED_PARAM(e);
 	ResetCategories();
 }
 
-MI::ClickEvent node::PalleteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::PaletteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
 {
 	auto&& point = e.point();
 	if (point.x < m_categories_draw_area.x ||
@@ -58,13 +59,14 @@ MI::ClickEvent node::PalleteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
 			Notify({ m_categories[i].painter.GetText() });
 			return MI::ClickEvent::CLICKED;
 		}
+		y_value += 2 * y_pad + m_categories[i].height;
 	}
 	return MI::ClickEvent::NONE;
 }
 
-SDL_FRect node::PalleteCategoryPicker::DrawPanelBorder(SDL_Renderer* renderer)
+SDL_FRect node::PaletteCategoryPicker::DrawPanelBorder(SDL_Renderer* renderer)
 {
-	SDL_FRect draw_area = GetRect();
+	SDL_FRect draw_area = GetSize().ToRect();
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &draw_area);
 	
@@ -90,9 +92,9 @@ SDL_FRect node::PalleteCategoryPicker::DrawPanelBorder(SDL_Renderer* renderer)
 	return inner_rect;
 }
 
-void node::PalleteCategoryPicker::ResetCategories()
+void node::PaletteCategoryPicker::ResetCategories()
 {
-	const auto& labels = m_palleteProvider->GetCategories();
+	const auto& labels = m_paletteProvider->GetCategories();
 
 	// make the categories size equal to the labels size
 	while (m_categories.size() < labels.size())
@@ -110,7 +112,7 @@ void node::PalleteCategoryPicker::ResetCategories()
 	}
 }
 
-void node::PalleteCategoryPicker::Draw(SDL_Renderer* renderer)
+void node::PaletteCategoryPicker::OnDraw(SDL::Renderer& renderer)
 {
 	auto&& rect = DrawPanelBorder(renderer);
 

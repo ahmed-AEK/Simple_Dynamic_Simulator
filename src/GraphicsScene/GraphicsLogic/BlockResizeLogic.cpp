@@ -33,15 +33,15 @@ static void SetBlockToRect(node::BlockObject& block, const node::model::Rect& ne
 			sock->SetCenterInBlock(socket.GetPosition());
 		}
 	}
-	block.SetSpaceRect(new_rect);
+	block.SetPosition({ new_rect.x, new_rect.y });
+	block.SetSize({ new_rect.w, new_rect.h });
 }
 
 node::logic::BlockResizeLogic::BlockResizeLogic(BlockObject& block, BlockResizeObject& resize_object, 
 	model::Point drag_start_point, DragSide side, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager},  m_block{block.GetMIHandlePtr()}, m_resizeObject{resize_object.GetMIHandlePtr()},
-	m_initial_rect{block.GetSpaceRect()}, m_drag_side{side}
+	m_initial_rect{block.GetPosition().x, block.GetPosition().y, block.GetSize().w, block.GetSize().h}, m_drag_side{side}
 {
-	assert(scene);
 	assert(manager);
 	m_drag_start_point = GetScene()->QuantizePoint(drag_start_point);
 	FillSockets(m_temp_sockets, block);
@@ -107,8 +107,9 @@ void node::logic::BlockResizeLogic::OnMouseMove(const model::Point& current_mous
 
 	auto&& block = static_cast<BlockObject&>(*m_block.GetObjectPtr());
 	SetBlockToRect(block, new_rect, m_temp_sockets);
-	m_resizeObject->SetSpaceRect(BlockResizeObject::RectForBlockRect(new_rect));
-
+	auto new_object_rect = BlockResizeObject::RectForBlockRect(new_rect);
+	m_resizeObject->SetPosition({ new_object_rect.x, new_object_rect.y });
+	m_resizeObject->SetSize({ new_object_rect.w, new_object_rect.h });
 }
 
 void node::logic::BlockResizeLogic::OnCancel()
@@ -200,11 +201,14 @@ void node::logic::BlockResizeLogic::CleanUp()
 		SetBlockToRect(block, m_initial_rect, m_temp_sockets);
 	}
 
-	m_block.GetObjectPtr()->SetSpaceRect(m_initial_rect);
+	m_block.GetObjectPtr()->SetPosition({ m_initial_rect.x, m_initial_rect.y });
+	m_block.GetObjectPtr()->SetSize({ m_initial_rect.w, m_initial_rect.h });
 
 	if (auto ptr = m_resizeObject.GetObjectPtr())
 	{
-		ptr->SetSpaceRect(BlockResizeObject::RectForBlockRect(m_initial_rect));
+		auto new_rect = BlockResizeObject::RectForBlockRect(m_initial_rect);
+		ptr->SetPosition({ new_rect.x, new_rect.y });
+		ptr->SetSize({ new_rect.w, new_rect.h });
 	}
 }
 

@@ -3,6 +3,7 @@
 #include "Scene.hpp"
 #include "algorithm"
 #include "SDL_Framework/SDL_headers.h"
+#include "SDL_Framework/SDL_Math.hpp"
 #include "ContextMenu.hpp"
 #include "Application.hpp"
 #include "Widget.hpp"
@@ -11,46 +12,54 @@
 #include "Dialog.hpp"
 #include "ToolTipWidget.hpp"
 
-void node::Scene::Draw(SDL_Renderer* renderer)
+void node::Scene::Draw(SDL::Renderer& renderer)
 {
     OnDraw(renderer);
     if (m_current_mouse_hover.isAlive() && m_dragObject)
     {
         SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
+        auto clip = renderer.ClipRect(WidgetRect(*m_current_mouse_hover.GetObjectPtr()));
         m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
     }
 }
 
-void node::Scene::OnDraw(SDL_Renderer* renderer)
+void node::Scene::OnDraw(SDL::Renderer& renderer)
 {
     if (m_centralWidget)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_centralWidget));
         m_centralWidget->Draw(renderer);
     }
     if (m_toolbar)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_toolbar));
         m_toolbar->Draw(renderer);
     }
     if (m_sidePanel)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_sidePanel));
         m_sidePanel->Draw(renderer);
     }
     for (auto&& it = m_dialogs.begin(); it != m_dialogs.end(); it++)
     {
         auto&& widget = *it;
+        auto clip = renderer.ClipRect(WidgetRect(*widget));
         widget->Draw(renderer);
     }
     if (m_modal_dialog)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_modal_dialog));
         m_modal_dialog->Draw(renderer);
     }
     if (m_tooltip)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_tooltip));
         m_tooltip->Draw(renderer);
     }
     if (m_pContextMenu)
     {
+        auto clip = renderer.ClipRect(WidgetRect(*m_pContextMenu));
         m_pContextMenu->Draw(renderer);
     }
 }
@@ -58,7 +67,7 @@ void node::Scene::OnDraw(SDL_Renderer* renderer)
 void node::Scene::ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_FPoint& p)
 {
     m_pContextMenu = std::move(menu);
-    m_pContextMenu->SetRect({p.x,p.y, 0,0});
+    m_pContextMenu->SetPosition({p.x,p.y});
 
 }
 void node::Scene::DestroyContextMenu()
@@ -74,6 +83,8 @@ void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
 void node::Scene::SetToolBar(std::unique_ptr<ToolBar> toolbar)
 {
     m_toolbar = std::move(toolbar);
+    m_toolbar->SetParent(this);
+    m_toolbar->SetPosition({ 0,0 });
 }
 
 void node::Scene::SetCenterWidget(std::unique_ptr<Widget> widget)
@@ -145,7 +156,7 @@ void node::Scene::SetFocus(Widget* widget)
 
 void node::Scene::OnMouseMove(MouseHoverEvent& e)
 {
-    SDL_FPoint p{ e.point() };
+    SDL_FPoint p{ e.globalPosition() };
     if (!b_mouseCaptured)
     {
         node::Widget* current_hover = this->OnGetInteractableAtPoint(p);
@@ -158,7 +169,9 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
         {
             if (old_hover)
             {
-                old_hover->MouseOut();
+                auto global_widget_pos = old_hover->GetGlobalPosition();
+                e.local_position = e.globalPosition() - global_widget_pos;
+                old_hover->MouseOut(e);
                 if (m_dragObject && old_hover->IsDropTarget())
                 {
                     current_hover->DropExit(*m_dragObject);
@@ -176,7 +189,9 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
 
             if (current_hover)
             {
-                current_hover->MouseIn();
+                auto global_widget_pos = current_hover->GetGlobalPosition();
+                e.local_position = e.globalPosition() - global_widget_pos;
+                current_hover->MouseIn(e);
                 if (m_dragObject && current_hover->IsDropTarget())
                 {
                     current_hover->DropEnter(*m_dragObject);
@@ -195,6 +210,8 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
             }
             else
             {
+                auto global_widget_pos = m_current_mouse_hover->GetGlobalPosition();
+                e.local_position = e.globalPosition() - global_widget_pos;
                 object->MouseMove(e);
             }
         }
@@ -206,20 +223,20 @@ node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
 {
     if (m_pContextMenu)
     {
-        if (auto interactable = m_pContextMenu->GetInteractableAtPoint(p))
+        if (auto interactable = m_pContextMenu->GetInteractableAtPoint(p - m_pContextMenu->GetPosition()))
         {
             return interactable;
         }
     }
     if (m_modal_dialog)
     {
-        node::Widget* current_hover = m_modal_dialog->GetInteractableAtPoint(p);
+        node::Widget* current_hover = m_modal_dialog->GetInteractableAtPoint(p - m_modal_dialog->GetPosition());
         return current_hover;
     }
     for (auto it = m_dialogs.rbegin(); it != m_dialogs.rend(); it++)
     {
         auto&& widget = *it;
-        node::Widget* current_hover = widget->GetInteractableAtPoint(p);
+        node::Widget* current_hover = widget->GetInteractableAtPoint(p - widget->GetPosition());
         if (current_hover)
         {
             return current_hover;
@@ -227,21 +244,21 @@ node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
     }
     if (m_sidePanel)
     {
-        if (auto result = m_sidePanel->GetInteractableAtPoint(p))
+        if (auto result = m_sidePanel->GetInteractableAtPoint(p - m_sidePanel->GetPosition()))
         {
             return result;
         }
     }
     if (m_toolbar)
     {
-        if (auto result = m_toolbar->GetInteractableAtPoint(p))
+        if (auto result = m_toolbar->GetInteractableAtPoint(p - m_toolbar->GetPosition()))
         {
             return result;
         }
     }
     if (m_centralWidget)
     {
-        if (auto result = m_centralWidget->GetInteractableAtPoint(p))
+        if (auto result = m_centralWidget->GetInteractableAtPoint(p - m_centralWidget->GetPosition()))
         {
             return result;
         }
@@ -303,7 +320,8 @@ void node::Scene::SetModalDialog(std::unique_ptr<node::Dialog> dialog)
     }
     if (m_current_mouse_hover)
     {
-        m_current_mouse_hover->MouseOut();
+        MouseHoverEvent e{ {0,0} };
+        m_current_mouse_hover->MouseOut(e);
     }
     m_current_mouse_hover = nullptr;
     m_current_keyboar_focus = nullptr;
@@ -319,6 +337,7 @@ void node::Scene::Start()
 void node::Scene::ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip)
 {
     m_tooltip = std::move(tooltip);
+    m_tooltip->SetParent(this);
 }
 
 void node::Scene::HideToolTip(Widget* widget)
@@ -329,22 +348,24 @@ void node::Scene::HideToolTip(Widget* widget)
     }
 }
 
-void node::Scene::OnSetRect(const SDL_FRect& rect)
+void node::Scene::OnSetSize(const WidgetSize& size)
 {
-    Widget::OnSetRect(rect);
+    Widget::OnSetSize(size);
     if (m_sidePanel)
     {
-        m_sidePanel->UpdateWindowSize(rect);
+        m_sidePanel->UpdateWindowSize(size);
     }
     if (m_toolbar)
     {
-        m_toolbar->SetRect({ 0,0, rect.w, ToolBar::height });
+        m_toolbar->SetSize({ size.w, ToolBar::height });
     }
 
     if (m_centralWidget)
     {
-        SDL_FRect scene_rect{ rect.x, rect.y + (m_toolbar ? ToolBar::height : 0), rect.w, rect.h - (m_toolbar ? ToolBar::height : 0) };
-        m_centralWidget->SetRect(scene_rect);
+        SDL_FPoint scene_pos{ 0, static_cast<float>(m_toolbar ? ToolBar::height : 0) };
+        m_centralWidget->SetPosition(scene_pos);
+        WidgetSize scene_size{ size.w, size.h - (m_toolbar ? ToolBar::height : 0) };
+        m_centralWidget->SetSize(scene_size);
     }
 
     auto dialog_resizer = [&](Dialog& dialog)
@@ -353,25 +374,26 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
             {
                 return;
             }
-            SDL_FRect modified_rect = dialog.GetRect();
+            SDL_Rect modified_rect = Widget::WidgetRect(dialog);
             SDL_FRect title_rect = dialog.GetTitleBarRect();
-            if (modified_rect.x + modified_rect.w > rect.w)
+            if (modified_rect.x + modified_rect.w > size.w)
             {
-                modified_rect.x = rect.w - modified_rect.w;
+                modified_rect.x = static_cast<int>(size.w - modified_rect.w);
             }
             if (modified_rect.x < 0)
             {
                 modified_rect.x = 0;
             }
-            if (modified_rect.y + title_rect.h > rect.h)
+            if (modified_rect.y + title_rect.h > size.h)
             {
-                modified_rect.y = rect.h - title_rect.h;
+                modified_rect.y = static_cast<int>(size.h - title_rect.h);
             }
             if (modified_rect.y < 0)
             {
                 modified_rect.y = 0;
             }
-            dialog.SetRect(modified_rect);
+            dialog.SetPosition({ static_cast<float>(modified_rect.x), 
+                static_cast<float>(modified_rect.y) });
         };
 
     for (auto& dialog: m_dialogs)
@@ -388,7 +410,7 @@ void node::Scene::OnSetRect(const SDL_FRect& rect)
 MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 {
     {
-        MouseHoverEvent move_evt{ e.point() };
+        MouseHoverEvent move_evt{ e.globalPosition() };
         OnMouseMove(move_evt);
     }
     node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
@@ -404,6 +426,8 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
         bool processed = false;
         while (current_widget && !processed)
         {
+            const auto& global_widget_pos = current_widget->GetGlobalPosition();
+            e.local_position = e.globalPosition() - global_widget_pos;
             auto result = current_hover->LMBDown(e);
             switch (result)
             {
@@ -453,7 +477,7 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
 MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
 {
     {
-        MouseHoverEvent move_evt{ e.point() };
+        MouseHoverEvent move_evt{ e.globalPosition() };
         OnMouseMove(move_evt);
     }
     node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
@@ -464,6 +488,8 @@ MI::ClickEvent node::Scene::OnRMBDown(MouseButtonEvent& e)
     }
     if (current_hover)
     {
+        const auto& global_widget_pos = current_hover->GetGlobalPosition();
+        e.local_position = e.globalPosition() - global_widget_pos;
         auto result = current_hover->RMBDown(e);
         switch (result)
         {
@@ -505,6 +531,8 @@ MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
     }
     if (current_hover)
     {
+        const auto& global_widget_pos = current_hover->GetGlobalPosition();
+        e.local_position = e.globalPosition() - global_widget_pos;
         auto result = current_hover->RMBUp(e);
         switch (result)
         {
@@ -538,7 +566,7 @@ MI::ClickEvent node::Scene::OnRMBUp(MouseButtonEvent& e)
 
 MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 {
-    SDL_FPoint p{ e.point() };
+    SDL_FPoint p{ e.globalPosition() };
     node::Widget* current_hover = m_current_mouse_hover.GetObjectPtr();
 
     if ( m_pContextMenu && m_pContextMenu->GetMIHandlePtr().GetObjectPtr() != current_hover)
@@ -551,7 +579,7 @@ MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
         if (current_hover && current_hover->IsDropTarget())
         {
             auto&& widget = m_current_mouse_hover.GetObjectPtr();
-            widget->DropObject(*m_dragObject, p);
+            widget->DropObject(*m_dragObject, p - widget->GetGlobalPosition());
             SetFocus(widget);
         }
         m_dragObject = std::nullopt;
@@ -560,6 +588,8 @@ MI::ClickEvent node::Scene::OnLMBUp(MouseButtonEvent& e)
 
     if (current_hover)
     {
+        const auto& global_widget_pos = current_hover->GetGlobalPosition();
+        e.local_position = e.globalPosition() - global_widget_pos;
         auto result = current_hover->LMBUp(e);
         switch (result)
         {
@@ -595,7 +625,7 @@ bool node::Scene::OnScroll(const double amount, const SDL_FPoint& p)
 {
     if (m_current_mouse_hover.isAlive())
     {
-        m_current_mouse_hover.GetObjectPtr()->Scroll(amount, p);
+        m_current_mouse_hover.GetObjectPtr()->Scroll(amount, p - m_current_mouse_hover->GetGlobalPosition());
     }
     return false;
 }
@@ -628,8 +658,8 @@ void node::Scene::OnSendChar(TextInputEvent& e)
     }
 }
 
-node::Scene::Scene(SDL_FRect rect, Application* parent)
-    :Widget{rect, nullptr}, p_parent(parent), m_rect_base(rect)
+node::Scene::Scene(const WidgetSize& size, Application* parent)
+    :Widget{size, nullptr}, p_parent(parent), m_rect_base(size.ToRect())
 {
 
 }

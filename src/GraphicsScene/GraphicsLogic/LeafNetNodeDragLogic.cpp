@@ -139,7 +139,7 @@ node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const mo
 		const auto& sockets = block_it.second->GetSockets();
 		auto it = std::find_if(sockets.begin(), sockets.end(), [&](const auto& socket)
 			{
-				auto socket_rect = ToSDLRect(socket->GetSpaceRect());
+				auto socket_rect = ToSDLRect(socket->GetSceneRect());
 				if (SDL_PointInRectFloat(&current_mouse_point_SDL, &socket_rect))
 				{
 					return true;

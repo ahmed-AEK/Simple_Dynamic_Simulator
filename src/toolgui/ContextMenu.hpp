@@ -16,7 +16,7 @@ class TOOLGUI_API ContextMenu : public node::Widget
 {
 public:
     ContextMenu(node::Widget* parent, TTF_Font* font);
-    virtual void Draw(SDL_Renderer* renderer) override;
+    virtual void OnDraw(SDL::Renderer& renderer) override;
 protected:
     void OnMouseMove(MouseHoverEvent& e) override;
     MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;

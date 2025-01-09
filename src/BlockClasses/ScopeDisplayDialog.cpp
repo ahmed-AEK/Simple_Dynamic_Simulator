@@ -16,7 +16,7 @@ namespace node
 class ScopeDisplayToolButton : public ToolBarButton
 {
 public:
-	ScopeDisplayToolButton(const SDL_FRect& rect, ToolBar* parent,
+	ScopeDisplayToolButton(const WidgetSize& size, ToolBar* parent,
 		std::string name, ScopeDisplayToolsManager& manager);
 	void OnButonClicked() override;
 	void SetActive(bool value = true) { b_active = value; }
@@ -249,8 +249,8 @@ void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 	m_plot_widget = widget.GetMIHandlePtr();
 }
 
-node::ScopeDisplayToolButton::ScopeDisplayToolButton(const SDL_FRect& rect, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
-	:ToolBarButton(rect, parent, std::move(name)), m_manager{ manager } 
+node::ScopeDisplayToolButton::ScopeDisplayToolButton(const WidgetSize& size, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
+	:ToolBarButton(size, parent, std::move(name)), m_manager{ manager } 
 {
 }
 
@@ -259,30 +259,31 @@ void node::ScopeDisplayToolButton::OnButonClicked()
 	m_manager.ChangeTool(GetName());
 }
 
-node::ScopeDiplayDialog::ScopeDiplayDialog(const SDL_FRect& rect, Scene* parent)
-	:BlockDialog{"Scope Display", rect, parent}
+node::ScopeDiplayDialog::ScopeDiplayDialog(const WidgetSize& size, Scene* parent)
+	:BlockDialog{"Scope Display", size, parent}
 {	
-	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), SDL_FRect{0.0f,0.0f,400.0f,200.0f}, this);
+	auto plot = std::make_unique<PlotWidget>(parent->GetApp()->getFont(FontType::Label).get(), 
+		WidgetSize{400.0f,200.0f}, this);
 	m_tools_manager.SetWidget(*plot);
 	{
 		SetResizeable(true);
 
-		auto toolbar = std::make_unique<ToolBar>(rect, this);
+		auto toolbar = std::make_unique<ToolBar>(WidgetSize{ size.w,ToolBar::height }, this);
 		
-		auto reset_btn = std::make_unique<ToolBarCommandButton>(SDL_FRect{ 0.0f,0.0f,ToolBarButton::width, ToolBarButton::height }, toolbar.get(),
+		auto reset_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width, ToolBarButton::height }, toolbar.get(),
 			"Reset", [plot_ptr = plot.get()]() {plot_ptr->ResetZoom(); });
 		reset_btn->SetSVGPath("assets/expand.svg");
 		reset_btn->SetDescription("Reset Zoom");
 		toolbar->AddButton(std::move(reset_btn));
 		toolbar->AddSeparator();
 
-		auto A_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{0.0f,0.0f, ToolBarButton::width, ToolBarButton::height}, toolbar.get(), "A", m_tools_manager);
+		auto A_btn = std::make_unique<ScopeDisplayToolButton>(WidgetSize{ ToolBarButton::width, ToolBarButton::height}, toolbar.get(), "A", m_tools_manager);
 		A_btn->SetSVGPath("assets/arrow.svg");
 		A_btn->SetDescription("Arrow Tool");
-		auto M_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{ 0.0f,0.0f, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "M", m_tools_manager);
+		auto M_btn = std::make_unique<ScopeDisplayToolButton>(WidgetSize{ ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "M", m_tools_manager);
 		M_btn->SetSVGPath("assets/move.svg");
 		M_btn->SetDescription("Move Tool");
-		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(SDL_FRect{ 0.0f,0.0f, ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "Z", m_tools_manager);
+		auto Z_btn = std::make_unique<ScopeDisplayToolButton>(WidgetSize{ ToolBarButton::width, ToolBarButton::height }, toolbar.get(), "Z", m_tools_manager);
 		Z_btn->SetSVGPath("assets/zoom.svg");
 		Z_btn->SetDescription("Zoom Tool");
 
@@ -332,8 +333,8 @@ void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
 	}
 }
 
-node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_FRect& rect, Dialog* parent)
-	:DialogControl{rect,parent}, m_font{font}, m_current_point_painter{font}
+node::PlotWidget::PlotWidget(TTF_Font* font, const WidgetSize& size, Dialog* parent)
+	:DialogControl{size,parent}, m_font{font}, m_current_point_painter{font}
 {
 	SetSizingMode(DialogControl::SizingMode::expanding);
 
@@ -343,7 +344,7 @@ node::PlotWidget::PlotWidget(TTF_Font* font, const SDL_FRect& rect, Dialog* pare
 	}
 }
 
-void node::PlotWidget::Draw(SDL_Renderer* renderer)
+void node::PlotWidget::OnDraw(SDL::Renderer& renderer)
 {
 	DrawAxes(renderer);
 	DrawAxesTicks(renderer);
@@ -476,7 +477,7 @@ MI::ClickEvent node::PlotWidget::OnLMBUp(MouseButtonEvent& e)
 	return DialogControl::OnLMBUp(e);
 }
 
-void node::PlotWidget::OnMouseOut()
+void node::PlotWidget::OnMouseOut(MouseHoverEvent&)
 {
 	m_current_point = std::nullopt;
 }
@@ -501,7 +502,7 @@ SDL_Rect node::PlotWidget::GetInnerRect()
 	constexpr float right_margin = 20;
 	constexpr float top_margin = 20;
 	constexpr float bottom_margin = 40;
-	const auto& base_rect = GetRect();
+	const auto& base_rect = GetSize().ToRect();
 	SDL_Rect inner_rect = ToRect(SDL_FRect{ base_rect.x + left_margin, base_rect.y + top_margin, base_rect.w - left_margin - right_margin, base_rect.h - top_margin - bottom_margin });
 	return inner_rect;
 }

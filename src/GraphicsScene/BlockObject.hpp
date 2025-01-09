@@ -22,14 +22,14 @@ class BlockResizeObject;
 class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
 public:
-    static std::unique_ptr<BlockObject> Create(GraphicsScene* scene, const model::BlockModel& model,
+    static std::unique_ptr<BlockObject> Create(const model::BlockModel& model,
         std::unique_ptr<BlockStyler> styler = nullptr);
 
-    explicit BlockObject(GraphicsScene* scene = nullptr, const model::Rect& rect = {100,100,100,100}, 
+    explicit BlockObject(const model::ObjectSize& size = {100,100},
         std::unique_ptr<BlockStyler> styler = nullptr, std::optional<model::BlockId> model_id = std::nullopt, 
         model::BlockOrientation orientation = model::BlockOrientation::LeftToRight);
     ~BlockObject() override;
-    void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
+    void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
     std::optional<model::BlockId> GetModelId();
     const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
@@ -46,15 +46,10 @@ public:
 
 protected:
     void AddSocket(std::unique_ptr<BlockSocketObject> id);
-    void OnSetSpaceRect(const model::Rect& rect) override;
-    virtual void RePositionSockets();
     GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
-    void OnUpdateRect() override;
     MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
-
-    void OnSceneChange() override;
-
-
+    void OnSetPosition(const model::Point& position) override;
+    void OnSetSize(const model::ObjectSize& size) override;
 private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;

@@ -14,34 +14,41 @@ class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
 	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt, 
-		model::Point center_in_block = {0,0}, GraphicsScene* parentScene = nullptr, BlockObject* parentBlock = nullptr);
+		model::Point center_in_block = {0,0});
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
 
 	BlockObject* GetParentBlock() const { return m_parentBlock; }
-	void SetParentBlock(BlockObject* block) { m_parentBlock = block; }
 
 	std::optional<model::SocketId> GetId() const { return m_id; }
 	void SetId(std::optional<model::SocketId> id) { m_id = std::move(id); }
 
-
-	void SetCenterInBlock(const model::Point& p) { m_center_in_block = p; }
-	const model::Point& GetCenterInBlock() const { return m_center_in_block; }
-
-	model::Point GetCenterInSpace();
-	void SetCenterInSpace(const model::Point& point);
-
+	model::Point GetCenterInBlock() const
+	{
+		return GetPosition() + model::Point{nodeLength / 2, nodeLength / 2 };
+	}
+	model::Point GetCenterInSpace() const
+	{
+		return GetScenePosition() + model::Point{ nodeLength / 2, nodeLength / 2 };
+	}
+	void SetCenterInBlock(const model::Point& point) 
+	{
+		SetPosition({ point.x - nodeLength / 2, point.y - nodeLength / 2 });
+	}
 	model::BlockSocketModel::SocketType GetSocketType() const { return m_socktType; }
 	void SetSocketType(model::BlockSocketModel::SocketType type) { m_socktType = type; }
-	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
+	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
+	void UpdateConnectedNodes();
 	static constexpr int nodeLength = 15;
 protected:
-	void OnSetSpaceRect(const model::Rect& rect) override;
+	void OnSetPosition(const model::Point& position) override;
 private:
-	model::Point m_center_in_block;
-	BlockObject* m_parentBlock;
+	void SetParentBlock(BlockObject* block) { m_parentBlock = block; }
+	friend class BlockObject;
+
+	BlockObject* m_parentBlock = nullptr;
 	model::BlockSocketModel::SocketType m_socktType;
 	std::optional<model::SocketId> m_id;
 	NetNode* m_connected_node = nullptr;

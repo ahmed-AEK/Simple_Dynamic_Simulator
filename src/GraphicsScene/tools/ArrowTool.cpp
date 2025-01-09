@@ -58,14 +58,14 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
                 m_current_block_resize_slot = ResizerObjectSlot{};
             }
 
-            auto resizer = CreateResizeObject(*block_obj, scene, manager);
+            auto resizer = CreateResizeObject(*block_obj, manager);
             if (resizer)
             {
                 m_current_block_resize_slot = ResizerObjectSlot{ scene.GetMIHandlePtr(), resizer->GetMIHandlePtr() };
                 scene.AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
             }
 
-            auto obj_rect = current_hover->GetSpaceRect();
+            auto obj_rect = current_hover->GetSceneRect();
             auto drag_logic = std::make_unique<logic::BlockDragLogic>(e.point, model::Point{ obj_rect.x, obj_rect.y }, 
                 *block_obj, &scene, &manager);
             scene.SetGraphicsLogic(std::move(drag_logic));
@@ -113,7 +113,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
         }
         case ObjectType::interactive:
         {
-            return current_hover->LMBDown({ e.point });
+            return current_hover->LMBDown({ e.point - current_hover->GetScenePosition() });
             break;
         }
         default: break;
@@ -163,11 +163,12 @@ void node::ArrowTool::OnExit()
     }
 }
 
-std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(BlockObject& block, GraphicsScene& scene, GraphicsObjectsManager& manager)
+std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(BlockObject& block, GraphicsObjectsManager& manager)
 {
-    model::Rect resizer_rect = BlockResizeObject::RectForBlockRect(block.GetSpaceRect());
+    model::Rect resizer_rect = BlockResizeObject::RectForBlockRect(block.GetSceneRect());
 
-    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), &manager, resizer_rect, &scene);
+    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), &manager, model::ObjectSize{ resizer_rect.w, resizer_rect.h });
+    resizer->SetPosition({ resizer_rect.x, resizer_rect.y });
     block.SetResizeHandles(*resizer);
     return resizer;
 }

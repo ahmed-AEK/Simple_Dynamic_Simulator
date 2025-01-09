@@ -20,15 +20,15 @@ namespace node
 			right,
 		};
 
-		SidePanel(PanelSide side, const SDL_FRect& rect, Widget* parent);
+		SidePanel(PanelSide side, const WidgetSize& size, Widget* parent);
 
 		void Expand() noexcept;
 		void Retract() noexcept;
-		void UpdateWindowSize(const SDL_FRect& rect);
+		void UpdateWindowSize(const WidgetSize& rect);
 
 		void SetWidget(std::unique_ptr<Widget> widget);
 
-		void Draw(SDL_Renderer* renderer) override;
+		void OnDraw(SDL::Renderer& renderer) override;
 
 		void SetSide(PanelSide side) noexcept {	m_side = side; }
 		const PanelSide& GetSide() const noexcept {	return m_side; }
@@ -36,7 +36,7 @@ namespace node
 	protected:
 		Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
 		MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
-
+		void OnSetSize(const WidgetSize& size) override;
 	private:
 
 		void UpdatePanelMotion();
@@ -74,24 +74,4 @@ namespace node
 		static constexpr int widget_margin = 2;
 	};
 
-
-	class TestWidget:public Widget
-	{
-	public:
-		using Widget::Widget;
-		void Draw(SDL_Renderer* renderer) override
-		{
-			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			SDL_RenderFillRect(renderer, &GetRect());
-		}
-
-	protected:
-		MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override
-		{
-			UNUSED_PARAM(e);
-			SDL_Log("Clicked!");
-			return MI::ClickEvent::CLICKED;
-		}
-
-	};
 }

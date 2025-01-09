@@ -35,14 +35,14 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     {
         auto styler = GetBlockStyler(block.GetStyler(), block);
         styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), block, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(block, std::move(styler));
         auto ptr = obj.get();
         GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(block.GetId(), ptr);
     }
     for (const auto& net_node : m_sceneModel->GetModel().GetNetNodes())
     {
-        auto node = std::make_unique<node::NetNode>(net_node.GetPosition(), GetGraphicsScene());
+        auto node = std::make_unique<node::NetNode>(net_node.GetPosition());
         node->SetId(net_node.GetId());
         m_net_nodes.emplace(net_node.GetId(), node.get());
         GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
@@ -58,7 +58,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
             SDL_Log("broken scene!");
             return;
         }
-        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, GetGraphicsScene());
+        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second);
 
         segment_obj->SetId(net_segment.GetId());
         m_net_segments.emplace(net_segment.GetId(), segment_obj.get());
@@ -94,7 +94,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
     {
         auto& model_ref = std::get<model::BlockModelConstRef>(e.data);
         auto styler = GetBlockStyler(model_ref.get().GetStyler(), model_ref);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
@@ -107,7 +107,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         auto& report = std::get<BlockAddWithConnectionsReport>(e.data);
         auto& model_ref = report.block;
         auto styler = GetBlockStyler(model_ref.get().GetStyler(), model_ref);
-        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(GetGraphicsScene(), model_ref, std::move(styler));
+        std::unique_ptr<node::BlockObject> obj = node::BlockObject::Create(model_ref, std::move(styler));
         auto* ptr = obj.get();
         GetGraphicsScene()->AddObject(std::move(obj), GraphicsScene::BlockLayer);
         m_blocks.emplace(model_ref.get().GetId(), ptr);
@@ -157,7 +157,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
         auto it = m_blocks.find(model_id);
         if (it != m_blocks.end())
         {
-            it->second->SetSpaceOrigin(new_position);
+            it->second->SetPosition(new_position);
         }
         break;
     }
@@ -176,7 +176,8 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                 socket->SetCenterInBlock(block_socket->GetPosition());
             }
             it->second->SetOrientation(block_ref.GetOrienation());
-            it->second->SetSpaceRect(new_bounds);
+            it->second->SetPosition({ new_bounds.x, new_bounds.y });
+            it->second->SetSize({ new_bounds.w, new_bounds.h });
         }
         break;
     }
@@ -298,7 +299,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
     // handle added nodes
     for (const auto& added_node : report.added_nodes)
     {
-        auto node = std::make_unique<NetNode>(added_node.get().GetPosition(), GetGraphicsScene());
+        auto node = std::make_unique<NetNode>(added_node.get().GetPosition());
         m_net_nodes.emplace(added_node.get().GetId(), node.get());
         node->SetId(added_node.get().GetId());
         GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
@@ -355,7 +356,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         {
             continue;
         }
-        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second, GetGraphicsScene());
+        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second);
         auto id = added_segment.get().GetId();
         segment->SetId(id);
         m_net_segments.emplace(id, segment.get());

@@ -12,9 +12,9 @@ class BlockResizeObject : public GraphicsObject
 {
 public:
 	static model::Rect RectForBlockRect(const model::Rect& rect);
-	BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, model::Rect sceneRect, GraphicsScene* scene = nullptr);
+	BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size);
 
-	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
+	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 protected:
 	GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;

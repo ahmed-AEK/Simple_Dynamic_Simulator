@@ -354,8 +354,8 @@ void TextPainter::Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL
 
     SDL_FRect text_rect{ 0,0,0,0 };
     SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
-    text_rect.x = point.x;
-    text_rect.y = point.y;
+    text_rect.x = std::floor(point.x);
+    text_rect.y = std::floor(point.y);
     SDL_RenderTexture(renderer, m_text_texture.GetTexture(), NULL, &text_rect);
 }
 

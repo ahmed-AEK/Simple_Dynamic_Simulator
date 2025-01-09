@@ -12,15 +12,15 @@ class Dialog;
 class DialogButton : public Widget
 {
 public:
-	DialogButton(std::string text, std::function<void()> OnClick, const SDL_FRect& rect, Widget* scene);
-	void Draw(SDL_Renderer* renderer) override;
+	DialogButton(std::string text, TTF_Font* font, std::function<void()> OnClick, const WidgetSize& size, Widget* scene);
 
 protected:
-	void OnMouseOut() override;
+	void OnDraw(SDL::Renderer& renderer) override;
+	void OnMouseOut(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 private:
-	std::string m_text;
+	TextPainter m_text_painter;
 	std::function<void()> m_onClick;
 	bool b_being_clicked = false;
 };
@@ -34,7 +34,7 @@ public:
 		expanding,
 	};
 
-	DialogControl(const SDL_FRect& rect, Dialog* parent);
+	DialogControl(const WidgetSize& size, Dialog* parent);
 	SDL_FRect GetSizeHint() const { return m_size_hint; }
 	void SetSizeHint(const SDL_FRect& rect) { m_size_hint = rect; }
 	SizingMode GetSizingMode() const { return m_sizingMode; }
@@ -55,9 +55,8 @@ public:
 		Center,
 	};
 
-	Dialog(std::string title, const SDL_FRect& rect, Scene* parent);
+	Dialog(std::string title, const WidgetSize& size, Scene* parent);
 	~Dialog() override;
-	void Draw(SDL_Renderer* renderer) override;
 	const std::string& GetTitle() const { return m_title; };
 	void SetTitle(std::string title) { m_title = title; m_title_painter.SetText(title); }
 
@@ -83,12 +82,14 @@ public:
 	bool BeingDragged() const;
 	void StopDrag();
 protected:
+	void OnDraw(SDL::Renderer& renderer) override;
+
 	void OnMouseMove(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
-	void OnMouseOut() override;
+	void OnMouseOut(MouseHoverEvent& e) override;
 	Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
-	void OnSetRect(const SDL_FRect& rect) override;
+	void OnSetSize(const WidgetSize& size) override;
 	virtual void OnClose();
 	virtual void OnOk();
 	bool OnKeyPress(KeyboardEvent& e) override;
@@ -102,7 +103,7 @@ private:
 	void DrawOutline(SDL_Renderer* renderer, const SDL_FRect& rect);
 	SDL_FRect GetXButtonRect() const;
 	SDL_FRect GetResizeGripRect() const;
-	SDL_FPoint CalculateMinSize() const;
+	WidgetSize CalculateMinSize() const;
 
 	std::vector<std::unique_ptr<DialogControl>> m_controls;
 	std::vector<std::unique_ptr<DialogButton>> m_buttons;
@@ -118,7 +119,8 @@ private:
 
 	struct TitleDrag
 	{
-		SDL_FPoint drag_edge_start_position{ 0,0 };
+		// both points relative to parent
+		SDL_FPoint drag_edge_start_position{ 0,0 }; 
 		SDL_FPoint drag_mouse_start_position{ 0,0 };
 	};
 	struct ResizeDrag
@@ -128,8 +130,8 @@ private:
 			grip,
 			top,
 		};
-		SDL_FPoint drag_edge_start_position{ 0,0 };
-		SDL_FPoint min_size;
+		SDL_FPoint drag_edge_start_position{ 0,0 };  // relative to parent
+		WidgetSize min_size;
 		DragMode mode;
 	};
 	using DragData = std::variant<std::monostate, TitleDrag, ResizeDrag>;

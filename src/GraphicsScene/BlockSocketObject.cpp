@@ -3,6 +3,7 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "NetObject.hpp"
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 #include <cassert>
 
 void node::BlockSocketObject::SetConnectedNode(NetNode* node)
@@ -28,36 +29,23 @@ node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
-
 node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id, 
-	model::Point center_in_block, GraphicsScene* parentScene, BlockObject* parentBlock)
-	:GraphicsObject{model::Rect{ 0,0,nodeLength,nodeLength },ObjectType::socket, parentScene}, 
-	m_center_in_block{ center_in_block }, m_parentBlock(parentBlock), m_socktType(type), m_id{ id }
+	model::Point center_in_block)
+	:GraphicsObject{ model::ObjectSize{ nodeLength,nodeLength },ObjectType::socket, nullptr}, 
+	m_socktType(type), m_id{ id }
 {
-	b_selectable = false;
-	b_draggable = false;
+	SetSelectable(false);
+	SetCenterInBlock(center_in_block);
 }
 
-node::model::Point node::BlockSocketObject::GetCenterInSpace()
-{
-	return { GetSpaceRect().x + nodeLength / 2, GetSpaceRect().y + nodeLength / 2 };
-
-}
-
-void node::BlockSocketObject::SetCenterInSpace(const model::Point& point)
-{
-	SetSpaceRect({point.x - nodeLength/2, point.y - nodeLength/2, nodeLength, nodeLength});
-}
-
-void node::BlockSocketObject::Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer)
+void node::BlockSocketObject::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
 	UNUSED_PARAM(renderer);
 	UNUSED_PARAM(transformer);
 }
 
-void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
+void node::BlockSocketObject::UpdateConnectedNodes()
 {
-	GraphicsObject::OnSetSpaceRect(rect);
 	if (m_connected_node)
 	{
 		const auto& new_center = GetCenterInSpace();
@@ -81,5 +69,11 @@ void node::BlockSocketObject::OnSetSpaceRect(const model::Rect& rect)
 		next_node->setCenter({ next_node->getCenter().x, new_center.y });
 		next_node->UpdateConnectedSegments();
 	}
+}
+
+void node::BlockSocketObject::OnSetPosition(const model::Point& position)
+{
+	GraphicsObject::OnSetPosition(position);
+	UpdateConnectedNodes();
 }
 

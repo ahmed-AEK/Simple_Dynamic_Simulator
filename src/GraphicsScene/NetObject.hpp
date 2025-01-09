@@ -18,20 +18,20 @@ constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject
 {
 public:
-	explicit NetNode(const model::Point& center, GraphicsScene* scene = nullptr);
-	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
-	const model::Point& getCenter() noexcept { return m_centerPoint; }
+	explicit NetNode(const model::Point& center);
+	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
+	model::Point getCenter() const { return GetPosition() + model::Point{m_width / 2, m_height / 2}; }
 	void setSegment(NetSegment* segment, model::ConnectedSegmentSide side);
-	NetSegment* getSegment(model::ConnectedSegmentSide side)
+	NetSegment* getSegment(model::ConnectedSegmentSide side) const
 	{
 		assert(static_cast<size_t>(side) < 4);
 		return m_connected_segments[static_cast<size_t>(side)];
 	}
-	void setCenter(const model::Point& point) noexcept { SetSpaceOrigin({ point.x - m_width / 2, point.y - m_height / 2 }); }
+	void setCenter(const model::Point& point) { SetPosition({ point.x - m_width / 2, point.y - m_height / 2 }); }
 	void UpdateConnectedSegments();
 	void SetConnectedSocket(BlockSocketObject* socket);
 	BlockSocketObject* GetConnectedSocket() noexcept;
-	uint8_t GetConnectedSegmentsCount();
+	uint8_t GetConnectedSegmentsCount() const;
 	void ClearSegment(const NetSegment* segment);
 
 	std::optional<node::model::ConnectedSegmentSide> GetSegmentSide(const NetSegment& segment) const;
@@ -40,10 +40,8 @@ public:
 	std::optional<model::NetNodeId> GetId() const noexcept { return m_id; }
 
 protected:
-	void OnSetSpaceRect(const model::Rect& rect) override;
 private:
 	std::optional<model::NetNodeId> m_id = std::nullopt;
-	model::Point m_centerPoint;
 	std::array<NetSegment*, 4> m_connected_segments{};
 	BlockSocketObject* m_socket = nullptr;
 	static constexpr int m_width = 10;
@@ -56,8 +54,8 @@ class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
 	explicit NetSegment(const model::NetSegmentOrientation& orientation,
-	NetNode* startNode = nullptr, NetNode* endNode = nullptr, GraphicsScene* scene = nullptr);
-	void Draw(SDL_Renderer* renderer, const SpaceScreenTransformer& transformer) override;
+	NetNode* startNode = nullptr, NetNode* endNode = nullptr);
+	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 	NetNode* getStartNode() noexcept { return m_startNode; }
 	NetNode* getEndNode() noexcept { return m_endNode; }
 	void Connect(NetNode* start, NetNode* end, const model::NetSegmentOrientation& orientation);

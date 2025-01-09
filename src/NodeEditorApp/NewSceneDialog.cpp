@@ -6,8 +6,9 @@
 #include "boost/algorithm/string.hpp"
 
 
-node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<std::string> content, const SDL_FRect& rect, MainNodeScene* parent, bool hide_cancel)
-	:Dialog{ std::move(title), rect, parent }
+node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<std::string> content, 
+	const WidgetSize& size, MainNodeScene* parent, bool hide_cancel)
+	:Dialog{ std::move(title), size, parent }
 {
 	assert(parent);
 	auto* font = parent->GetApp()->getFont().get();
@@ -26,7 +27,8 @@ node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<st
 	}
 	total_height += content.size() ? static_cast<int>(DialogLabel::LinesMargin * content.size() - 1) : 0;
 
-	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, SDL_FRect{ 0.0f,0.0f, static_cast<float>(width),static_cast<float>(total_height) }, font, this));
+	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{std::move(content)}, 
+		WidgetSize{ static_cast<float>(width),static_cast<float>(total_height) }, font, this));
 	AddButton("Ok", [this] {this->TriggerOk(); });
 	if (!hide_cancel)
 	{
@@ -49,11 +51,12 @@ void node::OkCancelModalDialog::OnClose()
 }
 
 
-node::SingleEntryDialog::SingleEntryDialog(std::string title, std::vector<std::string> content, std::string initial_value, const SDL_FRect& rect, MainNodeScene* parent)
-	:OkCancelModalDialog{ std::move(title), std::move(content), rect, parent }
+node::SingleEntryDialog::SingleEntryDialog(std::string title, std::vector<std::string> content, 
+	std::string initial_value, const WidgetSize& size, MainNodeScene* parent)
+	:OkCancelModalDialog{ std::move(title), std::move(content), size, parent }
 {
 	assert(parent);
-	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), SDL_FRect{0.0f,0.0f,500.0f, 35.0f}, this);
+	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), WidgetSize{500.0f, 35.0f}, this);
 	m_edit = edit.get();
 	AddControl(std::move(edit));
 }
@@ -77,8 +80,8 @@ std::string node::SingleEntryDialog::GetValue()
 	return m_edit->GetValue();
 }
 
-node::LoadSceneDialog::LoadSceneDialog(const SDL_FRect& rect, MainNodeScene* parent)
-	:SingleEntryDialog{ "Load Scene", {"Loaded Scene name:"}, "saved_scene.blks", rect, parent }
+node::LoadSceneDialog::LoadSceneDialog(const WidgetSize& size, MainNodeScene* parent)
+	:SingleEntryDialog{ "Load Scene", {"Loaded Scene name:"}, "saved_scene.blks", size, parent }
 {
 }
 
@@ -96,8 +99,9 @@ void node::LoadSceneDialog::OnOk()
 	scene->LoadScene(std::move(data));
 }
 
-node::NewSceneDialog::NewSceneDialog(const SDL_FRect& rect, MainNodeScene* parent)
-	:OkCancelModalDialog{ "Create New Scene", {"Create a new scene ?","Unsaved work will be lost!"}, rect, parent }
+node::NewSceneDialog::NewSceneDialog(const WidgetSize& size, MainNodeScene* parent)
+	:OkCancelModalDialog{ "Create New Scene", 
+		{"Create a new scene ?","Unsaved work will be lost!"}, size, parent }
 {
 }
 
@@ -109,8 +113,8 @@ void node::NewSceneDialog::OnOk()
 	scene->NewScene();
 }
 
-node::SaveSceneDialog::SaveSceneDialog(const SDL_FRect& rect, MainNodeScene* parent)
-	:SingleEntryDialog{ "Save Scene", {"Saved Scene name:"}, "saved_scene.blks", rect, parent }
+node::SaveSceneDialog::SaveSceneDialog(const WidgetSize& size, MainNodeScene* parent)
+	:SingleEntryDialog{ "Save Scene", {"Saved Scene name:"}, "saved_scene.blks", size, parent }
 {
 }
 
@@ -128,8 +132,10 @@ void node::SaveSceneDialog::OnOk()
 	scene->MaybeSaveScene(std::move(data));
 }
 
-node::ConfirmOverwriteSaveSceneDialog::ConfirmOverwriteSaveSceneDialog(std::string name, const SDL_FRect& rect, MainNodeScene* parent)
-	: OkCancelModalDialog{ "Overwrite File!", {"File already exists!", "Overwrite file : " + name}, rect, parent }, m_name{ std::move(name) }
+node::ConfirmOverwriteSaveSceneDialog::ConfirmOverwriteSaveSceneDialog(std::string name, 
+	const WidgetSize& size, MainNodeScene* parent)
+	: OkCancelModalDialog{ "Overwrite File!", 
+		{"File already exists!", "Overwrite file : " + name}, size, parent }, m_name{ std::move(name) }
 {
 }
 

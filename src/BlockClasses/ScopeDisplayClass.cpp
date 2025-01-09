@@ -111,7 +111,7 @@ std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Sc
 	UNUSED_PARAM(model);
 	UNUSED_PARAM(data);
 
-	auto dialog = std::make_unique<ScopeDiplayDialog>(SDL_FRect{ 50.0f,50.0f, 500.0f,500.0f }, &scene);
+	auto dialog = std::make_unique<ScopeDiplayDialog>(WidgetSize{ 500.0f,500.0f }, &scene);
 
 	try
 	{

@@ -5,8 +5,8 @@ SDLFramework.cpp SDLFramework.hpp
 SDLRenderer.cpp SDLRenderer.hpp
 SDLCPP.hpp SDL_headers.h
 SVGRasterizer.hpp SVGRasterizer.cpp
-Utility.hpp
-Utility.cpp
+Utility.hpp Utility.cpp
+SDL_Math.hpp
 )
 
 target_include_directories(SDL_Framework PRIVATE ".")

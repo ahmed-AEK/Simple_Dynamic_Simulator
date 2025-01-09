@@ -30,14 +30,19 @@ inline Point get_rect_origin(const Rect& rect)
 }
 }
 
+[[nodiscard]] inline constexpr model::Point operator+(const model::Point& p1, const model::Point& p2)
+{
+	return { p1.x + p2.x, p1.y + p2.y };
+}
+
+[[nodiscard]] inline constexpr model::Point operator-(const model::Point& p1, const model::Point& p2)
+{
+	return { p1.x - p2.x, p1.y - p2.y };
+}
+
 [[nodiscard]] inline constexpr bool operator==(const Point& p1, const Point& p2) noexcept
 {
 	return p1.x == p2.x && p1.y == p2.y;
-}
-
-[[nodiscard]] inline constexpr Point operator+(const Point& p1, const Point& p2) noexcept
-{
-	return { p1.x + p2.x , p1.y + p2.y };
 }
 
 [[nodiscard]] inline constexpr bool operator==(const Rect& r1, const Rect& r2) noexcept

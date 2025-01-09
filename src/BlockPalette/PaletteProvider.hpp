@@ -27,7 +27,7 @@ struct BlockTemplate
 	model::BlockStyleProperties style_properties;
 };
 
-struct PalleteElement
+struct PaletteElement
 {
 	std::string block_template;
 	model::BlockModel block{ model::BlockId{0}, model::BlockType::Functional, model::Rect{0,0,0,0} };
@@ -36,7 +36,7 @@ struct PalleteElement
 	std::shared_ptr<TextPainter> text_painter;
 };
 
-struct BlockPalleteChange
+struct BlockPaletteChange
 {
 	struct CategoryAdded
 	{
@@ -46,22 +46,22 @@ struct BlockPalleteChange
 	CategoryAdded e;
 };
 
-class PalleteProvider : public SinglePublisher<BlockPalleteChange>
+class PaletteProvider : public SinglePublisher<BlockPaletteChange>
 {
 public:
-	PalleteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory);
+	PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory);
 	void AddElement(const BlockTemplate& temp);
-	void AddElement(const std::string& category, std::unique_ptr<PalleteElement> element);
+	void AddElement(const std::string& category, std::unique_ptr<PaletteElement> element);
 
 	BlockStylerFactory& GetStylerFactory() { return *m_blockStyleFactory; }
-	const std::vector<std::unique_ptr<PalleteElement>>* GetCategoryElements(const std::string& category) const;
+	const std::vector<std::unique_ptr<PaletteElement>>* GetCategoryElements(const std::string& category) const;
 	std::vector<std::string_view> GetCategories() const;
 private:
 	void AddFunctionalElemnt(const BlockTemplate& temp);
 	void AddSubsystemElement(const BlockTemplate& temp);
 	void AddPortElement(const BlockTemplate& temp);
 
-	std::unordered_map<std::string, std::vector<std::unique_ptr<PalleteElement>>> m_elements;
+	std::unordered_map<std::string, std::vector<std::unique_ptr<PaletteElement>>> m_elements;
 	std::shared_ptr<BlockClassesManager> m_classesManager;
 	std::shared_ptr<BlockStylerFactory> m_blockStyleFactory;
 };

@@ -19,6 +19,7 @@ public:
 	virtual bool Save(const node::model::NodeSceneModel& scene, SubSceneId id, SubSceneId parent_id) = 0;
 	virtual std::shared_ptr<BlockLoader> GetBlockLoader(SubSceneId id) = 0;
 	virtual std::shared_ptr<NetLoader> GetNetLoader(SubSceneId id) = 0;
+	virtual std::string GetSceneName() const = 0;
 
 	virtual ~SceneLoader() = default;
 	SceneLoader() = default;

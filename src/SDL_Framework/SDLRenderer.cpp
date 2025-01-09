@@ -1,5 +1,7 @@
 #include "SDLRenderer.hpp"
+
 #include <utility>
+#include <cassert>
 
 void swap(SDL::Renderer& first, SDL::Renderer& second) noexcept
 {
@@ -31,10 +33,6 @@ namespace SDL
     : p_renderer(nullptr)
     {
         swap(*this, other);
-    }
-    Renderer::operator SDL_Renderer *() const noexcept
-    {
-        return p_renderer;
     }
 
     bool Renderer::Init(SDL_Window* wnd)
@@ -78,6 +76,91 @@ namespace SDL
             return false;
         }
         return true;
+    }
+    RenderClip Renderer::ClipRect(const SDL_Rect& rect)
+    {
+        return RenderClip{ *this, rect };
+    }
+
+    void Renderer::AddClipRect(const SDL_Rect& rect)
+    {
+        assert(p_renderer);
+        auto new_rect = rect;
+        if (m_clip_rects.size())
+        {
+            auto&& last_clip_rect = m_clip_rects.back();
+            new_rect.x += last_clip_rect.x;
+            new_rect.y += last_clip_rect.y;
+        }
+        m_clip_rects.push_back(new_rect);
+        [[maybe_unused]] auto result = SDL_SetRenderViewport(p_renderer, &new_rect);
+        assert(result);
+        ClipLastTwoRects();
+    }
+
+    void Renderer::PopClipRect()
+    {
+        m_clip_rects.pop_back();
+        if (m_clip_rects.size())
+        {
+            SDL_SetRenderViewport(p_renderer, &m_clip_rects.back());
+        }
+        else
+        {
+            SDL_SetRenderViewport(p_renderer, nullptr);
+        }
+        ClipLastTwoRects();
+    }
+
+    void Renderer::ClipLastTwoRects()
+    {
+        if (m_clip_rects.size() < 2)
+        {
+            SDL_SetRenderClipRect(p_renderer, nullptr);
+            return;
+        }
+
+        auto& last_rect = *(m_clip_rects.end() - 1);
+        auto& before_last_rect = *(m_clip_rects.end() - 2);
+        SDL_Rect clip_rect;
+        auto done = SDL_GetRectIntersection(&last_rect, &before_last_rect, &clip_rect);
+        if (done)
+        {
+            clip_rect.x -= last_rect.x;
+            clip_rect.y -= last_rect.y;
+            SDL_SetRenderClipRect(p_renderer, &clip_rect);
+        }
+        else
+        {
+            SDL_SetRenderClipRect(p_renderer, nullptr);
+        }
+    }
+
+    RenderClip::RenderClip(Renderer& renderer, const SDL_Rect& rect)
+        :m_renderer{&renderer}
+    {
+        renderer.AddClipRect(rect);
+    }
+
+    RenderClip::RenderClip(RenderClip&& other)
+    {
+        m_renderer = other.m_renderer;
+        other.m_renderer = nullptr;
+    }
+
+    RenderClip& RenderClip::operator=(RenderClip&& other)
+    {
+        m_renderer = other.m_renderer;
+        other.m_renderer = nullptr;
+        return *this;
+    }
+
+    RenderClip::~RenderClip()
+    {
+        if (m_renderer)
+        {
+            m_renderer->PopClipRect();
+        }
     }
 }
 
