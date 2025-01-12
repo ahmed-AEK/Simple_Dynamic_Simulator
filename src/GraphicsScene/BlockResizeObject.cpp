@@ -15,7 +15,7 @@ node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& r
 	return resizer_rect;
 }
 
-node::BlockResizeObject::BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size)
+node::BlockResizeObject::BlockResizeObject(BlockObject& parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size)
 	:GraphicsObject{size, ObjectType::interactive, nullptr}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
 {
 	SetAligned(false);
@@ -173,7 +173,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 
 	if (side)
 	{
-		auto logic_obj = std::make_unique<logic::BlockResizeLogic>(static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
+		auto logic_obj = std::make_unique<logic::BlockResizeLogic>(*m_parent_block.GetObjectPtr(), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
 		SDL_Log("Clicked On Resize Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;
@@ -185,7 +185,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 		const auto& global_pos = this->GetScenePosition();
 		rotate_btn_global.x += global_pos.x;
 		rotate_btn_global.y += global_pos.y;
-		auto logic_obj = std::make_unique<logic::BlockRotateLogic>(rotate_btn_global, static_cast<BlockObject&>(*m_parent_block.GetObjectPtr()), scene, m_manager);
+		auto logic_obj = std::make_unique<logic::BlockRotateLogic>(rotate_btn_global, *m_parent_block.GetObjectPtr(), scene, m_manager);
 		SDL_Log("Clicked On Rotate Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;

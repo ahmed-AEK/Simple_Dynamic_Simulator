@@ -17,6 +17,6 @@ protected:
 	MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 
 private:
-	HandlePtr<GraphicsObject> m_object;
+	HandlePtrS<BlockObject,GraphicsObject> m_object;
 };
 }

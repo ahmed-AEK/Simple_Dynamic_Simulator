@@ -177,23 +177,26 @@ void node::Dialog::OnMouseMove(MouseHoverEvent& e)
 		{
 			new_size.w = std::max(mouse_parent_point.x - old_position.x, drag_data.min_size.w);
 			new_size.h = std::max(mouse_parent_point.y - old_position.y, drag_data.min_size.h);
+			if (new_size.w != old_size.w || new_size.h != old_size.h)
+			{
+				SetSize(new_size);
+			}
 			break;
 		}
 		case ResizeDrag::DragMode::top:
 		{
 			new_size.h = std::max(drag_data.drag_edge_start_position.y - mouse_parent_point.y, drag_data.min_size.h);
 			new_position.y = drag_data.drag_edge_start_position.y - new_size.h;
+			if (new_position.y != old_position.y)
+			{
+				SetPosition(new_position);
+				if (new_size.w != old_size.w || new_size.h != old_size.h)
+				{
+					SetSize(new_size);
+				}
+			}
 			break;
 		}
-		}
-
-		if (new_position.x != old_position.x || new_position.y != old_position.y)
-		{
-			SetPosition(new_position);
-			if (new_size.w != old_size.w || new_size.h != old_size.h)
-			{
-				SetSize(new_size);
-			}
 		}
 	}
 }

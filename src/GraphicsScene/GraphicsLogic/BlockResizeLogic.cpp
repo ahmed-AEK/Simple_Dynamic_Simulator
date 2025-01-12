@@ -39,7 +39,7 @@ static void SetBlockToRect(node::BlockObject& block, const node::model::Rect& ne
 
 node::logic::BlockResizeLogic::BlockResizeLogic(BlockObject& block, BlockResizeObject& resize_object, 
 	model::Point drag_start_point, DragSide side, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager},  m_block{block.GetMIHandlePtr()}, m_resizeObject{resize_object.GetMIHandlePtr()},
+	:GraphicsLogic{scene, manager},  m_block{block}, m_resizeObject{resize_object},
 	m_initial_rect{block.GetPosition().x, block.GetPosition().y, block.GetSize().w, block.GetSize().h}, m_drag_side{side}
 {
 	assert(manager);
@@ -105,7 +105,7 @@ void node::logic::BlockResizeLogic::OnMouseMove(const model::Point& current_mous
 	}
 	}
 
-	auto&& block = static_cast<BlockObject&>(*m_block.GetObjectPtr());
+	auto&& block = *m_block.GetObjectPtr();
 	SetBlockToRect(block, new_rect, m_temp_sockets);
 	auto new_object_rect = BlockResizeObject::RectForBlockRect(new_rect);
 	m_resizeObject->SetPosition({ new_object_rect.x, new_object_rect.y });
@@ -124,7 +124,7 @@ MI::ClickEvent node::logic::BlockResizeLogic::OnLMBUp(const model::Point& curren
 		CleanUp();
 		return MI::ClickEvent::CAPTURE_END;
 	}
-	auto&& block = static_cast<BlockObject&>(*m_block.GetObjectPtr());
+	auto&& block = *m_block.GetObjectPtr();
 	if (!block.GetModelId())
 	{
 		CleanUp();
@@ -197,7 +197,7 @@ void node::logic::BlockResizeLogic::CleanUp()
 {
 	if (auto ptr = m_block.GetObjectPtr())
 	{
-		auto&& block = static_cast<BlockObject&>(*ptr);
+		auto&& block = *ptr;
 		SetBlockToRect(block, m_initial_rect, m_temp_sockets);
 	}
 

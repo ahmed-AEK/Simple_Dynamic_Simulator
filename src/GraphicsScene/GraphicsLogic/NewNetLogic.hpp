@@ -28,13 +28,13 @@ public:
 
 	struct SocketAnchor
 	{
-		HandlePtr<GraphicsObject> socket;
+		HandlePtrS<BlockSocketObject, GraphicsObject> socket;
 		model::Point position;
 	};
 
 	struct SegmentAnchor
 	{
-		HandlePtr<GraphicsObject> segment;
+		HandlePtrS<NetSegment, GraphicsObject> segment;
 		model::Point position;
 	};
 
@@ -56,8 +56,8 @@ private:
 	NetModificationRequest PopulateResultNet(const model::Point& current_mouse_point);
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
 	void DeleteAllOwnedObjects();
-	std::array<HandlePtr<GraphicsObject>, 4> m_nodes;
-	std::array<HandlePtr<GraphicsObject>, 3> m_segments;
+	std::array<HandlePtrS<NetNode,GraphicsObject>, 4> m_nodes;
+	std::array<HandlePtrS<NetSegment, GraphicsObject>, 3> m_segments;
 	anchor_t m_start_anchor;
 };
 

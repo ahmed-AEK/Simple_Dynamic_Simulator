@@ -169,7 +169,7 @@ void node::logic::VSegmentDragLogic::CleanUp()
 }
 
 node::logic::SegmentViewer::SegmentViewer(NetNode& node1, NetNode& node2, NetSegment& segment)
-	:m_first_node{node1.GetFocusHandlePtr()}, m_second_node{node2.GetFocusHandlePtr()}, m_segment{segment.GetFocusHandlePtr()}
+	:m_first_node{node1}, m_second_node{node2}, m_segment{segment}
 {
 }
 
@@ -179,14 +179,14 @@ void node::logic::SegmentViewer::Update(const model::Point& pos1, const model::P
 	{
 		return;
 	}
-	static_cast<NetNode*>(m_first_node.GetObjectPtr())->setCenter(pos1);
-	static_cast<NetNode*>(m_second_node.GetObjectPtr())->setCenter(pos2);
-	static_cast<NetNode*>(m_first_node.GetObjectPtr())->UpdateConnectedSegments();
+	m_first_node.GetObjectPtr()->setCenter(pos1);
+	m_second_node.GetObjectPtr()->setCenter(pos2);
+	m_first_node.GetObjectPtr()->UpdateConnectedSegments();
 }
 
 node::logic::NodeDragHandler::NodeDragHandler(const model::Point& start_point, NetNode& node)
-	:m_start_point{ start_point }, m_node{ node.GetFocusHandlePtr() }, m_node_start_position{ node.getCenter() } {}
+	:m_start_point{ start_point }, m_node{ node }, m_node_start_position{ node.getCenter() } {}
 
 node::NetNode* node::logic::NodeDragHandler::GetBaseNode()
-{ return static_cast<NetNode*>(m_node.GetObjectPtr()); }
+{ return m_node.GetObjectPtr(); }
 

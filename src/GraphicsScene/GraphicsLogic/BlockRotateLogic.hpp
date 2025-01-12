@@ -19,7 +19,7 @@ protected:
 
 private:
 	model::Rect m_rotate_btn_rect;
-	HandlePtr<GraphicsObject> m_block;
+	HandlePtrS<BlockObject, GraphicsObject> m_block;
 };
 }
 }

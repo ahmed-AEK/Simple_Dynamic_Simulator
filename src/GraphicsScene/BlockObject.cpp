@@ -144,7 +144,7 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
 
 void node::BlockObject::SetResizeHandles(BlockResizeObject& resize_object)
 {
-    m_resizer = resize_object.GetMIHandlePtr();
+    m_resizer = resize_object;
 }
 
 void node::BlockObject::HideResizeHandles()

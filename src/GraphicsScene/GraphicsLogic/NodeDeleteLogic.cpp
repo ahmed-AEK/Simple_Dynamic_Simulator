@@ -4,7 +4,7 @@
 #include "GraphicsScene.hpp"
 
 node::NodeDeleteLogic::NodeDeleteLogic(BlockObject& node, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	: GraphicsLogic{scene, manager }, m_object{node.GetFocusHandlePtr()}
+	: GraphicsLogic{scene, manager }, m_object{node}
 {
 }
 

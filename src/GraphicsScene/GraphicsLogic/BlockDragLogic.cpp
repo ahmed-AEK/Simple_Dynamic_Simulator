@@ -6,7 +6,7 @@
 node::logic::BlockDragLogic::BlockDragLogic(model::Point startPointMouseSpace, 
     model::Point startObjectEdge, BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
     :GraphicsLogic(scene, manager), m_startPointMouseSpace{ startPointMouseSpace }, 
-    m_startObjectEdge{ startObjectEdge }, m_block{ block.GetMIHandlePtr()}
+    m_startObjectEdge{ startObjectEdge }, m_block{ block }
 {
     assert(scene);
     assert(manager);
@@ -50,7 +50,7 @@ void node::logic::BlockDragLogic::OnCancel()
 MI::ClickEvent node::logic::BlockDragLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
     auto* scene = GetScene();
-    auto* block = static_cast<BlockObject*>(m_block.GetObjectPtr());
+    auto* block = m_block.GetObjectPtr();
     if (!scene && !block)
     {
         return MI::ClickEvent::CAPTURE_END;

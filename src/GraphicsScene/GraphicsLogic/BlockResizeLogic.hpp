@@ -33,8 +33,8 @@ private:
 	void CleanUp();
 
 	std::vector<model::BlockSocketModel> m_temp_sockets;
-	HandlePtr<GraphicsObject> m_block;
-	HandlePtr<GraphicsObject> m_resizeObject;
+	HandlePtrS<BlockObject, GraphicsObject> m_block;
+	HandlePtrS<BlockResizeObject, GraphicsObject> m_resizeObject;
 	model::Rect m_initial_rect;
 	model::Point m_drag_start_point;
 	DragSide m_drag_side;

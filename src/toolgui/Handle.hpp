@@ -31,6 +31,22 @@ public:
     T* operator->() const { return GetObjectPtr(); }
 };
 
+template <typename T, typename U>
+class HandlePtrS
+{
+    HandlePtr<U> m_ptr;
+public:
+    explicit HandlePtrS(T& obj) : m_ptr{ obj.GetMIHandlePtr() } {}
+    HandlePtrS& operator=(T& obj) { m_ptr = obj.GetMIHandlePtr(); return *this; }
+    HandlePtrS() = default;
+    HandlePtrS(nullptr_t) : m_ptr(nullptr) {}
+    T* GetObjectPtr() const { return static_cast<T*>(m_ptr.GetObjectPtr()); }
+    bool isAlive() const { return m_ptr.isAlive(); }
+    explicit operator bool() const { return isAlive(); }
+    T* operator->() const { return static_cast<T*>(GetObjectPtr()); }
+    operator HandlePtr<U>() const { return m_ptr; }
+};
+
 template <typename T>
 class HandleOwnigPtr
 {

@@ -31,7 +31,7 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSo
 			layer++;
 		}
 		assert(manager);
-		return std::make_unique<NewNetLogic>(SocketAnchor{socket.GetFocusHandlePtr(), socket.GetCenterInSpace()}, nodes, segments, scene, manager);
+		return std::make_unique<NewNetLogic>(SocketAnchor{ HandlePtrS<BlockSocketObject,GraphicsObject>{socket}, socket.GetCenterInSpace() }, nodes, segments, scene, manager);
 	}
 	catch (...)
 	{
@@ -77,7 +77,7 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSe
 			layer++;
 		}
 		assert(manager);
-		return std::make_unique<NewNetLogic>(SegmentAnchor{ base_segment.GetFocusHandlePtr(), {base_segment.getStartNode()->getCenter().x, start_point.y}}, nodes, segments, scene, manager);
+		return std::make_unique<NewNetLogic>(SegmentAnchor{ HandlePtrS<NetSegment, GraphicsObject>{base_segment}, {base_segment.getStartNode()->getCenter().x, start_point.y} }, nodes, segments, scene, manager);
 	}
 	catch (...)
 	{
@@ -109,13 +109,13 @@ node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*
 		[](const auto& node)
 		{
 			assert(node);
-			return node->GetFocusHandlePtr();
+			return HandlePtrS<NetNode, GraphicsObject>{*node};
 		});
 	std::transform(segments.begin(), segments.end(), m_segments.begin(),
 		[](const auto& segment)
 		{
 			assert(segment);
-			return segment->GetFocusHandlePtr();
+			return HandlePtrS<NetSegment, GraphicsObject>{*segment};
 		});
 	for (auto&& node : nodes)
 	{
@@ -124,18 +124,6 @@ node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*
 	segments[0]->Connect(nodes[0], nodes[1], model::NetSegmentOrientation::horizontal);
 	segments[1]->Connect(nodes[1], nodes[2], model::NetSegmentOrientation::vertical);
 	segments[2]->Connect(nodes[2], nodes[3], model::NetSegmentOrientation::horizontal);
-}
-
-static node::NetNode* AsNode(const node::HandlePtr<node::GraphicsObject>& obj)
-{
-	assert(obj.isAlive());
-	return static_cast<node::NetNode*>(obj.GetObjectPtr());
-}
-
-static node::NetSegment* AsSegment(const node::HandlePtr<node::GraphicsObject>& obj)
-{
-	assert(obj.isAlive());
-	return static_cast<node::NetSegment*>(obj.GetObjectPtr());
 }
 
 struct AnchorAlive
@@ -167,12 +155,12 @@ void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_poi
 
 	model::Point start = std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor);
 	model::node_int midpoint_x = (end_point.x + start.x) / 2;
-	AsNode(m_nodes[1])->setCenter({ midpoint_x, start.y });
-	AsNode(m_nodes[2])->setCenter({ midpoint_x, end_point.y });
-	AsNode(m_nodes[3])->setCenter({ end_point.x, end_point.y });
-	AsSegment(m_segments[0])->CalcRect();
-	AsSegment(m_segments[1])->CalcRect();
-	AsSegment(m_segments[2])->CalcRect();
+	m_nodes[1]->setCenter({ midpoint_x, start.y });
+	m_nodes[2]->setCenter({ midpoint_x, end_point.y });
+	m_nodes[3]->setCenter({ end_point.x, end_point.y });
+	m_segments[0]->CalcRect();
+	m_segments[1]->CalcRect();
+	m_segments[2]->CalcRect();
 }
 
 MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mouse_point)
@@ -208,22 +196,22 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	NetModificationRequest request;
 	
 	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		AsNode(m_nodes[0])->getCenter()
+		m_nodes[0]->getCenter()
 		});
 	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		AsNode(m_nodes[1])->getCenter()
+		m_nodes[1]->getCenter()
 		});
 	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		AsNode(m_nodes[2])->getCenter()
+		m_nodes[2]->getCenter()
 		});
 	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		AsNode(m_nodes[3])->getCenter()
+		m_nodes[3]->getCenter()
 		});
 
 	{
 		auto segment1_side = model::ConnectedSegmentSide{};
 		auto segment2_side = model::ConnectedSegmentSide{};
-		if (AsNode(m_nodes[0])->getCenter().x < AsNode(m_nodes[1])->getCenter().x) // node 0 on left
+		if (m_nodes[0]->getCenter().x < m_nodes[1]->getCenter().x) // node 0 on left
 		{
 			segment1_side = model::ConnectedSegmentSide::east;
 			segment2_side = model::ConnectedSegmentSide::west;
@@ -247,7 +235,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	{
 		auto segment1_side = model::ConnectedSegmentSide{};
 		auto segment2_side = model::ConnectedSegmentSide{};
-		if (AsNode(m_nodes[1])->getCenter().y <= AsNode(m_nodes[2])->getCenter().y) // node1 above node 2
+		if (m_nodes[1]->getCenter().y <= m_nodes[2]->getCenter().y) // node1 above node 2
 		{
 			segment1_side = model::ConnectedSegmentSide::south;
 			segment2_side = model::ConnectedSegmentSide::north;
@@ -271,7 +259,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	{
 		auto segment1_side = model::ConnectedSegmentSide{};
 		auto segment2_side = model::ConnectedSegmentSide{};
-		if (AsNode(m_nodes[2])->getCenter().x < AsNode(m_nodes[3])->getCenter().x) // node 2 on left
+		if (m_nodes[2]->getCenter().x < m_nodes[3]->getCenter().x) // node 2 on left
 		{
 			segment1_side = model::ConnectedSegmentSide::east;
 			segment2_side = model::ConnectedSegmentSide::west;
@@ -295,7 +283,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	BlockSocketObject* start_socket = nullptr;
 	if (std::holds_alternative<SocketAnchor>(m_start_anchor))
 	{
-		start_socket = static_cast<BlockSocketObject*>(std::get<SocketAnchor>(m_start_anchor).socket.GetObjectPtr());
+		start_socket = std::get<SocketAnchor>(m_start_anchor).socket.GetObjectPtr();
 		if (start_socket)
 		{
 			assert(start_socket->GetId());
@@ -311,7 +299,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	}
 	else if (std::holds_alternative<SegmentAnchor>(m_start_anchor))
 	{
-		auto* start_segment = static_cast<NetSegment*>(std::get<SegmentAnchor>(m_start_anchor).segment.GetObjectPtr());
+		auto* start_segment = std::get<SegmentAnchor>(m_start_anchor).segment.GetObjectPtr();
 		if (start_segment)
 		{
 			auto* start_node = start_segment->getStartNode();

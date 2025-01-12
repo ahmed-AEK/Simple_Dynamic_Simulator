@@ -23,7 +23,7 @@ protected:
 private:
 	model::Point m_startPointMouseSpace;
 	model::Point m_startObjectEdge;
-	node::HandlePtr<GraphicsObject> m_block;
+	node::HandlePtrS<BlockObject, GraphicsObject> m_block;
 	
 };
 

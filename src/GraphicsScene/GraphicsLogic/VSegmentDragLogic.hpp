@@ -35,7 +35,7 @@ struct NodeDragHandler
 	virtual AddedNode CreateRequest(NetModificationRequest& request, const model::Point& last_point) = 0;
 	virtual void OnCancel() = 0;
 	model::Point m_start_point;
-	HandlePtr<GraphicsObject> m_node;
+	HandlePtrS<NetNode, GraphicsObject> m_node;
 	model::Point m_node_start_position;
 	NodeDragHandler(NodeDragHandler&&) = default;
 	NodeDragHandler(const NodeDragHandler&) = default;
@@ -48,9 +48,9 @@ struct SegmentViewer
 {
 	SegmentViewer(NetNode& node1, NetNode& node2, NetSegment& segment);
 	void Update(const model::Point& pos1, const model::Point& pos2);
-	HandlePtr<GraphicsObject> m_first_node;
-	HandlePtr<GraphicsObject> m_second_node;
-	HandlePtr<GraphicsObject> m_segment;
+	HandlePtrS<NetNode, GraphicsObject> m_first_node;
+	HandlePtrS<NetNode, GraphicsObject> m_second_node;
+	HandlePtrS<NetSegment, GraphicsObject> m_segment;
 };
 
 class VSegmentDragLogic : public GraphicsLogic

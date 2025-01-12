@@ -6,7 +6,7 @@
 #include "BlockObject.hpp"
 
 node::logic::NetNodeDeleteLogic::NetNodeDeleteLogic(NetNode& segment, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager}, m_node{segment.GetFocusHandlePtr()}
+	:GraphicsLogic{scene, manager}, m_node{segment}
 {
 }
 
@@ -28,7 +28,7 @@ MI::ClickEvent node::logic::NetNodeDeleteLogic::OnLMBUp(const model::Point& curr
 	}
 
 	NetModificationRequest request;
-	NetNode& node = *static_cast<NetNode*>(m_node.GetObjectPtr());
+	NetNode& node = *m_node.GetObjectPtr();
 	assert(node.GetId());
 	if (!node.GetId())
 	{

@@ -21,7 +21,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
     {
         if (m_current_block_resize_slot.object && m_current_block_resize_slot.scene)
         {
-            static_cast<GraphicsScene*>(m_current_block_resize_slot.scene.GetObjectPtr())->PopObject(
+            m_current_block_resize_slot.scene->PopObject(
                 m_current_block_resize_slot.object.GetObjectPtr());
             m_current_block_resize_slot = ResizerObjectSlot{};
         }
@@ -53,7 +53,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
 
             if (m_current_block_resize_slot.object && m_current_block_resize_slot.scene)
             {
-                static_cast<GraphicsScene*>(m_current_block_resize_slot.scene.GetObjectPtr())->PopObject(
+                m_current_block_resize_slot.scene->PopObject(
                     m_current_block_resize_slot.object.GetObjectPtr());
                 m_current_block_resize_slot = ResizerObjectSlot{};
             }
@@ -61,7 +61,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
             auto resizer = CreateResizeObject(*block_obj, manager);
             if (resizer)
             {
-                m_current_block_resize_slot = ResizerObjectSlot{ scene.GetMIHandlePtr(), resizer->GetMIHandlePtr() };
+                m_current_block_resize_slot = ResizerObjectSlot{ HandlePtrS<GraphicsScene,Widget>{scene}, resizer->GetMIHandlePtr() };
                 scene.AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
             }
 
@@ -157,7 +157,7 @@ void node::ArrowTool::OnExit()
     {
         if (auto* scene = m_current_block_resize_slot.scene.GetObjectPtr())
         {
-            static_cast<GraphicsScene*>(scene)->PopObject(resizer);
+            scene->PopObject(resizer);
             m_current_block_resize_slot = ResizerObjectSlot{};
         }
     }
@@ -167,7 +167,7 @@ std::unique_ptr<node::BlockResizeObject> node::ArrowTool::CreateResizeObject(Blo
 {
     model::Rect resizer_rect = BlockResizeObject::RectForBlockRect(block.GetSceneRect());
 
-    auto resizer = std::make_unique<BlockResizeObject>(block.GetMIHandlePtr(), &manager, model::ObjectSize{ resizer_rect.w, resizer_rect.h });
+    auto resizer = std::make_unique<BlockResizeObject>(block, &manager, model::ObjectSize{ resizer_rect.w, resizer_rect.h });
     resizer->SetPosition({ resizer_rect.x, resizer_rect.y });
     block.SetResizeHandles(*resizer);
     return resizer;

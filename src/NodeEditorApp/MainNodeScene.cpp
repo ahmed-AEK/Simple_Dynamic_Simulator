@@ -773,14 +773,14 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
         auto it = objects_dialogs.find(static_cast<BlockObject*>(&object));
         if (it != objects_dialogs.end() && it->second.dialog.isAlive())
         {
-            Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
+            Dialog* dialog = it->second.dialog.GetObjectPtr();
             BumpDialogToTop(dialog);
             dialog->SetPosition({ 100.0f,100.0f});
             return;
         }
     }
 
-    auto model_id = static_cast<BlockObject*>(&object)->GetModelId();
+    auto model_id = object.GetModelId();
     assert(model_id);
     if (!model_id)
     {
@@ -799,7 +799,7 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     auto dialog = std::make_unique<BlockPropertiesDialog>(*block, graphicsObjectsManager, 
         m_classesManager, WidgetSize{ 0.0f,0.0f }, this);
     dialog->SetPosition({ 100.0f,100.0f });
-    objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::PropertiesDialog };
+    objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::PropertiesDialog };
     auto dialog_ptr = dialog.get();
     AddNormalDialog(std::move(dialog));
     SetFocus(dialog_ptr);
@@ -837,7 +837,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         auto it = objects_dialogs.find(&block);
         if (it != objects_dialogs.end() && it->second.dialog.isAlive())
         {
-            Dialog* dialog = static_cast<Dialog*>(it->second.dialog.GetObjectPtr());
+            Dialog* dialog = it->second.dialog.GetObjectPtr();
             BumpDialogToTop(dialog);
             dialog->SetPosition({ 100.0f,100.0f });
             return;
@@ -886,7 +886,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
             auto dialog = class_ptr->CreateBlockDialog(*this, block_model, *block_data,sim_data);
             if (dialog)
             {
-                objects_dialogs[&block] = DialogSlot{ dialog->GetMIHandlePtr(), DialogType::BlockDialog };
+                objects_dialogs[&block] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::BlockDialog };
                 auto dialog_ptr = dialog.get();
                 dialog_ptr->SetPosition({ 100.0f,100.0f });
                 AddNormalDialog(std::move(dialog));
@@ -1299,14 +1299,14 @@ void node::MainNodeScene::OnSettingsClicked()
             [this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
             m_sim_mgr.GetSimulationSettings(), WidgetSize{ 0.0f,0.0f }, this);
         dialog->SetPosition({ 100.0f, 100.0f });
-        m_settings_dialog = dialog->GetMIHandlePtr();
+        m_settings_dialog = *dialog;
         auto dialog_ptr = dialog.get();
         AddNormalDialog(std::move(dialog));
         SetFocus(dialog_ptr);
     }
     else
     {
-        auto* dialog = static_cast<SimulationSettingsDialog*>(m_settings_dialog.GetObjectPtr());
+        auto* dialog = m_settings_dialog.GetObjectPtr();
         dialog->SetPosition({ 100, 100 });
         BumpDialogToTop(dialog);
     }

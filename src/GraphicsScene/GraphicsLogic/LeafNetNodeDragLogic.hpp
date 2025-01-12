@@ -28,8 +28,8 @@ private:
 
 	model::Point m_first_node_start_point;
 	model::Point m_second_node_start_point;
-	HandlePtr<GraphicsObject> m_dragged_node;
-	HandlePtr<GraphicsObject> m_connected_node;
+	HandlePtrS<NetNode, GraphicsObject> m_dragged_node;
+	HandlePtrS<NetNode, GraphicsObject> m_connected_node;
 };
 }
 }

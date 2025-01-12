@@ -98,7 +98,7 @@ private:
     std::unique_ptr<TabChangeNotifier> m_tab_change_notifier;
 
     SimulationManager m_sim_mgr;
-    HandlePtr<Widget> m_settings_dialog;
+    HandlePtrS<Dialog, Widget> m_settings_dialog;
 
 
 };

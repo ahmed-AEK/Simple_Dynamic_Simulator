@@ -27,6 +27,7 @@ class GraphicsObjectsManager;
 class BlockObject;
 class SceneModelManager;
 struct BlockResult;
+class Dialog;
 
 enum class DialogType
 {
@@ -36,7 +37,7 @@ enum class DialogType
 
 struct DialogSlot
 {
-    HandlePtr<Widget> dialog;
+    HandlePtrS<Dialog, Widget> dialog;
     DialogType type;
 };
 

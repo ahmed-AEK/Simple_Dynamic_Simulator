@@ -5,7 +5,7 @@
 #include "GraphicsObjectsManager.hpp"
 
 node::logic::BlockRotateLogic::BlockRotateLogic(const model::Rect& rotate_btn_rect, BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager}, m_rotate_btn_rect{rotate_btn_rect}, m_block{block.GetMIHandlePtr()}
+	:GraphicsLogic{scene, manager}, m_rotate_btn_rect{rotate_btn_rect}, m_block{block}
 {
 	assert(scene);
 	assert(manager);
@@ -20,7 +20,7 @@ MI::ClickEvent node::logic::BlockRotateLogic::OnLMBUp(const model::Point& curren
 		return MI::ClickEvent::CAPTURE_END;
 	}
 
-	auto&& block = static_cast<BlockObject&>(*m_block.GetObjectPtr());
+	auto&& block = *m_block.GetObjectPtr();
 	if (!block.GetModelId())
 	{
 		return MI::ClickEvent::CAPTURE_END;

@@ -7,12 +7,13 @@ namespace node
 {
 
 class GraphicsObjectsManager;
+class BlockObject;
 
 class BlockResizeObject : public GraphicsObject
 {
 public:
 	static model::Rect RectForBlockRect(const model::Rect& rect);
-	BlockResizeObject(HandlePtr<GraphicsObject> parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size);
+	BlockResizeObject(BlockObject& parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size);
 
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 protected:
@@ -21,7 +22,7 @@ protected:
 
 private:
 	model::Rect GetInnerRect();
-	HandlePtr<GraphicsObject> m_parent_block;
+	HandlePtrS<BlockObject, GraphicsObject> m_parent_block;
 	GraphicsObjectsManager* m_manager;
 	SVGRasterizer m_rotate_rasterizer;
 	static constexpr int corner_width = 15;

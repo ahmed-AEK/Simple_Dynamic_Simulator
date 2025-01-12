@@ -28,7 +28,7 @@ class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, pu
 public:
 	GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory);
 	
-	GraphicsScene* GetGraphicsScene() { return static_cast<GraphicsScene*>(m_scene.GetObjectPtr()); }
+	GraphicsScene* GetGraphicsScene() { return m_scene.GetObjectPtr(); }
 
 	void SetSceneModel(std::shared_ptr<SceneModelManager> scene);
 	void SetSubSceneManager(SubScenesManager* manager) { m_parent_manager = manager; }
@@ -45,7 +45,7 @@ private:
 	void UpdateBlockStyler(BlockObject& block, const model::BlockModel& model);
 	std::unique_ptr<node::BlockStyler> GetBlockStyler(const std::string& styler, const model::BlockModel& model);
 
-	HandlePtr<Widget> m_scene;
+	HandlePtrS<GraphicsScene,Widget> m_scene;
 	SubScenesManager* m_parent_manager = nullptr;
 	std::shared_ptr<SceneModelManager> m_sceneModel;
 	std::unordered_map<model::BlockId, BlockObject*> m_blocks;

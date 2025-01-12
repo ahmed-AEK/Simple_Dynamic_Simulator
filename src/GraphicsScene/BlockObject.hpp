@@ -54,7 +54,7 @@ private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;
     std::unique_ptr<BlockStyler> m_styler;
-    HandlePtr<GraphicsObject> m_resizer;
+    HandlePtrS<BlockResizeObject, GraphicsObject> m_resizer;
     model::BlockOrientation m_orientation;
 };
 

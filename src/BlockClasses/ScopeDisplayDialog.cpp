@@ -186,13 +186,13 @@ private:
 }
 
 node::ScopeDisplayTool::ScopeDisplayTool(std::string name, PlotWidget& widget)
-	: m_name{ std::move(name) }, m_plot_widget{widget.GetMIHandlePtr()}
+	: m_name{ std::move(name) }, m_plot_widget{ widget }
 {
 }
 
 node::PlotWidget* node::ScopeDisplayTool::GetWidget()
 {
-	return static_cast<PlotWidget*>(m_plot_widget.GetObjectPtr());
+	return m_plot_widget.GetObjectPtr();
 }
 
 void node::ScopeDisplayToolsManager::ChangeTool(std::string_view tool_name)
@@ -221,13 +221,13 @@ void node::ScopeDisplayToolsManager::ChangeTool(std::string_view tool_name)
 	{
 		if (auto ptr = btn.GetObjectPtr())
 		{
-			if (static_cast<ScopeDisplayToolButton*>(ptr)->GetName() == tool_name)
+			if (ptr->GetName() == tool_name)
 			{
-				static_cast<ScopeDisplayToolButton*>(ptr)->SetActive(true);
+				ptr->SetActive(true);
 			}
 			else
 			{
-				static_cast<ScopeDisplayToolButton*>(ptr)->SetActive(false);
+				ptr->SetActive(false);
 			}
 		}
 	}
@@ -241,12 +241,12 @@ void node::ScopeDisplayToolsManager::AddTool(std::shared_ptr<ScopeDisplayTool> t
 
 void node::ScopeDisplayToolsManager::AddButton(ScopeDisplayToolButton& btn)
 {
-	m_buttons.push_back(btn.GetMIHandlePtr());
+	m_buttons.emplace_back(btn);
 }
 
 void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 {
-	m_plot_widget = widget.GetMIHandlePtr();
+	m_plot_widget = widget;
 }
 
 node::ScopeDisplayToolButton::ScopeDisplayToolButton(const WidgetSize& size, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)
@@ -333,21 +333,36 @@ void node::ScopeDiplayDialog::UpdateResults(std::any new_result)
 	}
 }
 
+namespace detail
+{
+	template <typename T, typename U, std::size_t ... Is>
+	constexpr std::array<T, sizeof...(Is)>
+		create_array(U value, std::index_sequence<Is...>)
+	{
+		// cast Is to void to remove the warning: unused value
+		return { {(static_cast<void>(Is), T{value})...} };
+	}
+}
+
+template <std::size_t N, typename T, typename U>
+constexpr std::array<T, N> create_array(const U& value)
+{
+	return detail::create_array<T>(value, std::make_index_sequence<N>());
+}
+
 node::PlotWidget::PlotWidget(TTF_Font* font, const WidgetSize& size, Dialog* parent)
-	:DialogControl{size,parent}, m_font{font}, m_current_point_painter{font}
+	:DialogControl{ size,parent }, m_font{ font },
+	m_x_painters{ create_array<x_ticks_count, TextPainter>(font) }, 
+	m_y_painters{ create_array<y_ticks_count, TextPainter>(font) }, 
+	m_current_point_painter{font}
 {
 	SetSizingMode(DialogControl::SizingMode::expanding);
-
-	for (int i = 0; i < 18; i++)
-	{
-		m_painters.emplace_back(font);
-	}
 }
 
 void node::PlotWidget::OnDraw(SDL::Renderer& renderer)
 {
-	DrawAxes(renderer);
 	DrawAxesTicks(renderer);
+	DrawAxes(renderer);
 	DrawData(renderer);
 	DrawCoords(renderer);
 	if (m_tool)
@@ -498,20 +513,12 @@ void node::PlotWidget::DrawAxes(SDL_Renderer* renderer)
 
 SDL_Rect node::PlotWidget::GetInnerRect()
 {
-	constexpr float left_margin = 45;
-	constexpr float right_margin = 20;
-	constexpr float top_margin = 20;
-	constexpr float bottom_margin = 40;
-	const auto& base_rect = GetSize().ToRect();
-	SDL_Rect inner_rect = ToRect(SDL_FRect{ base_rect.x + left_margin, base_rect.y + top_margin, base_rect.w - left_margin - right_margin, base_rect.h - top_margin - bottom_margin });
-	return inner_rect;
+	return ToRect(m_inner_rect);
 }
 
 void node::PlotWidget::ResetPainters()
 {
 	SDL_FRect inner_rect = ToFRect(GetInnerRect());
-	m_painters.clear();
-	m_data_texture.DropTexture();
 
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
@@ -523,14 +530,18 @@ void node::PlotWidget::ResetPainters()
 			if (draw_text)
 			{
 				float tick_value = m_space_extent.y + m_space_extent.h - (static_cast<float>(y) - inner_rect.y) / static_cast<float>(inner_rect.h) * m_space_extent.h;
+				if (std::isnan(tick_value))
+				{
+					tick_value = 0;
+				}
 				char buffer[16]{};
 				auto [ptr, ec] = std::to_chars(&buffer[0], buffer + std::size(buffer), tick_value, std::chars_format::fixed, 2);
 				if (ec != std::errc{})
 				{
 					std::memset(buffer, 0, std::size(buffer));
 				}
-				m_painters.emplace_back(m_font);
-				m_painters.back().SetText(std::string{ buffer });
+				m_y_painters[i] = TextPainter{m_font};
+				m_y_painters[i].SetText(std::string{ buffer });
 			}
 			y += spacing;
 		}
@@ -544,14 +555,18 @@ void node::PlotWidget::ResetPainters()
 			if (draw_text)
 			{
 				float tick_value = m_space_extent.x + (static_cast<float>(x) - inner_rect.x) / static_cast<float>(inner_rect.w) * m_space_extent.w;
+				if (std::isnan(tick_value))
+				{
+					tick_value = 0;
+				}
 				char buffer[16]{};
 				auto [ptr, ec] = std::to_chars(&buffer[0], buffer + std::size(buffer), tick_value, std::chars_format::fixed, 2);
 				if (ec != std::errc{})
 				{
 					std::memset(buffer, 0, std::size(buffer));
 				}
-				m_painters.emplace_back(m_font);
-				m_painters.back().SetText(std::string{ buffer });
+				m_x_painters[i] = TextPainter{ m_font };
+				m_x_painters[i].SetText(std::string{ buffer });
 			}
 			x += spacing;
 		}
@@ -840,32 +855,45 @@ void node::PlotWidget::DrawData(SDL_Renderer* renderer)
 
 void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 {
-	SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	SDL_FRect inner_rect = GetSize().ToRect();
+	inner_rect.y += top_margin;
+	inner_rect.h -= bottom_margin + top_margin;
 	const int tick_length = 5;
-	size_t painter_idx = 0;
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
+	SDL_Color Black = { 50, 50, 50, 255 };
+	float x_inner_offset = 0;
 	bool draw_text = true;
 	{
+		std::array<SDL_FRect, y_ticks_count> painters_rects;
+		for (size_t i = 0; i < painters_rects.size(); i++)
+		{
+			painters_rects[i] = m_y_painters[i].GetRect(renderer, Black);
+			x_inner_offset = std::max(painters_rects[i].w + 2 * text_margin + tick_length, x_inner_offset);
+		}
+
+		inner_rect.x += x_inner_offset;
+		inner_rect.w -= x_inner_offset + right_margin;
+		m_inner_rect = inner_rect;
+
 		std::array<SDL_FRect, y_ticks_count> left_ticks;
 		{
 			const float spacing = (inner_rect.h) / static_cast<float>(left_ticks.size() + 1);
-			float y = inner_rect.y + spacing;
+			float y = inner_rect.y + spacing + top_margin;
 			for (size_t i = 0; i < left_ticks.size(); i++)
 			{
 				if (draw_text)
 				{
-					SDL_Color Black = { 50, 50, 50, 255 };
-					SDL_FRect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
-					text_rect.x = inner_rect.x - 5 - tick_length - text_rect.w;
+					SDL_FRect text_rect = painters_rects[i];
+					text_rect.x = x_inner_offset - text_rect.w - text_margin - tick_length;
 					text_rect.y = y - text_rect.h / 2;
-					m_painters[painter_idx].Draw(renderer, { text_rect.x, text_rect.y }, Black);
-					painter_idx += 1;
+					m_y_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, Black);
 				}
 
 				left_ticks[i] = SDL_FRect{ inner_rect.x - tick_length, y, tick_length + 1, 1 };
 				y += spacing;
 			}
 		}
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderFillRects(renderer, left_ticks.data(), static_cast<int>(std::size(left_ticks)));
 	}
 
@@ -873,18 +901,15 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 		std::array<SDL_FRect, x_ticks_count> bottom_ticks;
 		{
 			const int spacing = static_cast<int>(inner_rect.w) / static_cast<int>(bottom_ticks.size() + 1);
-			float x = inner_rect.x + spacing;
+			float x = x_inner_offset + spacing;
 			for (size_t i = 0; i < bottom_ticks.size(); i++)
 			{
 				if (draw_text)
-				{
-					SDL_Color Black = { 50, 50, 50, 255 };
-					
-					SDL_FRect text_rect = m_painters[painter_idx].GetRect(renderer, Black);
+				{					
+					SDL_FRect text_rect = m_x_painters[i].GetRect(renderer, Black);
 					text_rect.x = x - text_rect.w/2;
 					text_rect.y = inner_rect.y + inner_rect.h + tick_length + 5;
-					m_painters[painter_idx].Draw(renderer, { text_rect.x, text_rect.y }, Black);
-					painter_idx += 1;
+					m_x_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, Black);
 				}
 				
 
@@ -892,6 +917,7 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 				x += spacing;
 			}
 		}
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderFillRects(renderer, bottom_ticks.data(), static_cast<int>(std::size(bottom_ticks)));
 	}
 }

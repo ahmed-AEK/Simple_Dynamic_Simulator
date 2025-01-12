@@ -19,7 +19,7 @@ protected:
 	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
-	HandlePtr<GraphicsObject> m_block;
+	HandlePtrS<BlockObject, GraphicsObject> m_block;
 };
 
 }

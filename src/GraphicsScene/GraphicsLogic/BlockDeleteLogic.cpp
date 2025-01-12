@@ -4,7 +4,7 @@
 #include "GraphicsObjectsManager.hpp"
 
 node::logic::BlockDeleteLogic::BlockDeleteLogic(BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager}, m_block{block.GetFocusHandlePtr()}
+	:GraphicsLogic{scene, manager}, m_block{block}
 {
 }
 
@@ -25,7 +25,7 @@ MI::ClickEvent node::logic::BlockDeleteLogic::OnLMBUp(const model::Point& curren
 		return MI::ClickEvent::CAPTURE_END;
 	}
 
-	GetObjectsManager()->GetSceneModel()->RemoveBlockById(*static_cast<BlockObject*>(m_block.GetObjectPtr())->GetModelId());
+	GetObjectsManager()->GetSceneModel()->RemoveBlockById(*m_block->GetModelId());
 
 	return MI::ClickEvent::CAPTURE_END;
 }

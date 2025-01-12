@@ -30,7 +30,7 @@ private:
 
 	struct ResizerObjectSlot
 	{
-		HandlePtr<Widget> scene;
+		HandlePtrS<GraphicsScene, Widget> scene;
 		HandlePtr<GraphicsObject> object;
 	};
 	ResizerObjectSlot m_current_block_resize_slot;

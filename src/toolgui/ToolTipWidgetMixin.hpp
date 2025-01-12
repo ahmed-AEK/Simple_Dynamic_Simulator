@@ -6,6 +6,9 @@
 
 namespace node
 {
+
+class ToolTipWidget;
+
 namespace mixin
 {
 	template <typename T>
@@ -31,7 +34,7 @@ namespace mixin
 		int64_t m_updateTaskId = 0;
 		SDL_FPoint m_last_mouse_pos{};
 		std::string m_description;
-		HandlePtr<Widget> m_toolTipWidget;
+		HandlePtrS<ToolTipWidget, Widget> m_toolTipWidget;
 
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BlockClasses/BlockDialog.hpp"
+#include <array>
 
 namespace node
 {
@@ -34,7 +35,7 @@ protected:
 	virtual void OnCancel() {}
 private:
 	std::string m_name;
-	HandlePtr<Widget> m_plot_widget;
+	HandlePtrS<PlotWidget, Widget> m_plot_widget;
 };
 
 class ScopeDisplayToolButton;
@@ -49,8 +50,8 @@ public:
 	void SetWidget(PlotWidget& widget);
 private:
 	std::vector<std::shared_ptr<ScopeDisplayTool>> m_tools;
-	std::vector<HandlePtr<Widget>> m_buttons;
-	HandlePtr<Widget> m_plot_widget;
+	std::vector<HandlePtrS<ScopeDisplayToolButton, Widget>> m_buttons;
+	HandlePtrS<PlotWidget, Widget> m_plot_widget;
 };
 
 class PlotWidget : public DialogControl
@@ -79,19 +80,27 @@ private:
 
 	void ReDrawSurface();
 
+	static constexpr size_t x_ticks_count = 9;
+	static constexpr size_t y_ticks_count = 9;
+	static constexpr float top_margin = 20;
+	static constexpr float bottom_margin = 40;
+	static constexpr float right_margin = 20;
+	static constexpr float text_margin = 5;
+
 	TTF_Font* m_font;
 	XYSeries m_data;
 	SDL_FRect m_base_space_extent{ 0,0,0,0 };
 	SDL_FRect m_space_extent{ 0,0,0,0 };
-	std::vector<TextPainter> m_painters;
+	SDL_FRect m_inner_rect{100,100,100,100};
+	std::array<TextPainter, x_ticks_count> m_x_painters;
+	std::array<TextPainter, y_ticks_count> m_y_painters;
 	std::shared_ptr<ScopeDisplayTool> m_tool;
 	std::optional<SDL_FPoint> m_current_point{ SDL_FPoint{ 0,0 } };
 	TextPainter m_current_point_painter;
 	DroppableTexture m_data_texture;
 	SDLSurface m_data_surface;
 
-	static constexpr size_t x_ticks_count = 9;
-	static constexpr size_t y_ticks_count = 9;
+
 };
 
 class ScopeDiplayDialog : public BlockDialog

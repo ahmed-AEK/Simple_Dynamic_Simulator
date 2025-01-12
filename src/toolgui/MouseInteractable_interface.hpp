@@ -50,6 +50,9 @@ namespace MI {
     class TOOLGUI_API MouseInteractable
     {
     public:
+
+        using MI_Type = T;
+
         using MouseHoverEvent = MI::MouseHoverEvent<T>;
         using MouseButtonEvent = MI::MouseButtonEvent<T>;
 
