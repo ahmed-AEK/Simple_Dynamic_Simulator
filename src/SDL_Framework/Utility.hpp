@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <cmath>
+#include <array>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color& color);
 
@@ -90,12 +91,14 @@ public:
 
     void Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, const SDL_Color& color);
 
+    void SetDrawSides(bool NW, bool NE, bool SE, bool SW);
 private:
     void ReCreateArcTexture(SDL_Renderer* renderer);
 
     std::shared_ptr<DroppableTexture> m_arc_texture;
     SDL_Color stored_color{ 0,0,0,0 };
     int stored_radius{ 0 };
+    std::array<bool, 4> m_draw_sides{ true,true,true,true };
 };
 
 void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect, int original_radius, int thickness, const SDL_Color& color1, const SDL_Color& color2,

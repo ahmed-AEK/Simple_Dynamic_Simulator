@@ -153,15 +153,15 @@ void node::PaletteBlocksViewer::DrawHeader(SDL_Renderer* renderer)
 
 SDL_FRect node::PaletteBlocksViewer::DrawPanelBorder(SDL_Renderer* renderer)
 {
-	SDL_FRect draw_area = GetSize().ToRect();
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &draw_area);
-
-	draw_area = GetOuterRect();
+	auto draw_area = GetInnerRect();
+	auto outer_rect = draw_area;
+	outer_rect.x -= 2;
+	outer_rect.y -= 2;
+	outer_rect.w += 4;
+	outer_rect.h += 4;
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &draw_area);
+	SDL_RenderFillRect(renderer, &outer_rect);
 
-	draw_area = GetInnerRect();
 	SDL_FRect inner_rect = draw_area;
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderFillRect(renderer, &draw_area);

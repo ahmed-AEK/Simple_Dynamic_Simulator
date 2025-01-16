@@ -13,6 +13,7 @@ node::Dialog::Dialog(std::string title, const WidgetSize& size, Scene* parent)
 	assert(parent);
 	m_title_painter.SetText(m_title);
 	m_X_painter.SetText("X");
+	m_title_bar_painter.SetDrawSides(true, true, false, false);
 }
 
 node::Dialog::~Dialog()
@@ -24,14 +25,14 @@ void node::Dialog::OnDraw(SDL::Renderer& renderer)
 	DrawOutline(renderer, GetSize().ToRect());
 
 	SDL_FRect banner_rect = GetTitleBarRect();
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &banner_rect);
 	banner_rect.x += 1;
 	banner_rect.y += 1;
 	banner_rect.w -= 2;
 	banner_rect.h -= 2;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &banner_rect);
+	m_title_bar_painter.Draw(renderer, banner_rect, 8, SDL_Color{ 255,255,255,255 });
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_FRect title_separator_rect{ banner_rect.x, banner_rect.y + banner_rect.h, banner_rect.w, 1 };
+	SDL_RenderFillRect(renderer, &title_separator_rect);
 
 	DrawTitle(renderer, SDL_FPoint{ banner_rect.x + ControlsMargin, banner_rect.y });
 	DrawXButton(renderer, GetXButtonRect());
@@ -411,25 +412,22 @@ void node::Dialog::DrawTitle(SDL_Renderer* renderer, const SDL_FPoint& start )
 void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_FRect& rect)
 {
 	SDL_FRect base = rect;
-	SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	SDL_RenderFillRect(renderer, &base);
-	base.x += 1;
-	base.y += 1;
-	base.w -= 2;
-	base.h -= 2;
+	SDL_Color btn_outer_color{ 220,220,220,255 };
+	SDL_Color btn_inner_color{ 220,220,220,255 };
+
 	if (b_being_closed)
 	{
-		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
+		btn_inner_color = SDL_Color{ 220,220,220,255 };
 	}
 	else if (b_mouse_on_close && !BeingDragged())
 	{
-		SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255);
+		btn_inner_color = SDL_Color{ 255, 60, 60, 255 };
 	}
 	else
 	{
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+		btn_inner_color = SDL_Color{ 255, 255, 255, 255 };
 	}
-	SDL_RenderFillRect(renderer, &base);
+	ThickFilledRoundRect(renderer, base, 8, 1, btn_outer_color, btn_inner_color, m_X_btn_outer_painter, m_X_btn_inner_painter);
 
 	SDL_Color color;
 	if (b_mouse_on_close && !BeingDragged())
@@ -440,6 +438,10 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_FRect& rect)
 	{
 		color = SDL_Color{ 0, 0, 0, 255 };
 	}
+	base.x += 1;
+	base.y += 1;
+	base.w -= 2;
+	base.h -= 2;
 	SDL_FRect X_rect = m_X_painter.GetRect(renderer, color);
 	X_rect.x = base.x + base.w / 2 - X_rect.w / 2;
 	X_rect.y = base.y + base.h / 2 - X_rect.h / 2;
@@ -448,15 +450,14 @@ void node::Dialog::DrawXButton(SDL_Renderer* renderer, const SDL_FRect& rect)
 
 void node::Dialog::DrawOutline(SDL_Renderer* renderer, const SDL_FRect& rect)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &rect);
 	SDL_FRect inner_rect = rect;
+	ThickFilledRoundRect(renderer, inner_rect, 8, 1, 
+		SDL_Color{ 0,0,0,255 }, SDL_Color{ 250,250,250,255 }, m_outer_painter, m_inner_painter);
 	inner_rect.x += 1;
 	inner_rect.y += 1;
 	inner_rect.w -= 2;
 	inner_rect.h -= 2;
-	SDL_SetRenderDrawColor(renderer, 250, 250, 250, 255);
-	SDL_RenderFillRect(renderer, &inner_rect);
+
 
 	if (m_resizable)
 	{
@@ -486,6 +487,21 @@ void node::Dialog::SetToolbar(std::unique_ptr<ToolBar> toolbar)
 	auto title_bar_rect = GetTitleBarRect();
 	m_toolbar->SetPosition({ title_bar_rect.x, title_bar_rect.y + title_bar_rect.h });
 	m_toolbar->SetSize({ GetSize().w, ToolBar::height});
+}
+
+void node::Dialog::SetResizeable(bool value)
+{
+	m_resizable = value;
+	if (m_resizable)
+	{
+		m_outer_painter.SetDrawSides(true, true, false, true);
+		m_inner_painter.SetDrawSides(true, true, false, true);
+	}
+	else
+	{
+		m_outer_painter.SetDrawSides(true, true, true, true);
+		m_inner_painter.SetDrawSides(true, true, true, true);
+	}
 }
 
 SDL_FRect node::Dialog::GetXButtonRect() const
@@ -550,25 +566,21 @@ node::DialogButton::DialogButton(std::string text, TTF_Font* font, std::function
 
 void node::DialogButton::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_FRect inner_rect = GetSize().ToRect();
-	SDL_RenderFillRect(renderer, &inner_rect);
+	SDL_Color bg_color{ 0,0,0,255 };
+	SDL_Color inner_color{ 255,255,255,255 };
+
+	if (b_being_clicked)
+	{
+		inner_color = SDL_Color{ 220, 220, 220, 255 };
+	}
+	ThickFilledRoundRect(renderer, inner_rect, 8, 1, bg_color, inner_color, m_outer_painter, m_inner_painter);
+	
+	SDL_Color Black = { 50, 50, 50, 255 };
 	inner_rect.x += 1;
 	inner_rect.y += 1;
 	inner_rect.w -= 2;
 	inner_rect.h -= 2;
-	if (b_being_clicked)
-	{
-		SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
-	}
-	else
-	{
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	}
-	SDL_RenderFillRect(renderer, &inner_rect);
-
-	SDL_Color Black = { 50, 50, 50, 255 };
-
 	SDL_FRect text_rect = m_text_painter.GetRect(renderer, Black);
 	SDL_FPoint text_start{
 		(GetSize().w - text_rect.w) / 2,

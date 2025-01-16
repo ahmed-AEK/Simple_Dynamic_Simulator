@@ -104,6 +104,8 @@ public:
     const std::shared_ptr<ToolHandler>& GetToolHandleer() const { return m_tool; }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
 
+    const WidgetSize& GetBaseSize() noexcept { return m_base_size; }
+    void SetBaseSize(const WidgetSize& size) noexcept { m_base_size = size; }
 protected:
     void OnSetSize(const WidgetSize& size) override;
     void OnMouseMove(MouseHoverEvent& e) override;
@@ -128,6 +130,7 @@ private:
         std::shared_ptr<node::BlockStyler> styler;
     };
 
+    WidgetSize m_base_size;
     model::Rect m_spaceRect_base;
     model::Rect m_spaceRect;
     double m_scroll_ratio = 1.25;

@@ -20,6 +20,8 @@ protected:
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 private:
+	RoundRectPainter m_outer_painter;
+	RoundRectPainter m_inner_painter;
 	TextPainter m_text_painter;
 	std::function<void()> m_onClick;
 	bool b_being_clicked = false;
@@ -73,7 +75,7 @@ public:
 	
 	void SetToolbar(std::unique_ptr<ToolBar> toolbar);
 	
-	void SetResizeable(bool value = true) { m_resizable = value; }
+	void SetResizeable(bool value = true);
 	
 	Scene* GetScene() const { return m_scene; }
 	void SetScene(Scene* scene) { m_scene = scene; }
@@ -105,12 +107,6 @@ private:
 	SDL_FRect GetResizeGripRect() const;
 	WidgetSize CalculateMinSize() const;
 
-	std::vector<std::unique_ptr<DialogControl>> m_controls;
-	std::vector<std::unique_ptr<DialogButton>> m_buttons;
-	std::unique_ptr<ToolBar> m_toolbar;
-	TextPainter m_title_painter;
-	TextPainter m_X_painter;
-
 	static constexpr float ButtonHeight{ 25.0f };
 	static constexpr float ButtonsMargin{ 6.0f };
 	static constexpr float ControlsMargin{ 6.0f };
@@ -136,6 +132,16 @@ private:
 	};
 	using DragData = std::variant<std::monostate, TitleDrag, ResizeDrag>;
 
+	std::vector<std::unique_ptr<DialogControl>> m_controls;
+	std::vector<std::unique_ptr<DialogButton>> m_buttons;
+	std::unique_ptr<ToolBar> m_toolbar;
+	RoundRectPainter m_outer_painter;
+	RoundRectPainter m_inner_painter;
+	RoundRectPainter m_title_bar_painter;
+	TextPainter m_title_painter;
+	RoundRectPainter m_X_btn_outer_painter;
+	RoundRectPainter m_X_btn_inner_painter;
+	TextPainter m_X_painter;
 	DragData m_dragData;
 	std::string m_title;
 	Scene* m_scene;

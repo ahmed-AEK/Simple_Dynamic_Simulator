@@ -9,10 +9,10 @@ class LineEditControl : public Widget
 {
 public:
 	LineEditControl(std::string initial_value, const WidgetSize& size, Widget* parent);
-	void OnDraw(SDL::Renderer& renderer) override;
 	const std::string& GetValue() const { return m_value; }
 	~LineEditControl() override;
 protected:
+	void OnDraw(SDL::Renderer& renderer) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	bool OnChar(TextInputEvent& e) override;
 	bool OnKeyPress(KeyboardEvent& e) override;
@@ -20,6 +20,8 @@ protected:
 	virtual void OnKeyboardFocusOut() override;
 private:
 	void ReCalculateCursorPixelPosition();
+	RoundRectPainter m_outer_painter;
+	RoundRectPainter m_inner_painter;
 	std::string m_value;
 	TextPainter m_painter;
 	size_t m_cursor_position;

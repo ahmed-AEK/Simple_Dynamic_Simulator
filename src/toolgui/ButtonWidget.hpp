@@ -7,8 +7,12 @@
 
 #include <functional>
 
+
 namespace node
 {
+    class ButtonWidget;
+    extern template class node::mixin::TooltipMixin<node::ButtonWidget>;
+
     class ButtonWidget: public Widget, public mixin::TooltipMixin<ButtonWidget>
     {
     public:
@@ -24,6 +28,8 @@ namespace node
         constexpr static int w_margin = 5;
         constexpr static int h_margin = 5;
         SVGRasterizer m_btn_painter;
+        RoundRectPainter m_outer_painter;
+        RoundRectPainter m_inner_painter;
         std::function<void(void)> m_action;
         bool m_hovered{};
     };

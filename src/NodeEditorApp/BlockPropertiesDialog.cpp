@@ -57,7 +57,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 	{
 		std::string initial_value = property.to_string();
 		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), 
-			WidgetSize{ 500.0f, static_cast<float>(font_height + 5) }, this);
+			WidgetSize{ 500.0f, 35.0f }, this);
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
 			{

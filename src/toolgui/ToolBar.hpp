@@ -23,7 +23,6 @@ public:
 	ToolBarButton(const WidgetSize& size, ToolBar* parent, std::string name = {});
 	~ToolBarButton() override;
 	const std::string& GetName() const noexcept { return m_name; }
-	void OnDraw(SDL::Renderer& renderer) override;
 	void SetSVGPath(std::string path);
 	void SetDescription(std::string description);
 	ToolBar* GetToolBar()
@@ -32,6 +31,7 @@ public:
 	}
 	void SetToolBar(ToolBar* toolbar);
 protected:
+	void OnDraw(SDL::Renderer& renderer) override;
 	virtual bool IsDisabled() { return false; }
 	void OnMouseOut(MouseHoverEvent& e) override final;
 	void OnMouseIn(MouseHoverEvent& e) override final;
@@ -53,7 +53,7 @@ private:
 class ToolBar: public Widget
 {
 public:
-	static constexpr int height = 40;
+	static constexpr int height = 50;
 
 	ToolBar(const WidgetSize& size, Widget* parent);
 	~ToolBar() override;
@@ -74,6 +74,8 @@ protected:
 private:
 	void RepositionButtons();
 	std::vector<ToolBarElement> m_buttons;
+	RoundRectPainter m_outer_bg_painter;
+	RoundRectPainter m_inner_bg_painter;
 };
 
 

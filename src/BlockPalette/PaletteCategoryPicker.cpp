@@ -4,9 +4,8 @@
 
 node::PaletteCategoryPicker::PaletteCategoryPicker(const WidgetSize& size,
 	std::shared_ptr<PaletteProvider> provider, TTF_Font* font, Widget* parent)
-	:Widget{size, parent}, m_paletteProvider{provider}, m_title_painter{font}
+	:Widget{size, parent}, m_paletteProvider{provider}, m_items_font{font}
 {
-	m_title_painter.SetText("Block Palette");
 	assert(font);
 	if (m_paletteProvider)
 	{
@@ -67,18 +66,6 @@ MI::ClickEvent node::PaletteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
 SDL_FRect node::PaletteCategoryPicker::DrawPanelBorder(SDL_Renderer* renderer)
 {
 	SDL_FRect draw_area = GetSize().ToRect();
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &draw_area);
-	
-	SDL_Color Black{ 50,50,50,255 };
-	SDL_FRect title_rect = m_title_painter.GetRect(renderer, Black);
-	float title_start_x = draw_area.x + draw_area.w / 2 - title_rect.w / 2;
-	m_title_painter.Draw(renderer, { title_start_x, draw_area.y + 5 }, Black);
-
-	draw_area.x += 5;
-	draw_area.w -= 10;
-	draw_area.y += 5 + 5 + title_rect.h;
-	draw_area.h -= 10 + 5 + title_rect.h;
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &draw_area);
 
@@ -99,7 +86,7 @@ void node::PaletteCategoryPicker::ResetCategories()
 	// make the categories size equal to the labels size
 	while (m_categories.size() < labels.size())
 	{
-		m_categories.emplace_back(TextPainter{ m_title_painter.GetFont() });
+		m_categories.emplace_back(TextPainter{ m_items_font });
 	}
 	while (m_categories.size() > labels.size())
 	{

@@ -9,7 +9,9 @@ node::TabbedView::TabbedView(TTF_Font* font, const WidgetSize& size, Widget* par
 {
 	SetFocusProxy(&m_stacked_widget);
 	m_bar.SetFocusProxy(&m_stacked_widget);
-	m_stacked_widget.SetPosition({ 0, static_cast<float>(GetTabsBarHeight()) });
+	m_stacked_widget.SetPosition({ 2, static_cast<float>(GetTabsBarHeight()) });
+	m_outer_bg_painter.SetDrawSides(false, true, true, true);
+	m_inner_bg_painter.SetDrawSides(false, true, true, true);
 }
 
 int32_t node::TabbedView::AddTab(std::string tab_name, std::unique_ptr<Widget> widget)
@@ -26,7 +28,15 @@ void node::TabbedView::OnSetSize(const WidgetSize& size)
 
 	m_bar.SetSize({ size.w, static_cast<float>(GetTabsBarHeight()) });
 	int tab_bar_height = GetTabsBarHeight();	
-	m_stacked_widget.SetSize({ size.w, size.h - tab_bar_height });
+	m_stacked_widget.SetSize({ size.w - 4, size.h - tab_bar_height - 2 });
+}
+
+void node::TabbedView::OnDraw(SDL::Renderer& renderer)
+{
+	float bar_height = static_cast<float>(GetTabsBarHeight() - 2);
+	auto size = GetSize();
+	SDL_FRect child_widget_rect{0, bar_height, size.w, size.h - bar_height};
+	ThickFilledRoundRect(renderer, child_widget_rect, 8, 2, { 204,204,204,255 }, { 255,255,255,255 }, m_outer_bg_painter, m_inner_bg_painter);
 }
 
 int node::TabbedView::GetTabsBarHeight() const
@@ -47,18 +57,14 @@ node::TabBar::TabBar(TTF_Font* font, const WidgetSize& size, TabbedView* parent)
 
 void node::TabBar::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_FRect rect = GetSize().ToRect();
-	SDL_Color outlineColor{ 50,50,50,255 };
-	SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, 255);
-	SDL_FRect lower_rect{ rect.x, rect.y + rect.h - 2, rect.w, 2 };
-	SDL_RenderFillRect(renderer, &lower_rect);
+	UNUSED_PARAM(renderer);
 }
 
 void node::TabBar::AddTab(std::string name)
 {
 	m_buttons.push_back(
 		std::make_unique<TabButton>(m_font, 
-			WidgetSize{static_cast<float>(GetTabWidth()), GetSize().h - 2 }, this));
+			WidgetSize{static_cast<float>(GetTabWidth()), GetSize().h }, this));
 	m_buttons.back()->SetText(std::move(name));
 	m_buttons.back()->SetFocusProxy(this);
 	ReCalcLayout();
@@ -121,7 +127,7 @@ void node::TabBar::SetTabName(int32_t idx, std::string_view name)
 
 void node::TabBar::ReCalcLayout()
 {
-	float x_val = 2;
+	float x_val = 0;
 	float y_val = 0;
 	for (auto&& btn : m_buttons)
 	{
@@ -200,6 +206,8 @@ node::TabButton::TabButton(TTF_Font* font, const WidgetSize& size, TabBar* paren
 	:Widget{size, parent}, m_tab_text{font}, m_X_painter{font}, m_parent{parent}
 {
 	m_X_painter.SetText("X");
+	m_outer_painter.SetDrawSides(true, true, false, false);
+	m_inner_painter.SetDrawSides(true, true, false, false);
 }
 
 void node::TabButton::OnDraw(SDL::Renderer& renderer)
@@ -207,7 +215,7 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 	auto rect = GetSize().ToRect();
 
 	SDL_Color background_color{ 255,255,255,255 };
-	if (!GetActive())
+	if (!IsActiveBtn())
 	{
 		if (m_mouse_hovered)
 		{
@@ -215,38 +223,30 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 		}
 		else
 		{
-			background_color = SDL_Color{ 210,210,210,255 };
+			background_color = SDL_Color{ 204, 204, 204, 255};
 		}
 	}
 
 
-	SDL_Color outlineColor{ 50,50,50,255 };
-	if (GetActive())
+	SDL_Color outlineColor{ 204,204,204,255 };
+	if (IsActiveBtn())
 	{
-		m_outer_painter.Draw(renderer, rect, 8, outlineColor);
-		SDL_FRect lower_rect{ rect.x, std::floor(rect.y + rect.h / 2), rect.w,std::ceil(rect.h / 2) };
-		SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
-		SDL_RenderFillRect(renderer, &lower_rect);
-
-		SDL_FRect inner_rect{ rect };
-		inner_rect.x += 2;
-		inner_rect.w -= 4;
-		inner_rect.h -= 2;
-		inner_rect.y += 2;
-		m_inner_painter.Draw(renderer, inner_rect, 6, background_color);
-		lower_rect.x += 2;
-		lower_rect.w -= 4;
-		SDL_SetRenderDrawColor(renderer, 
-			background_color.r, background_color.g, background_color.b, background_color.a);
-		SDL_RenderFillRect(renderer, &lower_rect);
+		auto new_rect = rect;
+		new_rect.h += 2;
+		ThickFilledRoundRect(renderer, new_rect, 8, 2, outlineColor, background_color, m_outer_painter, m_inner_painter);
 	}
 	else
 	{
-		m_outer_painter.Draw(renderer, rect, 8, background_color);
-		SDL_FRect lower_rect{ rect.x, std::floor(rect.y + rect.h / 2), rect.w,std::ceil(rect.h / 2) };
-		SDL_SetRenderDrawColor(renderer,
-			background_color.r, background_color.g, background_color.b, background_color.a);
-		SDL_RenderFillRect(renderer, &lower_rect);
+		if (m_mouse_hovered)
+		{
+			auto new_rect = rect;
+			new_rect.h += 2;
+			ThickFilledRoundRect(renderer, new_rect, 8, 2, outlineColor, background_color, m_outer_painter, m_inner_painter);
+		}
+		else
+		{
+			m_outer_painter.Draw(renderer, rect, 8, background_color);
+		}
 	}
 
 	SDL_Color Black{ 50,50,50,255 };
@@ -255,7 +255,7 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 	if (m_mouse_hovered)
 	{
 		auto X_Rect = GetXBtnRect();
-		ThickFilledRoundRect(renderer, X_Rect, 6, 1, { 180,180,180,255 }, background_color, m_outer_painter, m_inner_painter);
+		ThickFilledRoundRect(renderer, X_Rect, 6, 1, { 180,180,180,255 }, background_color, m_X_btn_painter_outer, m_X_btn_painter_inner);
 		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer, Black);
 		m_X_painter.Draw(renderer, { X_Rect.x + X_Rect.w / 2 - X_Rect_inner.w / 2 , X_Rect.y + X_Rect.h / 2 - X_Rect_inner.h / 2 }, Black);
 	}

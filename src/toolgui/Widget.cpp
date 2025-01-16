@@ -27,16 +27,6 @@ bool node::Widget::OnScroll(const double amount, const SDL_FPoint& p)
     return false;
 }
 
-const node::WidgetSize& node::Widget::GetBaseSize() noexcept
-{
-    return m_base_size;
-}
-
-void node::Widget::SetBaseSize(const WidgetSize& size) noexcept
-{
-    m_base_size = size;
-}
-
 node::Widget* node::Widget::GetFocusable()
 {
     if (m_focus_proxy)
@@ -115,7 +105,7 @@ node::Widget::~Widget()
 }
 
 node::Widget::Widget(const WidgetSize& size, Widget* parent)
-:m_parent(parent), m_size{ size }, m_base_size(size)
+:m_parent(parent), m_size{ size }
 {
     if (m_parent)
     {
@@ -139,7 +129,10 @@ void node::Widget::Draw(SDL::Renderer& renderer)
     for (auto* child : m_children)
     {
         auto clip = renderer.ClipRect(WidgetRect(*child));
-        child->Draw(renderer);
+        if (clip)
+        {
+            child->Draw(renderer);
+        }
     }
 }
 

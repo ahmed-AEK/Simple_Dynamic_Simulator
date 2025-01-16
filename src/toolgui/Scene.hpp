@@ -69,6 +69,10 @@ namespace node
         Application* GetApp() const override;
 
         void SetFocus(Widget* widget);
+        void SetFocusLater(Widget* widget);
+
+        SDL_Color GetBGColor() const { return m_bg_color; }
+        void SetBGColor(SDL_Color color) { m_bg_color = color; }
     protected:
         virtual void OnStart() {};
 
@@ -98,11 +102,11 @@ namespace node
         node::HandlePtr<node::Widget> m_current_mouse_hover;
         node::HandlePtr<node::Widget> m_current_keyboar_focus;
 
-        std::unique_ptr<SidePanel> m_sidePanel;
         std::unique_ptr<ToolBar> m_toolbar;
         std::unique_ptr<Widget> m_centralWidget;
 
         std::optional<DragDropObject> m_dragObject = std::nullopt;
         bool b_mouseCaptured = false;
+        SDL_Color m_bg_color{ 255, 255, 255, 255 };
     };
 }

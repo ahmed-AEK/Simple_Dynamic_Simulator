@@ -519,7 +519,7 @@ SDL_Rect node::PlotWidget::GetInnerRect()
 void node::PlotWidget::ResetPainters()
 {
 	SDL_FRect inner_rect = ToFRect(GetInnerRect());
-
+	m_data_texture.DropTexture();
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
 	{
@@ -878,7 +878,7 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 		std::array<SDL_FRect, y_ticks_count> left_ticks;
 		{
 			const float spacing = (inner_rect.h) / static_cast<float>(left_ticks.size() + 1);
-			float y = inner_rect.y + spacing + top_margin;
+			float y = inner_rect.y + spacing;
 			for (size_t i = 0; i < left_ticks.size(); i++)
 			{
 				if (draw_text)

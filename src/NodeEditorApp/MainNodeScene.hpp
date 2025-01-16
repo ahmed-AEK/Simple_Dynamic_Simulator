@@ -17,6 +17,7 @@ class BlockStylerFactory;
 class ToolsManager;
 class TabbedView;
 class SceneManager;
+class SceneGrid;
 
 class NodeSceneEventReceiver
 {
@@ -49,7 +50,8 @@ public:
     void CloseTabRequest(int32_t tab_idx);
 protected:
     virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
-    TabbedView* m_tabbedView = nullptr;
+    HandlePtrS<TabbedView,Widget> m_tabbedView;
+    HandlePtrS<SceneGrid, Widget> m_scene_grid;
 private:
     void RunSimulator();
     void OnSimulationEnd(const SimulationEvent& event);

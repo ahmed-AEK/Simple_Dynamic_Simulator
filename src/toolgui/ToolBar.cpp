@@ -90,6 +90,11 @@ node::ToolBarButton* node::ToolBar::GetButton(const std::string& name)
 void node::ToolBar::OnDraw(SDL::Renderer& renderer)
 {
 	SDL_FRect inner_rect = GetSize().ToRect();
+	inner_rect.x += 5;
+	inner_rect.y += 5;
+	inner_rect.w -= 2 * 5;
+	inner_rect.h -= 2 * 5;
+	ThickFilledRoundRect(renderer, inner_rect, 8, 2, { 204,204,204,255 }, { 255,255,255,255 }, m_outer_bg_painter, m_inner_bg_painter);
 	inner_rect.x += 2;
 	inner_rect.y += 2;
 	inner_rect.w -= 4;
@@ -113,8 +118,8 @@ void node::ToolBar::OnDraw(SDL::Renderer& renderer)
 
 void node::ToolBar::RepositionButtons()
 {
-	float position_x = ToolBarButton::Hmargin;
-	float position_y = 0;
+	float position_x = ToolBarButton::Hmargin + 5;
+	float position_y = 5;
 	for (auto&& button : m_buttons)
 	{
 		if (isButton(button))

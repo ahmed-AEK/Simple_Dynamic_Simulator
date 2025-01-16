@@ -4,6 +4,7 @@
 #include "toolgui/ToolBar.hpp"
 #include "toolgui/Application.hpp"
 #include "toolgui/Dialog.hpp"
+#include "toolgui/SceneGrid.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -537,8 +538,8 @@ void node::MainNodeScene::InitializeTools()
 
 void node::MainNodeScene::InitializeSidePanel()
 {
-    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, 
-        WidgetSize{ 300.0f,GetSize().h}, this);
+    auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, GetApp()->getFont().get(),
+        WidgetSize{ 300.0f,GetSize().h}, nullptr);
 
 
     auto&& palette_provider = std::make_shared<PaletteProvider>(m_classesManager, m_blockStylerFactory);
@@ -734,7 +735,8 @@ void node::MainNodeScene::InitializeSidePanel()
 
     sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{ 200.0f,200.0f },
         std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
-    SetSidePanel(std::move(sidePanel));
+    sidePanel->SetTitle("Block Pallete");
+    m_scene_grid->SetSidePanel(std::move(sidePanel));
 }
 
 void node::MainNodeScene::OpenPropertiesDialog()
@@ -802,7 +804,7 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::PropertiesDialog };
     auto dialog_ptr = dialog.get();
     AddNormalDialog(std::move(dialog));
-    SetFocus(dialog_ptr);
+    SetFocusLater(dialog_ptr);
 }
 
 void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
@@ -1033,7 +1035,7 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
     }
     
     auto& scene_mgr = *scene_mgr_it->second.manager;
-    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetSize(), m_tabbedView);
+    std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetSize(), nullptr);
     auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
     gScene->Attach(*graphicsObjectsManager);
     gScene->SetToolsManager(m_toolsManager);
@@ -1141,6 +1143,7 @@ std::optional<node::SceneId> node::MainNodeScene::GetSceneIdForTab(int32_t index
 node::MainNodeScene::MainNodeScene(const WidgetSize& size, node::Application* parent)
 :Scene(size, parent)
 {
+    SetBGColor({ 235,235,235,255 });
 }
 
 namespace node
@@ -1185,10 +1188,16 @@ void node::MainNodeScene::OnInit()
         { return std::make_unique<SVGBlockStyler>(model.block); });
 
     {
+        auto scene_grid = std::make_unique<SceneGrid>(WidgetSize{ 100,100 }, this);
+        m_scene_grid = *scene_grid;
+        SetCenterWidget(std::move(scene_grid));
+    }
+
+    {
         std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont(FontType::Label).get(), 
             WidgetSize{ 0,0 }, this);
-        m_tabbedView = view.get();
-        SetCenterWidget(std::move(view));
+        m_tabbedView = *view;
+        m_scene_grid->SetMainWidget(std::move(view));
     }
 
     m_classesManager = std::make_shared<BlockClassesManager>();
@@ -1220,7 +1229,7 @@ void node::MainNodeScene::OnInit()
     m_tabbedView->Attach(*m_tab_change_notifier);
 
 
-    GetToolBar()->SetFocusProxy(m_tabbedView);
+    GetToolBar()->SetFocusProxy(m_scene_grid.GetObjectPtr());
     SetFocus(GetCenterWidget());
 }
 

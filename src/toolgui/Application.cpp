@@ -359,10 +359,12 @@ namespace node
         if (m_scene && !UpdateTasksEmpty())
         {
             DoUpdateTasks();
-        }
-        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
-        SDL_RenderClear(m_renderer);
+        }        
         SDL_assert(m_scene);
+
+        auto BG_Color = m_scene->GetBGColor();
+        SDL_SetRenderDrawColor(m_renderer, BG_Color.r, BG_Color.g, BG_Color.b, BG_Color.a);
+        SDL_RenderClear(m_renderer);
         m_scene->Draw(m_renderer);
         // Update screen
         SDL_RenderPresent(m_renderer);

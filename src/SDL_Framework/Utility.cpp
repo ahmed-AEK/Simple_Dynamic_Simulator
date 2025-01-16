@@ -160,23 +160,56 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, 
     {
         // draw lower right corner
         SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y + rect.h - radius_f, radius_f, radius_f };
-        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
+        if (m_draw_sides[2])
+        {
+            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
+        }
+        else
+        {
+            SDL_RenderFillRect(renderer, &trgt);
+        }
     }
     {
         // draw upper right corner
         SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y, radius_f, radius_f };
-        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
+        if (m_draw_sides[1])
+        {
+            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
+        }
+        else
+        {
+            SDL_RenderFillRect(renderer, &trgt);
+        }
     }
     {
         // draw upper left corner
         SDL_FRect trgt{ rect.x, rect.y, radius_f, radius_f };
-        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
+        if (m_draw_sides[0])
+        {
+            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
+        }
+        else
+        {
+            SDL_RenderFillRect(renderer, &trgt);
+        }
     }
     {
         // draw lower left corner
         SDL_FRect trgt{ rect.x, rect.y + rect.h - radius_f, radius_f, radius_f };
-        SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
+        if (m_draw_sides[3])
+        {
+            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
+        }
+        else
+        {
+            SDL_RenderFillRect(renderer, &trgt);
+        }
     }
+}
+
+void RoundRectPainter::SetDrawSides(bool NW, bool NE, bool SE, bool SW)
+{
+    m_draw_sides = std::array<bool,4>{ NW, NE, SE, SW };
 }
 
 void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)

@@ -14,7 +14,10 @@ void node::StackedWidget::Draw(SDL::Renderer& renderer)
 	if (auto* widget = GetCurrentWidget())
 	{
 		auto clip = renderer.ClipRect(Widget::WidgetRect(*widget));
-		widget->Draw(renderer);
+		if (clip)
+		{
+			widget->Draw(renderer);
+		}
 	}
 }
 

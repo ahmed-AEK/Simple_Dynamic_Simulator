@@ -13,19 +13,18 @@ node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSi
 
 void node::LineEditControl::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_FRect edit_box = GetSize().ToRect();
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderFillRect(renderer, &edit_box);
+	const SDL_FRect edit_box = GetSize().ToRect();
+	ThickFilledRoundRect(renderer, edit_box, 8, 1, { 0,0,0,255 }, { 255,255,255,255 }, m_outer_painter, m_inner_painter);
+
 	SDL_FRect inner_rect{ edit_box };
 	inner_rect.x += 1;
 	inner_rect.y += 1;
 	inner_rect.w -= 2;
 	inner_rect.h -= 2;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderFillRect(renderer, &inner_rect);
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		SDL_FPoint text_start{ inner_rect.x + H_Margin, inner_rect.y };
+		auto text_Rect = m_painter.GetRect(renderer, Black);
+		SDL_FPoint text_start{ inner_rect.x + H_Margin, inner_rect.y + inner_rect.h - 5 - text_Rect.h };
 		m_painter.Draw(renderer, text_start, Black);
 	}
 	if (m_focused)

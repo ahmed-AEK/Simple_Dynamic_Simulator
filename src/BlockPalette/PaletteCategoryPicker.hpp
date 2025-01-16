@@ -36,7 +36,7 @@ private:
 	};
 
 	std::shared_ptr<PaletteProvider> m_paletteProvider;
-	TextPainter m_title_painter;
+	TTF_Font* m_items_font = nullptr;
 	std::vector<BlockCategorySlot> m_categories;
 	SDL_FRect m_categories_draw_area{};
 };

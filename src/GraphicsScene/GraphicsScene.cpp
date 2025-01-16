@@ -12,7 +12,7 @@
 #include "SDL_Framework/SDLRenderer.hpp"
 
 node::GraphicsScene::GraphicsScene(const WidgetSize& size, node::Widget* parent)
-:Widget(size, parent), 
+:Widget(size, parent), m_base_size{size},
 m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * size.h/size.w)}, 
 m_spaceRect{0, 0, 200, static_cast<int>(200 * size.h/ size.w)},
 m_spaceScreenTransformer(GetSize().ToRect(), m_spaceRect)
@@ -88,8 +88,11 @@ void node::GraphicsScene::OnDrawObjects(SDL::Renderer& renderer)
         if (object.m_ptr->IsVisible() && SDL_HasRectIntersectionFloat(&screen_rect, &obj_rect))
         {
             auto object_rect_screen = GetSpaceScreenTransformer().SpaceToScreenRect(object.m_ptr->GetSceneRect());
-            auto r = renderer.ClipRect(ToRectCeil(object_rect_screen));
-            object.m_ptr->Draw(renderer, GetSpaceScreenTransformer().WithZeroOffset());
+            auto clip = renderer.ClipRect(ToRectCeil(object_rect_screen));
+            if (clip)
+            {
+                object.m_ptr->Draw(renderer, GetSpaceScreenTransformer().WithZeroOffset());
+            }
         }
     }
 }

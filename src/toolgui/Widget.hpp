@@ -101,7 +101,7 @@ namespace node
     class TOOLGUI_API Widget : public WidgetMouseInteractable
     {
     public:
-        Widget(const WidgetSize& rect, Widget* parent);
+        Widget(const WidgetSize& size, Widget* parent);
         Widget(const Widget&) = delete;
         Widget& operator=(const Widget&) = delete;
 
@@ -109,8 +109,6 @@ namespace node
         void SetSize(const WidgetSize& size);
         virtual void Draw(SDL::Renderer& renderer);
         virtual ~Widget();
-        const WidgetSize& GetBaseSize() noexcept;
-        void SetBaseSize(const WidgetSize& size) noexcept;
         bool Scroll(const double amount, const SDL_FPoint& p) {return OnScroll(amount, p);}
         
         bool IsDropTarget() const { return m_isDropTarget; }
@@ -202,7 +200,6 @@ namespace node
         Widget* m_parent = nullptr;
         SDL_FPoint m_position{};
         WidgetSize m_size{};
-        WidgetSize m_base_size;
         bool m_isDropTarget = false;
         bool b_focusable = false;
         bool b_focused = false;

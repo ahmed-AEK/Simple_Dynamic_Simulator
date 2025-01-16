@@ -20,7 +20,10 @@ void node::Scene::Draw(SDL::Renderer& renderer)
         SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
         auto clip = renderer.ClipRect(WidgetRect(*m_current_mouse_hover.GetObjectPtr()));
-        m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
+        if (clip)
+        {
+            m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
+        }
     }
 }
 
@@ -29,38 +32,51 @@ void node::Scene::OnDraw(SDL::Renderer& renderer)
     if (m_centralWidget)
     {
         auto clip = renderer.ClipRect(WidgetRect(*m_centralWidget));
-        m_centralWidget->Draw(renderer);
+        if (clip)
+        {
+            m_centralWidget->Draw(renderer);
+        }
     }
     if (m_toolbar)
     {
         auto clip = renderer.ClipRect(WidgetRect(*m_toolbar));
-        m_toolbar->Draw(renderer);
-    }
-    if (m_sidePanel)
-    {
-        auto clip = renderer.ClipRect(WidgetRect(*m_sidePanel));
-        m_sidePanel->Draw(renderer);
+        if (clip)
+        {
+            m_toolbar->Draw(renderer);
+        }
     }
     for (auto&& it = m_dialogs.begin(); it != m_dialogs.end(); it++)
     {
         auto&& widget = *it;
         auto clip = renderer.ClipRect(WidgetRect(*widget));
-        widget->Draw(renderer);
+        if (clip)
+        {
+            widget->Draw(renderer);
+        }
     }
     if (m_modal_dialog)
     {
         auto clip = renderer.ClipRect(WidgetRect(*m_modal_dialog));
-        m_modal_dialog->Draw(renderer);
+        if (clip)
+        {
+            m_modal_dialog->Draw(renderer);
+        }
     }
     if (m_tooltip)
     {
         auto clip = renderer.ClipRect(WidgetRect(*m_tooltip));
-        m_tooltip->Draw(renderer);
+        if (clip)
+        {
+            m_tooltip->Draw(renderer);
+        }
     }
     if (m_pContextMenu)
     {
         auto clip = renderer.ClipRect(WidgetRect(*m_pContextMenu));
-        m_pContextMenu->Draw(renderer);
+        if (clip)
+        {
+            m_pContextMenu->Draw(renderer);
+        }
     }
 }
 
@@ -73,11 +89,6 @@ void node::Scene::ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const
 void node::Scene::DestroyContextMenu()
 {
     m_pContextMenu.reset(nullptr);
-}
-
-void node::Scene::SetSidePanel(std::unique_ptr<SidePanel> panel)
-{
-    m_sidePanel = std::move(panel); 
 }
 
 void node::Scene::SetToolBar(std::unique_ptr<ToolBar> toolbar)
@@ -128,6 +139,16 @@ void node::Scene::CancelCurrentDrag()
 node::Application* node::Scene::GetApp() const
 {
     return p_parent;
+}
+
+void node::Scene::SetFocusLater(Widget* widget)
+{
+    GetApp()->AddMainThreadTask([scene_handle = this->GetMIHandlePtr(), this, target_handle = widget->GetFocusable()]() {
+        if (scene_handle && target_handle)
+        {
+            this->SetFocus(target_handle);
+        }
+        });
 }
 
 void node::Scene::SetFocus(Widget* widget)
@@ -242,13 +263,6 @@ node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
             return current_hover;
         }
     }
-    if (m_sidePanel)
-    {
-        if (auto result = m_sidePanel->GetInteractableAtPoint(p - m_sidePanel->GetPosition()))
-        {
-            return result;
-        }
-    }
     if (m_toolbar)
     {
         if (auto result = m_toolbar->GetInteractableAtPoint(p - m_toolbar->GetPosition()))
@@ -351,10 +365,6 @@ void node::Scene::HideToolTip(Widget* widget)
 void node::Scene::OnSetSize(const WidgetSize& size)
 {
     Widget::OnSetSize(size);
-    if (m_sidePanel)
-    {
-        m_sidePanel->UpdateWindowSize(size);
-    }
     if (m_toolbar)
     {
         m_toolbar->SetSize({ size.w, ToolBar::height });

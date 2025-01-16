@@ -19,7 +19,7 @@ public:
 	TabButton(TTF_Font* font, const WidgetSize& size, TabBar* parent);
 	void SetText(std::string name);
 	void SetActive(bool value = true);
-	bool GetActive() const { return m_active; }
+	bool IsActiveBtn() const { return m_active; }
 protected:
 	void OnDraw(SDL::Renderer& renderer) override;
 	void OnMouseOut(MouseHoverEvent& e) override;
@@ -109,11 +109,13 @@ public:
 	static constexpr auto npos = StackedWidget::npos;
 protected:
 	void OnSetSize(const WidgetSize& size) override;
-
+	void OnDraw(SDL::Renderer& renderer) override;
 private:
 	int GetTabsBarHeight() const;
 	StackedWidget m_stacked_widget;
 	std::vector<std::string> m_tab_names;
 	TabBar m_bar;
+	RoundRectPainter m_outer_bg_painter;
+	RoundRectPainter m_inner_bg_painter;
 };
 }

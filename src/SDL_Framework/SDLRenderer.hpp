@@ -19,8 +19,11 @@ namespace SDL
         RenderClip& operator=(RenderClip&&);
         RenderClip& operator=(RenderClip&) = delete;
         ~RenderClip();
+        bool isClipped() const { return m_success; }
+        operator bool() const { return m_success; }
     private:
         Renderer* m_renderer;
+        bool m_success;
     };
 
     class Renderer
@@ -38,10 +41,17 @@ namespace SDL
         [[nodiscard]] RenderClip ClipRect(const SDL_Rect& rect);
     private:
         friend class RenderClip;
-        void AddClipRect(const SDL_Rect& rect);
+        bool AddClipRect(const SDL_Rect& rect);
         void PopClipRect();
         void ClipLastTwoRects();
+        void ReApplyLastClip();
         SDL_Renderer* p_renderer = nullptr;
-        std::vector<SDL_Rect> m_clip_rects;
+
+        struct ClipData
+        {
+            SDL_Rect viewport_rect;
+            SDL_Rect clip_rect;
+        };
+        std::vector<ClipData> m_viewport_rects;
     };
 }
