@@ -23,7 +23,7 @@ namespace node
         void OnMouseOut(MouseHoverEvent& e) override;
         void OnMouseIn(MouseHoverEvent& e) override;
         void OnMouseMove(MouseHoverEvent& e) override;
-        virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
+        MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
     private:
         constexpr static int w_margin = 5;
         constexpr static int h_margin = 5;

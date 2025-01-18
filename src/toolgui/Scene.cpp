@@ -19,10 +19,13 @@ void node::Scene::Draw(SDL::Renderer& renderer)
     {
         SDL_FPoint p;
         SDL_GetMouseState(&p.x, &p.y);
-        auto clip = renderer.ClipRect(WidgetRect(*m_current_mouse_hover.GetObjectPtr()));
+        auto widget_pos = m_current_mouse_hover->GetGlobalPosition();
+        auto widget_size = m_current_mouse_hover->GetSize();
+        auto clip_rect = ToRect(SDL_FRect{widget_pos.x, widget_pos.y, widget_size.w, widget_size.h});
+        auto clip = renderer.ClipRect(clip_rect);
         if (clip)
         {
-            m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p);
+            m_current_mouse_hover.GetObjectPtr()->DrawDropObject(renderer, *m_dragObject, p - widget_pos);
         }
     }
 }
@@ -635,7 +638,14 @@ bool node::Scene::OnScroll(const double amount, const SDL_FPoint& p)
 {
     if (m_current_mouse_hover.isAlive())
     {
-        m_current_mouse_hover.GetObjectPtr()->Scroll(amount, p - m_current_mouse_hover->GetGlobalPosition());
+        Widget* current_widget = m_current_mouse_hover.GetObjectPtr();
+        bool processed = false;
+        while (current_widget && !processed && current_widget != this)
+        {
+            processed = current_widget->Scroll(amount, p - current_widget->GetGlobalPosition());
+            current_widget = current_widget->GetParent();
+        }
+        return processed;
     }
     return false;
 }

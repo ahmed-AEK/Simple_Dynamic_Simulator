@@ -22,6 +22,7 @@ StackedWidget.hpp StackedWidget.cpp
 TabbedView.hpp TabbedView.cpp
 ToolTipWidgetMixin.hpp ToolTipWidgetMixin_impl.hpp
 SceneGrid.hpp SceneGrid.cpp
+ScrollView.hpp ScrollView.cpp
 )
 
 target_include_directories(toolgui PRIVATE ".")

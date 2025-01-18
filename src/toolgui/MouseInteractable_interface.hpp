@@ -10,23 +10,6 @@
 
 #include <memory>
 
-template <typename T>
-concept Sized = requires (const T & obj)
-{
-    obj.GetSize();
-    obj.GetSize().w;
-    obj.GetSize().h;
-};
-
-template <typename T>
-concept Positioned = requires (const T & obj)
-{
-    obj.GetPosition();
-    obj.GetPosition().x;
-    obj.GetPosition().y;
-};
-
-
 namespace MI {
 
     enum class ClickEvent : int
@@ -95,8 +78,8 @@ namespace MI {
         virtual ClickEvent OnRMBDown(MouseButtonEvent& e);
         virtual ClickEvent OnRMBUp(MouseButtonEvent& e);
     private:
-        T& Self() requires Sized<T> && Positioned<T> { return *static_cast<T*>(this); }
-        const T& Self() const requires Sized<T>&& Positioned<T> { return *static_cast<const T*>(this); }
+        T& Self() { return *static_cast<T*>(this); }
+        const T& Self() const { return *static_cast<const T*>(this); }
         node::HandleOwnigPtr<T> MI_handle_ptr = node::HandleAllocator<T>::CreateHandle(static_cast<T*>(this));
     };
 }

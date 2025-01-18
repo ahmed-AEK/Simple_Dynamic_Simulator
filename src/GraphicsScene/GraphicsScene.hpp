@@ -69,9 +69,7 @@ public:
     GraphicsScene(const WidgetSize& size, node::Widget* parent);
     ~GraphicsScene() override;
 
-    void SetScrollRatio(double scroll_ratio) { m_scroll_ratio = scroll_ratio; }
-    double GetScrollRatio() const noexcept { return m_scroll_ratio; }
-    double GetZoomScale() const { return m_zoomScale; }
+    float GetScrollRatio() const noexcept { return m_scroll_ratio; }
 
     void AddObject(std::unique_ptr<node::GraphicsObject> obj, int z_order);
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
@@ -103,9 +101,8 @@ public:
     void SetTool(std::shared_ptr<ToolHandler> ptr);
     const std::shared_ptr<ToolHandler>& GetToolHandleer() const { return m_tool; }
     virtual node::GraphicsObject* GetObjectAt(const model::Point& p) const;
-
-    const WidgetSize& GetBaseSize() noexcept { return m_base_size; }
-    void SetBaseSize(const WidgetSize& size) noexcept { m_base_size = size; }
+    void SetZoomFactor(float value);
+    float GetZoomFactor() const { return m_space_to_screen_factor; }
 protected:
     void OnSetSize(const WidgetSize& size) override;
     void OnMouseMove(MouseHoverEvent& e) override;
@@ -130,12 +127,13 @@ private:
         std::shared_ptr<node::BlockStyler> styler;
     };
 
-    WidgetSize m_base_size;
-    model::Rect m_spaceRect_base;
+    static constexpr int m_spaceQuantization = 20;
+    static constexpr float min_zoom_factor = 0.5;
+    static constexpr float max_zoom_factor = 2;
+    float m_space_to_screen_factor = 1;
+    static constexpr float m_scroll_ratio = 1.25;
+
     model::Rect m_spaceRect;
-    double m_scroll_ratio = 1.25;
-    double m_zoomScale = 1;
-    int m_spaceQuantization = 20;
 
     SDL_FPoint m_current_mouse_position{ 0,0 };
     

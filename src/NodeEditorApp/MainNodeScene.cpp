@@ -5,6 +5,7 @@
 #include "toolgui/Application.hpp"
 #include "toolgui/Dialog.hpp"
 #include "toolgui/SceneGrid.hpp"
+#include "toolgui/ScrollView.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -733,9 +734,9 @@ void node::MainNodeScene::InitializeSidePanel()
     };
     palette_provider->AddElement(std::move(comparator_block));
 
-    sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{ 200.0f,200.0f },
+    sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{200.0f,200.0f},
         std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
-    sidePanel->SetTitle("Block Pallete");
+    sidePanel->SetTitle("Block Palette");
     m_scene_grid->SetSidePanel(std::move(sidePanel));
 }
 
