@@ -21,6 +21,7 @@ void node::SidePanel::SetWidget(std::unique_ptr<Widget> widget)
 	if (m_contained_widget)
 	{
 		auto widget_rect = CalculateChildWidgetRect();
+		m_contained_widget->SetParent(this);
 		m_contained_widget->SetPosition({ widget_rect.x, widget_rect.y });
 		m_contained_widget->SetSize({widget_rect.w, widget_rect.h});
 	}
@@ -41,9 +42,8 @@ void node::SidePanel::OnDraw(SDL::Renderer& renderer)
 	m_title_painter.Draw(renderer, { widget_margin + 5, widget_margin + 5 }, Black);
 }
 
-MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent& e)
+MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent&)
 {
-	SDL_FPoint current_mouse_point{ e.point() };
 	return MI::ClickEvent::NONE;
 }
 

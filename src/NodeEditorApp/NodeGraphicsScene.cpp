@@ -35,11 +35,11 @@ void node::NodeGraphicsScene::DrawDots(SDL_Renderer* renderer) const
     float dot_width = 2;
     static std::vector<SDL_FRect> rects;
     rects.clear();
-    if (GetZoomScale() > 1.3)
+    if (GetZoomFactor() < 0.75)
     {
         dot_width = 1;
     }
-    else if (GetZoomScale() < 0.7)
+    else if (GetZoomFactor() > 1.5)
     {
         dot_width = 3;
     }

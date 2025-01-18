@@ -46,7 +46,7 @@ namespace SDL
             // SDL_Log("driver %d: %s", i, driver);
             if (strcmp("direct3d", driver) == 0)
             {
-                direct3d_found = true;
+                //direct3d_found = true;
             }
             if (strcmp("opengl", driver) == 0)
             {
@@ -80,6 +80,15 @@ namespace SDL
     RenderClip Renderer::ClipRect(const SDL_Rect& rect)
     {
         return RenderClip{ *this, rect };
+    }
+
+    SDL_Rect Renderer::GetClipRect() const
+    {
+        if (m_viewport_rects.size())
+        {
+            return m_viewport_rects.back().clip_rect;
+        }
+        return SDL_Rect{ 0, 0, 10000, 10000 };
     }
 
     bool Renderer::AddClipRect(const SDL_Rect& rect)

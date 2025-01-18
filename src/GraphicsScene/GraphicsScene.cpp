@@ -12,10 +12,9 @@
 #include "SDL_Framework/SDLRenderer.hpp"
 
 node::GraphicsScene::GraphicsScene(const WidgetSize& size, node::Widget* parent)
-:Widget(size, parent), m_base_size{size},
-m_spaceRect_base{0, 0, 1000, static_cast<int>(1000 * size.h/size.w)}, 
-m_spaceRect{0, 0, 200, static_cast<int>(200 * size.h/ size.w)},
-m_spaceScreenTransformer(GetSize().ToRect(), m_spaceRect)
+:Widget(size, parent),
+m_spaceRect{0, 0,static_cast<int>(size.w / m_space_to_screen_factor), static_cast<int>(size.h / m_space_to_screen_factor)},
+m_spaceScreenTransformer({ 0,0 }, {0,0}, m_space_to_screen_factor)
 {
     SetDropTarget(true);
 }
@@ -251,7 +250,7 @@ MI::ClickEvent node::GraphicsScene::OnLMBUp(MouseButtonEvent& e)
 void node::GraphicsScene::SetSpaceRect(const model::Rect& rect)
 {
     m_spaceRect = rect;
-    m_spaceScreenTransformer = SpaceScreenTransformer{ GetSize().ToRect(), m_spaceRect};
+    m_spaceScreenTransformer = SpaceScreenTransformer{ {0,0}, {m_spaceRect.x, m_spaceRect.y}, m_space_to_screen_factor };
 }
 
 const node::model::Rect& node::GraphicsScene::GetSpaceRect() const noexcept
@@ -317,45 +316,44 @@ bool node::GraphicsScene::OnScroll(const double amount, const SDL_FPoint& p)
     // 3. get new screen point position
     // 4. change origin by the difference between them
     model::Point old_position;
-    if (amount > 0)
+    if (amount < 0)
     {
-        if (m_zoomScale <= 0.3)
+        if (m_space_to_screen_factor <= min_zoom_factor)
         {
             return false;
         }
         auto&& transformer = GetSpaceScreenTransformer();
         old_position = transformer.ScreenToSpacePoint(p);
-        m_zoomScale /= m_scroll_ratio;
-        if (m_zoomScale < 0.3)
+        m_space_to_screen_factor /= m_scroll_ratio;
+        if (m_space_to_screen_factor < min_zoom_factor)
         {
-            m_zoomScale = 0.3;
+            m_space_to_screen_factor = min_zoom_factor;
         }
 
     }
-    else if (amount < 0)
+    else if (amount > 0)
     {
-        if (m_zoomScale >= 2)
+        if (m_space_to_screen_factor >= max_zoom_factor)
         {
             return false;
         }
         auto&& transformer = GetSpaceScreenTransformer();
         old_position = transformer.ScreenToSpacePoint(p);
-        m_zoomScale *= m_scroll_ratio;
-        if (m_zoomScale > 2)
+        m_space_to_screen_factor *= m_scroll_ratio;
+        if (m_space_to_screen_factor > max_zoom_factor)
         {
-            m_zoomScale = 2;
+            m_space_to_screen_factor = max_zoom_factor;
         }
     }
     else {
         return false;
     }
-    model::Rect new_rect = GetSpaceRect();
-    auto size_base = GetBaseSize();
-    double x_ratio = static_cast<double>(GetSize().w) / size_base.w;
-    double y_ratio = static_cast<double>(GetSize().h) / size_base.h;
-    new_rect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
-    new_rect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
+
+    auto new_rect = GetSpaceRect();
+    new_rect.w = static_cast<int>(GetSize().w / m_space_to_screen_factor);
+    new_rect.h = static_cast<int>(GetSize().h / m_space_to_screen_factor);
     SetSpaceRect(new_rect);
+    m_spaceScreenTransformer = SpaceScreenTransformer{ {0,0}, {m_spaceRect.x, m_spaceRect.y}, m_space_to_screen_factor };
     auto&& transformer = GetSpaceScreenTransformer();
     model::Point new_position = transformer.ScreenToSpacePoint(p);
     new_rect = GetSpaceRect();
@@ -392,12 +390,8 @@ void node::GraphicsScene::SetTool(std::shared_ptr<ToolHandler> ptr)
 void node::GraphicsScene::OnSetSize(const WidgetSize& size)
 {
     Widget::OnSetSize(size);
-    auto size_base = GetBaseSize();
-    double x_ratio = static_cast<double>(size.w)/ size_base.w;
-    double y_ratio = static_cast<double>(size.h)/ size_base.h;
-    m_spaceRect.w = static_cast<int>(m_spaceRect_base.w * x_ratio * m_zoomScale);
-    m_spaceRect.h = static_cast<int>(m_spaceRect_base.h * y_ratio * m_zoomScale);
-    m_spaceScreenTransformer = SpaceScreenTransformer{ GetSize().ToRect(), m_spaceRect};
+    m_spaceRect.w = static_cast<int>(GetSize().w / m_space_to_screen_factor);
+    m_spaceRect.h = static_cast<int>(GetSize().h / m_space_to_screen_factor);
 }
 
 node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) const
@@ -411,6 +405,14 @@ node::GraphicsObject* node::GraphicsScene::GetObjectAt(const model::Point& p) co
         }
     }
     return nullptr;
+}
+
+void node::GraphicsScene::SetZoomFactor(float value)
+{
+    m_space_to_screen_factor = value;
+    m_spaceRect.w = static_cast<int>(GetSize().w / m_space_to_screen_factor);
+    m_spaceRect.h = static_cast<int>(GetSize().h / m_space_to_screen_factor);
+    m_spaceScreenTransformer = SpaceScreenTransformer{ GetSize().ToRect(), m_spaceRect };
 }
 
 const node::SpaceScreenTransformer& node::GraphicsScene::GetSpaceScreenTransformer() const

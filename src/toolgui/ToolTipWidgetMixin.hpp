@@ -27,8 +27,8 @@ namespace mixin
 		void InternalUpdateToolTip();
 		void HideToolTip();
 
-		T& Self() requires std::derived_from<T, Widget> { return *static_cast<T*>(this); }
-		const T& Self() const requires std::derived_from<T, Widget> { return *static_cast<const T*>(this); }
+		T& Self() { return *static_cast<T*>(this); }
+		const T& Self() const { return *static_cast<const T*>(this); }
 
 		uint64_t m_last_action_time = 0;
 		int64_t m_updateTaskId = 0;

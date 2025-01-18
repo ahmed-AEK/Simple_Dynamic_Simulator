@@ -9,7 +9,8 @@ namespace node
     class SpaceScreenTransformer
     {
     public:
-        SpaceScreenTransformer(const SDL_FRect& screen, const model::Rect& space);
+        SpaceScreenTransformer(const SDL_FRect& screen_rect, const model::Rect& space_rect);
+        SpaceScreenTransformer(const SDL_FPoint& screen_orig, const model::Point& space_orig, float space_to_screen_factor);
         SpaceScreenTransformer();
         model::Point ScreenToSpacePoint(const SDL_FPoint& p) const noexcept;
         SDL_FPoint SpaceToScreenPoint(const model::Point& p) const noexcept;
@@ -20,15 +21,17 @@ namespace node
         SpaceScreenTransformer WithZeroOffset() const
         {
             SpaceScreenTransformer other = *this;
-            other.m_screenRect.x = 0;
-            other.m_screenRect.y = 0;
-            other.m_spaceRect.x = 0;
-            other.m_spaceRect.y = 0;
+            other.m_screen_orig.x = 0;
+            other.m_screen_orig.y = 0;
+            other.m_space_orig.x = 0;
+            other.m_space_orig.y = 0;
             return other;
         }
     private:
-        SDL_FRect m_screenRect;
-        model::Rect m_spaceRect;
+        SDL_FPoint m_screen_orig;
+        model::Point m_space_orig;
+        float m_space_to_screen_factor_x;
+        float m_space_to_screen_factor_y;
     };
 
 }

@@ -39,6 +39,7 @@ namespace SDL
         bool Init(SDL_Window* wnd);
         friend void ::swap(Renderer& first, Renderer& second) noexcept;
         [[nodiscard]] RenderClip ClipRect(const SDL_Rect& rect);
+        [[nodiscard]] SDL_Rect GetClipRect() const;
     private:
         friend class RenderClip;
         bool AddClipRect(const SDL_Rect& rect);
