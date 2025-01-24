@@ -22,9 +22,9 @@ using id_int = int32_t;
 enum class ConnectedSegmentSide
 {
 	north = 0,
-	south = 1,
-	west = 2,
-	east = 3,
+	east = 1,
+	south = 2,
+	west = 3,
 };
 
 enum class NetSegmentOrientation

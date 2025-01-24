@@ -83,6 +83,7 @@ public:
     std::span<const HandlePtr<GraphicsObject>> GetCurrentSelection() const;
     std::span<HandlePtr<GraphicsObject>> GetCurrentSelection();
     void AddSelection(HandlePtr<GraphicsObject> handle);
+    void SetSelection(std::vector<GraphicsObject*> objects);
     bool IsObjectSelected(const GraphicsObject& obj) const;
     void ClearCurrentSelection();
 

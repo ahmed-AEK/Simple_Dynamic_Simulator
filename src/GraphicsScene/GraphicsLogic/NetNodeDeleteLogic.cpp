@@ -34,59 +34,43 @@ MI::ClickEvent node::logic::NetNodeDeleteLogic::OnLMBUp(const model::Point& curr
 	{
 		return MI::ClickEvent::CAPTURE_END;
 	}
-	request.removed_nodes.push_back(*node.GetId());
-
-	if (auto socket = node.GetConnectedSocket())
+	for (auto object : GetScene()->GetCurrentSelection())
 	{
-		assert(socket->GetId());
-		assert(socket->GetParentBlock());
-		assert(socket->GetParentBlock()->GetModelId());
-		if (socket->GetId() && socket->GetParentBlock() && socket->GetParentBlock()->GetModelId())
+		auto* object_ptr = object.GetObjectPtr();
+		if (!object_ptr)
 		{
-			request.removed_connections.push_back({ *socket->GetId(), *socket->GetParentBlock()->GetModelId() });
+			continue;
 		}
-	}
-
-	for (int i = 0; i < 4; i++)
-	{
-		if (auto segment = node.getSegment(static_cast<model::ConnectedSegmentSide>(i)))
+		if (object_ptr->GetObjectType() == ObjectType::netSegment)
 		{
-			assert(segment->GetId());
-			if (auto id = segment->GetId())
+			auto id_opt = static_cast<NetSegment*>(object_ptr)->GetId();
+			assert(id_opt);
+			if (id_opt)
 			{
-				request.removed_segments.push_back(*id);
+				request.removed_segments.push_back(*id_opt);
 			}
-			
-			NetNode* other_connected_node = segment->getStartNode();
-			if (other_connected_node == &node)
+		}
+		if (object_ptr->GetObjectType() == ObjectType::netNode)
+		{
+			auto* netnode = static_cast<NetNode*>(object_ptr);
+			auto id_opt = netnode->GetId();
+			assert(id_opt);
+			if (id_opt)
 			{
-				other_connected_node = segment->getEndNode();
+				request.removed_nodes.push_back(*id_opt);
 			}
-
-			if (other_connected_node->GetConnectedSegmentsCount() != 1)
+			if (netnode->GetConnectedSocket())
 			{
-				continue;
-			}
-
-			assert(other_connected_node->GetId());
-			if (auto id = other_connected_node->GetId())
-			{
-				request.removed_nodes.push_back(*id);
-			}
-
-			if (auto* socket = other_connected_node->GetConnectedSocket())
-			{
-				assert(socket->GetId());
-				assert(socket->GetParentBlock());
-				assert(socket->GetParentBlock()->GetModelId());
-				if (socket->GetId() && socket->GetParentBlock() && socket->GetParentBlock()->GetModelId())
+				auto block_id_opt = netnode->GetConnectedSocket()->GetUniqueId();
+				assert(block_id_opt);
+				if (block_id_opt)
 				{
-					request.removed_connections.push_back({ *socket->GetId(), *socket->GetParentBlock()->GetModelId() });
+					request.removed_connections.push_back(*block_id_opt);
 				}
 			}
 		}
 	}
-
+	
 	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CAPTURE_END;
 }

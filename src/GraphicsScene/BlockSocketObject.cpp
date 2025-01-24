@@ -29,6 +29,25 @@ node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
+std::optional<node::model::SocketUniqueId> node::BlockSocketObject::GetUniqueId()
+{
+	if (!m_id)
+	{
+		return std::nullopt;
+	}
+	if (!m_parentBlock)
+	{
+		return std::nullopt;
+	}
+	auto parent_id_opt = m_parentBlock->GetModelId();
+	if (!parent_id_opt)
+	{
+		return std::nullopt;
+	}
+
+	return model::SocketUniqueId{*m_id, *parent_id_opt};
+}
+
 node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id, 
 	model::Point center_in_block)
 	:GraphicsObject{ model::ObjectSize{ nodeLength,nodeLength },ObjectType::socket, nullptr}, 

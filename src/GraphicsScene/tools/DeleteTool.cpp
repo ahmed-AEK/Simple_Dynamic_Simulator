@@ -26,12 +26,12 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& s
 	case ObjectType::netSegment:
 	{
 		scene.SetGraphicsLogic(std::make_unique<logic::SegmentDeleteLogic>(*static_cast<NetSegment*>(obj), &scene, &manager));
-		scene.AddSelection(obj->GetMIHandlePtr());
+		AddSelectConnectedNet(*static_cast<NetSegment*>(obj), scene);
 		break;
 	}
 	case ObjectType::netNode:
 		scene.SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), &scene, &manager));
-		scene.AddSelection(obj->GetMIHandlePtr());
+		AddSelectConnectedNet(*static_cast<NetNode*>(obj), scene);
 		break;
 	default: break;
 	}

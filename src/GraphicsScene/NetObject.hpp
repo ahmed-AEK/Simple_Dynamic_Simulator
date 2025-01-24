@@ -13,6 +13,8 @@ class NetSegment;
 class NetNode;
 class BlockSocketObject;
 
+void AddSelectConnectedNet(NetSegment& segment, GraphicsScene& scene);
+void AddSelectConnectedNet(NetNode& node, GraphicsScene& scene);
 
 constexpr int NET_NODE_OBJECT_Z = 100;
 class GRAPHICSSCENE_API NetNode : public GraphicsObject

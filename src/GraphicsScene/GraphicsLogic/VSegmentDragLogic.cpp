@@ -95,9 +95,16 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 	spare_nodes.push_back(viewer_node2.get());
 	spare_segments.push_back(viewer_segment.get());
 
+	auto* viewer_node1_ptr = viewer_node1.get();
+	auto* viewer_node2_ptr = viewer_node2.get();
+	auto* viewer_segment_ptr = viewer_segment.get();
+
 	scene->AddObject(std::move(viewer_node1), GraphicsScene::NetNodeLayer);
 	scene->AddObject(std::move(viewer_node2), GraphicsScene::NetNodeLayer);
 	scene->AddObject(std::move(viewer_segment), GraphicsScene::SegmentLayer);
+	viewer_node1_ptr->SetSelected(true);
+	viewer_node2_ptr->SetSelected(true);
+	viewer_segment_ptr->SetSelected(true);
 
 	segment.SetVisible(false);
 	auto segment_ptr_obj = scene->PopObject(&segment);
@@ -155,7 +162,9 @@ void node::logic::VSegmentDragLogic::CleanUp()
 	m_first_node_handler->OnCancel();
 	m_second_node_handler->OnCancel();
 	m_base_segment->SetVisible(true);
+	auto* base_segment_ptr = m_base_segment.get();
 	GetScene()->AddObject(std::move(m_base_segment), GraphicsScene::SegmentLayer);
+	AddSelectConnectedNet(*base_segment_ptr, *GetScene());
 	m_first_node_handler->GetBaseNode()->UpdateConnectedSegments();
 	m_second_node_handler->GetBaseNode()->UpdateConnectedSegments();
 	for (const auto* node : m_spare_nodes)

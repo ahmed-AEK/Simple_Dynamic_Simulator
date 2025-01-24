@@ -6,6 +6,8 @@
 #include <cassert>
 #include <algorithm>
 #include "SDL_Framework/SDLRenderer.hpp"
+#include <stack>
+#include "GraphicsScene/GraphicsScene.hpp"
 
 node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode)
 	: GraphicsObject(model::ObjectSize{ c_width, c_width }, ObjectType::netSegment, nullptr),
@@ -21,7 +23,14 @@ node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, Ne
 
 void node::NetSegment::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
-	SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+	if (IsSelected())
+	{
+		SDL_SetRenderDrawColor(renderer, 255, 180, 0, 255);
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+	}
 	SDL_FRect ScreenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &ScreenRect);
 }
@@ -104,7 +113,14 @@ node::NetNode::NetNode(const model::Point& center)
 
 void node::NetNode::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	if (IsSelected())
+	{
+		SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	}
 	SDL_FRect screenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &screenRect);
 }
@@ -177,4 +193,65 @@ void node::NetNode::setSegment(NetSegment* segment, model::ConnectedSegmentSide 
 	m_connected_segments[static_cast<size_t>(side)] = segment;
 }
 
+void node::AddSelectConnectedNet(NetSegment& segment, GraphicsScene& scene)
+{
+	if (segment.IsSelected())
+	{
+		return;
+	}
+	scene.AddSelection(segment.GetMIHandlePtr());
+	std::stack<NetNode*> nodes_to_visit;
+	if (!segment.getStartNode()->IsSelected())
+	{
+		nodes_to_visit.push(segment.getStartNode());
+	}
+	if (!segment.getEndNode()->IsSelected())
+	{
+		nodes_to_visit.push(segment.getEndNode());
+	}
+	nodes_to_visit.push(segment.getEndNode());
+	while (nodes_to_visit.size())
+	{
+		auto* node = nodes_to_visit.top();
+		nodes_to_visit.pop();
+		if (node->GetConnectedSegmentsCount() > 2)
+		{
+			continue;
+		}
+		scene.AddSelection(node->GetMIHandlePtr());
+		for (int i = 0; i < 4; i++)
+		{
+			auto* segment_ptr = node->getSegment(static_cast<model::ConnectedSegmentSide>(i));
+			if (segment_ptr && !segment_ptr->IsSelected())
+			{
+				scene.AddSelection(segment_ptr->GetMIHandlePtr());
+				if (!segment_ptr->getStartNode()->IsSelected())
+				{
+					nodes_to_visit.push(segment_ptr->getStartNode());
+				}
+				if (!segment_ptr->getEndNode()->IsSelected())
+				{
+					nodes_to_visit.push(segment_ptr->getEndNode());
+				}
+			}
+		}
+	}
+	
+}
 
+void node::AddSelectConnectedNet(NetNode& node, GraphicsScene& scene)
+{
+	if (node.IsSelected())
+	{
+		return;
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		auto* segment = node.getSegment(static_cast<model::ConnectedSegmentSide>(i));
+		if (segment)
+		{
+			AddSelectConnectedNet(*segment, scene);
+		}
+	}
+}

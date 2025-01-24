@@ -5,11 +5,11 @@ node::SpaceScreenTransformer::SpaceScreenTransformer(const SDL_FRect& screen_rec
     :m_screen_orig{screen_rect.x, screen_rect.y}, m_space_orig{space_rect.x, space_rect.y}, 
     m_space_to_screen_factor_x{screen_rect.w/space_rect.w}, m_space_to_screen_factor_y{screen_rect.h/space_rect.h}
 {
-    if (std::isinf(m_space_to_screen_factor_x) || std::isnan(m_space_to_screen_factor_x))
+    if (!std::isfinite(m_space_to_screen_factor_x))
     {
         m_space_to_screen_factor_x = 1;
     }
-    if (std::isinf(m_space_to_screen_factor_y) || std::isnan(m_space_to_screen_factor_y))
+    if (!std::isfinite(m_space_to_screen_factor_y))
     {
         m_space_to_screen_factor_y = 1;
     }

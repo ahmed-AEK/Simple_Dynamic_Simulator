@@ -140,7 +140,18 @@ bool node::ArrowTool::InternalSelectObject(GraphicsObject* object, GraphicsScene
         if (!scene.IsObjectSelected(*object))
         {
             scene.ClearCurrentSelection();
-            scene.AddSelection(object->GetFocusHandlePtr());
+            if (object->GetObjectType() == ObjectType::netNode)
+            {
+                AddSelectConnectedNet(*static_cast<NetNode*>(object), scene);
+            }
+            else if (object->GetObjectType() == ObjectType::netSegment)
+            {
+                AddSelectConnectedNet(*static_cast<NetSegment*>(object), scene);
+            }
+            else
+            {
+                scene.AddSelection(object->GetFocusHandlePtr());
+            }
         }
         return true;
     }

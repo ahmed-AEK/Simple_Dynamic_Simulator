@@ -530,7 +530,7 @@ void node::PlotWidget::ResetPainters()
 			if (draw_text)
 			{
 				float tick_value = m_space_extent.y + m_space_extent.h - (static_cast<float>(y) - inner_rect.y) / static_cast<float>(inner_rect.h) * m_space_extent.h;
-				if (std::isnan(tick_value))
+				if (!std::isfinite(tick_value))
 				{
 					tick_value = 0;
 				}

@@ -44,6 +44,25 @@ enum class FontType : char
     Label
 };
 
+class FrameRateController
+{
+public:
+    enum class ControlType: char
+    {
+        None,
+        Wait,
+        Uncapped
+    };
+
+    void Apply();
+    void SetControlType(ControlType control)
+    {
+        m_current_control = control;
+    }
+private:
+    ControlType m_current_control{ ControlType::None };
+    ControlType m_current_set_control{ ControlType::None };
+};
 class TOOLGUI_API Application
 {
 public:
@@ -106,6 +125,6 @@ private:
     std::vector<int64_t> m_deleted_updateTasks;
     int64_t m_current_task_id = 1;
     TaskQueue m_mainThreadTasks;
-
+    FrameRateController m_framerateController;
 };
 }

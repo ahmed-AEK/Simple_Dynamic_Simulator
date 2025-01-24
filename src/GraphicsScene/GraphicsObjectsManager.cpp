@@ -247,6 +247,8 @@ void node::GraphicsObjectsManager::OnNotify(BlockObjectDropped& object)
 
 void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report)
 {
+    std::vector<NetSegment*> objects_to_select;
+    std::vector<NetNode*> nodes_to_select;
 
     // handle remove connections
     for (const auto& removed_conn : report.removed_connections)
@@ -302,6 +304,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         auto node = std::make_unique<NetNode>(added_node.get().GetPosition());
         m_net_nodes.emplace(added_node.get().GetId(), node.get());
         node->SetId(added_node.get().GetId());
+        nodes_to_select.push_back(node.get());
         GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
 
@@ -314,6 +317,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         {
             it->second->setCenter(updated_node.new_position);
             it->second->UpdateConnectedSegments();
+            nodes_to_select.push_back(it->second);
         }
     }
 
@@ -338,6 +342,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
                 continue;
             }
             it->second->Connect(it1->second, it2->second, update_segment.get().m_orientation);
+            objects_to_select.push_back(it->second);
         }
     }
 
@@ -360,6 +365,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         auto id = added_segment.get().GetId();
         segment->SetId(id);
         m_net_segments.emplace(id, segment.get());
+        objects_to_select.push_back(segment.get());
         GetGraphicsScene()->AddObject(std::move(segment), GraphicsScene::SegmentLayer);
     }
 
@@ -388,7 +394,15 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
             }
         }
     }
-
+    for (auto* netnode : nodes_to_select)
+    {
+        AddSelectConnectedNet(*netnode, *m_scene.GetObjectPtr());
+    }
+    
+    for (auto* segment : objects_to_select)
+    {
+        AddSelectConnectedNet(*segment, *m_scene.GetObjectPtr());
+    }
 }
 
 void node::GraphicsObjectsManager::UpdateBlockStyler(BlockObject& block, const model::BlockModel& model)

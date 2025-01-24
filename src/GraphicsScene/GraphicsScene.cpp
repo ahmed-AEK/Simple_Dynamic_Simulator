@@ -277,6 +277,19 @@ void node::GraphicsScene::AddSelection(HandlePtr<GraphicsObject> handle)
     this->m_current_selection.push_back(handle);
 }
 
+void node::GraphicsScene::SetSelection(std::vector<GraphicsObject*> objects)
+{
+    for (auto* object: objects)
+    {
+        if (object->IsSelected())
+        {
+            continue;
+        }
+        object->SetSelected(true);
+        this->m_current_selection.push_back(object->GetMIHandlePtr());
+    }
+}
+
 bool node::GraphicsScene::IsObjectSelected(const GraphicsObject& obj) const
 {
     const node::GraphicsObject* obj_ptr = &obj;

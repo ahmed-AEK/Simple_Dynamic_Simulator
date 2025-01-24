@@ -368,6 +368,16 @@ namespace node
         m_scene->Draw(m_renderer);
         // Update screen
         SDL_RenderPresent(m_renderer);
+
+        if (UpdateTasksEmpty())
+        {
+            m_framerateController.SetControlType(FrameRateController::ControlType::Wait);
+        }
+        else
+        {
+            m_framerateController.SetControlType(FrameRateController::ControlType::Uncapped);
+        }
+        m_framerateController.Apply();
         return 0;
     }
     
@@ -398,6 +408,24 @@ namespace node
         SDL_GetRenderViewport(m_renderer, &viewport);
         SDL_GetRenderScale(m_renderer, &scale_x, &scale_y);
         return {(x / scale_x) - viewport.x,(y / scale_y) - viewport.y};
+    }
+
+    void FrameRateController::Apply()
+    {
+        if (m_current_control == m_current_set_control)
+        {
+            return;
+        }
+        if (m_current_control == ControlType::Wait)
+        {
+            SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
+        }
+        else
+        {
+            SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "0");
+        }
+        m_current_set_control = m_current_control;
+
     }
 }
 

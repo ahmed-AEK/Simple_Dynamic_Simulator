@@ -21,6 +21,7 @@ public:
 
 	BlockObject* GetParentBlock() const { return m_parentBlock; }
 
+	std::optional<model::SocketUniqueId> GetUniqueId();
 	std::optional<model::SocketId> GetId() const { return m_id; }
 	void SetId(std::optional<model::SocketId> id) { m_id = std::move(id); }
 

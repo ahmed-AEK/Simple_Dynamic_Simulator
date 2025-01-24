@@ -1,5 +1,6 @@
 #include "ScrollView.hpp"
 #include "SDL_Framework/SDLRenderer.hpp"
+#include <cmath>
 
 node::ScrollView::ScrollView(const WidgetSize& size, Widget* parent)
 	: Widget{size, parent}, m_scrollbar{GetScrollBarSize(), this}
@@ -23,7 +24,7 @@ void node::ScrollView::SetWidget(std::unique_ptr<Widget> widget)
 
 void node::ScrollView::RequestPosition(float new_position)
 {
-	if (new_position < 0)
+	if (new_position < 0 || !std::isfinite(new_position))
 	{
 		new_position = 0;
 	}
