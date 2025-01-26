@@ -29,7 +29,7 @@ node::NetNode* node::BlockSocketObject::GetConnectedNode() noexcept
 	return m_connected_node;
 }
 
-std::optional<node::model::SocketUniqueId> node::BlockSocketObject::GetUniqueId()
+std::optional<node::model::SocketUniqueId> node::BlockSocketObject::GetUniqueId() const
 {
 	if (!m_id)
 	{
@@ -48,10 +48,10 @@ std::optional<node::model::SocketUniqueId> node::BlockSocketObject::GetUniqueId(
 	return model::SocketUniqueId{*m_id, *parent_id_opt};
 }
 
-node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id, 
-	model::Point center_in_block)
+node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id,
+	model::Point center_in_block, model::ConnectedSegmentSide connection_side)
 	:GraphicsObject{ model::ObjectSize{ nodeLength,nodeLength },ObjectType::socket, nullptr}, 
-	m_socktType(type), m_id{ id }
+	m_socktType(type), m_connection_side{ connection_side }, m_id{ id }
 {
 	SetSelectable(false);
 	SetCenterInBlock(center_in_block);
@@ -65,29 +65,6 @@ void node::BlockSocketObject::Draw(SDL::Renderer& renderer, const SpaceScreenTra
 
 void node::BlockSocketObject::UpdateConnectedNodes()
 {
-	if (m_connected_node)
-	{
-		const auto& new_center = GetCenterInSpace();
-		m_connected_node->setCenter(new_center);
-		assert(m_connected_node->GetConnectedSegmentsCount() == 1);
-
-		// set connected node position
-		NetSegment* next_segment = m_connected_node->getSegment(model::ConnectedSegmentSide::east);
-		if (!next_segment)
-		{
-			next_segment = m_connected_node->getSegment(model::ConnectedSegmentSide::west);
-		}
-
-		NetNode* next_node = next_segment->getStartNode();
-		if (next_node == m_connected_node)
-		{
-			next_node = next_segment->getEndNode();
-		}
-
-		// set position of the first node after one segment
-		next_node->setCenter({ next_node->getCenter().x, new_center.y });
-		next_node->UpdateConnectedSegments();
-	}
 }
 
 void node::BlockSocketObject::OnSetPosition(const model::Point& position)

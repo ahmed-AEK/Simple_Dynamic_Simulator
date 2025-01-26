@@ -197,7 +197,7 @@ std::optional<node::model::NetSegmentModel> node::loader::SQLNetLoader::GetSegme
 	NetSegmentId id{ query.getColumn(0) };
 	NetNodeId first_segment{ query.getColumn(1) };
 	NetNodeId second_segment{ query.getColumn(2) };
-	NetSegmentOrientation orientation{ static_cast<int>(query.getColumn(3)) };
+	NetSegmentOrientation orientation{ static_cast<char>(query.getColumn(3).getInt()) };
 
 	return NetSegmentModel{ id, first_segment, second_segment, orientation };
 }

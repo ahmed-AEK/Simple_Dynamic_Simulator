@@ -5,6 +5,20 @@
 namespace node
 {
 
+struct NetSolutionEndDescription
+{
+	model::Point point;
+	std::array<bool, 4> allowed_sides;
+
+	bool IsSideAllowed(model::ConnectedSegmentSide side) const
+	{
+		return allowed_sides[static_cast<size_t>(side)];
+	}
+	void SetSideAllowed(model::ConnectedSegmentSide side, bool value = true)
+	{
+		allowed_sides[static_cast<size_t>(side)] = value;
+	}
+};
 
 class NetsSolver
 {
@@ -17,25 +31,11 @@ public:
 		std::optional<model::NetNodeId> end;
 	};
 
-	struct SolutionEndDescription
-	{
-		model::Point point;
-		std::array<bool, 4> allowed_sides;
-
-		bool IsSideAllowed(model::ConnectedSegmentSide side) const
-		{
-			return allowed_sides[static_cast<size_t>(side)];
-		}
-		void SetSideAllowed(model::ConnectedSegmentSide side, bool value = true)
-		{
-			allowed_sides[static_cast<size_t>(side)] = value;
-		}
-	};
-	void SetStartDescription(const SolutionEndDescription& d)
+	void SetStartDescription(const NetSolutionEndDescription& d)
 	{
 		m_start_node = d;
 	}
-	void SetEndDescription(const SolutionEndDescription& d)
+	void SetEndDescription(const NetSolutionEndDescription& d)
 	{
 		m_end_node = d;
 	}
@@ -59,19 +59,20 @@ private:
 	NetSolution SolverHorz();
 	NetSolution SolveVert();
 	NetSolution SolveZ();
+	NetSolution SolveN();
 	NetSolution SolveL();
 	NetSolution SolveHFlipL();
 	NetSolution ExtendOneThenSolve(model::ConnectedSegmentSide side);
-
+	NetSolution ExtendTwoThenSolve(model::NetSegmentOrientation orientation);
 	NetsSolver CreateSimilarSolver() const;
 	model::NetNodeId GetNewNodeId();
 	model::NetSegmentId GetNewSegmentId();
 
-	std::optional<SolutionEndDescription> m_start_node;
-	std::optional<SolutionEndDescription> m_end_node;
+	std::optional<NetSolutionEndDescription> m_start_node;
+	std::optional<NetSolutionEndDescription> m_end_node;
 	model::id_int m_new_node_id = 0;
 	model::id_int m_new_segment_id = 0;
-	model::node_int m_extension_distance = 10;
+	model::node_int m_extension_distance = 30;
 };
 
 

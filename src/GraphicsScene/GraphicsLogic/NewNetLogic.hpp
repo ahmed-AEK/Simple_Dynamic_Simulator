@@ -22,7 +22,7 @@ namespace model
 namespace logic
 {
 
-class GRAPHICSSCENE_API NewNetLogic : public node::logic::GraphicsLogic
+	class GRAPHICSSCENE_API NewNetLogic : public node::logic::GraphicsLogic
 {
 public:
 
@@ -44,8 +44,8 @@ public:
 		GraphicsScene* scene, GraphicsObjectsManager* manager);
 	static std::unique_ptr<NewNetLogic> CreateFromSegment(NetSegment& base_segment, const model::Point& start_point,
 		GraphicsScene* scene, GraphicsObjectsManager* manager);
-	NewNetLogic(anchor_t start_anchor, std::array<NetNode*, 4> nodes,
-		std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager);
+	NewNetLogic(anchor_t start_anchor, std::array<NetNode*, 6> nodes,
+		std::array<NetSegment*, 5> segments, GraphicsScene* scene, GraphicsObjectsManager* manager);
 
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;
@@ -53,11 +53,13 @@ protected:
 	void OnCancel() override;
 
 private:
+	void ResetNodes();
+
 	NetModificationRequest PopulateResultNet(const model::Point& current_mouse_point);
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
-	void DeleteAllOwnedObjects();
-	std::array<HandlePtrS<NetNode,GraphicsObject>, 4> m_nodes;
-	std::array<HandlePtrS<NetSegment, GraphicsObject>, 3> m_segments;
+	void CleanUp();
+	std::array<HandlePtrS<NetNode,GraphicsObject>, 6> m_nodes;
+	std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> m_segments;
 	anchor_t m_start_anchor;
 };
 

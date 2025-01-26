@@ -19,7 +19,7 @@ namespace node::model
 
 using id_int = int32_t;
 
-enum class ConnectedSegmentSide
+enum class ConnectedSegmentSide : char
 {
 	north = 0,
 	east = 1,
@@ -27,7 +27,7 @@ enum class ConnectedSegmentSide
 	west = 3,
 };
 
-enum class NetSegmentOrientation
+enum class NetSegmentOrientation : char
 {
 	horizontal = 0,
 	vertical = 1,
@@ -101,6 +101,15 @@ template <>
 struct std::hash<node::model::NetSegmentId>
 {
 	std::size_t operator()(const node::model::NetSegmentId& k) const
+	{
+		return k.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::SocketId>
+{
+	std::size_t operator()(const node::model::SocketId& k) const
 	{
 		return k.value;
 	}

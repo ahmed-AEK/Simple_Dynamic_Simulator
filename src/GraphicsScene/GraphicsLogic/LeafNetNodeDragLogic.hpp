@@ -1,12 +1,18 @@
 #pragma once
 
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
+#include "GraphicsScene/GraphicsLogic/TemporaryNetManager.hpp"
+
+#include <variant>
+#include <array>
 
 namespace node
 {
 class NetNode;
 class BlockSocketObject;
 class GraphicsObject;
+class NetSegment;
+struct NetModificationRequest;
 
 namespace logic
 {
@@ -16,7 +22,7 @@ class LeafNetNodeDragLogic : public GraphicsLogic
 public:
 	static std::unique_ptr<LeafNetNodeDragLogic> TryCreate(NetNode& node,
 		GraphicsScene& scene, GraphicsObjectsManager& manager);
-	LeafNetNodeDragLogic(NetNode& dragged_node, NetNode& connected_node,
+	LeafNetNodeDragLogic(TemporaryNetManager net_manager,
 		GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	void OnMouseMove(const model::Point& current_mouse_point) override;
@@ -24,12 +30,12 @@ protected:
 	void OnCancel() override;
 private:
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
+	void ResetNodes();
+	void PositionNodes(const model::Point& target_point);
 	void CleanUp();
+	NetModificationRequest PopulateResultNet(const model::Point& current_mouse_point);
 
-	model::Point m_first_node_start_point;
-	model::Point m_second_node_start_point;
-	HandlePtrS<NetNode, GraphicsObject> m_dragged_node;
-	HandlePtrS<NetNode, GraphicsObject> m_connected_node;
+	TemporaryNetManager m_temp_net_mgr;
 };
 }
 }

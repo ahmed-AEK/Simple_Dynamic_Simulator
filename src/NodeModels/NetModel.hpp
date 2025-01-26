@@ -22,6 +22,7 @@ public:
 	void SetPosition(const Point& position) { m_position = position; }
 	std::optional<NetSegmentId> GetSegmentAt(const ConnectedSegmentSide side) const;
 	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<NetSegmentId> segment);
+	std::optional<ConnectedSegmentSide> GetSegmentSide(NetSegmentId segment_id) const;
 private:
 	NetNodeId m_Id;
 	std::array<bool, 4> m_valid_sides{ false,false,false,false };

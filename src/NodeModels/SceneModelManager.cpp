@@ -4,52 +4,6 @@
 
 #include <iterator>
 
-static void MoveNodeAndConnectedNodes(const node::model::NetNodeId& node_Id, const node::model::Point& point,
-	node::model::NodeSceneModel& model)
-{
-	using namespace node::model;
-	;
-	auto* main_node_wrap = model.GetNetNodeById(node_Id);
-	assert(main_node_wrap);
-	if (!main_node_wrap)
-	{
-		return;
-	}
-
-	NetNodeModel& main_node = (*main_node_wrap);
-	main_node.SetPosition(point);
-
-	auto correct_segment_at = [&](ConnectedSegmentSide side) {
-		auto east_segment = main_node.GetSegmentAt(side);
-		std::optional<NetNodeId> other_side{ std::nullopt };
-		if (east_segment)
-		{
-			auto* segment_model = model.GetNetSegmentById(*east_segment);
-			if (segment_model)
-			{
-				other_side = segment_model->m_firstNodeId;
-				if (other_side == node_Id)
-				{
-					other_side = segment_model->m_secondNodeId;
-				}
-			}
-		}
-		if (other_side)
-		{
-			auto* other_node = model.GetNetNodeById(*other_side);
-			if (other_node)
-			{
-				other_node->SetPosition({ other_node->GetPosition().x, point.y });
-			}
-		}
-		};
-
-	correct_segment_at(ConnectedSegmentSide::east);
-	correct_segment_at(ConnectedSegmentSide::west);
-	assert(!main_node.GetSegmentAt(ConnectedSegmentSide::north)); // TODO
-	assert(!main_node.GetSegmentAt(ConnectedSegmentSide::south)); // TODO
-}
-
 static node::model::NetNodeId GetMaxNodeId(std::span<node::model::NetNodeModel> vec)
 {
 	using namespace node;
@@ -78,149 +32,6 @@ static node::model::NetSegmentId GetMaxSegmentId(std::span<node::model::NetSegme
 
 namespace node
 {
-struct MoveBlockAction : public ModelAction
-{
-	MoveBlockAction(model::Point dst_point, model::BlockId id)
-		:dst_point{ dst_point }, id{ id } {}
-	model::Point src_point{};
-	const model::Point dst_point;
-	const model::BlockId id;
-	bool DoUndo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		block->SetPosition(src_point);
-		for (auto&& socket : block->GetSockets())
-		{
-			const auto& connected_node = socket.GetConnectedNetNode();
-			if (connected_node)
-			{
-				MoveNodeAndConnectedNodes(*connected_node, 
-					{ src_point.x + socket.GetPosition().x, src_point.y + socket.GetPosition().y}, manager.GetModel());
-			}
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
-		
-		return true;
-	}
-
-	bool DoRedo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		src_point = block->GetPosition();
-
-		block->SetPosition(dst_point);
-		for (auto&& socket : block->GetSockets())
-		{
-			const auto& connected_node = socket.GetConnectedNetNode();
-			auto&& socket_pos = socket.GetPosition();
-			if (connected_node)
-			{
-				MoveNodeAndConnectedNodes(*connected_node, 
-					{ dst_point.x + socket_pos.x, dst_point.y + socket_pos.y }, manager.GetModel());
-			}
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
-		return true;
-	}
-
-};
-
-struct ResizeBlockAction : public ModelAction
-{
-	ResizeBlockAction(model::Rect dst_rect, model::BlockId id, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> new_sockets_positions)
-		:dst_rect{ dst_rect }, id{ id }, new_orientation{ new_orientation }, 
-		new_sockets_positions{new_sockets_positions} {}
-	model::Rect src_rect{};
-	std::vector<model::BlockSocketModel> old_sockets_positions;
-	const model::Rect dst_rect;
-	const model::BlockId id;
-	const model::BlockOrientation new_orientation;
-	model::BlockOrientation old_orientation = model::BlockOrientation::LeftToRight;
-	const std::vector<model::BlockSocketModel> new_sockets_positions;
-
-	bool DoUndo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		block->SetOrientation(old_orientation);
-		block->SetBounds(src_rect);
-		for (auto&& socket : block->GetSockets())
-		{
-			auto old_socket_it = std::find_if(old_sockets_positions.begin(), old_sockets_positions.end(), 
-				[&](const model::BlockSocketModel& old_socket) {return old_socket.GetId() == socket.GetId(); });
-			assert(old_socket_it != old_sockets_positions.end());
-			if (old_socket_it == old_sockets_positions.end())
-			{
-				return false;
-			}
-			const auto& connected_node = socket.GetConnectedNetNode();
-			auto&& old_socket_pos = old_socket_it->GetPosition();
-			socket.SetPosition(old_socket_pos);
-			if (connected_node)
-			{
-				MoveNodeAndConnectedNodes(*connected_node,
-					{ dst_rect.x + old_socket_pos.x, dst_rect.y + old_socket_pos.y }, manager.GetModel());
-			}
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
-		return true;
-	}
-
-	bool DoRedo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		src_rect = block->GetBounds();
-		old_orientation = block->GetOrienation();
-
-		block->SetOrientation(new_orientation);
-		block->SetBounds(dst_rect);
-		for (auto&& socket : block->GetSockets())
-		{
-			auto new_socket_it = std::find_if(new_sockets_positions.begin(), new_sockets_positions.end(), [&](const model::BlockSocketModel& new_socket) {return new_socket.GetId() == socket.GetId(); });
-			assert(new_socket_it != new_sockets_positions.end());
-			if (new_socket_it == new_sockets_positions.end())
-			{
-				return false;
-			}
-			const auto& connected_node = socket.GetConnectedNetNode();
-			auto&& old_socket_pos = socket.GetPosition();
-			old_sockets_positions.push_back(model::BlockSocketModel{ socket.GetType(), socket.GetId(), old_socket_pos});
-			auto&& new_socket_pos = new_socket_it->GetPosition();
-			socket.SetPosition(new_socket_pos);
-			if (connected_node)
-			{
-				MoveNodeAndConnectedNodes(*connected_node,
-					{ dst_rect.x + new_socket_pos.x, dst_rect.y + new_socket_pos.y }, manager.GetModel());
-			}
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
-		return true;
-	}
-
-};
 
 struct AddSubsystemBlockAction : public ModelAction
 {
@@ -786,6 +597,7 @@ struct UpdateNetAction : public ModelAction
 		model::NetNodeId old_node2;
 		model::ConnectedSegmentSide old_first_side;
 		model::ConnectedSegmentSide old_second_side;
+		model::NetSegmentOrientation old_orientation;
 	};
 
 	struct StoredAddedSegment
@@ -904,6 +716,7 @@ struct UpdateNetAction : public ModelAction
 
 				updated_segment->m_firstNodeId = segment_request.old_node1;
 				updated_segment->m_secondNodeId = segment_request.old_node2;
+				updated_segment->m_orientation = segment_request.old_orientation;
 
 				node1->SetSegmentAt(segment_request.old_first_side, updated_segment->GetId());
 				node2->SetSegmentAt(segment_request.old_second_side, updated_segment->GetId());
@@ -1170,7 +983,7 @@ struct UpdateNetAction : public ModelAction
 				return false;
 			}
 
-			StoredSegmentUpdate segment_update{ updated_segment->GetId(), model::NetNodeId{0}, model::NetNodeId{0} , {}, {}};
+			StoredSegmentUpdate segment_update{ updated_segment->GetId(), model::NetNodeId{0}, model::NetNodeId{0} , {}, {}, {} };
 			{
 				// disconnect from old node
 				auto node_id = updated_segment->m_firstNodeId;
@@ -1230,6 +1043,8 @@ struct UpdateNetAction : public ModelAction
 					updated_segment->m_secondNodeId = new_nodes[segment_request.node2.value];
 				}
 			}
+			segment_update.old_orientation = updated_segment->m_orientation;
+			updated_segment->m_orientation = segment_request.orientation;
 
 			{
 				auto node_id1 = updated_segment->m_firstNodeId;
@@ -1392,6 +1207,148 @@ struct UpdateNetAction : public ModelAction
 	}
 };
 
+
+struct MoveBlockAction : public ModelAction
+{
+	MoveBlockAction(model::Point dst_point, model::BlockId id, NetModificationRequest&& update_request)
+		:dst_point{ dst_point }, id{ id }, m_update_net_action{ std::move(update_request) } {}
+	model::Point src_point{};
+	const model::Point dst_point;
+	const model::BlockId id;
+	UpdateNetAction m_update_net_action;
+
+	bool DoUndo(SceneModelManager& manager) override
+	{
+		if (!m_update_net_action.DoUndo(manager))
+		{
+			return false;
+		}
+		auto* block = manager.GetModel().GetBlockById(id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		block->SetPosition(src_point);
+		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
+
+		return true;
+	}
+
+	bool DoRedo(SceneModelManager& manager) override
+	{
+		if (!m_update_net_action.DoRedo(manager))
+		{
+			return false;
+		}
+		auto* block = manager.GetModel().GetBlockById(id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		src_point = block->GetPosition();
+
+		block->SetPosition(dst_point);
+		manager.Notify(SceneModification{ SceneModificationType::BlockMoved, SceneModification::data_t{*block} });
+		return true;
+	}
+
+};
+
+
+struct ResizeBlockAction : public ModelAction
+{
+	ResizeBlockAction(model::Rect dst_rect, model::BlockId id, model::BlockOrientation new_orientation,
+		std::vector<model::BlockSocketModel> new_sockets_positions, NetModificationRequest&& net_update)
+		:dst_rect{ dst_rect }, id{ id }, new_orientation{ new_orientation },
+		new_sockets_positions{ new_sockets_positions }, net_update_action{ std::move(net_update) } {
+	}
+	model::Rect src_rect{};
+	std::vector<model::BlockSocketModel> old_sockets_positions;
+	const model::Rect dst_rect;
+	const model::BlockId id;
+	const model::BlockOrientation new_orientation;
+	model::BlockOrientation old_orientation = model::BlockOrientation::LeftToRight;
+	const std::vector<model::BlockSocketModel> new_sockets_positions;
+	UpdateNetAction net_update_action;
+
+	bool DoUndo(SceneModelManager& manager) override
+	{
+		auto* block = manager.GetModel().GetBlockById(id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		if (!net_update_action.DoUndo(manager))
+		{
+			return false;
+		}
+
+		block->SetOrientation(old_orientation);
+		block->SetBounds(src_rect);
+		for (auto&& socket : block->GetSockets())
+		{
+			auto old_socket_it = std::find_if(old_sockets_positions.begin(), old_sockets_positions.end(),
+				[&](const model::BlockSocketModel& old_socket) {return old_socket.GetId() == socket.GetId(); });
+			assert(old_socket_it != old_sockets_positions.end());
+			if (old_socket_it == old_sockets_positions.end())
+			{
+				return false;
+			}
+			auto&& old_socket_pos = old_socket_it->GetPosition();
+			auto&& old_socket_side = old_socket_it->GetConnectionSide();
+			socket.SetPosition(old_socket_pos);
+			socket.SetConnectionSide(old_socket_side);
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
+		return true;
+	}
+
+	bool DoRedo(SceneModelManager& manager) override
+	{
+		auto* block = manager.GetModel().GetBlockById(id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		if (!net_update_action.DoRedo(manager))
+		{
+			return false;
+		}
+		src_rect = block->GetBounds();
+		old_orientation = block->GetOrienation();
+
+		block->SetOrientation(new_orientation);
+		block->SetBounds(dst_rect);
+		for (auto&& socket : block->GetSockets())
+		{
+			auto new_socket_it = std::find_if(new_sockets_positions.begin(), new_sockets_positions.end(), [&](const model::BlockSocketModel& new_socket) {return new_socket.GetId() == socket.GetId(); });
+			assert(new_socket_it != new_sockets_positions.end());
+			if (new_socket_it == new_sockets_positions.end())
+			{
+				return false;
+			}
+			auto&& old_socket_pos = socket.GetPosition();
+			auto&& old_socket_side = socket.GetConnectionSide();
+			old_sockets_positions.push_back(model::BlockSocketModel{ socket.GetType(), socket.GetId(), old_socket_pos, old_socket_side });
+			auto&& new_socket_pos = new_socket_it->GetPosition();
+			auto&& new_socket_side = new_socket_it->GetConnectionSide();
+			socket.SetPosition(new_socket_pos);
+			socket.SetConnectionSide(new_socket_side);
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockResized, SceneModification::data_t{*block} });
+		return true;
+	}
+
+};
+
 }
 
 node::SceneModelManager::SceneModelManager(std::shared_ptr<model::NodeSceneModel> scene)
@@ -1433,15 +1390,19 @@ void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions)
+void node::SceneModelManager::ResizeBlockById(const model::BlockId& id, 
+	const model::Rect& new_rect, model::BlockOrientation new_orientation, 
+	std::vector<model::BlockSocketModel> socket_positions,
+	NetModificationRequest&& net_update)
 {
-	auto action = std::make_unique<ResizeBlockAction>(new_rect, id, new_orientation, std::move(socket_positions));
+	auto action = std::make_unique<ResizeBlockAction>(new_rect, id, new_orientation, 
+		std::move(socket_positions), std::move(net_update));
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const model::Point& new_origin)
+void node::SceneModelManager::MoveBlockById(const model::BlockId& id, const model::Point& new_origin, NetModificationRequest&& net_update)
 {
-	auto move_action = std::make_unique<MoveBlockAction>(new_origin, id);
+	auto move_action = std::make_unique<MoveBlockAction>(new_origin, id, std::move(net_update));
 	PushAction(std::move(move_action));
 }
 
@@ -1463,7 +1424,7 @@ void node::SceneModelManager::ModifyBlockSockets(model::BlockId id, std::vector<
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::UpdateNet(NetModificationRequest& update_request)
+void node::SceneModelManager::UpdateNet(NetModificationRequest&& update_request)
 {
 	auto action = std::make_unique<UpdateNetAction>(std::move(update_request));
 	PushAction(std::move(action));

@@ -19,8 +19,8 @@ std::unique_ptr<node::BlockObject> node::BlockObject::Create(const model::BlockM
     ptr->SetPosition({ model_bounds.x, model_bounds.y });
     for (const auto& socket : model.GetSockets())
     {
-        auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(), 
-            socket.GetPosition());
+        auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(),
+            socket.GetPosition(), socket.GetConnectionSide());
         ptr->AddSocket(std::move(socket_ptr));
     }
     return ptr;
@@ -137,7 +137,7 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
     for (const auto& socket : new_sockets)
     {
         auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(),
-            socket.GetPosition());
+            socket.GetPosition(), socket.GetConnectionSide());
         AddSocket(std::move(socket_ptr));
     }
 }

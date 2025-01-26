@@ -307,6 +307,16 @@ std::unique_ptr<node::Dialog> node::Scene::PopDialog(const node::Dialog* dialog)
     assert(it != m_dialogs.end());
     if (it != m_dialogs.end())
     {
+        auto* dialog_ptr = it->get();
+        if (dialog_ptr == m_current_keyboar_focus.GetObjectPtr())
+        {
+            SetFocus(nullptr);
+            if (auto* focus = m_centralWidget->GetFocusable())
+            {
+                SetFocus(focus);
+            }
+
+        }
         auto out = std::move(*it);
         m_dialogs.erase(it);
         return out;

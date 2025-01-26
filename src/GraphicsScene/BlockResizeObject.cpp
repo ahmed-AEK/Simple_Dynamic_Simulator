@@ -173,7 +173,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 
 	if (side)
 	{
-		auto logic_obj = std::make_unique<logic::BlockResizeLogic>(*m_parent_block.GetObjectPtr(), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
+		auto logic_obj = logic::BlockResizeLogic::TryCreate(*m_parent_block.GetObjectPtr(), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
 		SDL_Log("Clicked On Resize Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;

@@ -39,6 +39,9 @@ void node::NetSegment::Connect(NetNode* start, NetNode* end, const model::NetSeg
 {
 	assert(start);
 	assert(end);
+
+	Disconnect();
+
 	m_startNode = start;
 	m_endNode = end;
 	switch(orientation)
@@ -81,8 +84,12 @@ void node::NetSegment::Connect(NetNode* start, NetNode* end, const model::NetSeg
 
 void node::NetSegment::Disconnect()
 {
-	m_startNode->ClearSegment(this);
-	m_endNode->ClearSegment(this);
+	if (m_startNode)
+	{
+		assert(m_endNode);
+		m_startNode->ClearSegment(this);
+		m_endNode->ClearSegment(this);
+	}
 }
 
 void node::NetSegment::CalcRect()

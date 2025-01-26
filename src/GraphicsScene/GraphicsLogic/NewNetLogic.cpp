@@ -4,6 +4,9 @@
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "NetUtils/NetsSolver.hpp"
+#include "GraphicsScene/SolverUtils.hpp"
+
 #include <array>
 #include <algorithm>
 
@@ -11,24 +14,23 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSo
 	GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
 	assert(scene);
-	std::array<NetNode*, 4> nodes{};
-	std::array<NetSegment*, 3> segments{};
+	std::array<NetNode*, 6> nodes{};
+	std::array<NetSegment*, 5> segments{};
 	try
 	{
-		int layer = 1000;
 		for (auto&& segment : segments)
 		{
 			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
 			segment = new_segmet.get();
-			scene->AddObject(std::move(new_segmet), layer);
-			layer++;
+			scene->AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer);
+			segment->SetSelected(true);
 		}
 		for (auto&& node : nodes)
 		{
 			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
 			node = new_node.get();
-			scene->AddObject(std::move(new_node), layer);
-			layer++;
+			scene->AddObject(std::move(new_node), GraphicsScene::NetNodeLayer);
+			node->SetSelected(true);
 		}
 		assert(manager);
 		return std::make_unique<NewNetLogic>(SocketAnchor{ HandlePtrS<BlockSocketObject,GraphicsObject>{socket}, socket.GetCenterInSpace() }, nodes, segments, scene, manager);
@@ -57,8 +59,8 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSo
 std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSegment(NetSegment& base_segment, const model::Point& start_point, GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
 	assert(scene);
-	std::array<NetNode*, 4> nodes{};
-	std::array<NetSegment*, 3> segments{};
+	std::array<NetNode*, 6> nodes{};
+	std::array<NetSegment*, 5> segments{};
 	try
 	{
 		int layer = 1000;
@@ -100,8 +102,8 @@ std::unique_ptr<node::logic::NewNetLogic> node::logic::NewNetLogic::CreateFromSe
 	return nullptr;
 }
 
-node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*, 4> nodes,
-	std::array<NetSegment*, 3> segments, GraphicsScene* scene, GraphicsObjectsManager* manager)
+node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*, 6> nodes,
+	std::array<NetSegment*, 5> segments, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager }, m_start_anchor{std::move(start_anchor)}
 {
 	
@@ -121,10 +123,24 @@ node::logic::NewNetLogic::NewNetLogic(anchor_t start_anchor, std::array<NetNode*
 	{
 		node->setCenter(std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor));
 	}
+	ResetNodes();
+
+	for (int i = 0; i < 4; i++)
+	{
+		nodes[i]->SetVisible(true);
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		segments[i]->SetVisible(true);
+	}
+
 	segments[0]->Connect(nodes[0], nodes[1], model::NetSegmentOrientation::horizontal);
 	segments[1]->Connect(nodes[1], nodes[2], model::NetSegmentOrientation::vertical);
 	segments[2]->Connect(nodes[2], nodes[3], model::NetSegmentOrientation::horizontal);
 }
+
+namespace
+{
 
 struct AnchorAlive
 {
@@ -137,6 +153,35 @@ struct AnchorAlive
 		return segment.segment.isAlive();
 	}
 };
+
+struct AnchorGetConnectionSide
+{
+	std::array<bool,4> operator()(const node::logic::NewNetLogic::SocketAnchor& socket)
+	{
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(socket.socket->GetConnectionSide())] = true;
+		return sides;
+	}
+	std::array<bool,4> operator()(const node::logic::NewNetLogic::SegmentAnchor& segment)
+	{
+		std::array<bool, 4> sides{};
+		if (segment.segment->GetOrientation() == node::model::NetSegmentOrientation::horizontal)
+		{
+			sides[0] = true;
+			sides[2] = true;
+		}
+		else
+		{
+			sides[1] = true;
+			sides[3] = true;
+		}
+		return sides;
+	}
+};
+
+}
+
+
 void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
 	BlockSocketObject* end_socket = GetSocketAt(current_mouse_point);
@@ -154,13 +199,45 @@ void node::logic::NewNetLogic::OnMouseMove(const model::Point& current_mouse_poi
 	}
 
 	model::Point start = std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor);
-	model::node_int midpoint_x = (end_point.x + start.x) / 2;
-	m_nodes[1]->setCenter({ midpoint_x, start.y });
-	m_nodes[2]->setCenter({ midpoint_x, end_point.y });
-	m_nodes[3]->setCenter({ end_point.x, end_point.y });
-	m_segments[0]->CalcRect();
-	m_segments[1]->CalcRect();
-	m_segments[2]->CalcRect();
+
+	ResetNodes();
+
+	if (std::abs(start.x - end_point.x) < 5 && std::abs(start.y - end_point.y) < 5)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			m_nodes[i]->SetVisible(true);
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			m_segments[i]->SetVisible(true);
+		}
+
+		model::node_int midpoint_x = (end_point.x + start.x) / 2;
+		m_nodes[1]->setCenter({ midpoint_x, start.y });
+		m_nodes[2]->setCenter({ midpoint_x, end_point.y });
+		m_nodes[3]->setCenter({ end_point.x, end_point.y });
+		m_segments[0]->CalcRect();
+		m_segments[1]->CalcRect();
+		m_segments[2]->CalcRect();
+	}
+	else
+	{
+		NetsSolver solver;
+		solver.SetStartDescription(NetSolutionEndDescription{ start, std::visit(AnchorGetConnectionSide{}, m_start_anchor) });
+		if (end_socket)
+		{
+			std::array<bool, 4> sides{};
+			sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
+			solver.SetEndDescription(NetSolutionEndDescription{ end_point, sides});
+		}
+		else
+		{
+			solver.SetEndDescription(NetSolutionEndDescription{ end_point, {true, true, true, true} });
+		}
+		auto solution = solver.Solve();
+		ApplySolutionToNodes(solution, m_nodes, m_segments);
+	}
 }
 
 MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mouse_point)
@@ -168,21 +245,40 @@ MI::ClickEvent node::logic::NewNetLogic::OnLMBUp(const model::Point& current_mou
 	UNUSED_PARAM(current_mouse_point);
 	if (!std::visit(AnchorAlive{}, m_start_anchor))
 	{
-		DeleteAllOwnedObjects();
+		CleanUp();
 		return MI::ClickEvent::CAPTURE_END;
 	}
 
 	assert(GetObjectsManager());
-	auto request = PopulateResultNet(current_mouse_point);
-	DeleteAllOwnedObjects();
+	CleanUp();
 
-	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
+	model::Point start = std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor);
+
+	if (std::abs(start.x - current_mouse_point.x) >= 5 || std::abs(start.y - current_mouse_point.y) >= 5)
+	{
+		auto request = PopulateResultNet(current_mouse_point);
+		GetObjectsManager()->GetSceneModel()->UpdateNet(std::move(request));
+	}
+
 	return MI::ClickEvent::CAPTURE_END;
 }
 
 void node::logic::NewNetLogic::OnCancel()
 {
-	DeleteAllOwnedObjects();
+	CleanUp();
+}
+
+void node::logic::NewNetLogic::ResetNodes()
+{
+	for (auto& node : m_nodes)
+	{
+		node->SetVisible(false);
+	}
+	for (auto& segment : m_segments)
+	{
+		segment->SetVisible(false);
+		segment->Disconnect();
+	}
 }
 
 node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const model::Point& current_mouse_point)
@@ -193,90 +289,70 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 
 	const auto* end_socket = GetSocketAt(current_mouse_point);
 
+	NetsSolver solver;
+
+	model::Point start = std::visit([](const auto& anchor) {return anchor.position; }, m_start_anchor);
+
+	solver.SetStartDescription(NetSolutionEndDescription{ start, std::visit(AnchorGetConnectionSide{}, m_start_anchor) });
+	if (end_socket)
+	{
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
+		solver.SetEndDescription(NetSolutionEndDescription{ end_socket->GetCenterInSpace(), sides});
+	}
+	else
+	{
+		solver.SetEndDescription(NetSolutionEndDescription{ current_mouse_point, {true, true, true, true} });
+	}
+	const auto solution = solver.Solve();
+
 	NetModificationRequest request;
 	
-	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		m_nodes[0]->getCenter()
-		});
-	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		m_nodes[1]->getCenter()
-		});
-	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		m_nodes[2]->getCenter()
-		});
-	request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-		m_nodes[3]->getCenter()
-		});
-
+	for (const auto& node : solution.nodes)
 	{
-		auto segment1_side = model::ConnectedSegmentSide{};
-		auto segment2_side = model::ConnectedSegmentSide{};
-		if (m_nodes[0]->getCenter().x < m_nodes[1]->getCenter().x) // node 0 on left
-		{
-			segment1_side = model::ConnectedSegmentSide::east;
-			segment2_side = model::ConnectedSegmentSide::west;
-		}
-		else
-		{
-			segment1_side = model::ConnectedSegmentSide::west;
-			segment2_side = model::ConnectedSegmentSide::east;
-		}
-		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-			NetModificationRequest::NodeIdType::new_id,
-			NetModificationRequest::NodeIdType::new_id,
-			segment1_side,
-			segment2_side,
-			model::NetSegmentOrientation::horizontal,
-			NetNodeId{0},
-			NetNodeId{1}
-		});
-	}
-
-	{
-		auto segment1_side = model::ConnectedSegmentSide{};
-		auto segment2_side = model::ConnectedSegmentSide{};
-		if (m_nodes[1]->getCenter().y <= m_nodes[2]->getCenter().y) // node1 above node 2
-		{
-			segment1_side = model::ConnectedSegmentSide::south;
-			segment2_side = model::ConnectedSegmentSide::north;
-		}
-		else
-		{
-			segment1_side = model::ConnectedSegmentSide::north;
-			segment2_side = model::ConnectedSegmentSide::south;
-		}
-		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-			NetModificationRequest::NodeIdType::new_id,
-			NetModificationRequest::NodeIdType::new_id,
-			segment1_side,
-			segment2_side,
-			model::NetSegmentOrientation::vertical,
-			NetNodeId{1},
-			NetNodeId{2}
+		request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+			node.GetPosition()
 			});
 	}
 
+	for (const auto& segment : solution.segments)
 	{
 		auto segment1_side = model::ConnectedSegmentSide{};
 		auto segment2_side = model::ConnectedSegmentSide{};
-		if (m_nodes[2]->getCenter().x < m_nodes[3]->getCenter().x) // node 2 on left
+		if (segment.m_orientation == model::NetSegmentOrientation::horizontal)
 		{
-			segment1_side = model::ConnectedSegmentSide::east;
-			segment2_side = model::ConnectedSegmentSide::west;
+			if (solution.nodes[segment.m_firstNodeId.value].GetPosition().x <= solution.nodes[segment.m_secondNodeId.value].GetPosition().x) // node 0 on left
+			{
+				segment1_side = model::ConnectedSegmentSide::east;
+				segment2_side = model::ConnectedSegmentSide::west;
+			}
+			else
+			{
+				segment1_side = model::ConnectedSegmentSide::west;
+				segment2_side = model::ConnectedSegmentSide::east;
+			}
 		}
-		else
+		if (segment.m_orientation == model::NetSegmentOrientation::vertical)
 		{
-			segment1_side = model::ConnectedSegmentSide::west;
-			segment2_side = model::ConnectedSegmentSide::east;
+			if (solution.nodes[segment.m_firstNodeId.value].GetPosition().y <= solution.nodes[segment.m_secondNodeId.value].GetPosition().y) // node 0 on top
+			{
+				segment1_side = model::ConnectedSegmentSide::south;
+				segment2_side = model::ConnectedSegmentSide::north;
+			}
+			else
+			{
+				segment1_side = model::ConnectedSegmentSide::north;
+				segment2_side = model::ConnectedSegmentSide::south;
+			}
 		}
 		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
 			NetModificationRequest::NodeIdType::new_id,
 			NetModificationRequest::NodeIdType::new_id,
 			segment1_side,
 			segment2_side,
-			model::NetSegmentOrientation::horizontal,
-			NetNodeId{2},
-			NetNodeId{3}
+			segment.m_orientation,
+			segment.m_firstNodeId,
+			segment.m_secondNodeId
 			});
 	}
 
@@ -315,6 +391,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 				NetModificationRequest::NodeIdType::new_id,
 				model::ConnectedSegmentSide::south,
 				model::ConnectedSegmentSide::north,
+				model::NetSegmentOrientation::vertical,
 				*start_segment->GetId(),
 				*start_node->GetId(),
 				NetNodeId{0}
@@ -336,7 +413,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 			model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())},
 			NetModificationRequest::NodeIdType::new_id,
-			NetNodeId{3}
+			solution.nodes.back().GetId()
 			});
 	}
 	return request;
@@ -374,7 +451,7 @@ node::BlockSocketObject* node::logic::NewNetLogic::GetSocketAt(const model::Poin
 	return end_socket;
 }
 
-void node::logic::NewNetLogic::DeleteAllOwnedObjects()
+void node::logic::NewNetLogic::CleanUp()
 {
 	GraphicsScene* scene = GetScene();
 	for (auto&& node : m_nodes)

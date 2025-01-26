@@ -13,15 +13,15 @@ class BlockObject;
 class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
-	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt, 
-		model::Point center_in_block = {0,0});
+	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt,
+		model::Point center_in_block = { 0,0 }, model::ConnectedSegmentSide connection_side = {});
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
 
 	BlockObject* GetParentBlock() const { return m_parentBlock; }
 
-	std::optional<model::SocketUniqueId> GetUniqueId();
+	std::optional<model::SocketUniqueId> GetUniqueId() const;
 	std::optional<model::SocketId> GetId() const { return m_id; }
 	void SetId(std::optional<model::SocketId> id) { m_id = std::move(id); }
 
@@ -38,7 +38,10 @@ public:
 		SetPosition({ point.x - nodeLength / 2, point.y - nodeLength / 2 });
 	}
 	model::BlockSocketModel::SocketType GetSocketType() const { return m_socktType; }
-	void SetSocketType(model::BlockSocketModel::SocketType type) { m_socktType = type; }
+	model::ConnectedSegmentSide GetConnectionSide() const { return m_connection_side; }
+	void SetSocketType(model::BlockSocketModel::SocketType type) { m_socktType = type; }	
+	void SetConnectionSide(model::ConnectedSegmentSide side) { m_connection_side = side; }
+
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
 	void UpdateConnectedNodes();
@@ -51,6 +54,7 @@ private:
 
 	BlockObject* m_parentBlock = nullptr;
 	model::BlockSocketModel::SocketType m_socktType;
+	model::ConnectedSegmentSide m_connection_side;
 	std::optional<model::SocketId> m_id;
 	NetNode* m_connected_node = nullptr;
 };

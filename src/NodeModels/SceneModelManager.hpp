@@ -104,6 +104,7 @@ struct NetModificationRequest
 		NodeIdType node2_type;
 		model::ConnectedSegmentSide node1_side;
 		model::ConnectedSegmentSide node2_side;
+		model::NetSegmentOrientation orientation;
 		model::NetSegmentId segment_id;
 		model::NetNodeId node1;
 		model::NetNodeId node2;
@@ -163,13 +164,16 @@ public:
 	void AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data);
 	void AddNewPortBlock(model::BlockModel&& block, model::PortBlockData&& data);
 	void RemoveBlockById(const model::BlockId& id);
-	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin);
-	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions);
+	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin, 
+		NetModificationRequest&& net_update);
+	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, 
+		model::BlockOrientation new_orientation, std::vector<model::BlockSocketModel> socket_positions,
+		NetModificationRequest&& net_update);
 
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
 	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);
 	void ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets);
-	void UpdateNet(NetModificationRequest& update_request);
+	void UpdateNet(NetModificationRequest&& update_request);
 	model::NodeSceneModel& GetModel() { return *m_scene; }
 	const model::NodeSceneModel& GetModel() const { return *m_scene; }
 

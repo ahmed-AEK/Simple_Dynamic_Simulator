@@ -191,6 +191,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     x INTEGER NOT NULL, 
                     y INTEGER NOT NULL, 
                     type INTEGER NOT NULL,
+                    connection_side INTEGER NOT NULL,
                     connected_node_id INTEGER,
                     PRIMARY KEY (id, parentid)
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");

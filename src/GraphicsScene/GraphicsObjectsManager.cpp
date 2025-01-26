@@ -174,6 +174,7 @@ void node::GraphicsObjectsManager::OnNotify(SceneModification& e)
                 assert(socket->GetId());
                 auto&& block_socket = block_ref.GetSocketById(*socket->GetId());
                 socket->SetCenterInBlock(block_socket->GetPosition());
+                socket->SetConnectionSide(block_socket->GetConnectionSide());
             }
             it->second->SetOrientation(block_ref.GetOrienation());
             it->second->SetPosition({ new_bounds.x, new_bounds.y });

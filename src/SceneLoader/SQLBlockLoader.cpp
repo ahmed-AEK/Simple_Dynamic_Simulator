@@ -158,19 +158,20 @@ bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block
 bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel& socket,
 	const node::model::BlockId& block_id)
 {
-	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?)" };
+	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?)" };
 	querySocket.bind(1, socket.GetId().value);
 	querySocket.bind(2, block_id.value);
 	querySocket.bind(3, socket.GetPosition().x);
 	querySocket.bind(4, socket.GetPosition().y);
 	querySocket.bind(5, static_cast<int>(socket.GetType()));
+	querySocket.bind(6, static_cast<int>(socket.GetConnectionSide()));
 	if (auto val = socket.GetConnectedNetNode(); val)
 	{
-		querySocket.bind(6, val->value);
+		querySocket.bind(7, val->value);
 	}
 	else
 	{
-		querySocket.bind(6);
+		querySocket.bind(7);
 	}
 	querySocket.exec();
 	return true;
@@ -235,8 +236,9 @@ node::loader::SQLBlockLoader::LoadSocketsForBlock(node::model::BlockModel& block
 		BlockSocketModel::SocketType type =
 			static_cast<node::model::BlockSocketModel::SocketType>(
 				static_cast<int>(querySocket.getColumn(4)));
-		node::model::BlockSocketModel socket{ type, model::SocketId{socket_id}, socketOrigin };
-		auto connected_node_column = querySocket.getColumn(5);
+		ConnectedSegmentSide connection_side = static_cast<model::ConnectedSegmentSide>(querySocket.getColumn(5).getInt());
+		node::model::BlockSocketModel socket{ type, model::SocketId{socket_id}, socketOrigin, connection_side };
+		auto connected_node_column = querySocket.getColumn(6);
 		if (!connected_node_column.isNull())
 		{
 			socket.SetConnectedNetNode(NetNodeId{ static_cast<id_int>(connected_node_column) });
@@ -387,7 +389,7 @@ std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetPortBlock
 		if (query.executeStep())
 		{
 			data.id = model::SocketId{ query.getColumn(1) };
-			data.port_type = model::SocketType{ static_cast<int>(query.getColumn(2)) };
+			data.port_type = model::SocketType{ static_cast<char>(query.getColumn(2).getInt()) };
 		}
 	}
 	return node::model::BlockData{ data };

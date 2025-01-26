@@ -15,7 +15,7 @@ namespace node::model
 
 class BlockModel;
 
-enum class SocketType
+enum class SocketType : char
 {
 	input = 0,
 	output = 1,
@@ -29,10 +29,10 @@ public:
 	using SocketType = model::SocketType;
 
 	explicit BlockSocketModel(
-		SocketType type, SocketId id, const Point& position = {},
+		SocketType type, SocketId id, const Point& position = {}, ConnectedSegmentSide side = {},
 		std::optional<NetNodeId> connectedNetNode = {}
 	)
-		: m_Id{ id }, m_position{ position }, m_type{ type },
+		: m_Id{ id }, m_position{ position }, m_type{ type }, m_side{side},
 		m_connectedNetNode{ connectedNetNode } {}
 
 	const Point& GetPosition() const noexcept { return m_position; }
@@ -41,6 +41,8 @@ public:
 	void SetId(SocketId id) { m_Id = id; };
 
 	const SocketType& GetType() const noexcept { return m_type; }
+	ConnectedSegmentSide GetConnectionSide() const { return m_side; }
+	void SetConnectionSide(ConnectedSegmentSide side) { m_side = side; }
 	const std::optional<NetNodeId>& GetConnectedNetNode() const noexcept { return m_connectedNetNode; }
 	void SetConnectedNetNode(std::optional<NetNodeId> node_id) { m_connectedNetNode = node_id; }
 	// SetConnectedNode in in Node to emit signals
@@ -49,6 +51,7 @@ private:
 	SocketId m_Id;
 	Point m_position;
 	SocketType m_type;
+	ConnectedSegmentSide m_side;
 	std::optional<NetNodeId> m_connectedNetNode;
 };
 

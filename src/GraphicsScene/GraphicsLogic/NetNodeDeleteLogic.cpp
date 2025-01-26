@@ -71,7 +71,7 @@ MI::ClickEvent node::logic::NetNodeDeleteLogic::OnLMBUp(const model::Point& curr
 		}
 	}
 	
-	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
+	GetObjectsManager()->GetSceneModel()->UpdateNet(std::move(request));
 	return MI::ClickEvent::CAPTURE_END;
 }
 

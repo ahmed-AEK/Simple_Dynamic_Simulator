@@ -22,3 +22,15 @@ void node::model::NetNodeModel::SetSegmentAt(const ConnectedSegmentSide side, co
 	m_valid_sides[static_cast<size_t>(side)] = true;
 	m_segmentIds[static_cast<size_t>(side)] = *segment;
 }
+
+std::optional<node::model::ConnectedSegmentSide> node::model::NetNodeModel::GetSegmentSide(NetSegmentId segment_id) const
+{
+	for (int i = 0; i < 4; i++)
+	{
+		if (m_valid_sides[i] && m_segmentIds[i] == segment_id)
+		{
+			return static_cast<model::ConnectedSegmentSide>(i);
+		}
+	}
+	return std::nullopt;
+}

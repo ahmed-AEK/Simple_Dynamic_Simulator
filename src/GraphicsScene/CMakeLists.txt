@@ -31,6 +31,9 @@ ToolsManager.hpp ToolsManager.cpp
 ToolButton.hpp ToolButton.cpp
 GraphicsObjectsManager.hpp GraphicsObjectsManager.cpp
 BlockResizeObject.hpp BlockResizeObject.cpp
+SolverUtils.hpp SolverUtils.cpp
+GraphicsLogic/Anchors.hpp GraphicsLogic/Anchors.cpp
+GraphicsLogic/TemporaryNetManager.hpp GraphicsLogic/TemporaryNetManager.cpp
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")
@@ -38,4 +41,4 @@ target_include_directories(GraphicsScene INTERFACE "..")
 
 target_compile_definitions(GraphicsScene PRIVATE GRAPHICSSCENE_EXPORTS)
 
-target_link_libraries(GraphicsScene PUBLIC toolgui NodeSDLStylers)
+target_link_libraries(GraphicsScene PUBLIC toolgui NodeSDLStylers NetUtils)

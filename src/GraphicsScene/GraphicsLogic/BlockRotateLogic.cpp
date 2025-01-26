@@ -3,6 +3,9 @@
 #include "GraphicsScene.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsObjectsManager.hpp"
+#include "GraphicsScene/BlockSocketObject.hpp"
+#include "GraphicsScene/SolverUtils.hpp"
+#include "GraphicsLogic/Anchors.hpp"
 
 node::logic::BlockRotateLogic::BlockRotateLogic(const model::Rect& rotate_btn_rect, BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager}, m_rotate_btn_rect{rotate_btn_rect}, m_block{block}
@@ -45,7 +48,39 @@ MI::ClickEvent node::logic::BlockRotateLogic::OnLMBUp(const model::Point& curren
 	new_rect.y = center_point.y - new_rect.h / 2;
 	styler.PositionSockets(new_sockets, new_rect, new_orientation);
 
-	GetObjectsManager()->GetSceneModel()->ResizeBlockById(*block.GetModelId(), new_rect, new_orientation, new_sockets);
+	NetModificationRequest main_request;
+	auto& socket_objects = block.GetSockets();
+	for (size_t i = 0; i < socket_objects.size(); i++)
+	{
+		auto* end_socket = socket_objects[i].get();
+		auto* connected_node = end_socket->GetConnectedNode();
+		if (!connected_node)
+		{
+			continue;
+		}
+		auto new_socket_pos = new_sockets[i].GetPosition();
+
+		auto branch = GetNetBranchForLeafNode(*connected_node);
+		std::reverse(branch.nodes.begin(), branch.nodes.end());
+		std::reverse(branch.segments.begin(), branch.segments.end());
+
+		NetsSolver solver;
+
+		model::Point start = branch.nodes[0]->getCenter();
+		auto start_anchor = logic::CreateStartAnchor(branch.nodes, branch.segments);
+
+		solver.SetStartDescription(NetSolutionEndDescription{ start, std::visit(AnchorGetConnectionSide{}, start_anchor) });
+
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(new_sockets[i].GetConnectionSide())] = true;
+		solver.SetEndDescription(NetSolutionEndDescription{ model::Point{new_rect.x, new_rect.y} + new_socket_pos, sides});
+
+		const auto solution = solver.Solve();
+		auto report = MakeModificationsReport(solution, branch.nodes, branch.segments);
+		UpdateModificationEndWithSocket(branch.nodes, report, end_socket);
+		MergeModificationRequests(report.request, main_request);
+	}
+	GetObjectsManager()->GetSceneModel()->ResizeBlockById(*block.GetModelId(), new_rect, new_orientation, new_sockets, std::move(main_request));
 	return MI::ClickEvent::CAPTURE_END;
 }
 

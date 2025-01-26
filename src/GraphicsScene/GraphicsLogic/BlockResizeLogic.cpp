@@ -5,6 +5,8 @@
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsObjectsManager.hpp"
+#include "GraphicsLogic/Anchors.hpp"
+#include "GraphicsScene/SolverUtils.hpp"
 
 static void FillSockets(std::vector<node::model::BlockSocketModel>& sockets, node::BlockObject& object)
 {
@@ -37,14 +39,46 @@ static void SetBlockToRect(node::BlockObject& block, const node::model::Rect& ne
 	block.SetSize({ new_rect.w, new_rect.h });
 }
 
-node::logic::BlockResizeLogic::BlockResizeLogic(BlockObject& block, BlockResizeObject& resize_object, 
-	model::Point drag_start_point, DragSide side, GraphicsScene* scene, GraphicsObjectsManager* manager)
+std::unique_ptr<node::logic::BlockResizeLogic> node::logic::BlockResizeLogic::TryCreate(BlockObject& block,
+	BlockResizeObject& resize_object, model::Point drag_start_point, DragSide side, GraphicsScene* scene, 
+	GraphicsObjectsManager* manager)
+{
+	std::unordered_map<model::SocketId, TemporaryNetManager> socket_nets;
+	assert(scene);
+	for (const auto& socket : block.GetSockets())
+	{
+		assert(socket->GetId());
+		if (!socket->GetId())
+		{
+			return nullptr;
+		}
+		auto* current_node = socket->GetConnectedNode();
+		if (!current_node)
+		{
+			continue;
+		}
+		TemporaryNetManager net = TemporaryNetManager::CreateFromLeafNodeNet(*current_node, *scene);
+		net.SetHighlight(false);
+		socket_nets[*socket->GetId()] = std::move(net);
+	}
+
+	return std::make_unique<BlockResizeLogic>(block, resize_object, drag_start_point, side, 
+		scene, manager, std::move(socket_nets));
+}
+
+node::logic::BlockResizeLogic::BlockResizeLogic(BlockObject& block, BlockResizeObject& resize_object,
+	model::Point drag_start_point, DragSide side, GraphicsScene* scene, GraphicsObjectsManager* manager,
+	std::unordered_map<model::SocketId, TemporaryNetManager>&& socket_nets)
 	:GraphicsLogic{scene, manager},  m_block{block}, m_resizeObject{resize_object},
-	m_initial_rect{block.GetPosition().x, block.GetPosition().y, block.GetSize().w, block.GetSize().h}, m_drag_side{side}
+	m_initial_rect{block.GetPosition().x, block.GetPosition().y, block.GetSize().w, block.GetSize().h}, 
+	m_drag_side{side}, m_socket_nets{std::move(socket_nets)}
 {
 	assert(manager);
 	m_drag_start_point = GetScene()->QuantizePoint(drag_start_point);
 	FillSockets(m_temp_sockets, block);
+	SetBlockToRect(block, block.GetSceneRect(), m_temp_sockets);
+
+	PositionNodes(block.GetScenePosition(), m_temp_sockets);
 }
 
 void node::logic::BlockResizeLogic::OnMouseMove(const model::Point& current_mouse_point)
@@ -110,6 +144,7 @@ void node::logic::BlockResizeLogic::OnMouseMove(const model::Point& current_mous
 	auto new_object_rect = BlockResizeObject::RectForBlockRect(new_rect);
 	m_resizeObject->SetPosition({ new_object_rect.x, new_object_rect.y });
 	m_resizeObject->SetSize({ new_object_rect.w, new_object_rect.h });
+	PositionNodes({ new_rect.x, new_rect.y }, m_temp_sockets);
 }
 
 void node::logic::BlockResizeLogic::OnCancel()
@@ -188,7 +223,41 @@ MI::ClickEvent node::logic::BlockResizeLogic::OnLMBUp(const model::Point& curren
 	auto orientation = block.GetOrienation();
 	CleanUp();
 
-	GetObjectsManager()->GetSceneModel()->ResizeBlockById(id, new_rect, orientation, new_sockets);
+	NetModificationRequest main_request;
+	auto& socket_objects = block.GetSockets();
+	for (size_t i = 0; i < socket_objects.size(); i++)
+	{
+		auto* end_socket = socket_objects[i].get();
+		auto* connected_node = end_socket->GetConnectedNode();
+		if (!connected_node)
+		{
+			continue;
+		}
+		auto new_socket_pos = new_sockets[i].GetPosition();
+
+		auto branch = GetNetBranchForLeafNode(*connected_node);
+		std::reverse(branch.nodes.begin(), branch.nodes.end());
+		std::reverse(branch.segments.begin(), branch.segments.end());
+
+		NetsSolver solver;
+
+		model::Point start = branch.nodes[0]->getCenter();
+		auto start_anchor = logic::CreateStartAnchor(branch.nodes, branch.segments);
+
+		solver.SetStartDescription(NetSolutionEndDescription{ start, std::visit(AnchorGetConnectionSide{}, start_anchor) });
+
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(new_sockets[i].GetConnectionSide())] = true;
+		solver.SetEndDescription(NetSolutionEndDescription{ model::Point{new_rect.x, new_rect.y} + new_socket_pos, sides });
+
+		const auto solution = solver.Solve();
+		auto report = MakeModificationsReport(solution, branch.nodes, branch.segments);
+		UpdateModificationEndWithSocket(branch.nodes, report, end_socket);
+		MergeModificationRequests(report.request, main_request);
+	}
+
+	GetObjectsManager()->GetSceneModel()->ResizeBlockById(id, new_rect, orientation, 
+		new_sockets, std::move(main_request));
 
 	return MI::ClickEvent::CAPTURE_END;
 }
@@ -209,6 +278,32 @@ void node::logic::BlockResizeLogic::CleanUp()
 		auto new_rect = BlockResizeObject::RectForBlockRect(m_initial_rect);
 		ptr->SetPosition({ new_rect.x, new_rect.y });
 		ptr->SetSize({ new_rect.w, new_rect.h });
+	}
+	for (auto&& [id, net] : m_socket_nets)
+	{
+		net.CleanUp();
+	}
+}
+
+void node::logic::BlockResizeLogic::PositionNodes(const model::Point& edge, 
+	std::span<const model::BlockSocketModel> sockets)
+{
+	for (auto&& [id, net] : m_socket_nets)
+	{
+		auto* socket = m_block->GetSocketById(id);
+
+		auto socket_it = std::find_if(sockets.begin(), sockets.end(), [&](const model::BlockSocketModel& socket_model)
+			{
+				return socket_model.GetId() == id;
+			});
+		assert(socket_it != sockets.end());
+
+		auto end_point = edge + socket_it->GetPosition();
+
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(socket->GetConnectionSide())] = true;
+
+		net.PositionNodes(NetSolutionEndDescription{ end_point, sides });
 	}
 }
 

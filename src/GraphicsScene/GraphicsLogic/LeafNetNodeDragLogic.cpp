@@ -3,116 +3,49 @@
 #include "GraphicsObjectsManager.hpp"
 #include "BlockObject.hpp"
 #include "BlockSocketObject.hpp"
+#include "NetUtils/NetsSolver.hpp"
+#include "GraphicsScene/SolverUtils.hpp"
 
-std::unique_ptr<node::logic::LeafNetNodeDragLogic> node::logic::LeafNetNodeDragLogic::TryCreate(NetNode& node,
+
+
+std::unique_ptr<node::logic::LeafNetNodeDragLogic> node::logic::LeafNetNodeDragLogic::TryCreate(NetNode& leaf_node,
 	GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
-	assert(node.GetConnectedSegmentsCount() == 1);
-	NetSegment* connected_segment = node.getSegment(model::ConnectedSegmentSide::east);
-	if (!connected_segment)
-	{
-		connected_segment = node.getSegment(model::ConnectedSegmentSide::west);
-	}
-	if (!connected_segment)
-	{
-		return nullptr;
-	}
+	assert(leaf_node.GetConnectedSegmentsCount() == 1);
+	TemporaryNetManager net_mgr = TemporaryNetManager::CreateFromLeafNodeNet(leaf_node, scene);
 
-	NetNode* connected_node = connected_segment->getStartNode();
-	if (connected_node == &node)
-	{
-		connected_node = connected_segment->getEndNode();
-	}
-	assert(connected_node);
-
-	return std::make_unique<LeafNetNodeDragLogic>(node, *connected_node, &scene, &manager);
+	return std::make_unique<LeafNetNodeDragLogic>(std::move(net_mgr), &scene, &manager);
 }
 
-node::logic::LeafNetNodeDragLogic::LeafNetNodeDragLogic(NetNode& dragged_node, NetNode& connected_node,
-	GraphicsScene* scene, GraphicsObjectsManager* manager)
-	:GraphicsLogic{scene, manager}, m_first_node_start_point{dragged_node.getCenter()}, 
-	m_second_node_start_point{connected_node.getCenter()}, 
-	m_dragged_node{dragged_node},
-	m_connected_node{connected_node}
+node::logic::LeafNetNodeDragLogic::LeafNetNodeDragLogic(TemporaryNetManager net_manager, GraphicsScene* scene, GraphicsObjectsManager* manager)
+	:GraphicsLogic{ scene, manager } , m_temp_net_mgr{std::move(net_manager)}
 {
+	PositionNodes(m_temp_net_mgr.orig_nodes.back()->getCenter());
 }
 
 void node::logic::LeafNetNodeDragLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
-	if (!m_dragged_node.isAlive())
-	{
-		GetScene()->SetGraphicsLogic(nullptr);
-		return;
-	}
-	assert(m_connected_node.isAlive());
-
-	BlockSocketObject* connectd_socket = GetSocketAt(current_mouse_point);
-	model::Point new_point = current_mouse_point;
-	if (connectd_socket)
-	{
-		new_point = connectd_socket->GetCenterInSpace();
-	}
-
-	auto* dragged_node = m_dragged_node.GetObjectPtr();
-	dragged_node->setCenter(new_point);
-	auto* connected_node = m_connected_node.GetObjectPtr();
-	connected_node->setCenter({ m_second_node_start_point.x, new_point.y });
-	connected_node->UpdateConnectedSegments();
+	PositionNodes(current_mouse_point);
 }
 
 MI::ClickEvent node::logic::LeafNetNodeDragLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
-	if (!m_dragged_node.isAlive())
+	CleanUp();
+	if (!std::visit(AnchorAlive{}, m_temp_net_mgr.start_anchor))
 	{
-		GetScene()->SetGraphicsLogic(nullptr);
 		return MI::ClickEvent::CAPTURE_END;
 	}
-	assert(m_connected_node.isAlive());
-
-	BlockSocketObject* connectd_socket = GetSocketAt(current_mouse_point);
-	model::Point new_point = current_mouse_point;
-	if (connectd_socket)
+	const auto* end_socket = GetSocketAt(current_mouse_point);
+	if (end_socket && end_socket == m_temp_net_mgr.orig_nodes.back()->GetConnectedSocket())
 	{
-		new_point = connectd_socket->GetCenterInSpace();
-	}
-	assert(m_dragged_node->GetId());
-	assert(m_connected_node->GetId());
-
-	std::optional<model::SocketUniqueId> connected_socket_id;
-	if (connectd_socket)
-	{
-		assert(connectd_socket->GetId());
-		assert(connectd_socket->GetParentBlock()->GetModelId());
-		connected_socket_id = model::SocketUniqueId{ *connectd_socket->GetId(), 
-			*connectd_socket->GetParentBlock()->GetModelId() };
+		return MI::ClickEvent::CAPTURE_END;
 	}
 
+	assert(GetObjectsManager());
 
-	NetModificationRequest request;
+	auto request = PopulateResultNet(current_mouse_point);
+	GetObjectsManager()->GetSceneModel()->UpdateNet(std::move(request));
 
-	// request node position change
-	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *m_dragged_node->GetId(), new_point });
-	request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *m_connected_node->GetId(), {m_second_node_start_point.x,new_point.y }});
-	
-
-	// remove old connection
-	const auto* old_connected_socket = m_dragged_node->GetConnectedSocket();
-	if (old_connected_socket && old_connected_socket != connectd_socket)
-	{
-		assert(old_connected_socket->GetId());
-		assert(old_connected_socket->GetParentBlock()->GetModelId());
-		request.removed_connections.push_back(model::SocketUniqueId{ *old_connected_socket->GetId(), *old_connected_socket->GetParentBlock()->GetModelId() });
-	}
-
-	// establish new connection
-	if (connected_socket_id && old_connected_socket != connectd_socket)
-	{
-		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
-			*connected_socket_id, NetModificationRequest::NodeIdType::existing_id, *m_dragged_node->GetId()
-			});
-	}
-	CleanUp();
-	GetObjectsManager()->GetSceneModel()->UpdateNet(request);
 	return MI::ClickEvent::CAPTURE_END;
 }
 
@@ -144,7 +77,7 @@ node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const mo
 		if (it != sockets.end())
 		{
 			auto* connected_node = it->get()->GetConnectedNode();
-			if (connected_node == nullptr || connected_node == m_dragged_node.GetObjectPtr())
+			if (connected_node == nullptr || connected_node == m_temp_net_mgr.orig_nodes.back().GetObjectPtr())
 			{
 				end_socket = it->get();
 				break;
@@ -154,18 +87,68 @@ node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const mo
 	return end_socket;
 }
 
+void node::logic::LeafNetNodeDragLogic::ResetNodes()
+{
+	m_temp_net_mgr.ResetNodes();
+}
+
+void node::logic::LeafNetNodeDragLogic::PositionNodes(const model::Point& target_point)
+{
+	BlockSocketObject* end_socket = GetSocketAt(target_point);
+
+	auto end_point = target_point;
+	if (end_socket)
+	{
+		end_point = end_socket->GetCenterInSpace();
+	}
+
+	ResetNodes();
+
+	NetSolutionEndDescription end_descriptor{};
+	if (end_socket)
+	{
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
+		end_descriptor = NetSolutionEndDescription{ end_point, sides };
+	}
+	else
+	{
+		end_descriptor = NetSolutionEndDescription{ end_point, {true, true, true, true} };
+	}
+	m_temp_net_mgr.PositionNodes(end_descriptor);
+}
+
 void node::logic::LeafNetNodeDragLogic::CleanUp()
 {
-	if (!m_dragged_node.isAlive())
-	{
-		return;
-	}
-	assert(m_connected_node.isAlive());
+	m_temp_net_mgr.CleanUp();
+}
 
-	auto* dragged_node = m_dragged_node.GetObjectPtr();
-	dragged_node->setCenter(m_first_node_start_point);
-	auto* connected_node = m_connected_node.GetObjectPtr();
-	connected_node->setCenter(m_second_node_start_point);
-	connected_node->UpdateConnectedSegments();
+node::NetModificationRequest node::logic::LeafNetNodeDragLogic::PopulateResultNet(const model::Point& current_mouse_point)
+{
+	using model::NetNodeId;
+	using model::NetSegmentId;
+	using enum model::ConnectedSegmentSide;
+
+	const auto* end_socket = GetSocketAt(current_mouse_point);
+
+	NetsSolver solver;
+
+	model::Point start = std::visit(AnchorStart{}, m_temp_net_mgr.start_anchor);
+
+	solver.SetStartDescription(NetSolutionEndDescription{ start, std::visit(AnchorGetConnectionSide{}, m_temp_net_mgr.start_anchor) });
+	if (end_socket)
+	{
+		std::array<bool, 4> sides{};
+		sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
+		solver.SetEndDescription(NetSolutionEndDescription{ end_socket->GetCenterInSpace(), sides });
+	}
+	else
+	{
+		solver.SetEndDescription(NetSolutionEndDescription{ current_mouse_point, {true, true, true, true} });
+	}
+	const auto solution = solver.Solve();
+	auto report = MakeModificationsReport(solution, m_temp_net_mgr.orig_nodes, m_temp_net_mgr.orig_segments);
+	UpdateModificationEndWithSocket(m_temp_net_mgr.orig_nodes, report, end_socket);
+	return std::move(report.request);
 }
 

@@ -65,8 +65,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
                 scene.AddObject(std::move(resizer), GraphicsScene::InteractiveLayer);
             }
 
-            auto obj_rect = current_hover->GetSceneRect();
-            auto drag_logic = std::make_unique<logic::BlockDragLogic>(e.point, model::Point{ obj_rect.x, obj_rect.y }, 
+            auto drag_logic = logic::BlockDragLogic::TryCreate(e.point, 
                 *block_obj, &scene, &manager);
             scene.SetGraphicsLogic(std::move(drag_logic));
             return MI::ClickEvent::CAPTURE_START;
