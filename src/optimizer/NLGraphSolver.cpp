@@ -1,11 +1,7 @@
 #include "NLGraphSolver.hpp"
 #include "toolgui/NodeMacros.h"
-#include <cassert>
-#include <iostream>
-#include <iomanip>
-#include <cmath>
 #include <boost/range/adaptors.hpp>
-#include <queue>
+
 #include "optimizer/NLGraphSolver_private.hpp"
 
 double opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::span<double> grad)

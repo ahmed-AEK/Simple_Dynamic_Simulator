@@ -1,5 +1,4 @@
 #include "PortBlocksDataManager.hpp"
-#include <algorithm>
 
 bool node::model::PortBlocksDataManager::RemovePortForId(BlockId id)
 {

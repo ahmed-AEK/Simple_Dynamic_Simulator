@@ -1,6 +1,5 @@
 #include "GraphicsScene/tools/ArrowTool.hpp"
 #include "GraphicsScene/GraphicsObject.hpp"
-#include <cassert>
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsLogic/ScreenDragLogic.hpp"
 #include "GraphicsLogic/BlockDragLogic.hpp"
@@ -9,7 +8,7 @@
 #include "BlockObject.hpp"
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
-#include "GraphicsLogic/VSegmentDragLogic.hpp"
+#include "GraphicsLogic/MiddleSegmentDragLogic.hpp"
 #include "BlockResizeObject.hpp"
 
 
@@ -102,7 +101,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
         {
             auto* segment = static_cast<NetSegment*>(current_hover);
             scene.BumpObjectInLayer(current_hover);
-            if (auto ptr = logic::VSegmentDragLogic::Create(*segment->getStartNode(),
+            if (auto ptr = logic::MiddleSegmentDragLogic::Create(*segment->getStartNode(),
                 *segment->getEndNode(), *segment, e.point, &scene, &manager))
             {
                 scene.SetGraphicsLogic(std::move(ptr));

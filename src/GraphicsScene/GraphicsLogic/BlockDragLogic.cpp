@@ -3,7 +3,6 @@
 #include "GraphicsScene.hpp"
 #include "GraphicsObjectsManager.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
-#include "NetUtils/NetsSolver.hpp"
 #include "GraphicsScene/SolverUtils.hpp"
 
 std::unique_ptr<node::logic::BlockDragLogic> node::logic::BlockDragLogic::TryCreate(

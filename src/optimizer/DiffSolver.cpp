@@ -1,6 +1,5 @@
 #include "DiffSolver.hpp"
-#include "cassert"
-#include "toolgui/NodeMacros.h"
+
 #include "boost/numeric/odeint/stepper/controlled_step_result.hpp"
 #include "optimizer/DiffSolver_private.hpp"
 

@@ -1,10 +1,6 @@
 #include "BlockSocketObject.hpp"
 #include "BlockObject.hpp"
-#include "SDL_Framework/SDL_headers.h"
 #include "NetObject.hpp"
-#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include "SDL_Framework/SDLRenderer.hpp"
-#include <cassert>
 
 void node::BlockSocketObject::SetConnectedNode(NetNode* node)
 {

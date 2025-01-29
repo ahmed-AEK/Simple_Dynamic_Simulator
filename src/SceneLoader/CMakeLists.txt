@@ -8,6 +8,7 @@ BlockLoader.hpp
 SQLBlockLoader.hpp SQLBlockLoader.cpp
 NetLoader.hpp
 SQLNetLoader.hpp SQLNetLoader.cpp
+pch.h
 )
 
 target_include_directories(SceneLoader PRIVATE ".")
@@ -17,3 +18,6 @@ target_link_libraries(SceneLoader PUBLIC
                         SQLiteCpp
 				NodeModels
                         )
+
+
+target_precompile_headers(SceneLoader PRIVATE pch.h)

@@ -1,6 +1,5 @@
 #include "GraphicsScene/SolverUtils.hpp"
 
-#include "NetUtils/NetsSolver.hpp"
 #include "GraphicsObjectsManager.hpp"
 #include "BlockSocketObject.hpp"
 

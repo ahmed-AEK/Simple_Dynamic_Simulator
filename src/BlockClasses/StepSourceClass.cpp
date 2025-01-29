@@ -1,13 +1,4 @@
 #include "StepSourceClass.hpp"
-#include "toolgui/NodeMacros.h"
-#include "optimizer/NLEquation.hpp"
-#include "optimizer/DiffEquation.hpp"
-#include "optimizer/NLStatefulEquation.hpp"
-#include "optimizer/Observer.hpp"
-#include "optimizer/SourceEq.hpp"
-
-#include <numbers>
-#include <cmath>
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },

@@ -1,12 +1,6 @@
 #include "NetObject.hpp"
 #include "BlockSocketObject.hpp"
 #include "BlockObject.hpp"
-#include <cmath>
-#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include <cassert>
-#include <algorithm>
-#include "SDL_Framework/SDLRenderer.hpp"
-#include <stack>
 #include "GraphicsScene/GraphicsScene.hpp"
 
 node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode)

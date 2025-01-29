@@ -1,7 +1,4 @@
-#include "gtest/gtest.h"
-#include "optimizer/FatAny.hpp"
-#include "toolgui/NodeMacros.h"
-#include <memory>
+
 
 TEST(testFatAny, testConstructor)
 {

@@ -3,7 +3,6 @@
 #include "BlockObject.hpp"
 #include "GraphicsLogic/BlockResizeLogic.hpp"
 #include "GraphicsLogic/BlockRotateLogic.hpp"
-#include "SDL_Framework/SDLRenderer.hpp"
 
 node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& rect)
 {

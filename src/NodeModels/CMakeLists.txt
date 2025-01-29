@@ -13,9 +13,12 @@ SubsystemBlocksDataManager.hpp SubsystemBlocksDataManager.cpp
 BlockData.hpp
 PortBlocksDataManager.hpp PortBlocksDataManager.cpp
 BlockPortsUpdate.hpp
+pch.h
 )
 
 target_include_directories(NodeModels PRIVATE ".")
 target_include_directories(NodeModels PUBLIC "..")
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+target_precompile_headers(NodeModels PRIVATE pch.h)

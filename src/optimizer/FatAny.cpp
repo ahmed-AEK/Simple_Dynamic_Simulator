@@ -1,5 +1,4 @@
 #include "FatAny.hpp"
-#include "toolgui/NodeMacros.h"
 
 opt::FatAny::FatAny(opt::FatAny&& other) noexcept
 	: p_manager(other.p_manager)

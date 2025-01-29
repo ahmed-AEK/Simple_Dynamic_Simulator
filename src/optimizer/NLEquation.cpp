@@ -1,9 +1,4 @@
 #include "NLEquation.hpp"
-#include <cassert>
-
-
-
-
 
 opt::NLEquation::NLEquation(std::pmr::vector<int32_t> input_ids, 
 	std::pmr::vector<int32_t> output_ids, NLFunctor functor,

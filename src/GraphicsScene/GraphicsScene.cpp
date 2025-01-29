@@ -1,15 +1,10 @@
 #include "GraphicsScene.hpp"
 #include "toolgui/NodeMacros.h"
-#include <algorithm>
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
-#include "toolgui/Scene.hpp"
-#include "toolgui/ContextMenu.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
-#include "NodeModels/SceneModelManager.hpp"
+
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
-#include "SDL_Framework/SDLRenderer.hpp"
 
 node::GraphicsScene::GraphicsScene(const WidgetSize& size, node::Widget* parent)
 :Widget(size, parent),

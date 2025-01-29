@@ -1,6 +1,4 @@
-#include "gtest/gtest.h"
-#include "optimizer/Equation.hpp"
-#include <array>
+
 
 TEST(testEquation, testIds)
 {

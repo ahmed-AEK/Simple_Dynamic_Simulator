@@ -21,7 +21,7 @@ GraphicsLogic/NodeDeleteLogic.cpp 	    GraphicsLogic/NodeDeleteLogic.hpp
 GraphicsLogic/ScreenDragLogic.cpp       GraphicsLogic/ScreenDragLogic.hpp
 GraphicsLogic/BlockDragLogic.cpp        GraphicsLogic/BlockDragLogic.hpp
 GraphicsLogic/LeafNetNodeDragLogic.cpp  GraphicsLogic/LeafNetNodeDragLogic.hpp
-GraphicsLogic/VSegmentDragLogic.cpp     GraphicsLogic/VSegmentDragLogic.hpp
+GraphicsLogic/MiddleSegmentDragLogic.cpp     GraphicsLogic/MiddleSegmentDragLogic.hpp
 GraphicsLogic/SegmentDeleteLogic.cpp    GraphicsLogic/SegmentDeleteLogic.hpp
 GraphicsLogic/BlockDeleteLogic.cpp      GraphicsLogic/BlockDeleteLogic.hpp
 GraphicsLogic/NetNodeDeleteLogic.cpp    GraphicsLogic/NetNodeDeleteLogic.hpp
@@ -34,6 +34,7 @@ BlockResizeObject.hpp BlockResizeObject.cpp
 SolverUtils.hpp SolverUtils.cpp
 GraphicsLogic/Anchors.hpp GraphicsLogic/Anchors.cpp
 GraphicsLogic/TemporaryNetManager.hpp GraphicsLogic/TemporaryNetManager.cpp
+pch.h
 )
 
 target_include_directories(GraphicsScene PRIVATE ".")
@@ -42,3 +43,5 @@ target_include_directories(GraphicsScene INTERFACE "..")
 target_compile_definitions(GraphicsScene PRIVATE GRAPHICSSCENE_EXPORTS)
 
 target_link_libraries(GraphicsScene PUBLIC toolgui NodeSDLStylers NetUtils)
+
+target_precompile_headers(GraphicsScene PRIVATE pch.h)

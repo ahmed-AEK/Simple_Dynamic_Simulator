@@ -1,14 +1,12 @@
 #include "ScopeDisplayDialog.hpp"
-#include <array>
+
 #include "SDL_Framework/SDLCPP.hpp"
 #include "toolgui/Scene.hpp"
 #include "toolgui/Application.hpp"
 #include "toolgui/ToolBar.hpp"
-#include <charconv>
-#include <cstring>
+
 #include "boost/container/static_vector.hpp"
-#include <cmath>
-#include <algorithm>
+
 
 namespace node
 {

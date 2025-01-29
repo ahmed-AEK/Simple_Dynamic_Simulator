@@ -1,4 +1,4 @@
-#include "VSegmentDragLogic.hpp"
+#include "MiddleSegmentDragLogic.hpp"
 #include "NetObject.hpp"
 #include "NodeModels/SceneModelManager.hpp"
 #include "GraphicsObjectsManager.hpp"
@@ -7,12 +7,20 @@ namespace node
 {
 	struct SimpleNodeMoveHandler : public logic::NodeDragHandler
 	{
-		SimpleNodeMoveHandler(const model::Point& start_point, NetNode& node, model::ConnectedSegmentSide segment_side)
-			:NodeDragHandler{ start_point, node }, m_segment_side{ segment_side } {}
+		SimpleNodeMoveHandler(const model::Point& start_point, NetNode& node, model::ConnectedSegmentSide segment_side, 
+			model::NetSegmentOrientation orientation)
+			:NodeDragHandler{ start_point, node }, m_segment_side{ segment_side }, m_orientation{ orientation } {}
 
 		void OnMove(const model::Point& new_point) override
 		{
-			GetBaseNode()->setCenter({ new_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y });
+			if (m_orientation == model::NetSegmentOrientation::vertical)
+			{
+				GetBaseNode()->setCenter({ new_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y });
+			}
+			else
+			{
+				GetBaseNode()->setCenter({ m_node_start_position.x ,  new_point.y - m_start_point.y + m_node_start_position.y });
+			}
 		}
 
 		NetNode* GetRepresentingNode() override
@@ -23,9 +31,18 @@ namespace node
 		AddedNode CreateRequest(NetModificationRequest& request, const model::Point& last_point) override
 		{
 			assert(GetBaseNode()->GetId());
-			request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *GetBaseNode()->GetId(),
-				{ last_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y } });
-			return { NetModificationRequest::NodeIdType::existing_id, *GetBaseNode()->GetId(), m_segment_side};
+			if (m_orientation == model::NetSegmentOrientation::vertical)
+			{
+				request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *GetBaseNode()->GetId(),
+					{ last_point.x - m_start_point.x + m_node_start_position.x , m_node_start_position.y } });
+			}
+			else
+			{
+				request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *GetBaseNode()->GetId(),
+					{ m_node_start_position.x , last_point.y - m_start_point.y + m_node_start_position.y } });
+			}
+			return { NetModificationRequest::NodeIdType::existing_id, *GetBaseNode()->GetId(), m_segment_side };
+
 		}
 		virtual void OnCancel() override
 		{
@@ -33,14 +50,54 @@ namespace node
 		}
 
 		model::ConnectedSegmentSide m_segment_side;
+		model::NetSegmentOrientation m_orientation;
 	};
 }
-std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::Create(NetNode& node1, NetNode& node2, NetSegment& segment, 
+
+static bool orthogonal_sides(node::model::ConnectedSegmentSide side1, node::model::ConnectedSegmentSide side2)
+{
+	using enum node::model::ConnectedSegmentSide;
+	switch (side1)
+	{
+	case north:
+	case south:
+	{
+
+		switch (side2)
+		{
+		case north:
+		case south:
+			return false;
+		default:
+			return true;
+		}
+		break;
+	}
+	case east:
+	case west:
+	{
+		switch (side2)
+		{
+		case east:
+		case west:
+			return false;
+		default:
+			return true;
+		}
+		break;
+	}
+	}
+	assert(false);
+	return false;
+}
+
+std::unique_ptr<node::logic::MiddleSegmentDragLogic> node::logic::MiddleSegmentDragLogic::Create(NetNode& node1, NetNode& node2, NetSegment& segment, 
 	const model::Point& start_point, GraphicsScene* scene, GraphicsObjectsManager* manager)
 {
 	std::unique_ptr<NodeDragHandler> first_node_handler;	
 	std::unique_ptr<NodeDragHandler> second_node_handler;
-
+	model::ConnectedSegmentSide first_node_side = *node1.GetSegmentSide(segment);
+	model::ConnectedSegmentSide second_node_side = *node2.GetSegmentSide(segment);;
 	std::vector<NetNode*> spare_nodes;
 	std::vector<NetSegment*> spare_segments;
 	if (node1.GetConnectedSegmentsCount() == 2)
@@ -48,17 +105,22 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		std::optional<model::ConnectedSegmentSide> side = std::nullopt;
 		for (size_t i = 0; i < 4; i++)
 		{
-			const auto* segment_ptr = node1.getSegment(static_cast<model::ConnectedSegmentSide>(i));
-			if (segment_ptr != nullptr && segment_ptr == &segment)
+			const auto* other_segment_ptr = node1.getSegment(static_cast<model::ConnectedSegmentSide>(i));
+			if (other_segment_ptr != nullptr && other_segment_ptr != &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
+				if (!orthogonal_sides(*side, first_node_side))
+				{
+					return nullptr;
+				}
+				break;
 			}
 		}
 		if (!side)
 		{
 			return nullptr;
 		}
-		first_node_handler = std::make_unique<SimpleNodeMoveHandler>(start_point, node1, *side);
+		first_node_handler = std::make_unique<SimpleNodeMoveHandler>(start_point, node1, first_node_side, segment.GetOrientation());
 	}
 	else
 	{
@@ -70,17 +132,22 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 		std::optional<model::ConnectedSegmentSide> side = std::nullopt;
 		for (size_t i = 0; i < 4; i++)
 		{
-			const auto* segment_ptr = node2.getSegment(static_cast<model::ConnectedSegmentSide>(i));
-			if (segment_ptr != nullptr && segment_ptr == &segment)
+			const auto* other_segment_ptr = node2.getSegment(static_cast<model::ConnectedSegmentSide>(i));
+			if (other_segment_ptr != nullptr && other_segment_ptr != &segment)
 			{
 				side = static_cast<model::ConnectedSegmentSide>(i);
+				if (!orthogonal_sides(*side, second_node_side))
+				{
+					return nullptr;
+				}
+				break;
 			}
 		}
 		if (!side)
 		{
 			return nullptr;
 		}
-		second_node_handler = std::make_unique<SimpleNodeMoveHandler>(start_point, node2, *side);
+		second_node_handler = std::make_unique<SimpleNodeMoveHandler>(start_point, node2, second_node_side, segment.GetOrientation());
 	}
 	else
 	{
@@ -89,7 +156,7 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 
 	auto viewer_node1 = std::make_unique<NetNode>(node1.getCenter());
 	auto viewer_node2 = std::make_unique<NetNode>(node2.getCenter());
-	auto viewer_segment = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, viewer_node1.get(), viewer_node2.get());
+	auto viewer_segment = std::make_unique<NetSegment>(segment.GetOrientation(), viewer_node1.get(), viewer_node2.get());
 	SegmentViewer viewer{ *viewer_node1.get(), *viewer_node2.get(), *viewer_segment.get() };
 	spare_nodes.push_back(viewer_node1.get());
 	spare_nodes.push_back(viewer_node2.get());
@@ -109,12 +176,12 @@ std::unique_ptr<node::logic::VSegmentDragLogic> node::logic::VSegmentDragLogic::
 	segment.SetVisible(false);
 	auto segment_ptr_obj = scene->PopObject(&segment);
 	std::unique_ptr<NetSegment> segment_ptr{ static_cast<NetSegment*>(segment_ptr_obj.release()) };
-	return std::make_unique<VSegmentDragLogic>(std::move(viewer), std::move(segment_ptr),
+	return std::make_unique<MiddleSegmentDragLogic>(std::move(viewer), std::move(segment_ptr),
 		std::move(first_node_handler), std::move(second_node_handler),std::move(spare_nodes), std::move(spare_segments),
 		scene, manager);
 }
 
-node::logic::VSegmentDragLogic::VSegmentDragLogic(SegmentViewer segment_viewer, std::unique_ptr<NetSegment> segment, std::unique_ptr<NodeDragHandler> first_node_handler, 
+node::logic::MiddleSegmentDragLogic::MiddleSegmentDragLogic(SegmentViewer segment_viewer, std::unique_ptr<NetSegment> segment, std::unique_ptr<NodeDragHandler> first_node_handler, 
 	std::unique_ptr<NodeDragHandler> second_node_handler, std::vector<NetNode*> spare_nodes, std::vector<NetSegment*> spare_segments,
 	GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager}, m_segment_viewer{ std::move(segment_viewer) }, m_first_node_handler{std::move(first_node_handler)},
@@ -123,7 +190,7 @@ node::logic::VSegmentDragLogic::VSegmentDragLogic(SegmentViewer segment_viewer, 
 {
 }
 
-void node::logic::VSegmentDragLogic::OnMouseMove(const model::Point& current_mouse_point)
+void node::logic::MiddleSegmentDragLogic::OnMouseMove(const model::Point& current_mouse_point)
 {
 	m_first_node_handler->OnMove(current_mouse_point);
 	m_second_node_handler->OnMove(current_mouse_point);
@@ -132,12 +199,12 @@ void node::logic::VSegmentDragLogic::OnMouseMove(const model::Point& current_mou
 	m_second_node_handler->GetRepresentingNode()->UpdateConnectedSegments();
 }
 
-void node::logic::VSegmentDragLogic::OnCancel()
+void node::logic::MiddleSegmentDragLogic::OnCancel()
 {
 	CleanUp();
 }
 
-MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& current_mouse_point)
+MI::ClickEvent node::logic::MiddleSegmentDragLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
 	UNUSED_PARAM(current_mouse_point);
 	NetModificationRequest request;
@@ -148,7 +215,7 @@ MI::ClickEvent node::logic::VSegmentDragLogic::OnLMBUp(const model::Point& curre
 	return MI::ClickEvent::CAPTURE_END;
 }
 
-void node::logic::VSegmentDragLogic::CleanUp()
+void node::logic::MiddleSegmentDragLogic::CleanUp()
 {
 	if (!m_first_node_handler->GetBaseNode())
 	{

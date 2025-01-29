@@ -1,7 +1,4 @@
  
-#include "gtest/gtest.h"
-#include "optimizer/DiffSolver.hpp"
-#include "toolgui/NodeMacros.h"
 
 TEST(testDiffSolver, testConstructor)
 {

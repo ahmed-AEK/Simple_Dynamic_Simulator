@@ -16,6 +16,7 @@ struct TemporaryNetManager
 {
 public:
 	static TemporaryNetManager CreateFromLeafNodeNet(node::NetNode& leaf_node, GraphicsScene& scene);
+	static TemporaryNetManager Create(GraphicsScene& scene);
 	TemporaryNetManager(std::vector<HandlePtrS<NetNode, GraphicsObject>> orig_nodes,
 		std::vector<HandlePtrS<NetSegment, GraphicsObject>> orig_segments,
 		std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes,

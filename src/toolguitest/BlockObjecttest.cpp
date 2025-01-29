@@ -1,11 +1,4 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "GraphicsScene/BlockObject.hpp"
-#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include "GraphicsScene/BlockSocketObject.hpp"
-#include "GraphicsScene/NetObject.hpp"
-#include "NodeSDLStylers/DefaultBlockStyler.hpp"
-#include <utility>
+
 
 
 using ::testing::ReturnRef;

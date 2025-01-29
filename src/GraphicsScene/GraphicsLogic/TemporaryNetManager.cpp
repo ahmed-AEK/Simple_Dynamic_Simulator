@@ -1,10 +1,8 @@
 #include "TemporaryNetManager.hpp"
 #include "GraphicsScene/GraphicsScene.hpp"
-#include "NetUtils/NetsSolver.hpp"
 #include "GraphicsScene/SolverUtils.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
-#include "toolgui/Widget.hpp"
 
 node::logic::TemporaryNetManager node::logic::TemporaryNetManager::CreateFromLeafNodeNet(
 	node::NetNode& leaf_node, GraphicsScene& scene)
@@ -61,6 +59,51 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::CreateFromLea
 		throw;
 	}
 	return TemporaryNetManager{std::move(branch.nodes), std::move(branch.segments), 
+		std::move(temp_nodes), std::move(temp_segments),
+		scene
+	};
+}
+
+node::logic::TemporaryNetManager node::logic::TemporaryNetManager::Create(GraphicsScene& scene)
+{
+	
+	std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes{};
+	std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> temp_segments{};
+	try
+	{
+		for (auto&& segment : temp_segments)
+		{
+			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
+			segment = *new_segmet;
+			scene.AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer);
+		}
+		for (auto&& node : temp_nodes)
+		{
+			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
+			node = *new_node;
+			scene.AddObject(std::move(new_node), GraphicsScene::NetNodeLayer);
+		}
+	}
+	catch (...)
+	{
+		// if we failed to create the object, delete everything
+		for (auto& node : temp_nodes)
+		{
+			if (node)
+			{
+				scene.PopObject(node.GetObjectPtr());
+			}
+		}
+		for (auto& segment : temp_segments)
+		{
+			if (segment)
+			{
+				scene.PopObject(segment.GetObjectPtr());
+			}
+		}
+		throw;
+	}
+	return TemporaryNetManager{ {}, {},
 		std::move(temp_nodes), std::move(temp_segments),
 		scene
 	};

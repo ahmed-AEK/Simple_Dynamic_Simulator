@@ -1,7 +1,4 @@
 #include "NodeScene.hpp"
-#include <cassert>
-#include <algorithm>
-
 
 node::model::BlockModel* node::model::NodeSceneModel::GetBlockById(const BlockId& id)
 {

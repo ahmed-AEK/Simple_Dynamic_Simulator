@@ -1,10 +1,8 @@
 #include "NLDiffSolver.hpp"
 #include "DiffEquation.hpp"
 #include "NLEquation.hpp"
-#include "toolgui/NodeMacros.h"
 #include "SourceEq.hpp"
 #include "Observer.hpp"
-#include <algorithm>
 
 namespace opt
 {

@@ -1,12 +1,7 @@
 #include "BlockPropertiesDialog.hpp"
-#include "SDL_Framework/SDLCPP.hpp"
-#include "toolgui/Scene.hpp"
-#include "toolgui/Application.hpp"
 #include "BlockClasses/BlockClassesManager.hpp"
-#include <charconv>
-#include "NodeModels/SceneModelManager.hpp"
-#include "GraphicsScene/GraphicsObjectsManager.hpp"
-#include "GraphicsScene/BlockObject.hpp"
+
+
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "toolgui/DialogControls.hpp"
 

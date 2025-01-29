@@ -1,6 +1,4 @@
 
-#include "gtest/gtest.h"
-#include "optimizer/flatmap.hpp"
 
 TEST(testFlatMap, testcopy_to)
 {

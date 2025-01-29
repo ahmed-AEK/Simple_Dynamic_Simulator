@@ -1,7 +1,4 @@
-#include "gtest/gtest.h"
-#include "optimizer/NLGraphSolver.hpp"
-#include <numbers>
-#include <cmath>
+
 
 TEST(testNLGraphSolver, testConstructor)
 {

@@ -1,6 +1,4 @@
-#include "optimizer/NLStatefulEquation.hpp"
-#include "gtest/gtest.h"
-#include <memory_resource>
+
 
 TEST(testNLStatefulEquation, testApply)
 {

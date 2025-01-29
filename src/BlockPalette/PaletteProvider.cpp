@@ -1,12 +1,6 @@
 #include "PaletteProvider.hpp"
-
-#include "BlockClasses/BlockClass.hpp"
-#include "BlockClasses/BlockClassesManager.hpp"
-
 #include "PaletteBlocksViewer.hpp"
-#include "NodeSDLStylers/BlockStylerFactory.hpp"
-#include <algorithm>
-#include <iterator>
+
 
 node::PaletteProvider::PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
 	:m_classesManager{ manager }, m_blockStyleFactory{std::move(style_factory)}

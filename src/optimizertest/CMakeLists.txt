@@ -13,6 +13,7 @@ NLStatefulEquationTest.cpp
 ObserverTest.cpp
 SourceEqTest.cpp
 NLGraphSolverTest.cpp
+pch.h
 )
 
 target_include_directories(NLOptimizertest PRIVATE ".")
@@ -26,3 +27,5 @@ include(GoogleTest)
 gtest_discover_tests(NLOptimizertest 
 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
+
+target_precompile_headers(NLOptimizertest PRIVATE pch.h)

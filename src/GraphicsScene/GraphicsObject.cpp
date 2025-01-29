@@ -1,8 +1,6 @@
 #include "GraphicsObject.hpp"
-#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include "toolgui/NodeMacros.h"
-#include "toolgui/MouseInteractable.hpp"
 #include "GraphicsScene.hpp"
+#include "toolgui/MouseInteractable.hpp"
 
 template class MI::MouseInteractable<node::GraphicsObject, node::model::ObjectSize, node::model::Point>;
 

@@ -12,6 +12,7 @@ SimulationManager.hpp SimulationManager.cpp
 NewSceneDialog.hpp NewSceneDialog.cpp
 SceneManager.hpp SceneManager.cpp
 IdTypes.hpp
+pch.h
 )
 
 target_include_directories(DynamicSimulator PRIVATE ".")
@@ -21,3 +22,5 @@ target_link_libraries(DynamicSimulator PRIVATE
 toolgui GraphicsScene BlockPalette BlockClasses SceneLoader)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+target_precompile_headers(DynamicSimulator PRIVATE pch.h)

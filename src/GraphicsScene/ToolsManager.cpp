@@ -1,8 +1,6 @@
 #include "ToolsManager.hpp"
-#include "SDL_Framework/SDL_headers.h"
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "tools/GraphicsTool.hpp"
-#include "toolgui/ToolBar.hpp"
 #include "ToolButton.hpp"
 
 static auto GetToolByName(const std::string& tool_name, auto&& vec) -> decltype(vec.begin())

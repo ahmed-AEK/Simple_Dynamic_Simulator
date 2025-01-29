@@ -18,6 +18,10 @@ bool AnchorAlive::operator()(const node::logic::NodeAnchor& node)
 {
 	return node.node.isAlive();
 }
+bool AnchorAlive::operator()(const node::logic::SegmentAnchor& node)
+{
+	return node.segment.isAlive();
+}
 
 
 node::model::Point AnchorStart::operator()(const std::monostate&)
@@ -32,6 +36,11 @@ node::model::Point AnchorStart::operator()(const node::logic::SocketAnchor& sock
 node::model::Point AnchorStart::operator()(const node::logic::NodeAnchor& node)
 {
 	return node.position;
+}
+
+node::model::Point AnchorStart::operator()(const node::logic::SegmentAnchor& segment)
+{
+	return segment.position;
 }
 
 
@@ -49,10 +58,30 @@ std::array<bool, 4> AnchorGetConnectionSide::operator()(const node::logic::NodeA
 {
 	return node.allowed_sides;
 }
+std::array<bool, 4> AnchorGetConnectionSide::operator()(const node::logic::SegmentAnchor& segment)
+{
+	std::array<bool, 4> sides{};
+	if (segment.segment->GetOrientation() == node::model::NetSegmentOrientation::horizontal)
+	{
+		sides[0] = true;
+		sides[2] = true;
+	}
+	else
+	{
+		sides[1] = true;
+		sides[3] = true;
+	}
+	return sides;
+}
 
 anchor_t CreateStartAnchor(std::span<HandlePtrS<NetNode, GraphicsObject>> nodes, 
 	std::span<HandlePtrS<NetSegment, GraphicsObject>> segments)
 {
+	if (!nodes.size())
+	{
+		return std::monostate{};
+	}
+
 	auto* node = nodes[0].GetObjectPtr();
 	if (auto* socket = nodes[0]->GetConnectedSocket())
 	{

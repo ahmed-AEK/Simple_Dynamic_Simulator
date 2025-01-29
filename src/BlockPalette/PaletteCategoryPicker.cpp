@@ -1,6 +1,5 @@
 #include "PaletteCategoryPicker.hpp"
 #include "PaletteProvider.hpp"
-#include "SDL_Framework/SDLRenderer.hpp"
 
 node::PaletteCategoryPicker::PaletteCategoryPicker(const WidgetSize& size,
 	std::shared_ptr<PaletteProvider> provider, TTF_Font* font, Widget* parent)

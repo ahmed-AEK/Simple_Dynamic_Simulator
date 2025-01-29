@@ -1,16 +1,8 @@
 #include "BlockObject.hpp"
-#include "SDL_Framework/SDL_headers.h"
 #include "BlockSocketObject.hpp"
 #include "GraphicsScene/NetObject.hpp"
-#include <algorithm>
-#include <iterator>
-#include "NodeSDLStylers/SpaceScreenTransformer.hpp"
-#include <cassert>
-#include "NodeModels/BlockModel.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsScene/BlockResizeObject.hpp"
-#include "SDL_Framework/SDLRenderer.hpp"
 
 std::unique_ptr<node::BlockObject> node::BlockObject::Create(const model::BlockModel& model, std::unique_ptr<BlockStyler> styler)
 {

@@ -30,9 +30,13 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 
 ### testing
 
-currently only the solver has full test coverage, the GUI has no tests, but it works.
+- the GUI has no tests, but it works.
+- NLDiffsolver has full test coverage. 
+- SceneLoader has full tests to catch any changes in schema.
+- NetsSolver has tests to gurantee correctness
 
 testing is done using ctest, just run `ctest .` in the appropriate build directory.
+
 ### supported platforms
 - Windows on MSVC
 - Linux using GCC

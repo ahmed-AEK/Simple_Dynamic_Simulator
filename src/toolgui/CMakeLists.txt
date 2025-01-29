@@ -23,6 +23,7 @@ TabbedView.hpp TabbedView.cpp
 ToolTipWidgetMixin.hpp ToolTipWidgetMixin_impl.hpp
 SceneGrid.hpp SceneGrid.cpp
 ScrollView.hpp ScrollView.cpp
+pch.h
 )
 
 target_include_directories(toolgui PRIVATE ".")
@@ -33,3 +34,6 @@ target_compile_definitions(toolgui PRIVATE TOOLGUI_EXPORTS)
 target_link_libraries(toolgui PUBLIC 
                         SDL_Framework NodeModels 
                         )
+
+target_precompile_headers(toolgui PRIVATE pch.h)
+

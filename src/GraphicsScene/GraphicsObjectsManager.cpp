@@ -1,7 +1,4 @@
-#include "NodeModels/BlockData.hpp"
 #include "GraphicsObjectsManager.hpp"
-
-#include "NodeSDLStylers/BlockStyler.hpp"
 
 #include "GraphicsScene/GraphicsScene.hpp"
 #include "GraphicsScene/BlockObject.hpp"
@@ -9,7 +6,6 @@
 #include "GraphicsScene/NetObject.hpp"
 #include "GraphicsLogic/GraphicsLogic.hpp"
 
-#include "NodeSDLStylers/BlockStylerFactory.hpp"
 
 node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory)
     :m_scene{scene}, m_blockStylerFactory{std::move(styler_factory)}

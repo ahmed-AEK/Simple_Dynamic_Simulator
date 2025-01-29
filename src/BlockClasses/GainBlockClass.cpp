@@ -1,9 +1,4 @@
 #include "GainBlockClass.hpp"
-#include "optimizer/NLEquation.hpp"
-#include "optimizer/DiffEquation.hpp"
-#include "optimizer/NLStatefulEquation.hpp"
-#include "optimizer/Observer.hpp"
-#include "optimizer/SourceEq.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	node::model::BlockProperty{"Multiplier", node::model::BlockPropertyType::FloatNumber, 1}

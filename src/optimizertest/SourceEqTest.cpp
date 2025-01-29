@@ -1,7 +1,3 @@
-#include "optimizer/SourceEq.hpp"
-#include "gtest/gtest.h"
-#include <memory_resource>
-#include "toolgui/NodeMacros.h"
 
 TEST(testSourceEq, testApply)
 {

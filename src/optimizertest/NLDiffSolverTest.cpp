@@ -1,11 +1,4 @@
- 
-#include "gtest/gtest.h"
-#include "optimizer/NLDiffSolver.hpp"
-#include "toolgui/NodeMacros.h"
-#include "optimizer/Observer.hpp"
-#include "optimizer/SourceEq.hpp"
-#include <cmath>
-#include <numbers>
+
 
 TEST(testNLDiffSolver, testConstructor)
 {

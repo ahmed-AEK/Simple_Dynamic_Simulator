@@ -1,6 +1,4 @@
 #include "BlockModel.hpp"
-#include <cassert>
-#include <algorithm>
 
 node::model::BlockSocketModel* node::model::BlockModel::GetSocketById(SocketId id)
 {

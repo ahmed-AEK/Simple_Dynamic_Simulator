@@ -1,6 +1,4 @@
-#include "gtest/gtest.h"
-#include "optimizer/NLEquation.hpp"
-#include <array>
+
 TEST(testNLEquation, testApply)
 {
 	

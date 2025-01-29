@@ -2,8 +2,6 @@
 #include "BlockPortsUpdate.hpp"
 #include "BlockData.hpp"
 
-#include <iterator>
-
 static node::model::NetNodeId GetMaxNodeId(std::span<node::model::NetNodeModel> vec)
 {
 	using namespace node;

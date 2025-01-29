@@ -1,6 +1,3 @@
-#include "gtest/gtest.h"
-#include "optimizer/DiffEquation.hpp"
-#include <array>
 
 TEST(testDiffEquation, testApply)
 {

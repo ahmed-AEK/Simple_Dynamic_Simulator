@@ -17,8 +17,11 @@ SineSourceClass.hpp SineSourceClass.cpp
 BlockDialog.hpp BlockDialog.cpp
 StepSourceClass.hpp StepSourceClass.cpp
 ComparatorClass.hpp ComparatorClass.cpp
+pch.h
 )
 
 target_include_directories(BlockClasses PRIVATE ".")
 target_include_directories(BlockClasses PUBLIC "..")
 target_link_libraries(BlockClasses PUBLIC NodeModels NLOptimizer toolgui)
+
+target_precompile_headers(BlockClasses PRIVATE pch.h)

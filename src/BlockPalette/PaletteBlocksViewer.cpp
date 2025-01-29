@@ -1,9 +1,4 @@
 #include "PaletteBlocksViewer.hpp"
-#include <cassert>
-#include "SDL_Framework/SDLCPP.hpp"
-#include "toolgui/Scene.hpp"
-#include "toolgui/Application.hpp"
-#include "NodeSDLStylers/BlockStylerFactory.hpp"
 
 namespace PaletteData {
 	static constexpr int TopPadding = 20;

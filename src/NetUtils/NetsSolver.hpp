@@ -64,6 +64,8 @@ private:
 	NetSolution SolveHFlipL();
 	NetSolution ExtendOneThenSolve(model::ConnectedSegmentSide side);
 	NetSolution ExtendTwoThenSolve(model::NetSegmentOrientation orientation);
+	NetSolution ExtendShorterThenSolve();
+
 	NetsSolver CreateSimilarSolver() const;
 	model::NetNodeId GetNewNodeId();
 	model::NetSegmentId GetNewSegmentId();

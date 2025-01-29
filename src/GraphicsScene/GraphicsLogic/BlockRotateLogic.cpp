@@ -1,7 +1,6 @@
 #include "BlockRotateLogic.hpp"
 #include "BlockObject.hpp"
 #include "GraphicsScene.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsObjectsManager.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
 #include "GraphicsScene/SolverUtils.hpp"

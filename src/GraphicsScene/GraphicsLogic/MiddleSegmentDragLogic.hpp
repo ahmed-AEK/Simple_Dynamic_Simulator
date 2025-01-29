@@ -53,13 +53,13 @@ struct SegmentViewer
 	HandlePtrS<NetSegment, GraphicsObject> m_segment;
 };
 
-class VSegmentDragLogic : public GraphicsLogic
+class MiddleSegmentDragLogic : public GraphicsLogic
 {
 public:
-	static std::unique_ptr<VSegmentDragLogic> Create(NetNode& node1, NetNode& node2, NetSegment& segment, 
+	static std::unique_ptr<MiddleSegmentDragLogic> Create(NetNode& node1, NetNode& node2, NetSegment& segment, 
 		const model::Point& start_point, GraphicsScene* scene, GraphicsObjectsManager* manager);
 
-	VSegmentDragLogic(SegmentViewer segment_viewer,
+	MiddleSegmentDragLogic(SegmentViewer segment_viewer,
 		std::unique_ptr<NetSegment> segment,
 		std::unique_ptr<NodeDragHandler> first_node_handler,
 		std::unique_ptr<NodeDragHandler> second_node_handler,

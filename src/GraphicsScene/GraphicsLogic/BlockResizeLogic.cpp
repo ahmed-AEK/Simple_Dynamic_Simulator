@@ -3,7 +3,6 @@
 #include "GraphicsScene/BlockResizeObject.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsScene/BlockSocketObject.hpp"
-#include "NodeSDLStylers/BlockStyler.hpp"
 #include "GraphicsObjectsManager.hpp"
 #include "GraphicsLogic/Anchors.hpp"
 #include "GraphicsScene/SolverUtils.hpp"

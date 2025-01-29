@@ -1,6 +1,4 @@
 #include "NetsSolver.hpp"
-#include "toolgui/NodeMacros.h"
-#include <cassert>
 #include "NetUtils/Utils.hpp"
 
 static void CopyConnectivity(std::span<const node::model::NetNodeModel> input_nodes,
@@ -22,8 +20,40 @@ static void CopyConnectivity(std::span<const node::model::NetNodeModel> input_no
             output_nodes[input_segment.m_firstNodeId.value], output_nodes[input_segment.m_secondNodeId.value]);
     }
 }
+
+static bool SidesOnSameAxis(const node::NetSolutionEndDescription& side1, const node::NetSolutionEndDescription& side2)
+{
+    using namespace node;
+    using namespace node::model;
+
+    if (side1.IsSideAllowed(ConnectedSegmentSide::north) || side1.IsSideAllowed(ConnectedSegmentSide::south))
+    {
+        if (side2.IsSideAllowed(ConnectedSegmentSide::north) || side2.IsSideAllowed(ConnectedSegmentSide::south))
+        {
+            return true;
+        }
+    }
+    if (side1.IsSideAllowed(ConnectedSegmentSide::east) || side1.IsSideAllowed(ConnectedSegmentSide::west))
+    {
+        if (side2.IsSideAllowed(ConnectedSegmentSide::east) || side2.IsSideAllowed(ConnectedSegmentSide::west))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+static bool HasSides(const node::NetSolutionEndDescription& side)
+{
+    using namespace node;
+    using namespace node::model;
+    return side.allowed_sides[0] || side.allowed_sides[1] || side.allowed_sides[2] || side.allowed_sides[3];
+}
 node::NetsSolver::NetSolution node::NetsSolver::Solve()
 {
+    using enum model::ConnectedSegmentSide;
+    assert(HasSides(*m_start_node));
+    assert(HasSides(*m_end_node));
+
     const NetSolutionEndDescription& start_node = *m_start_node;
     const NetSolutionEndDescription& end_node = *m_end_node;
     using namespace model;
@@ -34,22 +64,39 @@ node::NetsSolver::NetSolution node::NetsSolver::Solve()
         auto& left_desc =  start_is_left ? start_node : end_node;
         auto& right_desc = start_is_left ? end_node : start_node;
 
-        if (left_desc.IsSideAllowed(ConnectedSegmentSide::east) &&
-            right_desc.IsSideAllowed(ConnectedSegmentSide::west))
+        if (left_desc.IsSideAllowed(east) &&
+            right_desc.IsSideAllowed(west))
         {
             return SolverHorz();
         }
 
         // try a U
-        if (left_desc.IsSideAllowed(ConnectedSegmentSide::south) && 
-            right_desc.IsSideAllowed(ConnectedSegmentSide::south))
+        if (left_desc.IsSideAllowed(south) && 
+            right_desc.IsSideAllowed(south))
         {
-            return ExtendOneThenSolve(ConnectedSegmentSide::south);
+            return ExtendOneThenSolve(south);
         }
 
         // try two branches then a U
-        if (left_desc.IsSideAllowed(ConnectedSegmentSide::west) &&
-            right_desc.IsSideAllowed(ConnectedSegmentSide::east))
+        if (left_desc.IsSideAllowed(west) &&
+            right_desc.IsSideAllowed(east))
+        {
+            return ExtendTwoThenSolve(NetSegmentOrientation::horizontal);
+        }
+
+        if (!SidesOnSameAxis(*m_start_node, *m_end_node))
+        {
+            return ExtendShorterThenSolve();
+        }
+
+        if ((left_desc.IsSideAllowed(north) || left_desc.IsSideAllowed(south)) &&
+            (right_desc.IsSideAllowed(north) || right_desc.IsSideAllowed(south)))
+        {
+            return ExtendTwoThenSolve(NetSegmentOrientation::vertical);
+        }
+
+        if ((left_desc.IsSideAllowed(west) || left_desc.IsSideAllowed(east)) &&
+            (right_desc.IsSideAllowed(west) || right_desc.IsSideAllowed(east)))
         {
             return ExtendTwoThenSolve(NetSegmentOrientation::horizontal);
         }
@@ -63,22 +110,39 @@ node::NetsSolver::NetSolution node::NetsSolver::Solve()
         bool start_is_top = start_node.point.y < end_node.point.y;
         auto& top_node = start_is_top ? start_node : end_node;
         auto& bot_node = start_is_top ? end_node : start_node;
-        if (top_node.IsSideAllowed(ConnectedSegmentSide::south) &&
-            bot_node.IsSideAllowed(ConnectedSegmentSide::north))
+        if (top_node.IsSideAllowed(south) &&
+            bot_node.IsSideAllowed(north))
         {
             return SolveVert();
         }
 
         // try a D
-        if (top_node.IsSideAllowed(ConnectedSegmentSide::east) &&
-            bot_node.IsSideAllowed(ConnectedSegmentSide::east))
+        if (top_node.IsSideAllowed(east) &&
+            bot_node.IsSideAllowed(east))
         {
-            return ExtendOneThenSolve(ConnectedSegmentSide::east);
+            return ExtendOneThenSolve(east);
         }
 
         // try 2 branches then a D
-        if (top_node.IsSideAllowed(ConnectedSegmentSide::north) &&
-            bot_node.IsSideAllowed(ConnectedSegmentSide::south))
+        if (top_node.IsSideAllowed(north) &&
+            bot_node.IsSideAllowed(south))
+        {
+            return ExtendTwoThenSolve(NetSegmentOrientation::vertical);
+        }
+
+        if (!SidesOnSameAxis(*m_start_node, *m_end_node))
+        {
+            return ExtendShorterThenSolve();
+        }
+
+        if ((top_node.IsSideAllowed(east) || top_node.IsSideAllowed(west)) &&
+            (bot_node.IsSideAllowed(east) || bot_node.IsSideAllowed(west)))
+        {
+            return ExtendTwoThenSolve(NetSegmentOrientation::horizontal);
+        }
+
+        if ((top_node.IsSideAllowed(north) || top_node.IsSideAllowed(south)) &&
+            (bot_node.IsSideAllowed(north) || bot_node.IsSideAllowed(south)))
         {
             return ExtendTwoThenSolve(NetSegmentOrientation::vertical);
         }
@@ -96,61 +160,80 @@ node::NetsSolver::NetSolution node::NetsSolver::Solve()
 
     // L
     if (&top_desc == &left_desc &&
-        top_desc.IsSideAllowed(ConnectedSegmentSide::south) &&
-        bot_desc.IsSideAllowed(ConnectedSegmentSide::west))
+        top_desc.IsSideAllowed(south) &&
+        bot_desc.IsSideAllowed(west))
     {
         return SolveL();
     }
 
     // L VFlip
     if (&bot_desc == &left_desc &&
-        bot_desc.IsSideAllowed(ConnectedSegmentSide::north) &&
-        right_desc.IsSideAllowed(ConnectedSegmentSide::west))
+        bot_desc.IsSideAllowed(north) &&
+        right_desc.IsSideAllowed(west))
     {
         return SolveL();
     }
 
     // L HFlip
     if (&bot_desc == &left_desc &&
-        bot_desc.IsSideAllowed(ConnectedSegmentSide::east) &&
-        right_desc.IsSideAllowed(ConnectedSegmentSide::south))
+        bot_desc.IsSideAllowed(east) &&
+        right_desc.IsSideAllowed(south))
     {
         return SolveHFlipL();
     }
 
     // L HFlip and VFlip
     if (&top_desc == &left_desc &&
-        top_desc.IsSideAllowed(ConnectedSegmentSide::east) &&
-        bot_desc.IsSideAllowed(ConnectedSegmentSide::north))
+        top_desc.IsSideAllowed(east) &&
+        bot_desc.IsSideAllowed(north))
     {
         return SolveHFlipL();
     }
 
-    if (left_desc.IsSideAllowed(ConnectedSegmentSide::east) &&
-        right_desc.IsSideAllowed(ConnectedSegmentSide::west))
+    if (left_desc.IsSideAllowed(east) &&
+        right_desc.IsSideAllowed(west))
     {
         return SolveZ();
     }
-    if (top_desc.IsSideAllowed(ConnectedSegmentSide::south) &&
-        bot_desc.IsSideAllowed(ConnectedSegmentSide::north))
+    if (top_desc.IsSideAllowed(south) &&
+        bot_desc.IsSideAllowed(north))
     {
         return SolveN();
     }
 
-    if (left_desc.IsSideAllowed(ConnectedSegmentSide::south) && right_desc.IsSideAllowed(ConnectedSegmentSide::south))
+    if (left_desc.IsSideAllowed(south) && right_desc.IsSideAllowed(south))
     {
-        return ExtendOneThenSolve(ConnectedSegmentSide::south);
+        return ExtendOneThenSolve(south);
     }
     
-    if (top_desc.IsSideAllowed(ConnectedSegmentSide::east) && bot_desc.IsSideAllowed(ConnectedSegmentSide::east))
+    if (top_desc.IsSideAllowed(east) && bot_desc.IsSideAllowed(east))
     {
-        return ExtendOneThenSolve(ConnectedSegmentSide::east);
+        return ExtendOneThenSolve(east);
     }
-    if (left_desc.IsSideAllowed(ConnectedSegmentSide::west) &&
-        right_desc.IsSideAllowed(ConnectedSegmentSide::east))
+
+    if (left_desc.IsSideAllowed(west) &&
+        right_desc.IsSideAllowed(east))
     {
         return ExtendTwoThenSolve(NetSegmentOrientation::horizontal);
     }
+
+    if (!SidesOnSameAxis(*m_start_node, *m_end_node))
+    {
+        return ExtendShorterThenSolve();
+    }
+
+    if ((m_start_node->IsSideAllowed(east) || m_start_node->IsSideAllowed(west)) &&
+        (m_end_node->IsSideAllowed(east) || m_start_node->IsSideAllowed(west)))
+    {
+        return ExtendTwoThenSolve(NetSegmentOrientation::horizontal);
+    }
+
+    if ((m_start_node->IsSideAllowed(north) || m_start_node->IsSideAllowed(south)) &&
+        (m_end_node->IsSideAllowed(north) || m_start_node->IsSideAllowed(south)))
+    {
+        return ExtendTwoThenSolve(NetSegmentOrientation::vertical);
+    }
+
     assert(false); // shouldn't reach this point!
     return NetSolution{};
 }
@@ -530,8 +613,6 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
     NetSolution result;
     if (orientation == model::NetSegmentOrientation::horizontal)
     {
-        bool start_is_left = m_start_node->point.x <= m_end_node->point.x;
-
         // add start node
         result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_start_node->point });
 
@@ -541,17 +622,23 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
 
         auto inner_solver{ CreateSimilarSolver() };
 
-        if (start_is_left)
+        if (m_start_node->IsSideAllowed(ConnectedSegmentSide::east))
+        {
+            inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x + GetExtensionDistance(), m_start_node->point.y},
+                {true, true, true, false} });
+        }
+        else
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x - GetExtensionDistance(), m_start_node->point.y},
                 {true, false, true, true} });
+        }
+        if (m_end_node->IsSideAllowed(ConnectedSegmentSide::east))
+        {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x + GetExtensionDistance(), m_end_node->point.y},
                 {true, true, true, false} });
         }
         else
         {
-            inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x + GetExtensionDistance(), m_start_node->point.y},
-                {true, true, true, false} });
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x - GetExtensionDistance(), m_end_node->point.y},
                 {true, false, true, true} });
         }
@@ -575,8 +662,6 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
     }
     else // vertical
     {
-        bool start_is_top = m_start_node->point.y <= m_end_node->point.y;
-
         // add start node
         result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_start_node->point });
 
@@ -586,19 +671,25 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
 
         auto inner_solver{ CreateSimilarSolver() };
 
-        if (start_is_top)
+        if (m_start_node->IsSideAllowed(ConnectedSegmentSide::north))
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y - GetExtensionDistance()},
                 {true, true, false, true} });
-            inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y + GetExtensionDistance()},
-                {false, true, true, true} });
         }
         else
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y + GetExtensionDistance()},
                 {false, true, true, true} });
+        }
+        if (m_end_node->IsSideAllowed(ConnectedSegmentSide::north))
+        {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y - GetExtensionDistance()},
                 {true, true, false, true} });
+        }
+        else
+        {
+            inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y + GetExtensionDistance()},
+                {false, true, true, true} });
         }
         auto inner_result = inner_solver.Solve();
 
@@ -612,6 +703,169 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
         // add segment between end and inner solve
         result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
             NetNodeId{0}, NetNodeId{0}, model::NetSegmentOrientation::vertical });
+
+        NetUtils::connectSegementAndNodes(result.segments.back(), result.nodes[inner_remap.end], result.nodes.back());
+
+        result.start = result.nodes[0].GetId();
+        result.end = result.nodes.back().GetId();
+    }
+    return result;
+}
+
+static node::model::node_int calculateDistanceInDirection(node::model::ConnectedSegmentSide side, 
+    node::model::Point src, node::model::Point target)
+{
+    using namespace node::model;
+    switch (side)
+    {
+    case ConnectedSegmentSide::north:
+        return src.y - target.y;
+    case ConnectedSegmentSide::east:
+        return target.x - src.x;
+    case ConnectedSegmentSide::south:
+        return target.y - src.y;
+    case ConnectedSegmentSide::west:
+        return src.x - target.x;
+    }
+    assert(false); // shouldn't reach here
+    return 0;
+}
+
+node::NetsSolver::NetSolution node::NetsSolver::ExtendShorterThenSolve()
+{
+    using namespace node;
+    using namespace node::model;
+
+    NetSolution result;
+
+    node_int start_distance = 0;
+    ConnectedSegmentSide start_dir{};
+    node_int end_distance = 0;
+    ConnectedSegmentSide end_dir{};
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (m_start_node->IsSideAllowed(static_cast<ConnectedSegmentSide>(i)))
+        {
+            start_distance = calculateDistanceInDirection(
+                static_cast<ConnectedSegmentSide>(i), m_start_node->point, m_end_node->point);
+            start_dir = static_cast<ConnectedSegmentSide>(i);
+            break;
+        }
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        if (m_end_node->IsSideAllowed(static_cast<ConnectedSegmentSide>(i)))
+        {
+            end_distance = calculateDistanceInDirection(
+                static_cast<ConnectedSegmentSide>(i), m_end_node->point, m_start_node->point);
+            end_dir = static_cast<ConnectedSegmentSide>(i);
+            break;
+        }
+    }
+
+    bool extend_start = start_distance <= end_distance;
+    if (extend_start)
+    {
+        // add start node
+        result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_start_node->point });
+
+        // add segment between start and inner solve
+        result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+            NetNodeId{0}, NetNodeId{0}, 
+            start_dir == ConnectedSegmentSide::north || 
+            start_dir == ConnectedSegmentSide::south ? 
+            NetSegmentOrientation::vertical : 
+            NetSegmentOrientation::horizontal });
+
+        auto inner_solver{ CreateSimilarSolver() };
+        inner_solver.SetEndDescription(*m_end_node);
+
+        switch (start_dir)
+        {
+        using enum ConnectedSegmentSide;
+        case north:
+        {
+            inner_solver.SetStartDescription({ {m_start_node->point.x, m_start_node->point.y - GetExtensionDistance()},
+                {true, true, false, true} });
+            break;
+        }
+        case east:
+        {
+            inner_solver.SetStartDescription({ {m_start_node->point.x + GetExtensionDistance(), m_start_node->point.y},
+                {true, true, true, false} });
+            break;
+        }
+        case south:
+        {
+            inner_solver.SetStartDescription({ {m_start_node->point.x, m_start_node->point.y + GetExtensionDistance()},
+                {false, true, true, true} });
+            break;
+        }
+        case west:
+        {
+            inner_solver.SetStartDescription({ {m_start_node->point.x - GetExtensionDistance(), m_start_node->point.y},
+                {true, false, true, true} });
+            break;
+        }
+        }
+        auto inner_result = inner_solver.Solve();
+
+        [[maybe_unused]] auto inner_remap = AddInnerResult(inner_result, result);
+
+        NetUtils::connectSegementAndNodes(result.segments[0], result.nodes[0], result.nodes[1]);
+
+        result.start = result.nodes[0].GetId();
+        result.end = result.nodes.back().GetId();
+    }
+    else
+    {
+
+        auto inner_solver{ CreateSimilarSolver() };
+        inner_solver.SetStartDescription(*m_start_node);
+
+        switch (end_dir)
+        {
+        using enum ConnectedSegmentSide;
+        case north:
+        {
+            inner_solver.SetEndDescription({ {m_end_node->point.x, m_end_node->point.y - GetExtensionDistance()},
+                {true, true, false, true} });
+            break;
+        }
+        case east:
+        {
+            inner_solver.SetEndDescription({ {m_end_node->point.x + GetExtensionDistance(), m_end_node->point.y},
+                {true, true, true, false} });
+            break;
+        }
+        case south:
+        {
+            inner_solver.SetEndDescription({ {m_end_node->point.x, m_end_node->point.y + GetExtensionDistance()},
+                {false, true, true, true} });
+            break;
+        }
+        case west:
+        {
+            inner_solver.SetEndDescription({ {m_end_node->point.x - GetExtensionDistance(), m_end_node->point.y},
+                {true, false, true, true} });
+            break;
+        }
+        }
+        auto inner_result = inner_solver.Solve();
+
+        auto inner_remap = AddInnerResult(inner_result, result);
+
+        // add end node
+        result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_end_node->point });
+
+        // add segment between end and inner solve
+        result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+            NetNodeId{0}, NetNodeId{0},
+            end_dir == ConnectedSegmentSide::north ||
+            end_dir == ConnectedSegmentSide::south ?
+            NetSegmentOrientation::vertical :
+            NetSegmentOrientation::horizontal });
 
         NetUtils::connectSegementAndNodes(result.segments.back(), result.nodes[inner_remap.end], result.nodes.back());
 

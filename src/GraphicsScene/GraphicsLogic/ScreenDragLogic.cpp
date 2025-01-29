@@ -1,5 +1,4 @@
 #include "ScreenDragLogic.hpp"
-#include <cassert>
 #include "GraphicsScene.hpp"
 
 node::logic::ScreenDragLogic::ScreenDragLogic(SDL_FPoint startPointScreen, 
