@@ -167,6 +167,60 @@ node::logic::ModificationReport node::logic::MakeModificationsReport(const node:
 	return report;
 }
 
+node::NetModificationRequest node::logic::MakeCreationReport(const node::NetsSolver::NetSolution& solution)
+{
+	NetModificationRequest request;
+	
+	for (const auto& node : solution.nodes)
+	{
+		request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
+			node.GetPosition()
+			});
+	}
+
+	for (const auto& segment : solution.segments)
+	{
+		auto segment1_side = model::ConnectedSegmentSide{};
+		auto segment2_side = model::ConnectedSegmentSide{};
+		if (segment.m_orientation == model::NetSegmentOrientation::horizontal)
+		{
+			if (solution.nodes[segment.m_firstNodeId.value].GetPosition().x <= solution.nodes[segment.m_secondNodeId.value].GetPosition().x) // node 0 on left
+			{
+				segment1_side = model::ConnectedSegmentSide::east;
+				segment2_side = model::ConnectedSegmentSide::west;
+			}
+			else
+			{
+				segment1_side = model::ConnectedSegmentSide::west;
+				segment2_side = model::ConnectedSegmentSide::east;
+			}
+		}
+		if (segment.m_orientation == model::NetSegmentOrientation::vertical)
+		{
+			if (solution.nodes[segment.m_firstNodeId.value].GetPosition().y <= solution.nodes[segment.m_secondNodeId.value].GetPosition().y) // node 0 on top
+			{
+				segment1_side = model::ConnectedSegmentSide::south;
+				segment2_side = model::ConnectedSegmentSide::north;
+			}
+			else
+			{
+				segment1_side = model::ConnectedSegmentSide::north;
+				segment2_side = model::ConnectedSegmentSide::south;
+			}
+		}
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::NodeIdType::new_id,
+			segment1_side,
+			segment2_side,
+			segment.m_orientation,
+			segment.m_firstNodeId,
+			segment.m_secondNodeId
+			});
+	}
+	return request;
+}
+
 void node::logic::UpdateModificationEndWithSocket(
 	std::span<const node::HandlePtrS<node::NetNode, node::GraphicsObject>> orig_nodes, 
 	ModificationReport& report, const node::BlockSocketObject* end_socket)
@@ -176,10 +230,10 @@ void node::logic::UpdateModificationEndWithSocket(
 	if (!end_socket)
 	{
 		// no end socket, just desconnect the last node
-		if (orig_nodes.size() && orig_nodes.back()->GetConnectedSocket())
+		auto* old_end_socket = orig_nodes.back()->GetConnectedSocket();
+		if (orig_nodes.size() && old_end_socket)
 		{
-			auto* old_socket = orig_nodes.back()->GetConnectedSocket();
-			request.removed_connections.push_back(*old_socket->GetUniqueId());
+			request.removed_connections.push_back(*old_end_socket->GetUniqueId());
 			end_disconnected = true;
 		}
 		return;
@@ -190,19 +244,22 @@ void node::logic::UpdateModificationEndWithSocket(
 	if (orig_nodes.size())
 	{
 		auto* connected_socket = orig_nodes.back()->GetConnectedSocket();
-		if (connected_socket && connected_socket != end_socket)
+		if (connected_socket != end_socket) // need to create uptes
 		{
-			report.request.removed_connections.push_back(*connected_socket->GetUniqueId());
-			end_disconnected = true;
-		}
-		if (end_disconnected && report.end_node_info.node_id == orig_nodes.back()->GetId())
-		{
-			// end was disconnected, a new socket needs to be connected
-			report.request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
-				*end_socket->GetUniqueId(),
-				report.end_node_info.node_type,
-				report.end_node_info.node_id
-				});
+			if (connected_socket)
+			{
+				report.request.removed_connections.push_back(*connected_socket->GetUniqueId());
+				end_disconnected = true;
+			}
+			if (report.end_node_info.node_id == orig_nodes.back()->GetId())
+			{
+				// end was disconnected, a new socket needs to be connected
+				report.request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+					*end_socket->GetUniqueId(),
+					report.end_node_info.node_type,
+					report.end_node_info.node_id
+					});
+			}
 		}
 	}
 
@@ -229,6 +286,108 @@ void node::logic::UpdateModificationEndWithSocket(
 			});
 	}
 	
+}
+
+void node::logic::UpdateCreationStartWithSegment(
+	NetModificationRequest& request, const node::NetSegment& start_segment)
+{
+	// connect to a new node
+	auto* node1 = start_segment.getStartNode();
+	auto* node2 = start_segment.getEndNode();
+	auto node1_side = *node1->GetSegmentSide(start_segment);
+	auto node2_side = *node2->GetSegmentSide(start_segment);
+	// make the segment between node1 and our new end node
+	request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
+		NetModificationRequest::NodeIdType::existing_id,
+		NetModificationRequest::NodeIdType::new_id,
+		node1_side,
+		model::GetOppositeSegmentSide(node1_side),
+		start_segment.GetOrientation(),
+		*start_segment.GetId(),
+		*node1->GetId(),
+		model::NetNodeId{0}
+		});
+	request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+		NetModificationRequest::NodeIdType::new_id,
+		NetModificationRequest::NodeIdType::existing_id,
+		model::GetOppositeSegmentSide(node2_side),
+		node2_side,
+		start_segment.GetOrientation(),
+		model::NetNodeId{0},
+		*node2->GetId()
+		});
+}
+
+void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandlePtrS<node::NetNode, node::GraphicsObject>> orig_nodes, 
+	NetModificationRequest& request, const NetNodeModificationInfo& end_info, const node::NetSegment* end_segment)
+{
+	if (orig_nodes.size())
+	{
+		// no end socket, just desconnect the last node
+		auto* old_end_socket = orig_nodes.back()->GetConnectedSocket();
+		if (orig_nodes.size() && old_end_socket)
+		{
+			request.removed_connections.push_back(*old_end_socket->GetUniqueId());
+		}
+	}
+
+	if (orig_nodes.size() && end_info.node_id == orig_nodes.back()->GetId())
+	{
+		// connect to existing node
+		auto* orig_node = orig_nodes.back().GetObjectPtr();
+		auto* node1 = end_segment->getStartNode();
+		auto* node2 = end_segment->getEndNode();
+		auto node1_side = *node1->GetSegmentSide(*end_segment);
+		auto node2_side = *node2->GetSegmentSide(*end_segment);
+		// make the segment between node1 and our new end node
+		request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
+			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::NodeIdType::existing_id,
+			node1_side,
+			model::GetOppositeSegmentSide(node1_side),
+			end_segment->GetOrientation(),
+			*end_segment->GetId(),
+			*node1->GetId(),
+			*orig_node->GetId()
+			});
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::NodeIdType::existing_id,
+			model::GetOppositeSegmentSide(node2_side),
+			node2_side,
+			end_segment->GetOrientation(),
+			*orig_node->GetId(),
+			*node2->GetId()
+			});
+	}
+	else
+	{
+		// connect to a new node
+		auto* node1 = end_segment->getStartNode();
+		auto* node2 = end_segment->getEndNode();
+		auto node1_side = *node1->GetSegmentSide(*end_segment);
+		auto node2_side = *node2->GetSegmentSide(*end_segment);
+		// make the segment between node1 and our new end node
+		request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
+			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::NodeIdType::new_id,
+			node1_side,
+			model::GetOppositeSegmentSide(node1_side),
+			end_segment->GetOrientation(),
+			*end_segment->GetId(),
+			*node1->GetId(),
+			model::NetNodeId{static_cast<model::id_int>(request.added_nodes.size() - 1)}
+			});
+		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
+			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::NodeIdType::existing_id,
+			model::GetOppositeSegmentSide(node2_side),
+			node2_side,
+			end_segment->GetOrientation(),
+			model::NetNodeId{static_cast<model::id_int>(request.added_nodes.size() - 1)},
+			*node2->GetId()
+			});
+	}
 }
 
 

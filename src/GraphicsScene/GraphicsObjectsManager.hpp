@@ -36,7 +36,7 @@ public:
 	std::shared_ptr<SceneModelManager> GetSceneModel() { return m_sceneModel; }
 	
 	const std::unordered_map<model::BlockId, BlockObject*>& getBlocksRegistry() const { return m_blocks; }
-
+	const std::unordered_map<model::NetSegmentId, NetSegment*>& getSegmentsRegistry() const { return m_net_segments; }
 protected:
 	void OnNotify(SceneModification& e) override;
 	void OnNotify(BlockObjectDropped& object) override;

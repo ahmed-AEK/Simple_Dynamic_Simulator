@@ -35,14 +35,11 @@ MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scen
     case ObjectType::netSegment:
     {
         auto* segment = static_cast<NetSegment*>(obj);
-        if (segment->GetOrientation() == NetSegmentOrientation::vertical)
+        auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, &scene, &manager);
+        if (new_logic)
         {
-            auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, &scene, &manager);
-            if (new_logic)
-            {
-                scene.SetGraphicsLogic(std::move(new_logic));
-                return MI::ClickEvent::CLICKED;
-            }
+            scene.SetGraphicsLogic(std::move(new_logic));
+            return MI::ClickEvent::CLICKED;
         }
         break;
     }

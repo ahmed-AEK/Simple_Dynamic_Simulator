@@ -5,12 +5,15 @@
 #include "toolgui/Handle.hpp"
 #include "toolgui/Application.hpp"
 #include "toolgui/Scene.hpp"
+#include "toolgui/DialogControls.hpp"
+#include "toolgui/LineEditControl.hpp"
 
 #include "NodeModels/NodeScene.hpp"
 #include "NodeModels/SceneModelManager.hpp"
 
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
 #include "SDL_Framework/SDLCPP.hpp"
 

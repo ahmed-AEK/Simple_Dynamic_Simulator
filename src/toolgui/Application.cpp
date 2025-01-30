@@ -9,16 +9,6 @@
 
 #include "AssetsManager/AssetsManager.hpp"
 
-static bool resizingEventWatcher(void* data, SDL_Event* event) {
-    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        const SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
-        if (win == static_cast<SDL_Window*>(data)) {
-            textures::ResetAllTextures();
-        }
-    }
-    return 0;
-}
-
 namespace node
 {
     Application::Application(int width, int height, std::string title)
@@ -347,8 +337,6 @@ namespace node
         }
 
         b_running = true;
-
-        SDL_AddEventWatch(resizingEventWatcher, m_window.get());
 
         this->OnRun();
         return 0;

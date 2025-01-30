@@ -57,6 +57,7 @@ private:
     void OnSimulationEnd(const SimulationEvent& event);
     
     void OnSettingsClicked();
+    void OnAboutClicked();
 
     void InitializeTools();
     void InitializeSidePanel();
@@ -101,6 +102,7 @@ private:
 
     SimulationManager m_sim_mgr;
     HandlePtrS<Dialog, Widget> m_settings_dialog;
+    HandlePtrS<Dialog, Widget> m_about_dialog;
 
 
 };

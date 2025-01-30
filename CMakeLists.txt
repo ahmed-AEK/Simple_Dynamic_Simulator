@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO
 
-project(DynamicSim)
+project(DynamicSim VERSION 0.4.2)
 
 set(CMAKE_CXX_STANDARD 20)
 

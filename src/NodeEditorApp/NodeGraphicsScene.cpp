@@ -107,6 +107,7 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
                 {
                     if (model->CanRedo())
                     {
+                        SetGraphicsLogic(nullptr);
                         model->Redo();
                     }
                 }
@@ -114,6 +115,7 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
                 {
                     if (model->CanUndo())
                     {
+                        SetGraphicsLogic(nullptr);
                         model->Undo();
                     }
                 }

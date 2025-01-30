@@ -105,6 +105,12 @@ void node::NetSegment::CalcRect()
 	}
 }
 
+node::model::Point node::NetSegment::GetCenter() const
+{
+	auto rect = GetSceneRect();
+	return {rect.x + rect.w / 2, rect.y + rect.h / 2};
+}
+
 node::NetNode::NetNode(const model::Point& center)
 	: GraphicsObject({m_width, m_height}, ObjectType::netNode, nullptr)
 {
@@ -246,7 +252,7 @@ void node::AddSelectConnectedNet(NetNode& node, GraphicsScene& scene)
 	{
 		return;
 	}
-
+	scene.AddSelection(node.GetMIHandlePtr());
 	for (int i = 0; i < 4; i++)
 	{
 		auto* segment = node.getSegment(static_cast<model::ConnectedSegmentSide>(i));

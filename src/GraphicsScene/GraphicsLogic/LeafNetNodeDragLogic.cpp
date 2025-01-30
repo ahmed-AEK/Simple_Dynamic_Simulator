@@ -87,6 +87,36 @@ node::BlockSocketObject* node::logic::LeafNetNodeDragLogic::GetSocketAt(const mo
 	return end_socket;
 }
 
+node::NetSegment* node::logic::LeafNetNodeDragLogic::GetSegmentAt(const model::Point& point) const
+{
+	const auto& segments = GetObjectsManager()->getSegmentsRegistry();
+
+	auto current_mouse_point_SDL = ToSDLPoint(point);
+	NetSegment* end_segment = nullptr;
+	for (const auto& segment_it : segments)
+	{
+		if (!segment_it.second->IsVisible())
+		{
+			continue;
+		}
+		auto segment_rect = ToSDLRect(segment_it.second->GetSceneRect());
+		if (!SDL_PointInRectFloat(&current_mouse_point_SDL, &segment_rect))
+		{
+			continue;
+		}
+		auto it = std::find_if(m_temp_net_mgr.orig_segments.begin(),
+			m_temp_net_mgr.orig_segments.end(),
+			[&](const auto& orig_segment_it) { return orig_segment_it.GetObjectPtr() == segment_it.second; });
+		if (it != m_temp_net_mgr.orig_segments.end())
+		{
+			continue;
+		}
+
+		end_segment = segment_it.second;
+	}
+	return end_segment;
+}
+
 void node::logic::LeafNetNodeDragLogic::ResetNodes()
 {
 	m_temp_net_mgr.ResetNodes();
@@ -95,26 +125,50 @@ void node::logic::LeafNetNodeDragLogic::ResetNodes()
 void node::logic::LeafNetNodeDragLogic::PositionNodes(const model::Point& target_point)
 {
 	BlockSocketObject* end_socket = GetSocketAt(target_point);
+	NetSegment* end_segment = nullptr;
+	if (!end_socket)
+	{
+		ResetNodes();
+		end_segment = GetSegmentAt(target_point);
+	}
 
 	auto end_point = target_point;
 	if (end_socket)
 	{
 		end_point = end_socket->GetCenterInSpace();
 	}
+	if (end_segment)
+	{
+		auto segment_center = end_segment->GetCenter();
+		if (end_segment->GetOrientation() == model::NetSegmentOrientation::vertical)
+		{
+			end_point.x = segment_center.x;
+		}
+		else
+		{
+			end_point.y = segment_center.y;
+		}
+	}
 
-	ResetNodes();
-
-	NetSolutionEndDescription end_descriptor{};
+	NetSolutionEndDescription end_descriptor{ end_point, {true, true, true, true} };
 	if (end_socket)
 	{
 		std::array<bool, 4> sides{};
 		sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
 		end_descriptor = NetSolutionEndDescription{ end_point, sides };
 	}
-	else
+	if (end_segment)
 	{
-		end_descriptor = NetSolutionEndDescription{ end_point, {true, true, true, true} };
+		if (end_segment->GetOrientation() == model::NetSegmentOrientation::vertical)
+		{
+			end_descriptor.allowed_sides = { false, true, false, true };
+		}
+		else
+		{
+			end_descriptor.allowed_sides = { true, false ,true, false };
+		}
 	}
+
 	m_temp_net_mgr.PositionNodes(end_descriptor);
 }
 
@@ -130,6 +184,11 @@ node::NetModificationRequest node::logic::LeafNetNodeDragLogic::PopulateResultNe
 	using enum model::ConnectedSegmentSide;
 
 	const auto* end_socket = GetSocketAt(current_mouse_point);
+	NetSegment* end_segment = nullptr;
+	if (!end_socket)
+	{
+		end_segment = GetSegmentAt(current_mouse_point);
+	}
 
 	NetsSolver solver;
 
@@ -142,13 +201,35 @@ node::NetModificationRequest node::logic::LeafNetNodeDragLogic::PopulateResultNe
 		sides[static_cast<int>(end_socket->GetConnectionSide())] = true;
 		solver.SetEndDescription(NetSolutionEndDescription{ end_socket->GetCenterInSpace(), sides });
 	}
+	else if (end_segment)
+	{
+		if (end_segment->GetOrientation() == model::NetSegmentOrientation::vertical)
+		{
+			model::Point end_point = current_mouse_point;
+			end_point.x = end_segment->GetCenter().x;
+			solver.SetEndDescription({ end_point,{ false, true, false, true } });
+		}
+		else
+		{
+			model::Point end_point = current_mouse_point;
+			end_point.y = end_segment->GetCenter().y;
+			solver.SetEndDescription({ end_point,{ true, false, true, false} });
+		}
+	}
 	else
 	{
 		solver.SetEndDescription(NetSolutionEndDescription{ current_mouse_point, {true, true, true, true} });
 	}
 	const auto solution = solver.Solve();
 	auto report = MakeModificationsReport(solution, m_temp_net_mgr.orig_nodes, m_temp_net_mgr.orig_segments);
-	UpdateModificationEndWithSocket(m_temp_net_mgr.orig_nodes, report, end_socket);
+	if (end_segment)
+	{
+		UpdateModificationEndWithSegment(m_temp_net_mgr.orig_nodes, report.request, report.end_node_info, end_segment);
+	}
+	else
+	{
+		UpdateModificationEndWithSocket(m_temp_net_mgr.orig_nodes, report, end_socket);
+	}
 	return std::move(report.request);
 }
 

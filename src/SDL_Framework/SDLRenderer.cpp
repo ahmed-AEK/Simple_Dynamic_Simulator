@@ -44,9 +44,9 @@ namespace SDL
         {
             const char* driver = SDL_GetRenderDriver(i);
             // SDL_Log("driver %d: %s", i, driver);
-            if (strcmp("direct3d", driver) == 0)
+            if (strcmp("direct3d11", driver) == 0)
             {
-                //direct3d_found = true;
+                direct3d_found = true;
             }
             if (strcmp("opengl", driver) == 0)
             {
@@ -56,7 +56,7 @@ namespace SDL
         const char* driver = nullptr;
         if (direct3d_found)
         {
-            driver = "direct3d";
+            driver = "direct3d11";
         }
         else if (opengl_found)
         {
@@ -65,10 +65,11 @@ namespace SDL
 
         if (driver)
         {
+            SDL_SetHint(SDL_HINT_RENDER_DRIVER, driver);
             SDL_Log("using driver: %s", driver);
         }
 
-        p_renderer = SDL_CreateRenderer(wnd, driver);
+        p_renderer = SDL_CreateRenderer(wnd, nullptr);
         SDL_SetRenderVSync(p_renderer, 1);
         if (!p_renderer)
         {

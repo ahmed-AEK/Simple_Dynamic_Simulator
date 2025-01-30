@@ -40,9 +40,18 @@ ModificationReport MakeModificationsReport(const node::NetsSolver::NetSolution& 
 	std::span<const node::HandlePtrS<node::NetNode, node::GraphicsObject>> orig_nodes,
 	std::span<const node::HandlePtrS<node::NetSegment, node::GraphicsObject>> orig_segments);
 
+NetModificationRequest MakeCreationReport(const node::NetsSolver::NetSolution& solution);
+
 void UpdateModificationEndWithSocket(
 	std::span<const node::HandlePtrS<node::NetNode, node::GraphicsObject>> orig_nodes,
 	ModificationReport& report, const node::BlockSocketObject* end_socket);
+
+
+void UpdateCreationStartWithSegment(
+	NetModificationRequest& request, const node::NetSegment& start_segment);
+
+void UpdateModificationEndWithSegment(std::span<const node::HandlePtrS<node::NetNode, node::GraphicsObject>> orig_nodes,
+	NetModificationRequest& request, const NetNodeModificationInfo& end_info, const node::NetSegment* end_segment);
 
 void MergeModificationRequests(const node::NetModificationRequest& src,
 	node::NetModificationRequest& target);

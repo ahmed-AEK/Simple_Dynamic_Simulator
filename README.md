@@ -2,6 +2,9 @@
 A trial implementation of a node editor for solving differential algebraic systems.
 
 Implementation is heavily optimized, so it can acheive 60 fps on a potato using under 1% of CPU
+# [Try It Online](https://ahmed-aek.github.io/DynamicSimulator-Online/)
+
+**[Demo Video](https://youtu.be/xRRwlTSGhQI)**
 
 ![alt text](https://github.com/ahmed-AEK/dummy_NodeEditor/blob/main/preview.png?raw=true)
 
@@ -45,7 +48,7 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 the dependencies make it hard to build this on other machines, i don't want to use a package manager yet so that i don't have to re-download the dependencies on each platform.
 
-you need `SDL3`, `SDL3-TTF`, `SDL3-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost in the `external` folder, renamed to `boost` and `googletest` (omit the version numbers), then the following is enough.
+you need `SDL3`, `SDL3-TTF`, `SDL3-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost and SQLiteCpp in the `external` folder, renamed to `boost` and `googletest` and `SQLiteCpp` (omit the version numbers), then the following is enough.
 
 you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
 
@@ -61,3 +64,5 @@ License
 GPL-3.0 license (@ 2024 ahmed-AEK)
 
 This prevents re-packaging and selling the software, but it can still use commercial proprietary plugins.
+
+[def]: https://dynamicsimulator-beta.static.domains/

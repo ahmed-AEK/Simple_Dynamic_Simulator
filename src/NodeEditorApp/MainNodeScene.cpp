@@ -21,6 +21,7 @@
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
 #include "GraphicsScene/tools/GraphicsToolHandler.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
@@ -50,6 +51,7 @@
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
 #include "NodeEditorApp/SimulationSettingsDialog.hpp"
+#include "NodeEditorApp/AboutDialog.hpp"
 #include "NodeEditorApp/NewSceneDialog.hpp"
 #include "NodeEditorApp/SceneManager.hpp"
 
@@ -532,6 +534,13 @@ void node::MainNodeScene::InitializeTools()
         settings_btn->SetDescription("Settings");
         settings_btn->SetSVGPath("assets/settings.svg");
         toolbar->AddButton(std::move(settings_btn));
+    }
+    toolbar->AddSeparator();
+    {
+        auto about_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "I", [this]() {SDL_Log("About!"); this->OnAboutClicked(); });
+        about_btn->SetDescription("About Software");
+        about_btn->SetSVGPath("assets/about.svg");
+        toolbar->AddButton(std::move(about_btn));
     }
     SetToolBar(std::move(toolbar));
     m_toolsManager->ChangeTool("A");
@@ -1073,6 +1082,11 @@ void node::MainNodeScene::OnUndo()
         assert(false);
         return;
     }
+    auto* scene = graphicsObjectsManager->GetGraphicsScene();
+    if (scene)
+    {
+        scene->SetGraphicsLogic(nullptr);
+    }
     graphicsObjectsManager->GetSceneModel()->Undo();
 }
 
@@ -1089,6 +1103,11 @@ void node::MainNodeScene::OnRedo()
     {
         assert(false);
         return;
+    }
+    auto* scene = graphicsObjectsManager->GetGraphicsScene();
+    if (scene)
+    {
+        scene->SetGraphicsLogic(nullptr);
     }
     graphicsObjectsManager->GetSceneModel()->Redo();
 }
@@ -1317,6 +1336,25 @@ void node::MainNodeScene::OnSettingsClicked()
     else
     {
         auto* dialog = m_settings_dialog.GetObjectPtr();
+        dialog->SetPosition({ 100, 100 });
+        BumpDialogToTop(dialog);
+    }
+}
+
+void node::MainNodeScene::OnAboutClicked()
+{
+    if (!m_about_dialog.isAlive())
+    {
+        auto dialog = std::make_unique<AboutDialog>(WidgetSize{ 0.0f,0.0f }, this);
+        dialog->SetPosition({ 100.0f, 100.0f });
+        m_about_dialog = *dialog;
+        auto dialog_ptr = dialog.get();
+        AddNormalDialog(std::move(dialog));
+        SetFocus(dialog_ptr);
+    }
+    else
+    {
+        auto* dialog = m_about_dialog.GetObjectPtr();
         dialog->SetPosition({ 100, 100 });
         BumpDialogToTop(dialog);
     }
