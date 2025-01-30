@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <cassert>
 
 namespace node
 {
@@ -32,6 +33,24 @@ enum class NetSegmentOrientation : char
 	horizontal = 0,
 	vertical = 1,
 };
+
+inline ConnectedSegmentSide GetOppositeSegmentSide(ConnectedSegmentSide side)
+{
+	switch (side)
+	{
+		using enum ConnectedSegmentSide;
+	case north:
+		return south;
+	case east:
+		return west;
+	case south:
+		return north;
+	case west:
+		return east;
+	}
+	assert(false); // shouldn't reach here
+	return {};
+}
 
 struct BlockId
 {

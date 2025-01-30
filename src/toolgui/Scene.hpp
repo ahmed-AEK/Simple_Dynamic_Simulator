@@ -89,7 +89,7 @@ namespace node
         virtual void OnSendKeyPress(KeyboardEvent& e);
         virtual void OnSendChar(TextInputEvent& e);
 
-        node::Widget* OnGetInteractableAtPoint(const SDL_FPoint& p) const;
+        node::Widget* OnGetInteractableAtPoint(const SDL_FPoint& p) override;
         std::unique_ptr<node::ContextMenu> m_pContextMenu;
         Application* p_parent;
         SDL_FRect m_rect_base;

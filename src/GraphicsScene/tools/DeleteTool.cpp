@@ -4,8 +4,7 @@
 #include "NetObject.hpp"
 #include "GraphicsObjectsManager.hpp"
 #include "GraphicsLogic/BlockDeleteLogic.hpp"
-#include "GraphicsLogic/SegmentDeleteLogic.hpp"
-#include "GraphicsLogic/NetNodeDeleteLogic.hpp"
+#include "GraphicsLogic/NetDeleteLogic.hpp"
 
 MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
 {
@@ -25,12 +24,12 @@ MI::ClickEvent node::DeleteTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& s
 	}
 	case ObjectType::netSegment:
 	{
-		scene.SetGraphicsLogic(std::make_unique<logic::SegmentDeleteLogic>(*static_cast<NetSegment*>(obj), &scene, &manager));
+		scene.SetGraphicsLogic(std::make_unique<logic::NetDeleteLogic>(*obj, &scene, &manager));
 		AddSelectConnectedNet(*static_cast<NetSegment*>(obj), scene);
 		break;
 	}
 	case ObjectType::netNode:
-		scene.SetGraphicsLogic(std::make_unique<logic::NetNodeDeleteLogic>(*static_cast<NetNode*>(obj), &scene, &manager));
+		scene.SetGraphicsLogic(std::make_unique<logic::NetDeleteLogic>(*obj, &scene, &manager));
 		AddSelectConnectedNet(*static_cast<NetNode*>(obj), scene);
 		break;
 	default: break;

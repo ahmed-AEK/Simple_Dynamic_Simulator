@@ -243,7 +243,7 @@ void node::Scene::OnMouseMove(MouseHoverEvent& e)
 }
 
 
-node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p) const
+node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p)
 {
     if (m_pContextMenu)
     {

@@ -43,6 +43,7 @@ private:
 	void PositionNodes(const model::Point& target_point);
 	NetModificationRequest PopulateResultNet(const model::Point& current_mouse_point);
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
+	NetSegment* GetSegmentAt(const model::Point& point) const;
 	void CleanUp();
 	TemporaryNetManager m_net;
 };

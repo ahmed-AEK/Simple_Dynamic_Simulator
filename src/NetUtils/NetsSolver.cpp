@@ -11,7 +11,7 @@ static void CopyConnectivity(std::span<const node::model::NetNodeModel> input_no
     using namespace node::model;
     assert(input_segments.size() == output_segments.size());
     assert(input_nodes.size() == output_nodes.size());
-
+    UNUSED_PARAM(input_nodes);
     for (size_t i = 0; i < input_segments.size(); i++)
     {
         auto& input_segment = input_segments[i];
@@ -42,17 +42,18 @@ static bool SidesOnSameAxis(const node::NetSolutionEndDescription& side1, const 
     }
     return false;
 }
-static bool HasSides(const node::NetSolutionEndDescription& side)
-{
-    using namespace node;
-    using namespace node::model;
-    return side.allowed_sides[0] || side.allowed_sides[1] || side.allowed_sides[2] || side.allowed_sides[3];
-}
+
 node::NetsSolver::NetSolution node::NetsSolver::Solve()
 {
     using enum model::ConnectedSegmentSide;
-    assert(HasSides(*m_start_node));
-    assert(HasSides(*m_end_node));
+    assert(m_start_node->allowed_sides[0] || 
+        m_start_node->allowed_sides[1] || 
+        m_start_node->allowed_sides[2] || 
+        m_start_node->allowed_sides[3]);
+    assert(m_end_node->allowed_sides[0] ||
+        m_end_node->allowed_sides[1] ||
+        m_end_node->allowed_sides[2] ||
+        m_end_node->allowed_sides[3]);
 
     const NetSolutionEndDescription& start_node = *m_start_node;
     const NetSolutionEndDescription& end_node = *m_end_node;
@@ -205,10 +206,20 @@ node::NetsSolver::NetSolution node::NetsSolver::Solve()
     {
         return ExtendOneThenSolve(south);
     }
+
+    if (left_desc.IsSideAllowed(north) && right_desc.IsSideAllowed(north))
+    {
+        return ExtendOneThenSolve(north);
+    }
     
     if (top_desc.IsSideAllowed(east) && bot_desc.IsSideAllowed(east))
     {
         return ExtendOneThenSolve(east);
+    }
+
+    if (top_desc.IsSideAllowed(west) && bot_desc.IsSideAllowed(west))
+    {
+        return ExtendOneThenSolve(west);
     }
 
     if (left_desc.IsSideAllowed(west) &&
@@ -494,9 +505,61 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
     using namespace node::model;
     NetSolution result;
 
-    if (side == ConnectedSegmentSide::south)
+    if (side == ConnectedSegmentSide::north)
     {
-        bool start_is_lower = m_start_node->point.y <= m_end_node->point.y;
+        bool start_is_higher = m_start_node->point.y <= m_end_node->point.y;
+
+        if (start_is_higher)
+        {
+            // add start node
+            result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_start_node->point });
+
+            // add segment between start and inner solve
+            result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+                NetNodeId{0}, NetNodeId{0}, model::NetSegmentOrientation::vertical });
+        }
+
+        auto inner_solver{ CreateSimilarSolver() };
+
+        if (start_is_higher)
+        {
+            inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y - GetExtensionDistance()},
+                {false, true, true, true} });
+            inner_solver.SetEndDescription(*m_end_node);
+        }
+        else
+        {
+            inner_solver.SetStartDescription(*m_start_node);
+            inner_solver.SetEndDescription(
+                NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y - GetExtensionDistance()},
+                    {false, true, true, true} }
+            );
+        }
+        auto inner_result = inner_solver.Solve();
+
+        auto inner_remap = AddInnerResult(inner_result, result);
+
+        if (start_is_higher)
+        {
+            NetUtils::connectSegementAndNodes(result.segments[0], result.nodes[0], result.nodes[1]);
+        }
+        else
+        {
+            // add end node
+            result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_end_node->point });
+
+            // add segment between end and inner solve
+            result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+                NetNodeId{0}, NetNodeId{0}, model::NetSegmentOrientation::vertical });
+
+            NetUtils::connectSegementAndNodes(result.segments.back(), result.nodes[inner_remap.end], result.nodes.back());
+        }
+        result.start = result.nodes[0].GetId();
+        result.end = result.nodes.back().GetId();
+    }
+    else if (side == ConnectedSegmentSide::south)
+    {
+        bool start_is_lower = m_start_node->point.y >= m_end_node->point.y;
 
         if (start_is_lower)
         {
@@ -581,6 +644,58 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
         auto inner_remap = AddInnerResult(inner_result, result);
 
         if (start_is_right)
+        {
+            NetUtils::connectSegementAndNodes(result.segments[0], result.nodes[0], result.nodes[1]);
+        }
+        else
+        {
+            // add end node
+            result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_end_node->point });
+
+            // add segment between end and inner solve
+            result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+                NetNodeId{0}, NetNodeId{0}, model::NetSegmentOrientation::horizontal });
+
+            NetUtils::connectSegementAndNodes(result.segments.back(), result.nodes[inner_remap.end], result.nodes.back());
+        }
+        result.start = result.nodes[0].GetId();
+        result.end = result.nodes.back().GetId();
+    }
+    else if (side == ConnectedSegmentSide::west)
+    {
+        bool start_is_left = m_start_node->point.x <= m_end_node->point.x;
+
+        if (start_is_left)
+        {
+            // add start node
+            result.nodes.push_back(NetNodeModel{ GetNewNodeId(), m_start_node->point });
+
+            // add segment between start and inner solve
+            result.segments.push_back(NetSegmentModel{ GetNewSegmentId(),
+                NetNodeId{0}, NetNodeId{0}, model::NetSegmentOrientation::horizontal });
+        }
+
+        auto inner_solver{ CreateSimilarSolver() };
+
+        if (start_is_left)
+        {
+            inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x - GetExtensionDistance(), m_start_node->point.y},
+                {true, true, true, false} });
+            inner_solver.SetEndDescription(*m_end_node);
+        }
+        else
+        {
+            inner_solver.SetStartDescription(*m_start_node);
+            inner_solver.SetEndDescription(
+                NetSolutionEndDescription{ {m_end_node->point.x - GetExtensionDistance(), m_end_node->point.y},
+                    {true, true, true, false} }
+            );
+        }
+        auto inner_result = inner_solver.Solve();
+
+        auto inner_remap = AddInnerResult(inner_result, result);
+
+        if (start_is_left)
         {
             NetUtils::connectSegementAndNodes(result.segments[0], result.nodes[0], result.nodes[1]);
         }

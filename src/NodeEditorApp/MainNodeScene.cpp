@@ -21,6 +21,7 @@
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
 #include "GraphicsScene/tools/GraphicsToolHandler.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
 #include "BlockClasses/BlockClassesManager.hpp"
 #include "BlockClasses/GainBlockClass.hpp"
@@ -1073,6 +1074,11 @@ void node::MainNodeScene::OnUndo()
         assert(false);
         return;
     }
+    auto* scene = graphicsObjectsManager->GetGraphicsScene();
+    if (scene)
+    {
+        scene->SetGraphicsLogic(nullptr);
+    }
     graphicsObjectsManager->GetSceneModel()->Undo();
 }
 
@@ -1089,6 +1095,11 @@ void node::MainNodeScene::OnRedo()
     {
         assert(false);
         return;
+    }
+    auto* scene = graphicsObjectsManager->GetGraphicsScene();
+    if (scene)
+    {
+        scene->SetGraphicsLogic(nullptr);
     }
     graphicsObjectsManager->GetSceneModel()->Redo();
 }

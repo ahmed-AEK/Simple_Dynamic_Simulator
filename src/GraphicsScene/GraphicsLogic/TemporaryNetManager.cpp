@@ -174,22 +174,8 @@ void node::logic::TemporaryNetManager::PositionNodes(const NetSolutionEndDescrip
 
 	if (std::abs(start.x - end_description.point.x) < 5 && std::abs(start.y - end_description.point.y) < 5)
 	{
-		for (int i = 0; i < 4; i++)
-		{
-			temp_nodes[i]->SetVisible(true);
-		}
-		for (int i = 0; i < 3; i++)
-		{
-			temp_segments[i]->SetVisible(true);
-		}
-
-		model::node_int midpoint_x = (end_description.point.x + start.x) / 2;
-		temp_nodes[1]->setCenter({ midpoint_x, start.y });
-		temp_nodes[2]->setCenter({ midpoint_x, end_description.point.y });
-		temp_nodes[3]->setCenter({ end_description.point.x, end_description.point.y });
-		temp_segments[0]->CalcRect();
-		temp_segments[1]->CalcRect();
-		temp_segments[2]->CalcRect();
+		temp_nodes[0]->SetVisible(true);
+		temp_nodes[0]->setCenter({ start.x, start.y });
 	}
 	else
 	{

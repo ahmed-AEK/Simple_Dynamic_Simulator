@@ -11,6 +11,7 @@
 
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
 #include "SDL_Framework/SDLCPP.hpp"
 

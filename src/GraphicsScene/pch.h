@@ -7,6 +7,7 @@
 #include "toolgui/ToolBar.hpp"
 
 #include "NetUtils/NetsSolver.hpp"
+#include "NetUtils/Utils.hpp"
 
 #include "NodeSDLStylers/SpaceScreenTransformer.hpp"
 #include "NodeSDLStylers/BlockStyler.hpp"

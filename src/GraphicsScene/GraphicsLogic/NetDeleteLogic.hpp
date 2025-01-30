@@ -6,20 +6,20 @@ namespace node
 {
 
 class GraphicsObject;
-class NetNode;
+class NetSegment;
 
 namespace logic
 {
 
-class NetNodeDeleteLogic: public GraphicsLogic
+class NetDeleteLogic: public GraphicsLogic
 {
 public:
-	NetNodeDeleteLogic(NetNode& node, GraphicsScene* scene, GraphicsObjectsManager* manager);
+	NetDeleteLogic(GraphicsObject& object, GraphicsScene* scene, GraphicsObjectsManager* manager);
 protected:
 	virtual void OnMouseMove(const model::Point& current_mouse_point) override;
 	virtual MI::ClickEvent OnLMBUp(const model::Point& current_mouse_point) override;
 private:
-	HandlePtrS<NetNode, GraphicsObject> m_node;
+	HandlePtr<GraphicsObject> m_object;
 };
 
 }

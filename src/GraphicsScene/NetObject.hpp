@@ -58,8 +58,8 @@ public:
 	explicit NetSegment(const model::NetSegmentOrientation& orientation,
 	NetNode* startNode = nullptr, NetNode* endNode = nullptr);
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
-	NetNode* getStartNode() noexcept { return m_startNode; }
-	NetNode* getEndNode() noexcept { return m_endNode; }
+	NetNode* getStartNode() const noexcept { return m_startNode; }
+	NetNode* getEndNode() const noexcept { return m_endNode; }
 	void Connect(NetNode* start, NetNode* end, const model::NetSegmentOrientation& orientation);
 	void Disconnect();
 	void CalcRect();
@@ -68,7 +68,7 @@ public:
 
 	void SetId(std::optional<model::NetSegmentId> id) { m_id = std::move(id); }
 	std::optional<model::NetSegmentId> GetId() const noexcept { return m_id; }
-
+	model::Point GetCenter() const;
 protected:
 private:
 	static constexpr int c_width = 10;
