@@ -1,6 +1,6 @@
 
 using namespace node::model;
-TEST(testScene, testCreate)
+TEST(testSceneModel, testCreate)
 {
 	NodeSceneModel scene;
 	BlockId block_id = BlockId{ 1 };

@@ -1,6 +1,5 @@
 //#pragma warning( push , 0)
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "gmock/gmock-matchers.h"
 //#pragma warning( pop ) 
 #include "NetUtils/NetsSolver.hpp"

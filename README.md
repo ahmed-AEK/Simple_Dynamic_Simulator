@@ -46,17 +46,15 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 ### build instructions
 
-the dependencies make it hard to build this on other machines, i don't want to use a package manager yet so that i don't have to re-download the dependencies on each platform.
-
-you need `SDL3`, `SDL3-TTF`, `SDL3-Image`, `nlopt` and `lunasvg` on your `CMAKE_PREFIX_PATH` and you need gtest and boost and SQLiteCpp in the `external` folder, renamed to `boost` and `googletest` and `SQLiteCpp` (omit the version numbers), then the following is enough.
+until official port is provided from vcpkg, you will need a custom sdl3-ttf port at `VCPKG_OVERLAY_PORTS` and have vcpkg installed and VCPKG_ROOT pointing at its root.
 
 you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
 
 ```
 mkdir build
 cd build
-cmake ..
-cmake --build .
+cmake .. --preset=vcpkg-win-rel
+cmake --build ./Release_win
 ```
 
 License

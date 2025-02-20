@@ -2,9 +2,16 @@ cmake_minimum_required(VERSION 3.11)
 
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO
 
-project(DynamicSim VERSION 0.4.2)
+cmake_policy(SET CMP0091 NEW)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 
 set(CMAKE_CXX_STANDARD 20)
+
+project(DynamicSim VERSION 0.4.2)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "-W4 -EHsc -WX /GR-")
@@ -16,9 +23,6 @@ endif (MSVC)
 #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 # endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 # if( NOT CMAKE_BUILD_TYPE)
@@ -32,11 +36,13 @@ set(DRAWRECT_ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries (DLLs).")
 
-find_package(SDL3 REQUIRED)
-find_package(SDL3_ttf REQUIRED)
-find_package(SDL3_image REQUIRED)
-find_package(NLopt REQUIRED)
-find_package(lunasvg REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_ttf CONFIG REQUIRED)
+find_package(SDL3_image CONFIG REQUIRED)
+find_package(NLopt CONFIG REQUIRED)
+find_package(lunasvg CONFIG REQUIRED)
+find_package(SQLiteCpp CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 add_subdirectory(src/AssetsManager)
 add_subdirectory(src/SDL_Framework)
@@ -51,8 +57,6 @@ add_subdirectory(src/SceneLoader)
 add_subdirectory(src/SceneLoadertest)
 add_subdirectory(src/GraphicsScene)
 add_subdirectory(src/BlockPalette)
-add_subdirectory(external/googletest)
-add_subdirectory(external/SQLiteCpp)
 add_subdirectory(src/toolguitest)
 add_subdirectory(src/NodeEditorApp)
 add_subdirectory(src/optimizer)

@@ -1,6 +1,6 @@
 
 using namespace node::model;
-TEST(testNet, testCreate)
+TEST(testNetModel, testCreate)
 {
     NodeSceneModel scene;
     NetNodeModel node1{ NetNodeId{1} };

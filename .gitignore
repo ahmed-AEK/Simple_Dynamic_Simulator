@@ -38,3 +38,4 @@ build_linux/
 build_linux_static/
 Testing/
 .vscode/
+.vs/

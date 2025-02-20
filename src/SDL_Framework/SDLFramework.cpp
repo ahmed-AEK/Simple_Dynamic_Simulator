@@ -5,10 +5,6 @@ namespace SDL
 {
     SDLFramework::~SDLFramework()
     {
-        if (m_SDL_Image_init_done)
-        {
-            IMG_Quit();
-        }
         if (m_SDL_TTF_init_done)
         {
             TTF_Quit();
@@ -38,13 +34,6 @@ namespace SDL
         if (!(m_SDL_TTF_init_done))
         {
             SDL_Log("Couldn't initialize SDL_TTF");
-            return false;
-        }
-
-        m_SDL_Image_init_done = IMG_Init(IMG_INIT_PNG);
-        if (!(m_SDL_Image_init_done))
-        {
-            SDL_Log("couldn't initialize SDL_Image");
             return false;
         }
 

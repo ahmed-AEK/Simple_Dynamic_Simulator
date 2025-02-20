@@ -1,0 +1,23 @@
+{
+  "dependencies": [
+    "boost-odeint",
+    "gtest",
+    "lunasvg",
+    "nlopt",
+    "sdl3",
+    {
+      "name": "sdl3-image",
+      "features": [
+        "jpeg",
+        "png"
+      ]
+    },
+    "sqlitecpp",
+    {
+      "name": "sdl3-ttf",
+      "features": [
+        "harfbuzz"
+      ]
+    }
+  ]
+}

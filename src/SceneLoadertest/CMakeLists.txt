@@ -7,7 +7,7 @@ SQLNetLoadertest.cpp
 pch.h
 )
 
-target_link_libraries(SceneLoadertest PRIVATE GTest::gtest_main GTest::gmock_main SceneLoader)
+target_link_libraries(SceneLoadertest PRIVATE GTest::gtest_main SceneLoader)
 target_include_directories(SceneLoadertest PRIVATE '.')
 
 include(GoogleTest)

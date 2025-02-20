@@ -5,7 +5,7 @@ NetSegmenttest.cpp
 BlockObjecttest.cpp
 pch.h
 )
-target_link_libraries(toolguitest PRIVATE GTest::gtest_main GTest::gmock_main toolgui GraphicsScene)
+target_link_libraries(toolguitest PRIVATE GTest::gtest_main toolgui GraphicsScene)
 target_include_directories(toolguitest PRIVATE '.')
 
 include(GoogleTest)

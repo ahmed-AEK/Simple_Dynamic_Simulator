@@ -1,7 +1,7 @@
 
 
 using namespace node::model;
-TEST(testNetSegment, testCreate)
+TEST(testNetSegmentModel, testCreate)
 {
     node::model::NetSegmentModel segment{ NetSegmentId{1},NetNodeId{1},NetNodeId{2} ,
         NetSegmentOrientation::horizontal};
