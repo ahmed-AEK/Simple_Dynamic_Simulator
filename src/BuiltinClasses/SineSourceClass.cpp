@@ -1,8 +1,8 @@
 #include "SineSourceClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Phase_deg", node::model::BlockPropertyType::FloatNumber, 0.0 },
-	node::model::BlockProperty{"Freq_hz", node::model::BlockPropertyType::FloatNumber, 1.0 },
+	*node::model::BlockProperty::Create("Phase_deg", node::model::BlockPropertyType::FloatNumber, 0.0 ),
+	*node::model::BlockProperty::Create("Freq_hz", node::model::BlockPropertyType::FloatNumber, 1.0 ),
 };
 static constexpr std::string_view Description = "Output = Sin(2*pi*freq + phase*pi/180)";
 
@@ -42,7 +42,7 @@ bool node::SineSourceClass::ValidateClassProperties(const std::vector<model::Blo
 		{
 			return false;
 		}
-		if (properties[i].type != ClassProperties[i].type)
+		if (properties[i].GetType() != ClassProperties[i].GetType())
 		{
 			return false;
 		}

@@ -18,7 +18,7 @@ static std::string GetBlockGain(const node::model::FunctionalBlockData* data)
 	auto it = std::find_if(properties.begin(), properties.end(), [](const model::BlockProperty& prop) { return prop.name == "Multiplier"; });
 	if (it != properties.end())
 	{
-		if (it->type != model::BlockPropertyType::FloatNumber)
+		if (it->GetType() != model::BlockPropertyType::FloatNumber)
 		{
 			return {};
 		}

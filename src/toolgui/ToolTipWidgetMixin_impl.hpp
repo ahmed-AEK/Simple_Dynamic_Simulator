@@ -16,7 +16,7 @@ void node::mixin::TooltipMixin<T>::ToolTipMouseIn(MI::MouseHoverEvent<Widget>&)
 }
 
 template <typename T>
-void node::mixin::TooltipMixin<T>::ToolTipMouseOut(MI::MouseHoverEvent<Widget>&)
+void node::mixin::TooltipMixin<T>::ToolTipMouseOut()
 {
 	HideToolTip();
 	if (m_updateTaskId)

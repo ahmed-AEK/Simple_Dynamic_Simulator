@@ -7,9 +7,9 @@ GUI will contain
 1. A toolBar
 2. A tools Bar
 3. A "Scene" in the middle
-4. A "pallete" of nodes on the right to pick new nodes from
+4. A "palette" of nodes on the right to pick new nodes from
 5. A Properties panel on the Right too.
-6. both the Pallete and the properties windows will be in a tabbed window.
+6. both the Palette and the properties windows will be in a tabbed window.
 
 The properties window will contain
 
@@ -19,11 +19,11 @@ The properties window will contain
 ![GUI Sketch](UI_sketch.png)
 
 
-## User Interaction with pallete
+## User Interaction with palette
 
-pallete shows the nodes read from multiple libraries, there should be a way to add new libraries.
+palette shows the nodes read from multiple libraries, there should be a way to add new libraries.
 
-user can drag nodes from the pallete to the main scene, this will add the node of that type to the scene.
+user can drag nodes from the palette to the main scene, this will add the node of that type to the scene.
 
 ## User Interaction with the properties
 
@@ -72,5 +72,5 @@ user should be able to
 1. Move a node
 2. resize a node
 3. modify *some* of its properties (for example a ramp needs a variable rate), maybe through a "properties" panel.
-4. Add the node from the pallete
+4. Add the node from the palette
 5. Delete the node from the scene

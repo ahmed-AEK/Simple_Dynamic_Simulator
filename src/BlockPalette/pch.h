@@ -16,8 +16,8 @@
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 
-#include "BlockClasses/BlockClass.hpp"
-#include "BlockClasses/BlockClassesManager.hpp"
+#include "PluginAPI/BlockClass.hpp"
+#include "PluginAPI/BlockClassesManager.hpp"
 
 #include <cassert>
 #include <algorithm>

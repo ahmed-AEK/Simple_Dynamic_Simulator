@@ -7,25 +7,19 @@
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "NodeModels/BlockData.hpp"
 #include "NodeModels/Observer.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 #include <span>
 #include <memory>
 #include <vector>
 #include <string>
+#include <optional>
+#include <ranges>
 
 namespace node
 {
 class BlockClassesManager;
 class BlockStylerFactory;
-
-struct BlockTemplate
-{
-	std::string category;
-	std::string template_name;
-	model::BlockData data;
-	std::string styler_name;
-	model::BlockStyleProperties style_properties;
-};
 
 struct PaletteElement
 {
@@ -43,27 +37,78 @@ struct BlockPaletteChange
 		std::string_view category;
 	};
 
-	CategoryAdded e;
+	struct ElementAdded
+	{
+		std::string_view category;
+		PaletteElement& elem;
+	};
+
+	using Event = std::variant<CategoryAdded, ElementAdded>;
+	Event e;
 };
 
-class PaletteProvider : public SinglePublisher<BlockPaletteChange>
+class PaletteProvider : public MultiPublisher<BlockPaletteChange>
 {
 public:
+	enum class CategoryId : uint32_t {};
+	enum class ElementId : uint32_t {};
+	struct ElementUniqueId
+	{
+		CategoryId cat_id;
+		ElementId temp_id;
+		auto operator<=>(const ElementUniqueId&) const = default;
+	};
+
+	struct CategoryMapping
+	{
+		CategoryId id;
+		std::string name;
+	};
+	struct ElementMapping
+	{
+		ElementId id;
+		PaletteElement element;
+	};
+
 	PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory);
-	void AddElement(const BlockTemplate& temp);
-	void AddElement(const std::string& category, std::unique_ptr<PaletteElement> element);
+	std::optional<ElementUniqueId> AddElement(const BlockTemplate& temp);
 
 	BlockStylerFactory& GetStylerFactory() { return *m_blockStyleFactory; }
-	const std::vector<std::unique_ptr<PaletteElement>>* GetCategoryElements(const std::string& category) const;
-	std::vector<std::string_view> GetCategories() const;
+	std::span<const ElementMapping> GetCategoryElementsMap(const std::string& category) const;
+	auto GetCategoryElements(const std::string& category) const
+	{
+		auto s = GetCategoryElementsMap(category);
+		return s | std::ranges::views::transform([](const ElementMapping& m) ->const PaletteElement& { return m.element; });
+	}
+	std::span<const CategoryMapping> GetCategories() const;
 private:
-	void AddFunctionalElemnt(const BlockTemplate& temp);
-	void AddSubsystemElement(const BlockTemplate& temp);
-	void AddPortElement(const BlockTemplate& temp);
+	std::optional<ElementUniqueId> AddFunctionalElemnt(const BlockTemplate& temp);
+	std::optional<ElementUniqueId> AddSubsystemElement(const BlockTemplate& temp);
+	std::optional<ElementUniqueId> AddPortElement(const BlockTemplate& temp);
 
-	std::unordered_map<std::string, std::vector<std::unique_ptr<PaletteElement>>> m_elements;
+	using palette_storage = std::unordered_map<CategoryId, std::vector<ElementMapping>>;
+	palette_storage::iterator EnsureCategory(const std::string& str);
+
+	palette_storage m_elements;
+
+	uint32_t m_next_cat_id{};
+	uint32_t m_next_elem_id{};
+
+	std::vector<CategoryMapping> m_categories;
 	std::shared_ptr<BlockClassesManager> m_classesManager;
 	std::shared_ptr<BlockStylerFactory> m_blockStyleFactory;
 };
 
 }
+
+template <>
+struct std::hash<node::PaletteProvider::ElementUniqueId>
+{
+	std::size_t operator()(const node::PaletteProvider::ElementUniqueId& k) const
+	{
+		size_t hash = 23;
+		hash = hash * 31 + static_cast<uint32_t>(k.cat_id);
+		hash = hash * 31 + static_cast<uint32_t>(k.temp_id);
+		return hash;
+	}
+};

@@ -23,12 +23,24 @@ enum class BlockPropertyType
 
 struct BlockProperty
 {
+
+	struct TypeGetter
+	{
+		BlockPropertyType operator()(const std::string&) const { return BlockPropertyType::String; }
+		BlockPropertyType operator()(const double&) const { return BlockPropertyType::FloatNumber; }
+		BlockPropertyType operator()(const int64_t&) const { return BlockPropertyType::Integer; }
+		BlockPropertyType operator()(const uint64_t&) const { return BlockPropertyType::UnsignedInteger; }
+		BlockPropertyType operator()(const bool&) const { return BlockPropertyType::Boolean; }
+	};
 	using property_t = std::variant<std::string, double, int64_t, uint64_t, bool>;
-	BlockProperty(std::string name, BlockPropertyType type, property_t prop)
-		:name{ name }, type{ type }, prop{ prop } {}
+	BlockProperty(std::string name, property_t prop)
+		:name{ name }, prop{ prop } {}
+	static std::optional<BlockProperty> Create(std::string name, BlockPropertyType prop_type, property_t prop);
+
 	std::string name;
-	BlockPropertyType type;
 	property_t prop;
+	
+	BlockPropertyType GetType() const { return std::visit(TypeGetter{}, prop); }
 
 	std::string to_string() const;
 	static std::optional<property_t> from_string(BlockPropertyType type, std::string_view str);

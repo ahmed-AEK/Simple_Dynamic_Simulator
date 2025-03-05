@@ -20,7 +20,7 @@ namespace mixin
 			HideToolTip();
 		}
 		void ToolTipMouseIn(MI::MouseHoverEvent<Widget>& e);
-		void ToolTipMouseOut(MI::MouseHoverEvent<Widget>& e);
+		void ToolTipMouseOut();
 		void ToolTipMouseMove(MI::MouseHoverEvent<Widget>& e);
 		void SetToolTipDescription(std::string description);
 	private:

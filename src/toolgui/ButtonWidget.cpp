@@ -34,10 +34,10 @@ void node::ButtonWidget::OnDraw(SDL::Renderer& renderer)
     m_btn_painter.Draw(renderer, btn_rect.x, btn_rect.y);
 }
 
-void node::ButtonWidget::OnMouseOut(MouseHoverEvent& e)
+void node::ButtonWidget::OnMouseOut(MouseHoverEvent&)
 {
     m_hovered = false;
-    ToolTipMouseOut(e);
+    ToolTipMouseOut();
 }
 
 void node::ButtonWidget::OnMouseIn(MouseHoverEvent& e)
@@ -56,6 +56,7 @@ MI::ClickEvent node::ButtonWidget::OnLMBUp(MouseButtonEvent& e)
     SDL_Log("Button Pressed!");
     Widget::OnLMBUp(e);
     m_action();
+    ToolTipMouseOut();
     return MI::ClickEvent::CLICKED;
 }
 

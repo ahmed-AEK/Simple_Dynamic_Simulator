@@ -1,15 +1,15 @@
 #pragma once
 
-#include "BlockClasses/BlockClass.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 namespace node
 {
 
-class GainBlockClass : public BlockClass
+class SineSourceClass : public BlockClass
 {
 public:
-	GainBlockClass();
-	
+	SineSourceClass();
+
 	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) override;

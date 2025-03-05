@@ -60,11 +60,77 @@ void node::TabBar::OnDraw(SDL::Renderer& renderer)
 	UNUSED_PARAM(renderer);
 }
 
+void node::TabBar::OnMouseMove(MouseHoverEvent& e)
+{
+	if (!m_current_drag_data)
+	{
+		return;
+	}
+	auto* dragged_widget = m_current_drag_data->btn_ptr.GetObjectPtr();
+	if (!dragged_widget)
+	{
+		return;
+	}
+
+	{
+		auto it = std::find(m_buttons_preview_order.begin(), m_buttons_preview_order.end(), dragged_widget);
+		if (it == m_buttons_preview_order.end())
+		{
+			return;
+		}
+
+		m_buttons_preview_order.erase(it);
+	}
+	
+	auto mouse_pos = e.point();
+
+	float x_val = 0;
+	auto it = m_buttons_preview_order.begin();
+	while (it != m_buttons_preview_order.end())
+	{
+		auto offset = (*it)->GetSize().w;
+		if (x_val + offset > mouse_pos.x)
+		{
+			break;
+		}
+		x_val += offset;
+		it++;
+	}
+	m_buttons_preview_order.insert(it, dragged_widget);
+	ReCalcLayout();
+}
+
+MI::ClickEvent node::TabBar::OnLMBDown(MouseButtonEvent& e)
+{
+	auto click_pos = e.point();
+	for (const auto& btn : m_buttons_preview_order)
+	{
+		SDL_FRect Btn_Rect = btn->WidgetFRect(*btn);
+		if (SDL_PointInRectFloat(&click_pos, &Btn_Rect))
+		{
+			m_current_drag_data = { HandlePtrS<TabButton,Widget>{*btn} };
+			return MI::ClickEvent::CAPTURE_START;
+		}
+	}
+	return MI::ClickEvent::NONE;
+}
+MI::ClickEvent node::TabBar::OnLMBUp(MouseButtonEvent& e)
+{
+	UNUSED_PARAM(e);
+	if (m_current_drag_data)
+	{
+		m_current_drag_data = std::nullopt;
+		return MI::ClickEvent::CAPTURE_END;
+	}
+	return MI::ClickEvent::NONE;
+}
+
 void node::TabBar::AddTab(std::string name)
 {
 	m_buttons.push_back(
 		std::make_unique<TabButton>(m_font, 
 			WidgetSize{static_cast<float>(GetTabWidth()), GetSize().h }, this));
+	m_buttons_preview_order.push_back(m_buttons.back().get());
 	m_buttons.back()->SetText(std::move(name));
 	m_buttons.back()->SetFocusProxy(this);
 	ReCalcLayout();
@@ -77,7 +143,10 @@ void node::TabBar::DeleteTab(int32_t index)
 	{
 		return;
 	}
+	auto* btn_addr = (m_buttons.begin() + index)->get();
 	m_buttons.erase(m_buttons.begin() + index);
+	m_buttons_preview_order.erase(
+		std::find(m_buttons_preview_order.begin(), m_buttons_preview_order.end(),btn_addr));
 	ReCalcLayout();
 }
 
@@ -129,7 +198,7 @@ void node::TabBar::ReCalcLayout()
 {
 	float x_val = 0;
 	float y_val = 0;
-	for (auto&& btn : m_buttons)
+	for (auto&& btn : m_buttons_preview_order)
 	{
 		btn->SetPosition({ x_val, y_val });
 		x_val += GetTabWidth() + 2;
@@ -321,7 +390,7 @@ MI::ClickEvent node::TabButton::OnLMBDown(MouseButtonEvent& e)
 	}
 	
 	m_parent->ButtonClicked(this);
-	return MI::ClickEvent::CLICKED;
+	return MI::ClickEvent::NONE;
 }
 
 MI::ClickEvent node::TabButton::OnLMBUp(MouseButtonEvent& e)

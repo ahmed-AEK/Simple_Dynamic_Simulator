@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BlockClasses/BlockClass.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 namespace node
 {

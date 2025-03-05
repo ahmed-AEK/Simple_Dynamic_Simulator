@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO
+option(BUILD_STATIC "Make a static build" FALSE)
 
 cmake_policy(SET CMP0091 NEW)
 
@@ -19,6 +20,9 @@ else(MSVC)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror -fno-rtti")
 endif (MSVC)
 
+if (UNIX AND BUILD_STATIC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+endif (UNIX AND BUILD_STATIC)
 # if (UNIX AND ${CMAKE_BUILD_TYPE} MATCHES "Debug")
 #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 # endif()
@@ -50,7 +54,7 @@ add_subdirectory(src/toolgui)
 add_subdirectory(src/NodeModels)
 add_subdirectory(src/NetUtils)
 add_subdirectory(src/NetUtilstest)
-add_subdirectory(src/BlockClasses)
+add_subdirectory(src/BuiltinClasses)
 add_subdirectory(src/NodeModelstest)
 add_subdirectory(src/NodeSDLStylers)
 add_subdirectory(src/SceneLoader)
@@ -62,3 +66,4 @@ add_subdirectory(src/NodeEditorApp)
 add_subdirectory(src/optimizer)
 add_subdirectory(src/optimizertest)
 add_subdirectory(src/optimizer_perf)
+add_subdirectory(src/PluginAPI)

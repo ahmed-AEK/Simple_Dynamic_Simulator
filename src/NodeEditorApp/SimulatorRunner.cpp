@@ -10,7 +10,7 @@
 #include "optimizer/DiffEquation.hpp"
 #include "optimizer/Observer.hpp"
 #include "optimizer/NLStatefulEquation.hpp"
-#include "BlockClasses/BlockClassesManager.hpp"
+#include "PluginAPI/BlockClassesManager.hpp"
 #include "optimizer/NLDiffSolver.hpp"
 #include "optimizer/SourceEq.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"

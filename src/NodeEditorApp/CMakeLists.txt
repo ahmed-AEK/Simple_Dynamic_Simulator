@@ -12,6 +12,7 @@ SimulationManager.hpp SimulationManager.cpp
 NewSceneDialog.hpp NewSceneDialog.cpp
 SceneManager.hpp SceneManager.cpp
 AboutDialog.hpp AboutDialog.cpp
+PluginsManager.hpp PluginsManager.cpp
 IdTypes.hpp
 pch.h
 )
@@ -26,7 +27,7 @@ PRIVATE APP_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 target_link_libraries(DynamicSimulator PRIVATE 
-toolgui GraphicsScene BlockPalette BlockClasses SceneLoader)
+toolgui GraphicsScene BlockPalette BuiltinClasses PluginAPI SceneLoader)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
 

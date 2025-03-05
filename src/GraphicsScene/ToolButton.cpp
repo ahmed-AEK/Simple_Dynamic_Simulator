@@ -12,5 +12,6 @@ void node::ToolButton::OnButonClicked()
 	if (auto ptr = m_manager.lock())
 	{
 		ptr->ChangeTool(GetName());
+		ToolTipMouseOut();
 	}
 }

@@ -1,7 +1,7 @@
 #include "RampSourceClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Slope", node::model::BlockPropertyType::FloatNumber, 1.0 }
+	*node::model::BlockProperty::Create("Slope", node::model::BlockPropertyType::FloatNumber, 1.0 )
 };
 static constexpr std::string_view Description = "Output = Slope * t";
 
@@ -39,7 +39,7 @@ bool node::RampSourceClass::ValidateClassProperties(const std::vector<model::Blo
 	{
 		return false;
 	}
-	if (properties[0].type != ClassProperties[0].type)
+	if (properties[0].GetType() != ClassProperties[0].GetType())
 	{
 		return false;
 	}

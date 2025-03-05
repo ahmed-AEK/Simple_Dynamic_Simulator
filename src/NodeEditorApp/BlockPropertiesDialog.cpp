@@ -1,5 +1,5 @@
 #include "BlockPropertiesDialog.hpp"
-#include "BlockClasses/BlockClassesManager.hpp"
+#include "PluginAPI/BlockClassesManager.hpp"
 
 
 #include "NodeSDLStylers/BlockStyler.hpp"
@@ -56,7 +56,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
 			{
-				if (auto prop = model::BlockProperty::from_string(old_prop.type, value))
+				if (auto prop = model::BlockProperty::from_string(old_prop.GetType(), value))
 				{
 					auto new_prop = old_prop;
 					new_prop.prop = std::move(*prop);

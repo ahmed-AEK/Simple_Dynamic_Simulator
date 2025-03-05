@@ -6,7 +6,7 @@
 #include "ScopeDisplayDialog.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Inputs", node::model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
+	*node::model::BlockProperty::Create("Inputs", node::model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1))
 };
 
 static constexpr std::string_view Description = "Displays Input signals, Double Tap to show the Scope Dialog";
@@ -45,7 +45,7 @@ bool node::ScopeDisplayClass::ValidateClassProperties(const std::vector<model::B
 	{
 		return false;
 	}
-	if (properties[0].type != ClassProperties[0].type)
+	if (properties[0].GetType() != ClassProperties[0].GetType())
 	{
 		return false;
 	}

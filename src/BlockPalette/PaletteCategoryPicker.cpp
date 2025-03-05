@@ -29,8 +29,10 @@ void node::PaletteCategoryPicker::SetProvider(std::shared_ptr<PaletteProvider> p
 
 void node::PaletteCategoryPicker::OnNotify(BlockPaletteChange& e)
 {
-	UNUSED_PARAM(e);
-	ResetCategories();
+	if (std::get_if<BlockPaletteChange::CategoryAdded>(&e.e))
+	{
+		ResetCategories();
+	}
 }
 
 MI::ClickEvent node::PaletteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
@@ -94,7 +96,7 @@ void node::PaletteCategoryPicker::ResetCategories()
 
 	for (size_t i = 0; i < labels.size(); i++)
 	{
-		m_categories[i].painter.SetText(labels[i]);
+		m_categories[i].painter.SetText(labels[i].name);
 	}
 }
 

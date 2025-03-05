@@ -1,10 +1,10 @@
 #include "StepSourceClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
-	node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
-	node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
-	node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+	*node::model::BlockProperty::Create("Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 ),
+	*node::model::BlockProperty::Create("Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 ),
+	*node::model::BlockProperty::Create("Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 ),
+	*node::model::BlockProperty::Create("Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 ),
 };
 static constexpr std::string_view Description = "Output = t < Step Time ? Initial Value : Final Value";
 
@@ -44,7 +44,7 @@ bool node::StepSourceClass::ValidateClassProperties(const std::vector<model::Blo
 		{
 			return false;
 		}
-		if (properties[i].type != ClassProperties[i].type)
+		if (properties[i].GetType() != ClassProperties[i].GetType())
 		{
 			return false;
 		}

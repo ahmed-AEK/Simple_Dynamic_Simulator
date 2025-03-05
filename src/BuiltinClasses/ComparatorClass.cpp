@@ -1,8 +1,8 @@
 #include "ComparatorClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
-	node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
+	*node::model::BlockProperty::Create("threshold", node::model::BlockPropertyType::FloatNumber, 0.0 ),
+	*node::model::BlockProperty::Create("Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 ),
 };
 
 static constexpr std::string_view Description = "Output = input > threshold ? 1 : 0";
@@ -45,7 +45,7 @@ bool node::ComparatorBlockClass::ValidateClassProperties(const std::vector<model
 		{
 			return false;
 		}
-		if (properties[i].type != ClassProperties[i].type)
+		if (properties[i].GetType() != ClassProperties[i].GetType())
 		{
 			return false;
 		}

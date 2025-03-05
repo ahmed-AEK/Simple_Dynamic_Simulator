@@ -157,6 +157,13 @@ namespace node
         SDL_FPoint GetPosition() const { return m_position; }
         WidgetSize GetSize() const { return m_size; }
 
+        static SDL_FRect WidgetFRect(node::Widget& widget)
+        {
+            auto pos = widget.GetPosition();
+            auto size = widget.GetSize();
+            return SDL_FRect{pos.x, pos.y, size.w, size.h };
+        }
+
         static SDL_Rect WidgetRect(node::Widget& widget)
         {
             auto pos = widget.GetPosition();

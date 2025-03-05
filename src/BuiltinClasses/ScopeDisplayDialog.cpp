@@ -255,6 +255,7 @@ node::ScopeDisplayToolButton::ScopeDisplayToolButton(const WidgetSize& size, Too
 void node::ScopeDisplayToolButton::OnButonClicked()
 {
 	m_manager.ChangeTool(GetName());
+	ToolTipMouseOut();
 }
 
 node::ScopeDiplayDialog::ScopeDiplayDialog(const WidgetSize& size, Scene* parent)

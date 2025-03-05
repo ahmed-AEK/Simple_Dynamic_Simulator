@@ -23,30 +23,19 @@
 #include "GraphicsScene/tools/GraphicsToolHandler.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
-#include "BlockClasses/BlockClassesManager.hpp"
-#include "BlockClasses/GainBlockClass.hpp"
-#include "BlockClasses/ConstantSourceClass.hpp"
-#include "BlockClasses/ScopeDisplayClass.hpp"
-#include "BlockClasses/RampSourceClass.hpp"
-#include "BlockClasses/IntegrationBlockClass.hpp"
-#include "BlockClasses/DerivativeBlockClass.hpp"
-#include "BlockClasses/AddSimpleClass.hpp"
-#include "BlockClasses/MultiplyBlockClass.hpp"
-#include "BlockClasses/SineSourceClass.hpp"
-#include "BlockClasses/StepSourceClass.hpp"
-#include "BlockClasses/ComparatorClass.hpp"
+#include "PluginAPI/BlockClassesManager.hpp"
 
-#include "BlockClasses/BlockDialog.hpp"
+#include "PluginAPI/BlockDialog.hpp"
 
 #include "BlockPalette/BlockPalette.hpp"
 #include "BlockPalette/PaletteProvider.hpp"
 
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
-#include "NodeSDLStylers/DefaultBlockStyler.hpp"
-#include "NodeSDLStylers/TextBlockStyler.hpp"
+#include "NodeSDLStylers/SVGBlockStyler.hpp"
 #include "NodeSDLStylers/GainBlockStyler.hpp"
 #include "NodeSDLStylers/PropertyPrintStyler.hpp"
-#include "NodeSDLStylers/SVGBlockStyler.hpp"
+
+#include "BuiltinClasses/BuiltinClassesPlugin.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
@@ -54,6 +43,7 @@
 #include "NodeEditorApp/AboutDialog.hpp"
 #include "NodeEditorApp/NewSceneDialog.hpp"
 #include "NodeEditorApp/SceneManager.hpp"
+#include "NodeEditorApp/PluginsManager.hpp"
 
 #include "SceneLoader/SceneLoader.hpp"
 #include <filesystem>
@@ -76,7 +66,7 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
         sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id, 
             model::FunctionalBlockData{ "Ramp" ,
             {
-                model::BlockProperty{ "Slope",model::BlockPropertyType::FloatNumber, 1.0 }
+                *model::BlockProperty::Create( "Slope",model::BlockPropertyType::FloatNumber, 1.0 )
             }
             });
         sceneModel->AddBlock(std::move(model));
@@ -91,7 +81,7 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
         sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id,
             model::FunctionalBlockData{ "Gain" ,
             {
-                model::BlockProperty{ "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 }
+                *model::BlockProperty::Create( "Multiplier",model::BlockPropertyType::FloatNumber, 1.0 )
             }
             });
         sceneModel->AddBlock(std::move(model));
@@ -107,7 +97,7 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
         sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id,
             model::FunctionalBlockData{ "Scope Display" ,
             {
-                model::BlockProperty{ "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) }
+                *model::BlockProperty::Create( "Inputs",model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1) )
             }
             });
         sceneModel->AddBlock(std::move(model));
@@ -553,195 +543,7 @@ void node::MainNodeScene::InitializeSidePanel()
 
 
     auto&& palette_provider = std::make_shared<PaletteProvider>(m_classesManager, m_blockStylerFactory);
-
-    auto SubScene_block = BlockTemplate
-    {
-        "Subsystem",
-        "Subsystem",
-        model::SubsystemBlockData{
-            "Local",
-            SubSceneId{0}
-        },
-        "Default",
-        model::BlockStyleProperties{}
-    };
-    palette_provider->AddElement(std::move(SubScene_block));
-
-    auto input_block = BlockTemplate
-    {
-        "Subsystem",
-        "Input",
-        model::PortBlockData{
-            model::SocketId{0},
-            model::SocketType::input
-        },
-        "Default",
-        model::BlockStyleProperties{}
-    };
-    palette_provider->AddElement(std::move(input_block));
-
-    auto output_block = BlockTemplate
-    {
-        "Subsystem",
-        "Output",
-        model::PortBlockData{
-            model::SocketId{0},
-            model::SocketType::output
-        },
-        "Default",
-        model::BlockStyleProperties{}
-    };
-    palette_provider->AddElement(std::move(output_block));
-
-    auto block_template = BlockTemplate{
-        "Math",
-        "Gain",
-        model::FunctionalBlockData{
-            "Gain",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Multiplier", model::BlockPropertyType::FloatNumber, 1.0}
-            }
-        },
-        "Gain",
-        model::BlockStyleProperties{}
-    };
-    for (int i = 0; i < 1; i++)
-    {
-        palette_provider->AddElement(block_template);
-    }
-
-    auto add_block = BlockTemplate{
-        "Math",
-        "Add",
-        model::FunctionalBlockData{
-            "Add Simple", {}
-        },
-        "Text",
-        model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
-    };
-    palette_provider->AddElement(std::move(add_block));
-
-    auto integrate_block = BlockTemplate{
-        "Math",
-        "Integration",
-        model::FunctionalBlockData{
-            "Integration", {}
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/integral.svg"}}}
-    };
-    palette_provider->AddElement(std::move(integrate_block));
-
-    auto deriv_block = BlockTemplate{
-        "Math",
-        "Derivative",
-        model::FunctionalBlockData{
-            "Derivative", {}
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/derivative.svg"}}}
-    };
-    palette_provider->AddElement(std::move(deriv_block));
-
-    auto constant_block = BlockTemplate{
-        "Sources",
-        "Constant Source",
-        model::FunctionalBlockData{
-            "Constant Source",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Value", model::BlockPropertyType::FloatNumber, 1.0}
-            }
-        },
-        "Property Printer",
-        model::BlockStyleProperties{{{PropertyPrintStyler::printed_key_text, "Value"}}}
-    };
-    palette_provider->AddElement(std::move(constant_block));
-
-    auto ramp_block = BlockTemplate{
-        "Sources",
-        "Ramp",
-        model::FunctionalBlockData{
-            "Ramp",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Slope", model::BlockPropertyType::FloatNumber, 1.0}
-            }
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}}}
-    };
-    palette_provider->AddElement(std::move(ramp_block));
-
-    auto scope_block = BlockTemplate{
-        "Sinks",
-        "Scope",
-        model::FunctionalBlockData {
-            "Scope Display",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1)}
-            },
-        },
-        "SVG Styler",        
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}}}
-    };
-    palette_provider->AddElement(std::move(scope_block));
-
-    auto multiply_block = BlockTemplate{
-        "Math",
-        "Multiply",
-        model::FunctionalBlockData{
-            "Multiply", {}
-        },
-        "Text",
-        model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
-    };
-    palette_provider->AddElement(std::move(multiply_block));
-
-    auto sine_block = BlockTemplate{
-        "Sources",
-        "Sine",
-        model::FunctionalBlockData{
-            "Sine",
-            std::vector<model::BlockProperty>{
-                model::BlockProperty{"Phase_deg", model::BlockPropertyType::FloatNumber, 0.0},
-                model::BlockProperty{"Freq_hz", model::BlockPropertyType::FloatNumber, 1.0},
-            }
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
-    };
-    palette_provider->AddElement(std::move(sine_block));
-
-    auto step_block = BlockTemplate{
-        "Sources",
-        "Step",
-        model::FunctionalBlockData{
-            "Step",
-            std::vector<model::BlockProperty>{
-                node::model::BlockProperty{"Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 },
-                node::model::BlockProperty{"Final Value", node::model::BlockPropertyType::FloatNumber, 1.0 },
-                node::model::BlockProperty{"Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 },
-                node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
-            }
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
-    };
-    palette_provider->AddElement(std::move(step_block));
-
-    auto comparator_block = BlockTemplate{
-        "Math",
-        "Comparator",
-        model::FunctionalBlockData{
-            "Comparator",
-            std::vector<model::BlockProperty>{
-                node::model::BlockProperty{"threshold", node::model::BlockPropertyType::FloatNumber, 0.0 },
-                node::model::BlockProperty{"Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 },
-            }
-        },
-        "SVG Styler",
-        model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
-    };
-    palette_provider->AddElement(std::move(comparator_block));
+    m_palette_provider = palette_provider;
 
     sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{200.0f,200.0f},
         std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
@@ -1221,19 +1023,11 @@ void node::MainNodeScene::OnInit()
     }
 
     m_classesManager = std::make_shared<BlockClassesManager>();
-    m_classesManager->RegisterBlockClass(std::make_shared<GainBlockClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<ConstantSourceClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<ScopeDisplayClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<RampSourceClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<IntegrationBlockClass>());    
-    m_classesManager->RegisterBlockClass(std::make_shared<DerivativeBlockClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<AddSimpleBlockClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<MultiplyBlockClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<SineSourceClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<StepSourceClass>());
-    m_classesManager->RegisterBlockClass(std::make_shared<ComparatorBlockClass>());
 
     InitializeSidePanel();
+
+    m_plugins_manager = std::make_shared<PluginsManager>(m_palette_provider, m_classesManager);
+    m_plugins_manager->AddPlugin(std::make_shared<BuiltinClassesPlugin>());
 
     InitializeTools();
 
@@ -1258,9 +1052,6 @@ node::MainNodeScene::~MainNodeScene() = default;
 // helper type for the visitor #4
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
-// explicit deduction guide (not needed as of C++20)
-template<class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
 
 void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
 {

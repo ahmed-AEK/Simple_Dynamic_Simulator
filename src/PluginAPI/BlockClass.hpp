@@ -2,6 +2,7 @@
 
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
+#include "NodeModels/BlockData.hpp"
 
 #include <any>
 #include <variant>
@@ -31,6 +32,15 @@ enum class BlockType
 };
 
 using BlockFunctor = typename std::variant<opt::DiffEquation, opt::NLEquation, opt::NLStatefulEquation, opt::Observer, opt::SourceEq>;
+
+struct BlockTemplate
+{
+	std::string category;
+	std::string template_name;
+	model::BlockData data;
+	std::string styler_name;
+	model::BlockStyleProperties style_properties;
+};
 
 class BlockClass
 {

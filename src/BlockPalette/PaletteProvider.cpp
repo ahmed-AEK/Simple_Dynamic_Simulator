@@ -9,55 +9,51 @@ node::PaletteProvider::PaletteProvider(std::shared_ptr<BlockClassesManager> mana
 	assert(m_blockStyleFactory);
 }
 
-void node::PaletteProvider::AddElement(const BlockTemplate& temp)
+std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::AddElement(const BlockTemplate& temp)
 {
 	assert(m_classesManager);
 	assert(temp.category.size());
 	if (temp.data.GetFunctionalData())
 	{
-		AddFunctionalElemnt(temp);
+		return AddFunctionalElemnt(temp);
 	}
 	else if (temp.data.GetSubsystemData())
 	{
-		AddSubsystemElement(temp);
+		return AddSubsystemElement(temp);
 	}
 	else if (temp.data.GetPortData())
 	{
-		AddPortElement(temp);
+		return AddPortElement(temp);
 	}
 	else
 	{
 		SDL_Log("unknown block template !");
+		return std::nullopt;
 	}
 }
 
-void node::PaletteProvider::AddElement(const std::string& category, std::unique_ptr<PaletteElement> element)
+std::span<const node::PaletteProvider::ElementMapping> node::PaletteProvider::GetCategoryElementsMap(const std::string& category) const
 {
-	m_elements[category].push_back(std::move(element));
-}
+	auto cat_it = std::find_if(m_categories.begin(), m_categories.end(), [&](const CategoryMapping& e) { return category == e.name; });
+	if (cat_it == m_categories.end())
+	{
+		return {};
+	}
 
-
-const std::vector<std::unique_ptr<node::PaletteElement>>* node::PaletteProvider::GetCategoryElements(const std::string& category) const
-{
-	auto it = m_elements.find(category);
+	auto it = m_elements.find(cat_it->id);
 	if (it != m_elements.end())
 	{
-		return &(it->second);
+		return it->second;
 	}
-	return nullptr;
+	return {};
 }
 
-std::vector<std::string_view> node::PaletteProvider::GetCategories() const
+std::span<const node::PaletteProvider::CategoryMapping> node::PaletteProvider::GetCategories() const
 {
-	auto result = std::vector<std::string_view>();
-	for (auto&& [category, vec] : m_elements)
-	{
-		result.push_back(category);
-	}
-	return result;
+	return m_categories;
 }
 
-void node::PaletteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
+std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetFunctionalData();
 	assert(block_data_ptr);
@@ -65,13 +61,13 @@ void node::PaletteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	assert(block_class);
 	if (!block_class)
 	{
-		return;
+		return std::nullopt;
 	}
 
 	assert(block_class->ValidateClassProperties(block_data_ptr->properties));
 	if (!block_class->ValidateClassProperties(block_data_ptr->properties))
 	{
-		return;
+		return std::nullopt;
 	}
 
 	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);
@@ -91,19 +87,25 @@ void node::PaletteProvider::AddFunctionalElemnt(const BlockTemplate& temp)
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
-	m_elements[temp.category].push_back(
-		std::make_unique<PaletteElement>(PaletteElement{
+	auto it = EnsureCategory(temp.category);
+
+	auto elem_id = ElementId{ m_next_elem_id };
+	it->second.push_back(
+		{ elem_id, PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},
 			std::move(styler),
 			std::make_shared<TextPainter>(nullptr),
 			}
-			)
+		}
 	);
+	m_next_elem_id++;
+	Notify(BlockPaletteChange{ BlockPaletteChange::ElementAdded{temp.category, it->second.back().element} });
+	return ElementUniqueId{ it->first ,elem_id };
 }
 
-void node::PaletteProvider::AddSubsystemElement(const BlockTemplate& temp)
+std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::AddSubsystemElement(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetSubsystemData();
 	assert(block_data_ptr);
@@ -118,19 +120,25 @@ void node::PaletteProvider::AddSubsystemElement(const BlockTemplate& temp)
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
-	m_elements[temp.category].push_back(
-		std::make_unique<PaletteElement>(PaletteElement{
+	auto it = EnsureCategory(temp.category);
+
+	auto elem_id = ElementId{ m_next_elem_id };
+	it->second.push_back(
+		{ elem_id, PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},
 			std::move(styler),
 			std::make_shared<TextPainter>(nullptr),
 			}
-			)
+		}
 	);
+	m_next_elem_id++;
+	Notify(BlockPaletteChange{ BlockPaletteChange::ElementAdded{temp.category, it->second.back().element} });
+	return ElementUniqueId{ it->first, elem_id };
 }
 
-void node::PaletteProvider::AddPortElement(const BlockTemplate& temp)
+std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::AddPortElement(const BlockTemplate& temp)
 {
 	auto* block_data_ptr = temp.data.GetPortData();
 	assert(block_data_ptr);
@@ -155,14 +163,40 @@ void node::PaletteProvider::AddPortElement(const BlockTemplate& temp)
 	assert(styler);
 	styler->PositionSockets(block.GetSockets(), block.GetBounds(), block.GetOrienation());
 
-	m_elements[temp.category].push_back(
-		std::make_unique<PaletteElement>(PaletteElement{
+	auto it = EnsureCategory(temp.category);
+
+	auto elem_id = ElementId{ m_next_elem_id };
+	it->second.push_back(
+		{ elem_id, PaletteElement{
 			temp.template_name,
 			std::move(block),
 			model::BlockData{*block_data_ptr},
 			std::move(styler),
 			std::make_shared<TextPainter>(nullptr),
 			}
-			)
+		}
 	);
+	m_next_elem_id++;
+	Notify(BlockPaletteChange{ BlockPaletteChange::ElementAdded{temp.category, it->second.back().element} });
+	return ElementUniqueId{ it->first ,elem_id };
+}
+
+node::PaletteProvider::palette_storage::iterator node::PaletteProvider::EnsureCategory(const std::string& str)
+{
+	auto it = std::find_if(m_categories.begin(), m_categories.end(), [&](const CategoryMapping& e) { return str == e.name; });
+	if (it == m_categories.end())
+	{
+		auto cat_id = CategoryId{ m_next_cat_id };
+		m_categories.push_back(CategoryMapping{ cat_id, str });
+		m_next_cat_id++;
+		auto res = m_elements.emplace(cat_id, palette_storage::mapped_type{});
+		Notify(BlockPaletteChange{ BlockPaletteChange::CategoryAdded{ str } });
+		return res.first;
+	}
+	else
+	{
+		auto it2 = m_elements.find(it->id);
+		assert(it2 != m_elements.end());
+		return it2;
+	}
 }

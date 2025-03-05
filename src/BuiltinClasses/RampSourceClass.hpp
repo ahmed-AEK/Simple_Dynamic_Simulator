@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BlockClasses/BlockClass.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 namespace node
 {
 
-class ConstantSourceClass : public BlockClass
+class RampSourceClass : public BlockClass
 {
 public:
-	ConstantSourceClass();
+	RampSourceClass();
 
 	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>

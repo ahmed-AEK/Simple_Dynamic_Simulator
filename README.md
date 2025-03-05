@@ -13,7 +13,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - moving and connecting nodes
 - Algebraic Differential Solver
 - Display simulation result on Scope block
-- Block pallete to add blocks
+- Block palette to add blocks
 - customized block shapes
 - persistent storing and loading blocks (experimental)
 - undo/redo
@@ -30,6 +30,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - SDL3, SDL3-TTF, SDL3-image
 - google-test
 - lunasvg
+- SQLiteCpp
 
 ### testing
 
@@ -46,7 +47,7 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 ### build instructions
 
-until official port is provided from vcpkg, you will need a custom sdl3-ttf port at `VCPKG_OVERLAY_PORTS` and have vcpkg installed and VCPKG_ROOT pointing at its root.
+have vcpkg installed and VCPKG_ROOT ENV var setup correctly.
 
 you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
 

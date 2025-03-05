@@ -58,13 +58,25 @@ public:
 	static constexpr auto npos = StackedWidget::npos;
 protected:
 	void OnDraw(SDL::Renderer& renderer) override;
+	void OnMouseMove(MouseHoverEvent& e) override;
+	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
+	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 
 private:
 	void ReCalcLayout();
+
+
+	struct TabButtonDragData
+	{
+		HandlePtrS<TabButton, Widget> btn_ptr;
+	};
+
 	TTF_Font* m_font;
 	TabbedView* m_parent;
 	std::vector<std::unique_ptr<TabButton>> m_buttons;
+	std::vector<TabButton*> m_buttons_preview_order;
 	int32_t m_active_tab = npos;
+	std::optional<TabButtonDragData> m_current_drag_data;
 	static constexpr int tab_width = 115;
 };
 

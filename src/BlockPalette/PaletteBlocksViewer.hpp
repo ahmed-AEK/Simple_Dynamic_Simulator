@@ -24,7 +24,9 @@ public:
 	void SetCategory(std::string category);
 	const std::string& GetCategory() const { return m_current_category; }
 	void SetProvider(std::shared_ptr<PaletteProvider> provider);
-
+	
+	void UpdateElements();
+		
 	static constexpr int ElementHeight = 100;
 	static constexpr int ElementWidth = 100;
 protected:
@@ -43,7 +45,7 @@ private:
 
 }
 
-class PaletteBlocksViewer : public Widget, public SinglePublisher<detail::BlockViewerBackClicked>
+class PaletteBlocksViewer : public Widget, public SinglePublisher<detail::BlockViewerBackClicked>, public SingleObserver<BlockPaletteChange>
 {
 public:
 	PaletteBlocksViewer(const WidgetSize& size,
@@ -54,6 +56,7 @@ public:
 	void SetProvider(std::shared_ptr<PaletteProvider> provider);
 
 	void SetCategory(std::string category);
+	void OnNotify(BlockPaletteChange& e) override;
 
 	static constexpr int ElementHeight = palette_viewer::BlocksElementsViewer::ElementHeight;
 	static constexpr int ElementWidth = palette_viewer::BlocksElementsViewer::ElementWidth;

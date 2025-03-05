@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BlockClasses/BlockDialog.hpp"
+#include "PluginAPI/BlockDialog.hpp"
 #include <array>
 
 namespace node

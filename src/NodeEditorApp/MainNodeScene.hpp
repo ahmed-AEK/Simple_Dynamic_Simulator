@@ -18,6 +18,8 @@ class ToolsManager;
 class TabbedView;
 class SceneManager;
 class SceneGrid;
+class PaletteProvider;
+class PluginsManager;
 
 class NodeSceneEventReceiver
 {
@@ -96,6 +98,8 @@ private:
 
     std::shared_ptr<ToolsManager> m_toolsManager;
     std::shared_ptr<BlockClassesManager> m_classesManager;
+    std::shared_ptr<PaletteProvider> m_palette_provider;
+    std::shared_ptr<PluginsManager> m_plugins_manager;
     std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
     std::vector<std::unique_ptr<NodeSceneEventReceiver>> m_event_receivers;
     std::unique_ptr<TabChangeNotifier> m_tab_change_notifier;

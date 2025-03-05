@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BlockClasses/BlockClass.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 namespace node
 {
 
-class IntegrationBlockClass : public BlockClass
+class ScopeDisplayClass : public BlockClass
 {
 public:
-	IntegrationBlockClass();
+	ScopeDisplayClass();
 	
 	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>
@@ -17,6 +17,10 @@ public:
 	bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties) override;
 	BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) override;
 	GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) override;
+
+	std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, 
+		model::FunctionalBlockData& data, std::any& simulation_data) override;
+	bool HasBlockDialog() const override;
 };
 
 }

@@ -3,6 +3,8 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
 
+#include "PluginAPI/BlockClass.hpp"
+
 #include "optimizer/NLEquation.hpp"
 #include "optimizer/DiffEquation.hpp"
 #include "optimizer/NLStatefulEquation.hpp"

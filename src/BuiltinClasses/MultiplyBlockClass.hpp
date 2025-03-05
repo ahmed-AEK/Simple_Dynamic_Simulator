@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BlockClasses/BlockClass.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 namespace node
 {
 
-class DerivativeBlockClass : public BlockClass
+class MultiplyBlockClass : public BlockClass
 {
 public:
-	DerivativeBlockClass();
+	MultiplyBlockClass();
 	
 	const std::vector<model::BlockProperty>& GetDefaultClassProperties() override;
 	std::vector<model::BlockSocketModel::SocketType>

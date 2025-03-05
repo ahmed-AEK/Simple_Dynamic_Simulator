@@ -1,7 +1,7 @@
 #include "GainBlockClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Multiplier", node::model::BlockPropertyType::FloatNumber, 1}
+	*node::model::BlockProperty::Create("Multiplier", node::model::BlockPropertyType::FloatNumber, 1)
 };
 
 static constexpr std::string_view Description = "Sets its output to its input multiplied by \"Multiplier\"";
@@ -38,7 +38,7 @@ bool node::GainBlockClass::ValidateClassProperties(const std::vector<model::Bloc
 	{
 		return false;
 	}
-	if (properties[0].type != ClassProperties[0].type)
+	if (properties[0].GetType() != ClassProperties[0].GetType())
 	{
 		return false;
 	}

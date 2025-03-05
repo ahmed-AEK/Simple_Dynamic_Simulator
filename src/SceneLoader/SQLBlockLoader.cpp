@@ -148,7 +148,7 @@ bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block
 	query.bind(1, property_id);
 	query.bind(2, block_id.value);
 	query.bind(3, property.name.c_str());
-	query.bind(4, static_cast<int>(property.type));
+	query.bind(4, static_cast<int>(property.GetType()));
 	auto property_str = property.to_string();
 	query.bind(5, property_str);
 	query.exec();
@@ -286,7 +286,7 @@ bool node::loader::SQLBlockLoader::AddFunctionalBlockData(const node::model::Blo
 		query.bind(1, property_id);
 		query.bind(2, block_id.value);
 		query.bind(3, property.name.c_str());
-		query.bind(4, static_cast<int>(property.type));
+		query.bind(4, static_cast<int>(property.GetType()));
 		auto property_str = property.to_string();
 		query.bind(5, property_str);
 		query.exec();
@@ -359,7 +359,7 @@ std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetFunctiona
 			{
 				return std::nullopt;
 			}
-			data.properties.push_back(model::BlockProperty{ std::move(name), type, std::move(*prop) });
+			data.properties.push_back(model::BlockProperty{ std::move(name), std::move(*prop) });
 		}
 	}
 	return node::model::BlockData{ data };

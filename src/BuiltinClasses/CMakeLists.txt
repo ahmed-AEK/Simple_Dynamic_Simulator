@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-add_library(BlockClasses 
-BlockClassesManager.cpp BlockClassesManager.hpp
-BlockClass.cpp BlockClass.hpp
+add_library(BuiltinClasses 
 AddBlockClass.cpp AddBlockClass.hpp
 GainBlockClass.cpp GainBlockClass.hpp
 ConstantSourceClass.cpp ConstantSourceClass.hpp
@@ -14,14 +12,14 @@ DerivativeBlockClass.cpp DerivativeBlockClass.hpp
 AddSimpleClass.cpp AddSimpleClass.hpp
 MultiplyBlockClass.cpp MultiplyBlockClass.hpp
 SineSourceClass.hpp SineSourceClass.cpp
-BlockDialog.hpp BlockDialog.cpp
 StepSourceClass.hpp StepSourceClass.cpp
 ComparatorClass.hpp ComparatorClass.cpp
+BuiltinClassesPlugin.hpp BuiltinClassesPlugin.cpp
 pch.h
 )
 
-target_include_directories(BlockClasses PRIVATE ".")
-target_include_directories(BlockClasses PUBLIC "..")
-target_link_libraries(BlockClasses PUBLIC NodeModels NLOptimizer toolgui)
+target_include_directories(BuiltinClasses PRIVATE ".")
+target_include_directories(BuiltinClasses PUBLIC "..")
+target_link_libraries(BuiltinClasses PUBLIC NodeModels NLOptimizer toolgui PluginAPI)
 
-target_precompile_headers(BlockClasses PRIVATE pch.h)
+target_precompile_headers(BuiltinClasses PRIVATE pch.h)

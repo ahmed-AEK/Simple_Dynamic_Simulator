@@ -82,7 +82,7 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 	std::string class_name{ "test1" };
 	model::FunctionalBlockData block_data;
 	block_data.block_class = class_name;
-	block_data.properties.push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::FloatNumber, 1.0 });
+	block_data.properties.push_back(*BlockProperty::Create( std::string{property_name}, BlockPropertyType::FloatNumber, 1.0 ));
 	scene.GetFunctionalBlocksManager().SetDataForId(block_id, std::move(block_data));
 	
 	SQLSceneLoader loader(":memory:");
@@ -105,7 +105,7 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties)
 	auto&& loaded_properties = loaded_block_data->properties;
 	ASSERT_EQ(loaded_properties.size(), 1);
 	EXPECT_EQ(loaded_properties[0].name, property_name);
-	EXPECT_EQ(loaded_properties[0].type, BlockPropertyType::FloatNumber);
+	EXPECT_EQ(loaded_properties[0].GetType(), BlockPropertyType::FloatNumber);
 	ASSERT_TRUE(std::holds_alternative<double>(loaded_properties[0].prop));
 	EXPECT_EQ(std::get<double>(loaded_properties[0].prop), 1.0);
 }
@@ -126,8 +126,8 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 
 	model::FunctionalBlockData block_data;
 	block_data.block_class = class_name;
-	block_data.properties.push_back(BlockProperty{ std::string{property_name}, BlockPropertyType::Boolean, true });
-	block_data.properties.push_back(BlockProperty{ std::string{property2_name}, BlockPropertyType::Integer, static_cast<int64_t>(2) });
+	block_data.properties.push_back(*BlockProperty::Create( std::string{property_name}, BlockPropertyType::Boolean, true ));
+	block_data.properties.push_back(*BlockProperty::Create( std::string{property2_name}, BlockPropertyType::Integer, static_cast<int64_t>(2) ));
 	scene.GetFunctionalBlocksManager().SetDataForId(block_id, std::move(block_data));
 
 	SQLSceneLoader loader(":memory:");
@@ -152,12 +152,12 @@ TEST(testBlockLoader, testSaveLoadBlockClassAndProperties2)
 	ASSERT_EQ(loaded_properties.size(), 2);
 
 	EXPECT_EQ(loaded_properties[0].name, property_name);
-	EXPECT_EQ(loaded_properties[0].type, BlockPropertyType::Boolean);
+	EXPECT_EQ(loaded_properties[0].GetType(), BlockPropertyType::Boolean);
 	ASSERT_TRUE(std::holds_alternative<bool>(loaded_properties[0].prop));
 	EXPECT_EQ(std::get<bool>(loaded_properties[0].prop), true);
 
 	EXPECT_EQ(loaded_properties[1].name, property2_name);
-	EXPECT_EQ(loaded_properties[1].type, BlockPropertyType::Integer);
+	EXPECT_EQ(loaded_properties[1].GetType(), BlockPropertyType::Integer);
 	ASSERT_TRUE(std::holds_alternative<int64_t>(loaded_properties[1].prop));
 	EXPECT_EQ(std::get<int64_t>(loaded_properties[1].prop), 2);
 }

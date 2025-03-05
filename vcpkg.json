@@ -14,6 +14,10 @@
     },
     "sqlitecpp",
     {
+      "name": "freetype",
+      "default-features": false
+    },
+    {
       "name": "sdl3-ttf",
       "features": [
         "harfbuzz"

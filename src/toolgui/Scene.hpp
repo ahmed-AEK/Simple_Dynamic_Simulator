@@ -69,6 +69,7 @@ namespace node
         Application* GetApp() const override;
 
         void SetFocus(Widget* widget);
+        void SetHover(Widget* widget, MouseHoverEvent& e);
         void SetFocusLater(Widget* widget);
 
         SDL_Color GetBGColor() const { return m_bg_color; }

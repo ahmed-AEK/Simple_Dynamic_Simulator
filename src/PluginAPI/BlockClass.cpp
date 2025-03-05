@@ -1,5 +1,5 @@
 #include "BlockClass.hpp"
-#include "BlockClasses/BlockDialog.hpp"
+#include "PluginAPI/BlockDialog.hpp"
 
 node::BlockClass::BlockClass(std::string name)
 	:m_name{std::move(name)}

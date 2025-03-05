@@ -216,11 +216,11 @@ void node::ToolBarButton::SetToolBar(ToolBar* toolbar)
 	SetParent(toolbar);
 }
 
-void node::ToolBarButton::OnMouseOut(MouseHoverEvent& e)
+void node::ToolBarButton::OnMouseOut(MouseHoverEvent&)
 {
 	b_hovered = false;
 	b_held_down = false;
-	ToolTipMouseOut(e);
+	ToolTipMouseOut();
 }
 
 void node::ToolBarButton::OnMouseIn(MouseHoverEvent& e)
@@ -267,5 +267,6 @@ void node::ToolBarCommandButton::OnButonClicked()
 	if (m_isActive())
 	{
 		m_action();
+		ToolTipMouseOut();
 	}
 }

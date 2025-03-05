@@ -1,7 +1,7 @@
 #include "ConstantSourceClass.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	node::model::BlockProperty{"Value", node::model::BlockPropertyType::FloatNumber, 1}
+	*node::model::BlockProperty::Create("Value", node::model::BlockPropertyType::FloatNumber, 1)
 };
 static constexpr std::string_view Description = "Output = Value";
 
@@ -39,7 +39,7 @@ bool node::ConstantSourceClass::ValidateClassProperties(const std::vector<model:
 	{
 		return false;
 	}
-	if (properties[0].type != ClassProperties[0].type)
+	if (properties[0].GetType() != ClassProperties[0].GetType())
 	{
 		return false;
 	}

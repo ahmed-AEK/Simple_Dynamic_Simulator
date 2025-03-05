@@ -15,7 +15,7 @@
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/Release_win",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL"
       }
@@ -49,6 +49,17 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "vcpkg-linux-rel-static",
+      "inherits": "vcpkg",
+      "binaryDir": "${sourceDir}/build/Release_linux_static",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "BUILD_STATIC": true,
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
       }
     }
   ]

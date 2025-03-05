@@ -178,51 +178,57 @@ void node::Scene::SetFocus(Widget* widget)
     }
 }
 
+void node::Scene::SetHover(Widget* widget, MouseHoverEvent& e)
+{
+    node::Widget* current_hover = widget;
+    node::Widget* old_hover = nullptr;
+    if (m_current_mouse_hover.isAlive())
+    {
+        old_hover = m_current_mouse_hover.GetObjectPtr();
+    }
+    if (current_hover == old_hover)
+    {
+        return;
+    }
+
+    if (old_hover)
+    {
+        e.local_position = e.globalPosition() - old_hover->GetGlobalPosition();
+        old_hover->MouseOut(e);
+        if (m_dragObject && old_hover->IsDropTarget())
+        {
+             old_hover->DropExit(*m_dragObject);
+        }
+    }
+
+    if (current_hover)
+    {
+        m_current_mouse_hover = current_hover->GetMIHandlePtr();
+    }
+    else
+    {
+        m_current_mouse_hover = node::HandlePtr<node::Widget>{};
+    }
+
+    if (current_hover)
+    {
+        e.local_position = e.globalPosition() - current_hover->GetGlobalPosition();
+        current_hover->MouseIn(e);
+        if (m_dragObject && current_hover->IsDropTarget())
+        {
+            current_hover->DropEnter(*m_dragObject);
+        }
+    }
+    
+}
+
 void node::Scene::OnMouseMove(MouseHoverEvent& e)
 {
     SDL_FPoint p{ e.globalPosition() };
     if (!b_mouseCaptured)
     {
         node::Widget* current_hover = this->OnGetInteractableAtPoint(p);
-        node::Widget* old_hover = nullptr;
-        if (m_current_mouse_hover.isAlive())
-        {
-            old_hover = m_current_mouse_hover.GetObjectPtr();
-        }
-        if (current_hover != old_hover)
-        {
-            if (old_hover)
-            {
-                auto global_widget_pos = old_hover->GetGlobalPosition();
-                e.local_position = e.globalPosition() - global_widget_pos;
-                old_hover->MouseOut(e);
-                if (m_dragObject && old_hover->IsDropTarget())
-                {
-                    current_hover->DropExit(*m_dragObject);
-                }
-            }
-
-            if (current_hover)
-            {
-                m_current_mouse_hover = current_hover->GetMIHandlePtr();
-            }
-            else
-            {
-                m_current_mouse_hover = node::HandlePtr<node::Widget>{};
-            }
-
-            if (current_hover)
-            {
-                auto global_widget_pos = current_hover->GetGlobalPosition();
-                e.local_position = e.globalPosition() - global_widget_pos;
-                current_hover->MouseIn(e);
-                if (m_dragObject && current_hover->IsDropTarget())
-                {
-                    current_hover->DropEnter(*m_dragObject);
-                }
-            }
-        }
-        
+        SetHover(current_hover, e);
     }
     if (m_current_mouse_hover.isAlive())
     {
@@ -447,11 +453,11 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
     {
         Widget* current_widget = current_hover;
         bool processed = false;
-        while (current_widget && !processed)
+        while (current_widget && !processed && current_widget != this)
         {
             const auto& global_widget_pos = current_widget->GetGlobalPosition();
             e.local_position = e.globalPosition() - global_widget_pos;
-            auto result = current_hover->LMBDown(e);
+            auto result = current_widget->LMBDown(e);
             switch (result)
             {
                 using enum MI::ClickEvent;
@@ -459,20 +465,26 @@ MI::ClickEvent node::Scene::OnLMBDown(MouseButtonEvent& e)
             {
                 this->b_mouseCaptured = true;
                 processed = true;
-                SetFocus(current_hover);
+                MouseHoverEvent h{ e.globalPosition() };
+                SetHover(current_widget,h);
+                SetFocus(current_widget);
                 break;
             }
             case CAPTURE_END:
             {
                 this->b_mouseCaptured = false;
                 processed = true;
-                SetFocus(current_hover);
+                MouseHoverEvent h{ e.globalPosition() };
+                SetHover(current_widget, h);
+                SetFocus(current_widget);
                 break;
             }
             case CLICKED:
             {
                 processed = true;
-                SetFocus(current_hover);
+                MouseHoverEvent h{ e.globalPosition() };
+                SetHover(current_widget, h);
+                SetFocus(current_widget);
                 break;
             }
             case NONE:

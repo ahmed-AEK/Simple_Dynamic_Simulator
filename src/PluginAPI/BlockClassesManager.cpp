@@ -8,22 +8,23 @@ bool node::BlockClassesManager::RegisterBlockClass(const std::shared_ptr<BlockCl
 		return false;
 	}
 	const auto& name = class_ptr->GetName();
-	auto it = m_classes.lower_bound(name);
+	auto it = m_classes.find(name);
 	if (it != m_classes.end() && it->first == name)
 	{
 		assert(false);
 		return false;
 	}
-	m_classes.emplace_hint(it, name, class_ptr);
+	m_classes.emplace(name, class_ptr);
 	return true;
 }
 
 std::shared_ptr<node::BlockClass> node::BlockClassesManager::GetBlockClassByName(const std::string& name)
 {
-	auto it = m_classes.find(name);
-	if (it != m_classes.end())
+	auto it_class = m_classes.find(name);
+	if (it_class == m_classes.end())
 	{
-		return it->second;
+		assert(false);
+		return nullptr;
 	}
-	return nullptr;
+	return it_class->second;
 }

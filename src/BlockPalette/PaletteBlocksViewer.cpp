@@ -25,6 +25,8 @@ node::PaletteBlocksViewer::PaletteBlocksViewer(const WidgetSize& size,
 	m_scrollview.SetWidget(std::move(elements_viewer));
 		
 	m_back_btn.SetPosition({20, 5});
+	m_paletteProvider->Attach(*this);
+
 	assert(font);
 }
 
@@ -49,6 +51,17 @@ void node::PaletteBlocksViewer::SetCategory(std::string category)
 	m_current_category = std::move(category); 
 	m_title_painter.SetText(m_current_category);
 	m_scrollview.RequestPosition(0);
+}
+
+void node::PaletteBlocksViewer::OnNotify(BlockPaletteChange& e)
+{
+	if (auto ptr = std::get_if<BlockPaletteChange::ElementAdded>(&e.e))
+	{
+		if (m_current_category == ptr->category)
+		{
+			m_elements_viewer->UpdateElements();
+		}
+	}
 }
 
 void node::PaletteBlocksViewer::OnSetSize(const WidgetSize& size)
@@ -121,12 +134,17 @@ node::palette_viewer::BlocksElementsViewer::BlocksElementsViewer(const WidgetSiz
 void node::palette_viewer::BlocksElementsViewer::SetCategory(std::string category)
 {
 	m_current_category = std::move(category);
-	ResizeToElementsHeight();
+	UpdateElements();
 }
 
 void node::palette_viewer::BlocksElementsViewer::SetProvider(std::shared_ptr<PaletteProvider> provider)
 {
 	m_paletteProvider = std::move(provider);
+	UpdateElements();
+}
+
+void node::palette_viewer::BlocksElementsViewer::UpdateElements()
+{
 	ResizeToElementsHeight();
 }
 
@@ -146,26 +164,26 @@ MI::ClickEvent node::palette_viewer::BlocksElementsViewer::OnLMBDown(MouseButton
 	float selected_y = current_mouse_point.y - PaletteData::TopPadding;
 	int selected_item_index = static_cast<int>(selected_y / PaletteData::ElementTotalHeight);
 
-	auto&& palette_elements = *m_paletteProvider->GetCategoryElements(m_current_category);
+	auto&& palette_elements = m_paletteProvider->GetCategoryElements(m_current_category);
 	assert(selected_item_index >= 0);
 	assert(static_cast<size_t>(selected_item_index) < palette_elements.size());
 
 	auto&& selected_element = palette_elements[selected_item_index];
-	auto block_data_ref = model::BlockDataCRef{ selected_element->block, {} };
-	if (auto functional_data = selected_element->data.GetFunctionalData())
+	auto block_data_ref = model::BlockDataCRef{ selected_element.block, {} };
+	if (auto functional_data = selected_element.data.GetFunctionalData())
 	{
-		block_data_ref = model::BlockDataCRef{ selected_element->block,
+		block_data_ref = model::BlockDataCRef{ selected_element.block,
 			model::BlockDataCRef::FunctionalRef{*functional_data}
 		};
 	}
 
 	GetApp()->GetScene()->StartDragObject(
-		DragDropObject{ selected_element->block_template,
-			model::BlockModel{selected_element->block},
+		DragDropObject{ selected_element.block_template,
+			model::BlockModel{selected_element.block},
 			std::shared_ptr<BlockStyler>{
-				m_paletteProvider->GetStylerFactory().GetStyler(selected_element->block.GetStyler(), block_data_ref)
+				m_paletteProvider->GetStylerFactory().GetStyler(selected_element.block.GetStyler(), block_data_ref)
 			},
-			model::BlockData{selected_element->data}
+			model::BlockData{selected_element.data}
 		});
 
 	return MI::ClickEvent::CLICKED;
@@ -180,9 +198,8 @@ void node::palette_viewer::BlocksElementsViewer::OnDraw(SDL::Renderer& renderer)
 
 	auto rect = GetSize().ToRect();
 
-	auto elements_ptr = m_paletteProvider->GetCategoryElements(m_current_category);
-	assert(elements_ptr);
-	auto&& elements = *elements_ptr;
+	auto elements = m_paletteProvider->GetCategoryElements(m_current_category);
+	assert(elements.size());
 	int possible_elements_on_screen = static_cast<int>(rect.h / PaletteData::ElementTotalHeight + 2);
 	int start_element = 0;
 	int max_element = std::min(possible_elements_on_screen + start_element,
@@ -199,7 +216,7 @@ void node::palette_viewer::BlocksElementsViewer::OnDraw(SDL::Renderer& renderer)
 		{
 			continue;
 		}
-		DrawElement(renderer, *elements[i], element_rect);
+		DrawElement(renderer, elements[i], element_rect);
 	}
 }
 
@@ -209,9 +226,8 @@ void node::palette_viewer::BlocksElementsViewer::ResizeToElementsHeight()
 	{
 		return;
 	}
-	auto elements_ptr = m_paletteProvider->GetCategoryElements(m_current_category);
-	assert(elements_ptr);
-	auto&& elements = *elements_ptr;
+	auto elements = m_paletteProvider->GetCategoryElements(m_current_category);
+	assert(elements.size());
 	auto next_height = PaletteData::ElementTotalHeight * elements.size() + PaletteData::TopPadding;
 	SetSize({ GetSize().w, static_cast<float>(next_height)});
 }
