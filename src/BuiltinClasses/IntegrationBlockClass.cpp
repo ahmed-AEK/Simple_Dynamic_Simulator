@@ -4,60 +4,33 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 };
 
 static constexpr std::string_view Description = "output = integration(input)";
+static constexpr node::model::BlockSocketModel::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::input,
+		node::model::BlockSocketModel::SocketType::output
+};
 
 
 node::IntegrationBlockClass::IntegrationBlockClass()
-	:BlockClass("Integration")
+	:BuiltinBasicClass{ "Integration", ClassProperties, class_sockets, Description, BlockType::Stateless }
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::IntegrationBlockClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType>
-node::IntegrationBlockClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::input, 
-		node::model::BlockSocketModel::SocketType::output 
-	};
-}
-
-bool node::IntegrationBlockClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != 0)
-	{
-		return false;
-	}
-	return true;
-}
-
-const std::string_view& node::IntegrationBlockClass::GetDescription() const
-{
-	return Description;
-}
-
-node::BlockType node::IntegrationBlockClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Differential;
-}
-
-node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
-	return opt::DiffEquation{
+	struct SimpleIntegrator : public opt::IDiffEquation
+	{
+		void Apply(std::span<const double> input, std::span<double> output, const double t) override
+		{
+			UNUSED_PARAM(t);
+			output[0] = input[0];
+		}
+	};
+	return opt::DiffEquationWrapper{
 		{0},
 		{1},
-		[](std::span<const double> in, std::span<double> out, const double)
-		{
-			out[0] = in[0];
-		}
+		opt::make_DiffEqn<SimpleIntegrator>()
 	};
 }
 

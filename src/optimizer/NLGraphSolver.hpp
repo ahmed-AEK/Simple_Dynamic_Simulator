@@ -21,11 +21,11 @@ public:
 	void Initialize();
 	void Solve(FlatMap& state, const double& time);
 	void UpdateState(FlatMap& state, const double& time);
-	void AddEquation(NLEquation eq);
-	void AddStatefulEquation(NLStatefulEquation eq);
+	void AddEquation(NLEquationWrapper eq);
+	void AddStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEquation(BufferEquation eq);
 	
-	std::vector<NLStatefulEquation>& GetStatefulEquations();
+	std::vector<NLStatefulEquationWrapper>& GetStatefulEquations();
 private:
 	std::unique_ptr<NLGraphSolver_impl> m_impl;
 };

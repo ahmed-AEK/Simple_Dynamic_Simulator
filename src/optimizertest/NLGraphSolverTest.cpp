@@ -2,7 +2,7 @@
 
 TEST(testNLGraphSolver, testConstructor)
 {
-	opt::NLEquation eq1{ { 1 }, { 2 }, [](auto in, auto out) {out[0] = in[0];} };
+	opt::NLEquationWrapper eq1{ { 1 }, { 2 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0];})};
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 }
@@ -10,14 +10,14 @@ TEST(testNLGraphSolver, testConstructor)
 TEST(testNLGraphSolver, testAddStateful)
 {
 	opt::NLGraphSolver solver;
-	solver.AddStatefulEquation({ {}, { 0 }, [](auto, auto out, const auto& t, const auto&)
+	solver.AddStatefulEquation({ {}, { 0 }, opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([](auto, auto out, const auto& t, const auto&)
 		{
 			out[0] = t;
 			return opt::FatAny{ t };
 		},
-		[](auto, const auto& , auto&)
+		[](auto, auto, auto)
 		{
-		}
+		})
 		});
 	solver.Initialize();
 	opt::FlatMap state(1);
@@ -57,20 +57,20 @@ TEST(testNLGraphSolver, testStateful_runs)
 {
 	opt::NLGraphSolver solver;
 	double recorded_double = 0;
-	solver.AddStatefulEquation({ {}, { 0 }, [&](auto, auto out, const auto& t, const opt::NLStatefulEquation& eq)
+	std::optional<double> stateful_state;
+	solver.AddStatefulEquation({ {}, { 0 }, 
+		opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([state = &stateful_state, recorded_double = &recorded_double](auto, auto out, const auto& t, opt::NLStatefulEquationDataCRef)
 		{
-			const auto& state = eq.GetState();
-			if (state.contains<double>())
+			if (*state)
 			{
-				recorded_double = state.get<double>();
+				*recorded_double = state->value();
 			}
 			out[0] = t;
 		},
-		[&](auto, const auto& t, opt::NLStatefulEquation& eq)
+		[state = &stateful_state](auto, const auto& t, opt::NLStatefulEquationDataRef)
 		{
-			auto& state = eq.GetState();
-			state = opt::FatAny{ t };
-		}
+			*state = t;
+		})
 		});
 	solver.Initialize();
 	opt::FlatMap state(1);
@@ -99,7 +99,7 @@ TEST(testNLGraphSolver, testEmptyRun)
 
 TEST(testNLGraphSolver, testSolve)
 {
-	opt::NLEquation eq1{ { 0 }, { 1 }, [](auto in, auto out) {out[0] = in[0];} };
+	opt::NLEquationWrapper eq1{ { 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0];})};
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 
@@ -115,8 +115,8 @@ TEST(testNLGraphSolver, testSolve)
 
 TEST(testNLGraphSolver, testSolve_two_equations)
 {
-	opt::NLEquation eq1{ { 0 }, { 1 }, [](auto in, auto out) {out[0] = in[0];} };
-	opt::NLEquation eq2{ { 1 } , { 2 }, [](auto in, auto out) {out[0] = in[0] * 2;} };
+	opt::NLEquationWrapper eq1{ { 0 }, { 1 },  opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0];} )};
+	opt::NLEquationWrapper eq2{ { 1 } , { 2 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0] * 2;})};
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 	solver.AddEquation(std::move(eq2));
@@ -133,8 +133,8 @@ TEST(testNLGraphSolver, testSolve_two_equations)
 
 TEST(testNLGraphSolver, testSolve_two_equations_cyclic)
 {
-	opt::NLEquation eq1{ { 0 }, { 1 }, [](auto in, auto out) {out[0] = in[0] + 1;} }; // y = x + 1
-	opt::NLEquation eq2{ { 1 } , { 0 }, [](auto in, auto out) {out[0] = in[0] * 2;} }; // x = 2 * y
+	opt::NLEquationWrapper eq1{ { 0 }, { 1 },  opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0] + 1;})}; // y = x + 1
+	opt::NLEquationWrapper eq2{ { 1 } , { 0 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) {out[0] = in[0] * 2;})}; // x = 2 * y
 	opt::NLGraphSolver solver;
 
 	solver.AddEquation(std::move(eq1));
@@ -159,46 +159,48 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 		double last_out;
 	};
 
-	auto mul = opt::NLEquation{ {0,1}, {2}, [](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; } };
-	auto diff = opt::NLStatefulEquation{
+	std::optional<DerivativeStateTest> stateful_state;
+	auto mul = opt::NLEquationWrapper{ {0,1}, {2}, 
+		opt::make_NLEqn<opt::FunctorNLEquation>([](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; })};
+	auto diff = opt::NLStatefulEquationWrapper{
 		{2},
 		{3},
-		opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
+		opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>(
+			[state = &stateful_state](std::span<const double> in, std::span<double> out, double t, opt::NLStatefulEquationDataCRef)
 		{
-			const auto& old_state = eq.GetState();
-			if (old_state.contains<DerivativeStateTest>())
+			if (*state)
 			{
-				const auto& state = old_state.get<const DerivativeStateTest>();
-				if (t == state.last_input_time)
+				auto& state_val = state->value();
+				if (t == state_val.last_input_time)
 				{
-					out[0] = state.last_out;
+					out[0] = state_val.last_out;
 				}
 				else
 				{
-					out[0] = (in[0] - state.last_input) / (t - state.last_input_time);
+					out[0] = (in[0] - state_val.last_input) / (t - state_val.last_input_time);
 				}
 			}
 			else
 			{
 				out[0] = 0;
 			}
-		}},
-		opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> in, const double t, opt::NLStatefulEquation& eq)
+		},
+		opt::FunctorNLStatefulEquation::NLStatefulUpdateFunctor{
+				[state = &stateful_state](std::span<const double> in, double t, opt::NLStatefulEquationDataRef)
 		{
-			auto& old_state = eq.GetState();
-			if (old_state.contains<DerivativeStateTest>())
+			if (*state)
 			{
-				auto& state = old_state.get<DerivativeStateTest>();
-				state.last_out = (in[0] - state.last_input) / (t - state.last_input_time);;
-				state.last_input = in[0];
-				state.last_input_time = t;
+				auto& state_val = state->value();
+				state_val.last_out = (in[0] - state_val.last_input) / (t - state_val.last_input_time);;
+				state_val.last_input = in[0];
+				state_val.last_input_time = t;
 			}
 			else
 			{
-				old_state = opt::FatAny{DerivativeStateTest{in[0], t, 0}};
+				*state = DerivativeStateTest{in[0], t, 0};
 			}
 		}
-		}
+		})
 	};
 
 	opt::NLGraphSolver solver;

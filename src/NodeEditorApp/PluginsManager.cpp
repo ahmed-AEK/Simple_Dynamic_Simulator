@@ -31,11 +31,11 @@ void node::PluginsManager::AddPlugin(std::shared_ptr<IBlocksPlugin> plugin)
 		bool added = m_classes_mgr->RegisterBlockClass(cls);
 		if (added)
 		{
-			plugin_it.first->second.registered_class_names.push_back(cls->GetName());
+			plugin_it.first->second.registered_class_names.push_back(std::string{ cls->GetName() });
 		}
 		else
 		{
-			SDL_Log("Failed to register class: %s", cls->GetName().c_str());
+			SDL_Log("Failed to register class: %s", cls->GetName().data());
 		}
 	}
 

@@ -11,7 +11,7 @@ namespace model
 struct PortBlockData
 {
 	SocketId id{ 0 };
-	SocketType port_type;
+	SocketType port_type{};
 };
 
 namespace detail

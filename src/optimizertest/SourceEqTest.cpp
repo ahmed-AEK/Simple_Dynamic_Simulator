@@ -2,18 +2,19 @@
 TEST(testSourceEq, testApply)
 {
 	std::array<double, 3> output_vals { 1, 2, 3 };
-	opt::SourceEq eq({ 0, 1, 2, 3 },
-		opt::SourceEq::SourceFunctor{ [&](auto outputs, const auto& t, opt::SourceEq&)
+	opt::SourceEqWrapper eq({ 0, 1, 2, 3 },
+		opt::make_SourceEqn<opt::FunctorSourceEq>(opt::FunctorSourceEq::SourceFunctor{ [&](auto outputs, const auto& t, opt::SourceEvent&)
 		{
 			outputs[0] = output_vals[0];
 			outputs[1] = output_vals[1];
 			outputs[2] = output_vals[2];
 			outputs[3] = t;
-		} });
+		} }));
+	std::vector<double> output_buffer(eq.output_ids.size());
 
-	eq.Apply(5);
+	opt::SourceEvent ev{};
+	eq.equation->Apply(output_buffer, 5, ev);
 	std::array<double, 4> outputs;
-	auto output_buffer = eq.get_output_buffer();
 	for (size_t i = 0; i < outputs.size(); i++)
 	{
 		outputs[i] = output_buffer[i];

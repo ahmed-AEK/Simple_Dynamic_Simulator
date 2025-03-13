@@ -12,16 +12,11 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 static constexpr std::string_view Description = "Displays Input signals, Double Tap to show the Scope Dialog";
 
 node::ScopeDisplayClass::ScopeDisplayClass()
-	:BlockClass("Scope Display")
+	:BuiltinBasicClass{ "Scope Display", ClassProperties, {}, Description, BlockType::Sink }
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::ScopeDisplayClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
+std::vector<node::model::BlockSocketModel::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
 {
 	UNUSED_PARAM(properties);
 	assert(ValidateClassProperties(properties));
@@ -35,44 +30,12 @@ std::vector<node::model::BlockSocketModel::SocketType> node::ScopeDisplayClass::
 	return result;
 }
 
-bool node::ScopeDisplayClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != 1)
-	{
-		return false;
-	}
-	if (properties[0].name != ClassProperties[0].name)
-	{
-		return false;
-	}
-	if (properties[0].GetType() != ClassProperties[0].GetType())
-	{
-		return false;
-	}
-	if (!std::holds_alternative<uint64_t>(properties[0].prop))
-	{
-		return false;
-	}
-	return true;
-}
-
-const std::string_view& node::ScopeDisplayClass::GetDescription() const
-{
-	return Description;
-}
-
-node::BlockType node::ScopeDisplayClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Sink;
-}
-
-node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<uint64_t>(properties[0].prop));
 	uint64_t value = std::get<uint64_t>(properties[0].prop);
-	std::pmr::vector<int32_t> ports;
+	std::vector<int32_t> ports;
 	for (uint32_t i = 0; i < value; i++)
 	{
 		ports.push_back(i);
@@ -82,9 +45,9 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 	{
 		vec->push_back({});
 	}
-	return opt::Observer{
-		ports,
-		opt::Observer::ObserverFunctor{[vec](std::span<const double> out, const double& t)
+	return opt::ObserverWrapper{
+		std::move(ports),
+		opt::make_ObserverEqn<opt::FunctorObserver>(opt::FunctorObserver{opt::FunctorObserver::ObserverFunctor{[vec](std::span<const double> out, const double& t)
 		{
 			for (size_t i = 0; i < out.size(); i++)
 			{
@@ -93,10 +56,10 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 			(*vec)[out.size()].push_back(t);
 		}},
 		{}, {},
-		opt::Observer::GetResultsFunctor{[vec]() 
+		opt::FunctorObserver::GetResultsFunctor{[vec]()
 		{
 			return std::any{*vec};
-		}}
+		}}})
 	};
 }
 

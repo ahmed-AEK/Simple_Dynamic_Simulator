@@ -1,21 +1,21 @@
 #include "SourceEq.hpp"
 
-opt::SourceEq::SourceEq(std::pmr::vector<int32_t> output_ids, SourceFunctor functor,
-	SourceTrigger trigger, std::pmr::memory_resource* resource)
-	:OutputEquation(std::move(output_ids), resource), m_functor(std::move(functor)), m_trigger{std::move(trigger)}
+opt::FunctorSourceEq::FunctorSourceEq(SourceFunctor functor,
+	SourceTrigger trigger)
+	: m_functor(std::move(functor)), m_trigger{std::move(trigger)}
 {
 }
 
-void opt::SourceEq::Apply(const double& t)
+void opt::FunctorSourceEq::Apply(std::span<double> output, const double& t, SourceEvent& ev)
 {
-	m_functor(m_output_buffer, t, *this);
+	m_functor(output, t, ev);
 }
 
-void opt::SourceEq::EventTrigger(const double& t)
+void opt::FunctorSourceEq::EventTrigger(const double& t, SourceEvent& ev)
 {
 	if (m_trigger)
 	{
-		m_trigger(t, *this);
+		m_trigger(t, ev);
 	}
 }
 

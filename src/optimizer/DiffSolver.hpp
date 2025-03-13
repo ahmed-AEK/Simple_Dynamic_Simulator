@@ -23,7 +23,7 @@ public:
     DiffSolver(DiffSolver&&) noexcept;
     DiffSolver& operator=(DiffSolver&&) noexcept;
     ~DiffSolver();
-    void AddEquation(DiffEquation eq);
+    void AddEquation(DiffEquationWrapper eq);
     void Initialize(double start_time, double end_time);
     StepResult Step(opt::FlatMap& state);
     [[nodiscard]] double GetStartTime() const;

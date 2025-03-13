@@ -11,15 +11,15 @@ namespace opt
 class NLGraphSolver_impl
 {
 public:
-	explicit NLGraphSolver_impl(std::vector<NLEquation> equations);
+	explicit NLGraphSolver_impl(std::vector<NLEquationWrapper> equations);
 	NLGraphSolver_impl();
 	void Initialize();
 	void Solve(FlatMap& state, const double& time);
 	void UpdateState(FlatMap& state, const double& time);
-	void AddEquation(NLEquation eq);
-	void AddStatefulEquation(NLStatefulEquation eq);
+	void AddEquation(NLEquationWrapper eq);
+	void AddStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEq(BufferEquation eq);
-	std::vector<NLStatefulEquation>& GetStatefulEquations();
+	std::vector<NLStatefulEquationWrapper>& GetStatefulEquations();
 protected:
 	[[nodiscard]] double SolveInternal(std::span<const double> x, std::span<double> grad);
 	static double CostFunction(unsigned n, const double* x, double* grad, void* data);
@@ -30,8 +30,8 @@ protected:
 
 private:
 
-	std::vector<NLEquation> m_equations;
-	std::vector<NLStatefulEquation> m_stateful_equations;
+	std::vector<NLEquationWrapper> m_equations;
+	std::vector<NLStatefulEquationWrapper> m_stateful_equations;
 	std::vector<BufferEquation> m_buffer_equations;
 	double m_last_state_time = 0;
 	opt::FlatMap m_current_state;

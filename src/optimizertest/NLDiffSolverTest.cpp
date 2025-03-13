@@ -16,7 +16,8 @@ TEST(testNLDiffSolver, testInitialize)
 
 TEST(testNLDiffSolver, testStep_time_advances)
 {
-    opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, auto t) { return out[0] = in[0]; UNUSED_PARAM(t);});
+    opt::DiffEquationWrapper eq({ 0 }, { 1 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq));
     solver.Initialize(0, 2);
@@ -38,7 +39,7 @@ TEST(testNLDiffSolver, testStep_time_advances)
 
 TEST(testNLDiffSolver, testNLEquations_simple)
 {
-    opt::NLEquation eq({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+    opt::NLEquationWrapper eq({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
     solver.AddNLEquation(std::move(eq));
     solver.Initialize(0, 2);
@@ -53,14 +54,14 @@ TEST(testNLDiffSolver, testNLEquations_simple)
 
 TEST(testNLDiffSolver, testNLEquations_simple_observer)
 {
-    opt::NLEquation eq({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+    opt::NLEquationWrapper eq({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
 
     std::vector<std::vector<double>> observer_log;
-    opt::Observer observer({ 0, 1 }, [&](auto inputs, const auto& t)
+    opt::ObserverWrapper observer({ 0, 1 }, opt::make_ObserverEqn<opt::FunctorObserver>([&](auto inputs, const auto& t)
         {
             observer_log.push_back({ inputs[0], inputs[1], t });
-        });
+        }));
     solver.AddObserver(std::move(observer));
 
     solver.AddNLEquation(std::move(eq));
@@ -77,8 +78,9 @@ TEST(testNLDiffSolver, testNLEquations_simple_observer)
 }
 TEST(testNLDiffSolver, testNLDiffEquations_1d1n)
 {
-    opt::DiffEquation eq({ 1 }, { 2 }, [](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);});
-    opt::NLEquation eq2({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+    opt::DiffEquationWrapper eq({ 1 }, { 2 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);}));
+    opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq));
     solver.AddNLEquation(std::move(eq2));
@@ -104,15 +106,16 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n)
 
 TEST(testNLDiffSolver, testNLDiffEquations_1d1n_observer)
 {
-    opt::DiffEquation eq({ 1 }, { 2 }, [](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t); });
-    opt::NLEquation eq2({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+    opt::DiffEquationWrapper eq({ 1 }, { 2 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t); }));
+    opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
 
     std::vector<std::vector<double>> observer_log;
-    opt::Observer observer({ 0, 1, 2 }, [&](auto inputs, const auto& t)
+    opt::ObserverWrapper observer({ 0, 1, 2 }, opt::make_ObserverEqn<opt::FunctorObserver>([&](auto inputs, const auto& t)
         {
             observer_log.push_back({ inputs[0], inputs[1], inputs[2], t});
-        });
+        }));
     solver.AddObserver(std::move(observer));
 
     solver.AddDiffEquation(std::move(eq));
@@ -146,9 +149,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n_observer)
 
 TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
 {
-    opt::DiffEquation eq({ 1 }, { 2 }, [](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);});
-    opt::NLEquation eq2({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
-    opt::NLEquation eq3({ 2 }, { 3 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+    opt::DiffEquationWrapper eq({ 1 }, { 2 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);}));
+    opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
+    opt::NLEquationWrapper eq3({ 2 }, { 3 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq));
     solver.AddNLEquation(std::move(eq2));
@@ -183,49 +187,52 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
         double last_input_time;
         double last_out;
     };
-
-    auto s1 = opt::SourceEq{ {0} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
-    auto s2 = opt::SourceEq{ {1} ,[](std::span<double> out, const double& t, opt::SourceEq&) { out[0] = std::sin(2 * std::numbers::pi * t); } };
-    auto mul = opt::NLEquation{ {0,1}, {2}, [](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; } };
-    auto diff = opt::NLStatefulEquation{
+    std::optional<DerivativeStateTest> deriv_state;
+    auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } )};
+    auto s2 = opt::SourceEqWrapper{ {1} , opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } )};
+    auto mul = opt::NLEquationWrapper{ {0,1}, {2}, 
+        opt::make_NLEqn<opt::FunctorNLEquation>([](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; })};
+    auto diff = opt::NLStatefulEquationWrapper{
         {2},
         {3},
-        opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
+        opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([state = &deriv_state](std::span<const double> in, 
+            std::span<double> out, const double t, opt::NLStatefulEquationDataCRef)
         {
-            const auto& old_state = eq.GetState();
-            if (old_state.contains<DerivativeStateTest>())
+            const auto& old_state = *state;
+            if (old_state)
             {
-                const auto& state = old_state.get<const DerivativeStateTest>();
-                if (t == state.last_input_time)
+                const auto& state_val = *old_state;
+                if (t == state_val.last_input_time)
                 {
-                    out[0] = state.last_out;
+                    out[0] = state_val.last_out;
                 }
                 else
                 {
-                    out[0] = (in[0] - state.last_input) / (t - state.last_input_time);
+                    out[0] = (in[0] - state_val.last_input) / (t - state_val.last_input_time);
                 }
             }
             else
             {
                 out[0] = 0;
             }
-        }},
-        opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> in, const double t, opt::NLStatefulEquation& eq)
+        },
+        opt::FunctorNLStatefulEquation::NLStatefulUpdateFunctor{[state = &deriv_state](std::span<const double> in, 
+            const double t, opt::NLStatefulEquationDataRef)
         {
-            auto& old_state = eq.GetState();
-            if (old_state.contains<DerivativeStateTest>())
+            auto& old_state = *state;
+            if (old_state)
             {
-                auto& state = old_state.get<DerivativeStateTest>();
-                state.last_out = (in[0] - state.last_input) / (t - state.last_input_time);;
-                state.last_input = in[0];
-                state.last_input_time = t;
+                auto& state_val = *old_state;
+                state_val.last_out = (in[0] - state_val.last_input) / (t - state_val.last_input_time);;
+                state_val.last_input = in[0];
+                state_val.last_input_time = t;
             }
             else
             {
-                old_state = opt::FatAny{DerivativeStateTest{in[0], t, 0}};
+                old_state = DerivativeStateTest{in[0], t, 0};
             }
         }
-    }
+    })
     };
 
     opt::NLDiffSolver solver;
@@ -256,29 +263,30 @@ TEST(testNLDiffSolver, test_SourceEvent)
 {
     bool event1_set = false;
     double event1_time = 0;
-    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double&, opt::SourceEq&) {
+    auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>([&](std::span<double> out, const double&, opt::SourceEvent&) {
             out[0] = 0;
         },
-        [&](const double& t, opt::SourceEq&)
+        [&](const double& t, opt::SourceEvent&)
         {
             event1_set = true;
             event1_time = t;
-        }
+        })
     };
-    s1.GetEvent() = opt::SourceEq::SourceEvent{ 0.2,false };
+    s1.ev = opt::SourceEvent{ true, false, 0.2 };
 
     bool event2_set = false;
     double event2_time = 0;
-    auto s2 = opt::SourceEq{ {1} ,[&](std::span<double> out, const double&, opt::SourceEq&) {
+    auto s2 = opt::SourceEqWrapper{ {1} , opt::make_SourceEqn<opt::FunctorSourceEq>([&](std::span<double> out, const double&, opt::SourceEvent&) {
             out[0] = 0;
         },
-        [&](const double& t, opt::SourceEq&)
+        [&](const double& t, opt::SourceEvent&)
         {
             event2_set = true;
             event2_time = t;
         }
+    )
     };
-    s2.GetEvent() = opt::SourceEq::SourceEvent{ 0.201,false };
+    s2.ev = opt::SourceEvent{true, false, 0.201};
 
     opt::NLDiffSolver solver;
     solver.AddSource(std::move(s1));
@@ -304,17 +312,18 @@ TEST(testNLDiffSolver, test_SourceEvent)
 
 TEST(testNLDiffSolver, testZeroCrossing)
 {
-    auto s1 = opt::SourceEq{ {0} ,[&](std::span<double> out, const double& t, opt::SourceEq&) {
+    auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>([&](std::span<double> out, const double& t, opt::SourceEvent&) {
             out[0] = t;
-        }
+        })
     };
     double trigger_planned_time = 0.49;
     bool triggered = false;
     double triggered_time = 0;
-    auto comparator = opt::NLStatefulEquation{ {0}, {1},
-        opt::NLStatefulEquation::NLStatefulFunctor{[&](std::span<const double>, std::span<double> out, const double, const opt::NLStatefulEquation& eq)
+    auto comparator = opt::NLStatefulEquationWrapper{ {0}, {1},
+        opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([&](std::span<const double>, 
+            std::span<double> out, double, opt::NLStatefulEquationDataCRef data)
         {
-            bool triggered = eq.GetZeroCrossings()[0].current_value == opt::ZeroCrossDescriptor::Position::above;
+            bool triggered = data.crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above;
             if (triggered)
             {
                 out[0] = 1;
@@ -323,18 +332,20 @@ TEST(testNLDiffSolver, testZeroCrossing)
             {
                 out[0] = 0;
             }
-        }},
-        opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> , const double, opt::NLStatefulEquation&)
+        },
+        opt::FunctorNLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> , double, opt::NLStatefulEquationDataRef)
         {
 
         }},
-        opt::NLStatefulEquation::NLStatefulCrossFunctor{[&](const double& t, size_t, opt::NLStatefulEquation&) {
+        opt::FunctorNLStatefulEquation::NLStatefulCrossFunctor{[&](double t, size_t, opt::NLStatefulEquationDataRef) {
             triggered_time = t;
             triggered = true;
-        }}
+        }})
     };
-    comparator.GetZeroCrossings().push_back(opt::ZeroCrossDescriptor{ trigger_planned_time, 0, opt::ZeroCrossDescriptor::CrossType::both, opt::ZeroCrossDescriptor::Position::undefined,
-opt::ZeroCrossDescriptor::Position::undefined });
+    comparator.data.crossings.push_back(
+        opt::ZeroCrossDescriptor{ trigger_planned_time, 0, 
+        opt::ZeroCrossDescriptor::CrossType::both, opt::ZeroCrossDescriptor::Position::undefined,
+        opt::ZeroCrossDescriptor::Position::undefined });
     opt::NLDiffSolver solver;
     solver.AddSource(std::move(s1));
     solver.AddNLStatefulEquation(std::move(comparator));

@@ -5,6 +5,9 @@ BlockClass.cpp BlockClass.hpp
 BlockDialog.hpp BlockDialog.cpp
 BlockClassesManager.cpp BlockClassesManager.hpp
 BlocksPlugin.cpp BlocksPlugin.hpp
+BlockTemplate.h TestTemplates.c
+BlockCClass.h
+BlockClassHelpers.hpp
 )
 
 target_include_directories(PluginAPI PRIVATE ".")
