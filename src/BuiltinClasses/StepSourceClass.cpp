@@ -7,62 +7,16 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 	*node::model::BlockProperty::Create("Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 ),
 };
 static constexpr std::string_view Description = "Output = t < Step Time ? Initial Value : Final Value";
+static constexpr node::model::BlockSocketModel::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::output
+};
 
 node::StepSourceClass::StepSourceClass()
-	:BlockClass("Step")
+	:BuiltinBasicClass{ "Step",  ClassProperties, class_sockets, Description, BlockType::Source }
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::StepSourceClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType> node::StepSourceClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::output
-	};
-}
-
-const std::string_view& node::StepSourceClass::GetDescription() const
-{
-	return Description;
-}
-
-bool node::StepSourceClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != ClassProperties.size())
-	{
-		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			return false;
-		}
-		if (!std::holds_alternative<double>(properties[i].prop))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-node::BlockType node::StepSourceClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Source;
-}
-
-node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	assert(ValidateClassProperties(properties));
 	double initial_value = std::get<double>(properties[0].prop);
@@ -93,9 +47,9 @@ node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::
 		}
 	);
 
-	auto eq = opt::SourceEq{
+	auto eq = opt::SourceEqWrapper{
 		{0},
-		[initial_value, final_value, event_set](std::span<double> out, const double& t, opt::SourceEq&) mutable
+		opt::make_SourceEqn<opt::FunctorSourceEq>(opt::FunctorSourceEq::SourceFunctor{[initial_value, final_value, event_set](std::span<double> out, const double& t, opt::SourceEvent&) mutable
 		{
 			if (!event_set->first_triggered)
 			{
@@ -109,13 +63,13 @@ node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::
 			}
 
 			out[0] = initial_value + (t - event_set->first_trigger_time) / (event_set->second_trigger_time - event_set->first_trigger_time) * (final_value - initial_value);
-			
+
+		}
 		},
+		opt::FunctorSourceEq::SourceTrigger{
+		[event_set, triggered = false](const double&, opt::SourceEvent& ev) mutable
 		{
-		[event_set, triggered = false](const double&, opt::SourceEq& eq) mutable
-		{
-			assert(eq.GetEvent());
-			auto& event = *eq.GetEvent();
+			auto& event = ev;
 			if (!event_set->first_triggered)
 			{
 				event_set->first_triggered = true;
@@ -131,9 +85,10 @@ node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::
 				return;
 			}
 		}
-		}
+		}),
+		{}
 	};
-	eq.GetEvent() = opt::SourceEq::SourceEvent{step_time, false};
+	eq.ev = opt::SourceEvent{true, false, step_time};
 	return eq;
 }
 

@@ -15,6 +15,7 @@
 #include <string>
 #include <optional>
 #include <ranges>
+#include "boost/container_hash/hash.hpp"
 
 namespace node
 {
@@ -106,9 +107,9 @@ struct std::hash<node::PaletteProvider::ElementUniqueId>
 {
 	std::size_t operator()(const node::PaletteProvider::ElementUniqueId& k) const
 	{
-		size_t hash = 23;
-		hash = hash * 31 + static_cast<uint32_t>(k.cat_id);
-		hash = hash * 31 + static_cast<uint32_t>(k.temp_id);
+		size_t hash = 0;
+		boost::hash_combine(hash, static_cast<size_t>(k.cat_id));
+		boost::hash_combine(hash, static_cast<size_t>(k.temp_id));
 		return hash;
 	}
 };

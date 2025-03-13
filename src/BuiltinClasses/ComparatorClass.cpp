@@ -6,64 +6,20 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 };
 
 static constexpr std::string_view Description = "Output = input > threshold ? 1 : 0";
+static constexpr node::model::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::input,
+		node::model::BlockSocketModel::SocketType::output
+};
+
 static constexpr double high_value = 1;
 static constexpr double low_value = 0;
 
 node::ComparatorBlockClass::ComparatorBlockClass()
-	:BlockClass{"Comparator"}
+	:BuiltinBasicClass{"Comparator", ClassProperties, class_sockets, Description, BlockType::Stateful}
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::ComparatorBlockClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType> node::ComparatorBlockClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return {
-		node::model::BlockSocketModel::SocketType::input,
-		node::model::BlockSocketModel::SocketType::output
-	};
-}
-
-const std::string_view& node::ComparatorBlockClass::GetDescription() const
-{
-	return Description;
-}
-
-bool node::ComparatorBlockClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != ClassProperties.size())
-	{
-		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			return false;
-		}
-		if (!std::holds_alternative<double>(properties[i].prop))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-node::BlockType node::ComparatorBlockClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Stateful;
-}
-
-node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 
 	struct ComparatorOutputTransition
@@ -81,15 +37,21 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 	{
 		rise_time = 1e-9;
 	}
-	auto transition = std::make_shared<ComparatorOutputTransition>(0, 0, 0, false);
-	auto ret = opt::NLStatefulEquation{
-		{0},
-		{1},
-		opt::NLStatefulEquation::NLStatefulFunctor{[threshold, transition, rise_time](std::span<const double>, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
+	constexpr auto transition = ComparatorOutputTransition{0, 0, 0, false};
+
+	class ComparatorClassFunction: public opt::INLStatefulEquation
+	{
+	public:
+		ComparatorClassFunction(ComparatorOutputTransition transitions, double rise_time, double threshold)
+			: m_transition_times{std::move(transitions)}, m_rise_time{rise_time}, m_threshold{threshold}
 		{
-			const auto& crossings = eq.GetZeroCrossings();
+		}
+		void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
+		{
+			UNUSED_PARAM(input);
+			const auto& crossings = data.crossings;
 			assert(crossings.size());
-			
+
 			double end_value;
 			if (crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above)
 			{
@@ -100,25 +62,29 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 				end_value = low_value;
 			}
 
-			if (t >= transition->end_time)
+			if (t >= m_transition_times.end_time)
 			{
-				out[0] = end_value;
+				output[0] = end_value;
 			}
 			else
 			{
-				double current_value = transition->start_value + (end_value - transition->start_value) * (t - transition->trigger_time) / rise_time;
-				out[0] = current_value;
+				double current_value = m_transition_times.start_value + 
+					(end_value - m_transition_times.start_value) * (t - m_transition_times.trigger_time) / m_rise_time;
+				output[0] = current_value;
 			}
-			
-		}},
-		opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double>, const double, opt::NLStatefulEquation&)
-		{
 
 		}
-		},
-		opt::NLStatefulEquation::NLStatefulCrossFunctor{[transition, rise_time](const double& t, size_t, opt::NLStatefulEquation& eq)
+		virtual void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
-			const auto& crossings = eq.GetZeroCrossings();
+			UNUSED_PARAM(input);
+			UNUSED_PARAM(t);
+			UNUSED_PARAM(data);
+		}
+		void CrossTrigger(double t, size_t index, opt::NLStatefulEquationDataRef data) override 
+		{
+			UNUSED_PARAM(index);
+			assert(index == 0);
+			const auto& crossings = data.crossings;
 
 			double start_value = 0;
 			if (crossings[0].last_value == opt::ZeroCrossDescriptor::Position::above)
@@ -130,53 +96,58 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 				start_value = low_value;
 			}
 
-			if (t >= transition->end_time)
+			if (t >= m_transition_times.end_time)
 			{
-				transition->trigger_time = t;
-				transition->start_value = start_value;
-				transition->end_time = t + rise_time;
-				transition->rising = crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above;
-				double end_value = transition->rising ? high_value : low_value;
+				m_transition_times.trigger_time = t;
+				m_transition_times.start_value = start_value;
+				m_transition_times.end_time = t + m_rise_time;
+				m_transition_times.rising = crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above;
+				double end_value = m_transition_times.rising ? high_value : low_value;
 				if (start_value != end_value)
 				{
 					// create transition
-					eq.GetEvent()->set = false;
-					eq.GetEvent()->t = transition->end_time;
+					data.ev.set = false;
+					data.ev.t = m_transition_times.end_time;
 				}
 			}
 			else
 			{
 				// transition in progress
 				double old_end_value = start_value;
-				start_value = transition->start_value + (old_end_value - transition->start_value) * (t - transition->trigger_time) / rise_time;
-				transition->start_value = start_value;
-				transition->trigger_time = t;
-				transition->rising = crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above;
-				double end_value = transition->rising ? high_value : low_value;
-				transition->end_time = t + std::abs(end_value - transition->start_value) / (high_value - low_value) * rise_time;
-				if (transition->end_time > t)
+				start_value = m_transition_times.start_value + 
+					(old_end_value - m_transition_times.start_value) * (t - m_transition_times.trigger_time) / m_rise_time;
+				m_transition_times.start_value = start_value;
+				m_transition_times.trigger_time = t;
+				m_transition_times.rising = crossings[0].current_value == opt::ZeroCrossDescriptor::Position::above;
+				double end_value = m_transition_times.rising ? high_value : low_value;
+				m_transition_times.end_time = t + std::abs(end_value - m_transition_times.start_value) / (high_value - low_value) * m_rise_time;
+				if (m_transition_times.end_time > t)
 				{
 					// push end_time away anway
-					eq.GetEvent()->set = false;
-					eq.GetEvent()->t = transition->end_time;
+					data.ev.set = false;
+					data.ev.t = m_transition_times.end_time;
 				}
 			}
 		}
-		},
-		opt::NLStatefulEquation::NLStatefulEventFunctor{[](const double&, opt::NLStatefulEquation&)
-		{
-
-		}
-		}
+	private:
+		ComparatorOutputTransition m_transition_times;
+		double m_rise_time;
+		double m_threshold;
 	};
-	ret.GetZeroCrossings().push_back({
+	auto ret = opt::NLStatefulEquationWrapper{
+		{0},
+		{1},
+		opt::make_NLStatefulEqn<ComparatorClassFunction>(transition, rise_time, threshold),
+		{}
+	};
+	ret.data.crossings.push_back({
 		threshold,
 		0,
 		opt::ZeroCrossDescriptor::CrossType::both,
 		opt::ZeroCrossDescriptor::Position::undefined,
 		opt::ZeroCrossDescriptor::Position::undefined,
 		});
-	ret.GetEvent() = opt::NLStatefulEquation::EquationEvent{0, true};
+	ret.data.ev = opt::StatefulEquationEvent{true, true, 0};
 	return ret;
 }
 

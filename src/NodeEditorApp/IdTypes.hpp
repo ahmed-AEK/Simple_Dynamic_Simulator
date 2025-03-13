@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "NodeModels/IdTypes.hpp"
+#include "boost/container_hash/hash.hpp"
 
 namespace node
 {
@@ -39,9 +40,9 @@ struct std::hash<node::SceneId>
 {
     std::size_t operator()(const node::SceneId& k) const
     {
-        size_t hash = 23;
-        hash = hash * 31 + k.manager.value;
-        hash = hash * 31 + k.subscene.value;
+        size_t hash = 0;
+        boost::hash_combine(hash, k.manager.value);
+        boost::hash_combine(hash, k.subscene.value);
         return hash;
     }
 };

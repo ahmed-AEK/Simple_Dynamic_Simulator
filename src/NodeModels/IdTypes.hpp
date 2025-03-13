@@ -4,6 +4,8 @@
 #include <vector>
 #include <cassert>
 
+#include "boost/container_hash/hash.hpp"
+
 namespace node
 {
 	struct SubSceneId
@@ -148,9 +150,9 @@ struct std::hash<node::model::SocketUniqueId>
 {
 	std::size_t operator()(const node::model::SocketUniqueId& k) const
 	{
-		size_t hash = 23;
-		hash = hash * 31 + k.block_id.value;
-		hash = hash * 31 + k.socket_id.value;
+		size_t hash = 0;
+		boost::hash_combine(hash, k.block_id.value);
+		boost::hash_combine(hash, k.socket_id.value);
 		return hash;
 	}
 };

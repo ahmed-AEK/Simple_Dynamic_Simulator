@@ -4,73 +4,30 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 	*node::model::BlockProperty::Create("Phase_deg", node::model::BlockPropertyType::FloatNumber, 0.0 ),
 	*node::model::BlockProperty::Create("Freq_hz", node::model::BlockPropertyType::FloatNumber, 1.0 ),
 };
+
+static constexpr node::model::BlockSocketModel::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::output
+};
+
 static constexpr std::string_view Description = "Output = Sin(2*pi*freq + phase*pi/180)";
 
 node::SineSourceClass::SineSourceClass()
-	:BlockClass("Sine")
+	:BuiltinBasicClass{ "Sine", ClassProperties, class_sockets, Description, BlockType::Source }
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::SineSourceClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType> node::SineSourceClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::output
-	};
-}
-
-const std::string_view& node::SineSourceClass::GetDescription() const
-{
-	return Description;
-}
-
-bool node::SineSourceClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != ClassProperties.size())
-	{
-		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			return false;
-		}
-		if (!std::holds_alternative<double>(properties[i].prop))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-node::BlockType node::SineSourceClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Source;
-}
-
-node::BlockClass::GetFunctorResult node::SineSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::SineSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	assert(ValidateClassProperties(properties));
 	double phase_rad = std::get<double>(properties[0].prop) / 180.0 * std::numbers::pi;
 	double freq_rad = std::get<double>(properties[1].prop) * 2 * std::numbers::pi;
-	return opt::SourceEq{
+	return opt::SourceEqWrapper{
 		{0},
-		[phase_rad, freq_rad](std::span<double> out, const double& t, opt::SourceEq&)
+		opt::make_SourceEqn<opt::FunctorSourceEq>([phase_rad, freq_rad](std::span<double> out, const double& t, opt::SourceEvent&)
 		{
 			out[0] = std::sin(t* freq_rad + phase_rad);
-		}
+		}),
+		{}
 	};
 }
 

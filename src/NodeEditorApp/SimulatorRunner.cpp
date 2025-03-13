@@ -64,11 +64,11 @@ struct PortBlockSimulationDescriptor
 
 struct BlocksFunctions
 {
-	std::vector<std::pair<opt::NLEquation,node::model::BlockId>> nl_eqs;
-	std::vector<std::pair<opt::NLStatefulEquation, node::model::BlockId>> nl_st_eqs;
-	std::vector<std::pair<opt::DiffEquation, node::model::BlockId>> diff_eqs;
-	std::vector<std::pair<opt::Observer, node::model::BlockId>> observers;
-	std::vector<std::pair<opt::SourceEq, node::model::BlockId>> sources;
+	std::vector<std::pair<opt::NLEquationWrapper,node::model::BlockId>> nl_eqs;
+	std::vector<std::pair<opt::NLStatefulEquationWrapper, node::model::BlockId>> nl_st_eqs;
+	std::vector<std::pair<opt::DiffEquationWrapper, node::model::BlockId>> diff_eqs;
+	std::vector<std::pair<opt::ObserverWrapper, node::model::BlockId>> observers;
+	std::vector<std::pair<opt::SourceEqWrapper, node::model::BlockId>> sources;
 	std::vector<std::pair<SubsystemSimulationDescriptor, node::model::BlockId>> subsystem_blocks;
 	std::vector<std::pair<PortBlockSimulationDescriptor, node::model::BlockId>> ports_blocks;
 };
@@ -136,11 +136,11 @@ static void AddFunctionalBlock(node::BlockClassesManager& mgr,
 
 	auto block_adder = [&](node::BlockFunctor& functor) {
 		std::visit(overloaded{
-		[&](opt::NLEquation& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
-		[&](opt::NLStatefulEquation& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
-		[&](opt::DiffEquation& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
-		[&](opt::Observer& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
-		[&](opt::SourceEq& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
+		[&](opt::NLEquationWrapper& eq) {funcs.nl_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::NLStatefulEquationWrapper& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::DiffEquationWrapper& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::ObserverWrapper& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::SourceEqWrapper& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
 			}, functor);
 		};
 
@@ -412,16 +412,16 @@ static void RemapFunctions(BlocksFunctions& funcs,
 							}
 						}
 					};
-				if constexpr (requires {func.get_input_ids(); })
+				if constexpr (requires {func.input_ids; })
 				{
-					for (auto& id : func.get_input_ids())
+					for (auto& id : func.input_ids)
 					{
 						id_mapper(id);
 					}
 				}
-				if constexpr (requires {func.get_output_ids(); })
+				if constexpr (requires {func.output_ids; })
 				{
-					for (auto& id : func.get_output_ids())
+					for (auto& id : func.output_ids)
 					{
 						id_mapper(id);
 					}
@@ -460,7 +460,7 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 
 	for (auto& func : funcs.diff_eqs)
 	{
-		auto out_ids = func.first.get_output_ids();
+		auto& out_ids = func.first.output_ids;
 		if (out_ids.size() && out_ids[0] == 9999)
 		{
 			continue;
@@ -469,7 +469,7 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	}
 	for (auto& func : funcs.nl_eqs)
 	{
-		auto out_ids = func.first.get_output_ids();
+		auto& out_ids = func.first.output_ids;
 		if (out_ids.size() && out_ids[0] == 9999)
 		{
 			continue;
@@ -483,7 +483,7 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	}
 	for (auto& func : funcs.nl_st_eqs)
 	{
-		auto out_ids = func.first.get_output_ids();
+		auto& out_ids = func.first.output_ids;
 		if (out_ids.size() && out_ids[0] == 9999)
 		{
 			continue;
@@ -492,7 +492,7 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	}
 	for (auto& func : funcs.sources)
 	{
-		auto out_ids = func.first.get_output_ids();
+		auto& out_ids = func.first.output_ids;
 		if (out_ids.size() && out_ids[0] == 9999)
 		{
 			continue;

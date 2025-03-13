@@ -1,6 +1,8 @@
 #pragma once
 
 #include "BlockPalette/PaletteProvider.hpp"
+#include "PluginAPI/BlocksPlugin.hpp"
+#include "PluginAPI/PluginRuntime.hpp"
 
 namespace node
 {
@@ -13,14 +15,17 @@ class PluginsManager
 {
 public:
 	PluginsManager(std::shared_ptr<PaletteProvider> palette, std::shared_ptr<BlockClassesManager> classes_mgr);
-	void AddPlugin(std::shared_ptr<IBlocksPlugin> plugin);
+	void AddRuntime(node::PluginRuntimePtr runtime);
+	void AddPlugin(node::BlocksPluginPtr plugin, std::string loader_name = {});
 private:
 	std::shared_ptr<PaletteProvider> m_block_palette;
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;
-	
+	std::unordered_map<std::string, node::PluginRuntimePtr> m_plugin_runtimes;
+
 	struct PluginRecord
 	{
-		std::shared_ptr<IBlocksPlugin> plugin;
+		std::string loader_name;
+		node::BlocksPluginPtr plugin;
 		std::vector<PaletteProvider::ElementUniqueId> block_ids;
 		std::vector<std::string> registered_class_names;
 	};

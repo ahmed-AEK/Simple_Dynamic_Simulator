@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "boost-odeint",
+    "boost-container-hash",
     "gtest",
     "lunasvg",
     "nlopt",

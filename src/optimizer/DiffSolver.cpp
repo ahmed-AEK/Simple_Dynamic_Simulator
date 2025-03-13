@@ -20,12 +20,12 @@ opt::DiffSolver_impl::DiffSolver_impl()
 
 }
 
-opt::DiffSolver_impl::DiffSolver_impl(std::vector<DiffEquation> equations)
+opt::DiffSolver_impl::DiffSolver_impl(std::vector<DiffEquationWrapper> equations)
 : m_equations(std::move(equations))
 {
 
 }
-void opt::DiffSolver_impl::AddEquation(DiffEquation eq)
+void opt::DiffSolver_impl::AddEquation(DiffEquationWrapper eq)
 {
     m_equations.push_back(std::move(eq));
 }
@@ -39,7 +39,7 @@ void opt::DiffSolver_impl::Initialize(double start_time, double end_time)
     m_output_ids.clear();
     for (const auto& item : m_equations)
     {
-        for (const auto& output_id : item.get_output_ids())
+        for (const auto& output_id : item.output_ids)
         {
             m_output_ids.insert(output_id);
         }
@@ -136,19 +136,25 @@ void opt::DiffSolver_impl::StepInternal(const opt::DiffSolver_impl::state_type& 
 
     ApplyPreprocessor(m_current_state, t);
     
+    std::array<double, 20> input_temp_buff;
+    std::array<double, 20> ouput_temp_buff;
+
     for (auto& eq : m_equations)
     {
-        auto input_buffer = eq.get_input_buffer();
-        auto input_ids = eq.get_input_ids();
+        auto& input_ids = eq.input_ids;
+        auto input_buffer = std::span{input_temp_buff}.subspan(0, input_ids.size());
         assert(input_buffer.size() == input_ids.size());
         for (size_t i = 0; i < input_buffer.size(); i++)
         {
             const auto val = m_current_state.get(input_ids[i]);
             input_buffer[i] = val;
         }
-        eq.Apply(t);
-        auto output_buffer = eq.get_output_buffer();
-        auto output_ids = eq.get_output_ids();
+
+        auto& output_ids = eq.output_ids;
+        auto output_buffer = std::span{ ouput_temp_buff }.subspan(0, output_ids.size());
+        
+
+        eq.equation->Apply(input_buffer, output_buffer, t);
         assert(output_buffer.size() == output_ids.size());
         for (size_t i = 0; i < output_buffer.size(); i++)
         {
@@ -224,7 +230,7 @@ opt::DiffSolver& opt::DiffSolver::operator=(DiffSolver&&) noexcept = default;
 
 opt::DiffSolver::~DiffSolver() = default;
 
-void opt::DiffSolver::AddEquation(DiffEquation eq)
+void opt::DiffSolver::AddEquation(DiffEquationWrapper eq)
 {
     m_impl->AddEquation(std::move(eq));
 }

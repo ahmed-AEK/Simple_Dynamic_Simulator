@@ -6,8 +6,8 @@
 
 namespace opt
 {
-class Observer;
-class SourceEq;
+struct ObserverWrapper;
+struct SourceEqWrapper;
 
 struct ObserverSlot;
 
@@ -25,12 +25,12 @@ public:
 	NLDiffSolver& operator=(const NLDiffSolver&) = delete;
 	~NLDiffSolver();
 	void SetMaxStep(double step_size);
-	void AddDiffEquation(DiffEquation eq);
-	void AddNLEquation(NLEquation eq);
-	void AddNLStatefulEquation(NLStatefulEquation eq);
+	void AddDiffEquation(DiffEquationWrapper eq);
+	void AddNLEquation(NLEquationWrapper eq);
+	void AddNLStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEquation(BufferEquation eq);
-	size_t AddObserver(Observer obs);
-	void AddSource(SourceEq source);
+	size_t AddObserver(ObserverWrapper obs);
+	void AddSource(SourceEqWrapper source);
 	void Initialize(double start_time, double end_time);
 	[[nodiscard]] double GetStartTime() const { return m_diffSolver.GetStartTime(); }
 	[[nodiscard]] double GetEndTime() const { return m_diffSolver.GetEndTime(); }
@@ -49,7 +49,7 @@ private:
 
 	static constexpr int ZeroCrossingIterations = 10;
 	double m_last_oberver_time = 0;
-	std::vector<SourceEq> m_sources;
+	std::vector<SourceEqWrapper> m_sources;
 	DiffSolver m_diffSolver;
 	NLGraphSolver m_NLSolver;
 	std::vector<ObserverSlot> m_observers;

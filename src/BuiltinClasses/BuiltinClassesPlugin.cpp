@@ -1,4 +1,5 @@
 #include "BuiltinClassesPlugin.hpp"
+#include "PluginAPI/BlockClassHelpers.hpp"
 
 #include "GainBlockClass.hpp"
 #include "ConstantSourceClass.hpp"
@@ -18,10 +19,13 @@
 #include "NodeSDLStylers/PropertyPrintStyler.hpp"
 #include "NodeSDLStylers/SVGBlockStyler.hpp"
 
+namespace 
+{
+
 namespace detail
 {
 
-static std::span<const std::shared_ptr<node::BlockClass>> get_classes()
+static std::span<const std::shared_ptr<node::BlockClass>> get_builtin_classes()
 {
     using namespace node;
     static const std::shared_ptr<node::BlockClass> classes[] =
@@ -41,7 +45,7 @@ static std::span<const std::shared_ptr<node::BlockClass>> get_classes()
     return classes;
 }
 
-static std::span<const node::BlockTemplate> get_blocks()
+static std::span<const node::BlockTemplate> get_builtin_blocks()
 {
     using namespace node;
     static const node::BlockTemplate blocks[] =
@@ -206,20 +210,53 @@ static std::span<const node::BlockTemplate> get_blocks()
     return blocks;
 }
 }
+}
 
-std::string node::BuiltinClassesPlugin::GetPluginName()
+node::BuiltinClassesPlugin::BuiltinClassesPlugin()
+    :IBlocksPlugin{}
 {
-    return "Builtin";
+}
+
+void node::BuiltinClassesPlugin::GetPluginName(GetPluginNameCallback cb, void* context)
+{
+    constexpr std::string_view name = "Builtin";
+    cb(context, name);
 }
 
 std::vector<std::shared_ptr<node::BlockClass>> node::BuiltinClassesPlugin::GetClasses()
 {
-    auto classes = detail::get_classes();
+    auto classes = ::detail::get_builtin_classes();
     return {classes.begin(), classes.end()};
 }
 
-std::vector<node::BlockTemplate> node::BuiltinClassesPlugin::GetBlocks()
+void node::BuiltinClassesPlugin::GetBlocks(GetBlocksCallback cb, void* context)
 {
-    auto blocks = detail::get_blocks();
-    return {blocks.begin(), blocks.end()};
+    auto blocks = ::detail::get_builtin_blocks();
+    auto group = helper::BlockTemplateGroupToC(blocks);
+
+    cb(context, group.block_templates);
+}
+
+void node::NativePluginsRuntime::GetName(GetNameCallback cb, void* context) const
+{
+    constexpr std::string_view name = "NativeCpp";
+    cb(context, name);
+}
+
+void node::NativePluginsRuntime::GetPlugin(std::string_view path, node::IBlocksPlugin** plugin_ptr)
+{
+    UNUSED_PARAM(path);
+    UNUSED_PARAM(plugin_ptr);
+}
+
+void node::NativePluginsRuntime::GetDefaultPlugin(node::IBlocksPlugin** plugin_ptr)
+{
+    struct StaticBuiltinPlugin: public BuiltinClassesPlugin
+    {
+        using BuiltinClassesPlugin::BuiltinClassesPlugin;
+        void Destroy() override {}
+    };
+
+    static StaticBuiltinPlugin plugin;
+    *plugin_ptr = &plugin;
 }

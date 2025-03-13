@@ -14,6 +14,7 @@ MultiplyBlockClass.cpp MultiplyBlockClass.hpp
 SineSourceClass.hpp SineSourceClass.cpp
 StepSourceClass.hpp StepSourceClass.cpp
 ComparatorClass.hpp ComparatorClass.cpp
+BuiltinBasicClass.hpp BuiltinBasicClass.cpp
 BuiltinClassesPlugin.hpp BuiltinClassesPlugin.cpp
 pch.h
 )

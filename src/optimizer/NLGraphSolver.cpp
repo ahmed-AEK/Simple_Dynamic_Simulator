@@ -61,6 +61,8 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 {
     EvalSpecificFunctors(state, m_inner_solve_eqns);
     double penalty = 0.0;
+    std::array<double, 20> input_temp_buffer;
+    std::array<double, 20> output_temp_buffer;
     for (auto&& eq_idx : m_estimated_eqns)
     {
         switch (eq_idx.type)
@@ -68,18 +70,17 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
         case EquationType::NLEquation:
         {
             auto& eq = m_equations[eq_idx.index];
-            auto input_buffer = eq.get_input_buffer();
-            auto input_ids = eq.get_input_ids();
-            assert(input_buffer.size() == input_ids.size());
+            auto& input_ids = eq.input_ids;
+            auto input_buffer = std::span{ input_temp_buffer }.subspan(0,input_ids.size());
             for (size_t i = 0; i < input_buffer.size(); i++)
             {
                 const auto val = state.get(input_ids[i]);
                 input_buffer[i] = val;
             }
-            eq.Apply();
-            auto output_buffer = eq.get_output_buffer();
-            auto output_ids = eq.get_output_ids();
-            assert(output_buffer.size() == output_ids.size());
+            auto& output_ids = eq.output_ids;
+            auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
+
+            eq.equation->Apply(input_buffer, output_buffer);
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
                 const double new_value = output_buffer[i];
@@ -91,8 +92,8 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
         case EquationType::statefulNLEquation:
         {
             auto& eq = m_stateful_equations[eq_idx.index];
-            auto input_buffer = eq.get_input_buffer();
-            auto input_ids = eq.get_input_ids();
+            auto& input_ids = eq.input_ids;
+            auto input_buffer = std::span{input_temp_buffer}.subspan(0, input_ids.size());
             assert(input_buffer.size() == input_ids.size());
             for (size_t i = 0; i < input_buffer.size(); i++)
             {
@@ -100,9 +101,11 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
                 input_buffer[i] = val;
             }
 
-            eq.Apply(m_current_time);
-            auto output_buffer = eq.get_output_buffer();
-            auto output_ids = eq.get_output_ids();
+            auto& output_ids = eq.output_ids;
+            auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
+
+            eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
+
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -128,28 +131,29 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
 {
     m_last_state_time = m_current_time;
+    std::array<double, 20> input_temp_buffer;
 
     for (auto element : m_stateful_equations | boost::adaptors::indexed())
     {
         auto& eq = element.value();
-        auto input_buffer = eq.get_input_buffer();
-        auto input_ids = eq.get_input_ids();
+        auto& input_ids = eq.input_ids;
+        auto input_buffer = std::span{input_temp_buffer}.subspan(0, input_ids.size());
         assert(input_buffer.size() == input_ids.size());
         for (size_t i = 0; i < input_buffer.size(); i++)
         {
             const auto val = state.get(input_ids[i]);
             input_buffer[i] = val;
         }
-        eq.Update(m_current_time);
+        eq.equation->Update(input_buffer, m_current_time, eq.data);
     }
 }
 
-std::vector<opt::NLStatefulEquation>& opt::NLGraphSolver_impl::GetStatefulEquations()
+std::vector<opt::NLStatefulEquationWrapper>& opt::NLGraphSolver_impl::GetStatefulEquations()
 {
     return m_stateful_equations;
 }
 
-opt::NLGraphSolver_impl::NLGraphSolver_impl(std::vector<NLEquation> equations)
+opt::NLGraphSolver_impl::NLGraphSolver_impl(std::vector<NLEquationWrapper> equations)
     :m_equations(std::move(equations))
 {
 }
@@ -164,15 +168,13 @@ void opt::NLGraphSolver_impl::Initialize()
 
     for (const auto& item : m_equations)
     {
-		auto&& range = item.get_output_ids();
-        std::transform(range.begin(), range.end(), std::back_inserter(remaining_output_ids),
-            [](const auto& item) { return item; });
+		auto&& range = item.output_ids;
+        remaining_output_ids.insert(remaining_output_ids.end(), range.begin(), range.end());
     }
     for (const auto& item : m_stateful_equations)
     {
-		auto&& range = item.get_output_ids();
-        std::transform(range.begin(), range.end(), std::back_inserter(remaining_output_ids),
-            [](const auto& item) { return item; });
+        auto&& range = item.output_ids;
+        remaining_output_ids.insert(remaining_output_ids.end(), range.begin(), range.end());
     }
     for (const auto& item : m_buffer_equations)
     {
@@ -218,7 +220,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
     for (size_t i = 0; i < m_equations.size(); i++)
     {
         all_blocks.push_back({ i, EquationType::NLEquation, 0 });
-        auto&& inputs = m_equations[i].get_input_ids();
+        auto&& inputs = m_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
@@ -236,7 +238,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
     for (size_t i = 0; i < m_stateful_equations.size(); i++)
     {
         all_blocks.push_back({ i, EquationType::statefulNLEquation, 0 });
-        auto&& inputs = m_stateful_equations[i].get_input_ids();
+        auto&& inputs = m_stateful_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
@@ -278,11 +280,11 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
                 {
                 case EquationType::NLEquation:
                 {
-                    return m_equations[index.index].get_output_ids();
+                    return m_equations[index.index].output_ids;
                 }
                 case EquationType::statefulNLEquation:
                 {
-                    return m_stateful_equations[index.index].get_output_ids();
+                    return m_stateful_equations[index.index].output_ids;
                 }
                 case EquationType::BufferEquation:
                 {
@@ -316,6 +318,8 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
 
 void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies)
 {
+    std::array<double, 20> input_temp_buffer;
+    std::array<double, 20> output_temp_buffer;
     for (const auto& eq_index : indicies)
     {
         switch (eq_index.type)
@@ -323,17 +327,19 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
         case EquationType::NLEquation:
         {
             auto& eq = m_equations[eq_index.index];
-            auto input_buffer = eq.get_input_buffer();
-            auto input_ids = eq.get_input_ids();
+            auto& input_ids = eq.input_ids;
+            auto input_buffer = std::span{input_temp_buffer}.subspan(0, input_ids.size());
             assert(input_buffer.size() == input_ids.size());
             for (size_t i = 0; i < input_buffer.size(); i++)
             {
                 const auto val = state.get(input_ids[i]);
                 input_buffer[i] = val;
             }
-            eq.Apply();
-            auto output_buffer = eq.get_output_buffer();
-            auto output_ids = eq.get_output_ids();
+
+            auto& output_ids = eq.output_ids;
+            auto output_buffer = std::span{output_temp_buffer}.subspan(0, output_ids.size());
+
+            eq.equation->Apply(input_buffer, output_buffer);
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -345,18 +351,18 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
         case EquationType::statefulNLEquation:
         {
             auto& eq = m_stateful_equations[eq_index.index];
-            auto input_buffer = eq.get_input_buffer();
-            auto input_ids = eq.get_input_ids();
+            auto& input_ids = eq.input_ids;
+            auto input_buffer = std::span{input_temp_buffer}.subspan(0, input_ids.size());
             assert(input_buffer.size() == input_ids.size());
             for (size_t i = 0; i < input_buffer.size(); i++)
             {
                 const auto val = state.get(input_ids[i]);
                 input_buffer[i] = val;
             }
-
-            eq.Apply(m_current_time);
-            auto output_buffer = eq.get_output_buffer();
-            auto output_ids = eq.get_output_ids();
+            auto& output_ids = eq.output_ids;
+            auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
+            
+            eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -390,7 +396,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
     for (size_t i = 0; i < m_equations.size(); i++)
     {
         all_blocks.push_back({ i, EquationType::NLEquation, 0 });
-        auto&& inputs = m_equations[i].get_input_ids();
+        auto&& inputs = m_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
@@ -404,7 +410,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
     for (size_t i = 0; i < m_stateful_equations.size(); i++)
     {
         all_blocks.push_back({ i, EquationType::statefulNLEquation, 0 });
-        auto&& inputs = m_stateful_equations[i].get_input_ids();
+        auto&& inputs = m_stateful_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
@@ -433,7 +439,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
             {
             case EquationType::NLEquation:
             {
-                for (auto&& id : m_equations[index.index].get_output_ids())
+                for (auto&& id : m_equations[index.index].output_ids)
                 {
                     if (std::find(remaining_output_ids.begin(), remaining_output_ids.end(), id) != remaining_output_ids.end())
                     {
@@ -444,7 +450,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
             }
             case EquationType::statefulNLEquation:
             {
-                for (auto&& id : m_stateful_equations[index.index].get_output_ids())
+                for (auto&& id : m_stateful_equations[index.index].input_ids)
                 {
                     if (std::find(remaining_output_ids.begin(), remaining_output_ids.end(), id) != remaining_output_ids.end())
                     {
@@ -480,11 +486,11 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
                     {
                     case EquationType::NLEquation:
                     {
-                        return m_equations[index.index].get_output_ids();
+                        return m_equations[index.index].output_ids;
                     }
                     case EquationType::statefulNLEquation:
                     {
-                        return m_stateful_equations[index.index].get_output_ids();
+                        return m_stateful_equations[index.index].output_ids;
                     }
                     case EquationType::BufferEquation:
                     {
@@ -532,7 +538,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
                 {
                     continue;
                 }
-                if (!max_block.has_value() && block.count > 0)
+                if (!max_block.has_value())
                 {
                     max_block = block;
                     continue;
@@ -545,11 +551,11 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
                             {
                             case EquationType::NLEquation:
                             {
-                                return m_equations[block_idx.index.index].get_output_ids().size();
+                                return m_equations[block_idx.index.index].output_ids.size();
                             }
                             case EquationType::statefulNLEquation:
                             {
-                                return m_stateful_equations[block_idx.index.index].get_output_ids().size();
+                                return m_stateful_equations[block_idx.index.index].output_ids.size();
                             }
                             case EquationType::BufferEquation:
                             {
@@ -577,11 +583,11 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
                     {
                     case EquationType::NLEquation:
                     {
-                        return m_equations[max_block->index.index].get_output_ids();
+                        return m_equations[max_block->index.index].output_ids;
                     }
                     case EquationType::statefulNLEquation:
                     {
-                        return m_stateful_equations[max_block->index.index].get_output_ids();
+                        return m_stateful_equations[max_block->index.index].output_ids;
                     }
                     case EquationType::BufferEquation:
                     {
@@ -620,12 +626,12 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
     }
 }
 
-void opt::NLGraphSolver_impl::AddEquation(opt::NLEquation eq)
+void opt::NLGraphSolver_impl::AddEquation(opt::NLEquationWrapper eq)
 {
     m_equations.emplace_back(std::move(eq));
 }
 
-void opt::NLGraphSolver_impl::AddStatefulEquation(NLStatefulEquation eq)
+void opt::NLGraphSolver_impl::AddStatefulEquation(NLStatefulEquationWrapper eq)
 {
     m_stateful_equations.push_back(std::move(eq));
 }
@@ -713,12 +719,12 @@ void opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
     m_impl->UpdateState(state, time);
 }
 
-void opt::NLGraphSolver::AddEquation(NLEquation eq)
+void opt::NLGraphSolver::AddEquation(NLEquationWrapper eq)
 {
     m_impl->AddEquation(std::move(eq));
 }
 
-void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquation eq)
+void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquationWrapper eq)
 {
     m_impl->AddStatefulEquation(std::move(eq));
 }
@@ -728,7 +734,7 @@ void opt::NLGraphSolver::AddBufferEquation(BufferEquation eq)
     m_impl->AddBufferEq(std::move(eq));
 }
 
-std::vector<opt::NLStatefulEquation>& opt::NLGraphSolver::GetStatefulEquations()
+std::vector<opt::NLStatefulEquationWrapper>& opt::NLGraphSolver::GetStatefulEquations()
 {
     return m_impl->GetStatefulEquations();
 }

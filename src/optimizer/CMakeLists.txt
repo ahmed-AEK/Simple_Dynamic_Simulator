@@ -20,8 +20,7 @@ pch.h
 
 target_include_directories(NLOptimizer PRIVATE ".")
 target_include_directories(NLOptimizer PUBLIC "..")
-target_include_directories(NLOptimizer SYSTEM PUBLIC "../../external/boost")
 
-target_link_libraries(NLOptimizer PUBLIC NLopt::nlopt)
+target_link_libraries(NLOptimizer PUBLIC NLopt::nlopt Boost::numeric_odeint)
 
 target_precompile_headers(NLOptimizer PRIVATE pch.h)

@@ -1027,7 +1027,7 @@ void node::MainNodeScene::OnInit()
     InitializeSidePanel();
 
     m_plugins_manager = std::make_shared<PluginsManager>(m_palette_provider, m_classesManager);
-    m_plugins_manager->AddPlugin(std::make_shared<BuiltinClassesPlugin>());
+    m_plugins_manager->AddRuntime(node::make_PluginRuntime<NativePluginsRuntime>());
 
     InitializeTools();
 

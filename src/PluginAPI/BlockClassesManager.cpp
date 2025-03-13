@@ -7,14 +7,15 @@ bool node::BlockClassesManager::RegisterBlockClass(const std::shared_ptr<BlockCl
 	{
 		return false;
 	}
-	const auto& name = class_ptr->GetName();
+	auto name = std::string{ class_ptr->GetName() };
+	
 	auto it = m_classes.find(name);
 	if (it != m_classes.end() && it->first == name)
 	{
 		assert(false);
 		return false;
 	}
-	m_classes.emplace(name, class_ptr);
+	m_classes.emplace(std::move(name), class_ptr);
 	return true;
 }
 

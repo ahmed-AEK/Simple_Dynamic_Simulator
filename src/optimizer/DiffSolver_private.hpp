@@ -22,9 +22,9 @@ public:
 
     using time_type = controlled_stepper::time_type;
 
-    explicit DiffSolver_impl(std::vector<DiffEquation> eq);
+    explicit DiffSolver_impl(std::vector<DiffEquationWrapper> eq);
     DiffSolver_impl();
-    void AddEquation(DiffEquation eq);
+    void AddEquation(DiffEquationWrapper eq);
     void Initialize(double start_time, double end_time);
     StepResult Step(opt::FlatMap& state);
     [[nodiscard]] constexpr double GetStartTime() const { return m_start_time; }
@@ -49,7 +49,7 @@ private:
         >(1e-4 , 1e-4, 1, 1)
     } };
 
-    std::vector<DiffEquation> m_equations;
+    std::vector<DiffEquationWrapper> m_equations;
     boost::container::flat_set<int32_t> m_output_ids;
     controlled_stepper::state_type m_current_x;
     controlled_stepper::state_type m_current_dxdt;

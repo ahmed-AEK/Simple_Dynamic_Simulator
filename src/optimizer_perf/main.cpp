@@ -6,14 +6,15 @@
 int main()
 {
     int iterations = 0;
-    const int count = 30000;
+    const int count = 300000;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < count; i++)
     {
         iterations = 0;
-        opt::DiffEquation eq({ 1 }, { 2 }, [](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);});
-        opt::NLEquation eq2({ 0 }, { 1 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
-        opt::NLEquation eq3({ 2 }, { 3 }, [](auto in, auto out) -> void { out[0] = in[0] * 2; });
+        opt::DiffEquationWrapper eq({ 1 }, { 2 }, 
+            opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);}));
+        opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
+        opt::NLEquationWrapper eq3({ 2 }, { 3 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
         opt::NLDiffSolver solver;
         solver.AddDiffEquation(std::move(eq));
         solver.AddNLEquation(std::move(eq2));

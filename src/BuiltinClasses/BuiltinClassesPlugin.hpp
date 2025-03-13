@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PluginAPI/BlocksPlugin.hpp"
+#include "PluginAPI/PluginRuntime.hpp"
 
 namespace node
 {
@@ -8,12 +9,22 @@ namespace node
 class BuiltinClassesPlugin: public IBlocksPlugin
 {
 public:
+	BuiltinClassesPlugin();
 
-	std::string GetPluginName() override;
+	void GetPluginName(GetPluginNameCallback cb, void* context) override;
 
 	std::vector<std::shared_ptr<BlockClass>> GetClasses() override;
 
-	std::vector<BlockTemplate> GetBlocks() override;
+	void GetBlocks(GetBlocksCallback cb, void* context) override;
+};
+
+
+class NativePluginsRuntime : public IPluginRuntime
+{
+public:
+	virtual void GetName(GetNameCallback cb, void* context) const override;
+	void GetPlugin(std::string_view path, IBlocksPlugin** plugin_ptr) override;
+	void GetDefaultPlugin(IBlocksPlugin** plugin_ptr) override;
 };
 
 }

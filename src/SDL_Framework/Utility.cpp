@@ -7,6 +7,8 @@
 #include <utility>
 #include <cmath>
 
+#include "boost/container_hash/hash.hpp"
+
 template <typename Key, typename Value>
 class CacheStore
 {
@@ -75,11 +77,11 @@ struct std::hash<RoundRectSpec>
 {
     std::size_t operator()(const RoundRectSpec& k) const
     {
-        size_t hash = 23;
-        hash = hash * 31 + k.color.r;
-        hash = hash * 31 + k.color.g;
-        hash = hash * 31 + k.color.b;
-        hash = hash * 31 + k.radius;
+        size_t hash = 0;
+        boost::hash_combine(hash, k.color.r);
+        boost::hash_combine(hash, k.color.g);
+        boost::hash_combine(hash, k.color.b);
+        boost::hash_combine(hash, k.radius);
         return hash;
     }
 };

@@ -8,36 +8,66 @@
 
 namespace opt
 {
-class SourceEq : public OutputEquation
+
+struct SourceEvent
+{
+	bool enabled = false;
+	bool set = false;
+	double t = 0;
+};
+
+class ISourceEq
 {
 public:
-	struct SourceEvent
+	virtual void Apply(std::span<double> output, const double& t, SourceEvent& ev) = 0;
+	virtual void EventTrigger(const double& t, SourceEvent& ev) = 0;
+	virtual void Destroy() { delete this; }
+protected:
+	virtual ~ISourceEq() = default;
+};
+
+namespace detail
+{
+	struct SourceEqnDeleter
 	{
-		double t = 0;
-		bool set = false;
+		void operator()(ISourceEq* ptr) { if (ptr) { ptr->Destroy(); } };
 	};
+}
 
+using SourceEqPtr = std::unique_ptr<ISourceEq, detail::SourceEqnDeleter>;
+
+template <typename T, typename...Args>
+SourceEqPtr make_SourceEqn(Args&&...args)
+{
+	return SourceEqPtr{ new T{std::forward<Args>(args)...} };
+}
+
+
+class FunctorSourceEq : public ISourceEq
+{
+public:
 	using SourceFunctor = std::function<void(
-		std::span<double>, const double&, SourceEq&)>;
+		std::span<double>, const double&, SourceEvent&)>;
 
-	using SourceTrigger = std::function<void(const double&, SourceEq&)>;
+	using SourceTrigger = std::function<void(const double&, SourceEvent&)>;
 
-	SourceEq(std::pmr::vector<int32_t> output_ids,
+	FunctorSourceEq(
 		SourceFunctor functor,
-		SourceTrigger trigger = {},
-		std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-	void Apply(const double& t);
+		SourceTrigger trigger = {});
+	void Apply(std::span<double> output, const double& t, SourceEvent& ev);
 
-	void EventTrigger(const double& t);
-	std::optional<SourceEvent>& GetEvent() { return m_event; }
-	const std::optional<SourceEvent>& GetEvent() const { return m_event; }
-	const opt::FatAny& GetState() const { return m_state; };
-	opt::FatAny& GetState() { return m_state; }
+	void EventTrigger(const double& t, SourceEvent& ev);
 
 private:
 	SourceFunctor m_functor;
 	SourceTrigger m_trigger;
-	std::optional<SourceEvent> m_event;
 	opt::FatAny m_state;
+};
+
+struct SourceEqWrapper
+{
+	std::vector<int32_t> output_ids;
+	SourceEqPtr equation;
+	SourceEvent ev;
 };
 }

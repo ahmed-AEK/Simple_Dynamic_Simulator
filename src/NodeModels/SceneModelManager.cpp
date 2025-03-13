@@ -2,6 +2,8 @@
 #include "BlockPortsUpdate.hpp"
 #include "BlockData.hpp"
 
+#include <ranges>
+
 static node::model::NetNodeId GetMaxNodeId(std::span<node::model::NetNodeModel> vec)
 {
 	using namespace node;
@@ -483,7 +485,7 @@ struct ModifyBlockPropertiesAndSocketsAction : public ModelAction
 
 		old_sockets.clear();
 		old_sockets.reserve(old_span.size());
-		std::copy(old_span.begin(), old_span.end(), std::back_inserter(old_sockets));
+		old_sockets.insert(old_sockets.end(), old_span.begin(), old_span.end());
 
 		block->ClearSockets();
 		block->ReserveSockets(new_sockets.size());
@@ -554,7 +556,7 @@ struct ModifyBlockSocketsAction : public ModelAction
 
 		old_sockets.clear();
 		old_sockets.reserve(old_span.size());
-		std::copy(old_span.begin(), old_span.end(), std::back_inserter(old_sockets));
+		old_sockets.insert(old_sockets.end(), old_span.begin(), old_span.end());
 
 		block->ClearSockets();
 		block->ReserveSockets(new_sockets.size());
@@ -793,13 +795,15 @@ struct UpdateNetAction : public ModelAction
 		
 		// setup notification
 		NetModificationReport report;
-		std::transform(edits.stored_new_connections.begin(), edits.stored_new_connections.end(),
-			std::back_inserter(report.removed_connections),
-			[](const model::SocketNodeConnection& conn) {return conn.socketId; });
+		{
+			auto transform_range = edits.stored_new_connections | std::ranges::views::transform([](const model::SocketNodeConnection& conn) {return conn.socketId; });
+			report.removed_connections.insert(report.removed_connections.end(), transform_range.begin(), transform_range.end());
+		}
 
-		std::transform(edits.stored_new_segments.begin(), edits.stored_new_segments.end(),
-			std::back_inserter(report.removed_segments),
-			[](const StoredAddedSegment& segment)->model::NetSegmentId {return segment.id; });
+		{
+			auto transform_range = edits.stored_new_segments | std::ranges::views::transform([](const StoredAddedSegment& segment)->model::NetSegmentId {return segment.id; });
+			report.removed_segments.insert(report.removed_segments.end(), transform_range.begin(), transform_range.end());
+		}
 
 		report.removed_nodes = edits.stored_added_nodes;
 

@@ -5,60 +5,38 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 
 static constexpr std::string_view Description = "output = input1 + input2";
 
+static constexpr node::model::BlockSocketModel::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::input,
+		node::model::BlockSocketModel::SocketType::input,
+		node::model::BlockSocketModel::SocketType::output
+};
 
 node::AddSimpleBlockClass::AddSimpleBlockClass()
-	:BlockClass("Add Simple")
+	:BuiltinBasicClass{ "Add Simple" , ClassProperties, class_sockets, Description, BlockType::Stateless }
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::AddSimpleBlockClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType>
-node::AddSimpleBlockClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::input, 		
-		node::model::BlockSocketModel::SocketType::input,
-		node::model::BlockSocketModel::SocketType::output 
-	};
-}
-
-bool node::AddSimpleBlockClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != 0)
-	{
-		return false;
-	}
-	return true;
-}
-
-const std::string_view& node::AddSimpleBlockClass::GetDescription() const
-{
-	return Description;
-}
-
-node::BlockType node::AddSimpleBlockClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Stateless;
-}
-
-node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
- 	return opt::NLEquation{
+	struct AddBlockFunction : public opt::INLEquation
+	{
+		AddBlockFunction() {}
+		virtual void Apply(std::span<const double> input, std::span<double> output)
+		{
+			output[0] = input[0] + input[1];
+		}
+		void Destroy() override
+		{
+			// do nothing
+		}
+	};
+	static AddBlockFunction block_fn;
+ 	return opt::NLEquationWrapper{
 		{0,1},
 		{2},
-		[](std::span<const double> in, std::span<double> out)
-		{
-			out[0] = in[0] + in[1];
-		}
+		opt::NLEqPtr{&block_fn}
 	};
 }
 

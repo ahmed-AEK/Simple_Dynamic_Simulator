@@ -2,14 +2,14 @@
 
 TEST(testDiffSolver, testConstructor)
 {
-    opt::DiffEquation eq({0},{1}, [](auto in, auto out, const auto& t) { return out[0] = in[0] + t;});
+    opt::DiffEquationWrapper eq({0},{1}, opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0] + t;}));
     opt::DiffSolver solver;
     solver.AddEquation(std::move(eq));
 }
 
 TEST(testDiffSolver, testInitialize)
 {
-    opt::DiffEquation eq({0},{1}, [](auto in, auto out, const auto& t) { return out[0] = in[0] + t;});
+    opt::DiffEquationWrapper eq({0},{1}, opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0] + t;}));
     opt::DiffSolver solver{};
     solver.AddEquation(std::move(eq));
     solver.Initialize(0, 10);
@@ -20,7 +20,8 @@ TEST(testDiffSolver, testInitialize)
 
 TEST(testDiffSolver, testStep_time_advances)
 {
-    opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
+    opt::DiffEquationWrapper eq({ 0 }, { 1 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
     opt::DiffSolver solver{};
     solver.AddEquation(std::move(eq));
     solver.Initialize(0, 2);
@@ -40,7 +41,8 @@ TEST(testDiffSolver, testStep_time_advances)
 
 TEST(testDiffSolver, testPreprocessor)
 {
-    opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
+    opt::DiffEquationWrapper eq({ 0 }, { 1 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
     opt::DiffSolver solver{};
     solver.AddEquation(std::move(eq));
 
@@ -71,11 +73,13 @@ TEST(testDiffSolver, testPreprocessor)
 
 TEST(testDiffSolver, test2Eq)
 {
-    opt::DiffEquation eq({ 0 }, { 1 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
-    opt::DiffEquation eq2({ 1 }, { 2 }, [](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);});
+    opt::DiffEquationWrapper eq({ 0 }, { 1 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
+    opt::DiffEquationWrapper eq2({ 1 }, { 2 }, 
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, const auto& t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
     opt::DiffSolver solver;
-    solver.AddEquation(eq);
-    solver.AddEquation(eq2);
+    solver.AddEquation(std::move(eq));
+    solver.AddEquation(std::move(eq2));
     solver.Initialize(0, 2);
     opt::FlatMap state(3);
     state.modify(0,1);

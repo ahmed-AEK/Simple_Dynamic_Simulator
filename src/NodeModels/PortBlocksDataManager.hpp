@@ -11,7 +11,7 @@ namespace model
 struct PortBlockData
 {
 	SocketId id{ 0 };
-	SocketType port_type;
+	SocketType port_type{};
 };
 
 namespace detail
@@ -24,7 +24,6 @@ class PortBlocksDataManager : public detail::PortBlocksDataManagerBase
 public:
 	void AddPortForId(BlockId id, SocketType socket_type)
 	{
-		
 		SocketId new_id{ static_cast<model::id_int>(GetData().size()) };
 		SetDataForId(id, { new_id, socket_type });
 	}

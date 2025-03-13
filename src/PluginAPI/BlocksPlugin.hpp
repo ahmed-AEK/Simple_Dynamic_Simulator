@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PluginAPI/BlockClass.hpp"
+#include "PluginAPI/BlockClassHelpers.hpp"
 
 namespace node
 {
@@ -8,19 +9,44 @@ namespace node
 class IBlocksPlugin
 {
 public:
-	virtual std::string GetPluginName() = 0;
+	using GetPluginNameCallback = void(*)(void*, std::string_view);
+	virtual void GetPluginName(GetPluginNameCallback cb, void* context) = 0;
 
 	virtual std::vector<std::shared_ptr<BlockClass>> GetClasses() = 0;
 
-	virtual std::vector<BlockTemplate> GetBlocks() = 0;
+	using GetBlocksCallback = void(*)(void* context, std::span<const CBlockTemplate> blocks);
+
+	virtual void GetBlocks(GetBlocksCallback cb, void* context) = 0;
+
+	virtual void Destroy() { delete this; }
+protected:
+	virtual ~IBlocksPlugin() = default;
 };
+
+namespace detail
+{
+	struct BlocksPluginDeleter
+	{
+		void operator()(IBlocksPlugin* ptr) { if (ptr) { ptr->Destroy(); } };
+	};
+}
+
+using BlocksPluginPtr = std::unique_ptr<IBlocksPlugin, detail::BlocksPluginDeleter>;
+
+template <typename T, typename...Args>
+BlocksPluginPtr make_BlocksPlugin(Args&&...args)
+{
+	return BlocksPluginPtr{ new T{std::forward<Args>(args)...} };
+}
+
 
 class BlocksPlugin : IBlocksPlugin
 {
 public:
-	std::string GetPluginName() override
+
+	virtual void GetPluginName(GetPluginNameCallback cb, void* context)
 	{
-		return m_name;
+		cb(context, m_name);
 	}
 
 	std::vector<std::shared_ptr<BlockClass>> GetClasses()
@@ -28,9 +54,11 @@ public:
 		return m_classes;
 	}
 
-	std::vector<BlockTemplate> GetBlocks() override
+	void GetBlocks(GetBlocksCallback cb, void* context) override
 	{
-		return m_blocks;
+		auto group = helper::BlockTemplateGroupToC(m_blocks);
+
+		cb(context, group.block_templates);
 	}
 
 	void AddClass(std::shared_ptr<BlockClass> cls)

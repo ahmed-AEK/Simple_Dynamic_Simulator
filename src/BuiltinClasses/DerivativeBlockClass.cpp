@@ -5,49 +5,17 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 
 static constexpr std::string_view Description = "output = d(input)/dt";
 
+static constexpr node::model::BlockSocketModel::SocketType class_sockets[] = {
+		node::model::BlockSocketModel::SocketType::input,
+		node::model::BlockSocketModel::SocketType::output
+};
 
 node::DerivativeBlockClass::DerivativeBlockClass()
-	:BlockClass("Derivative")
+	:BuiltinBasicClass{ "Derivative", ClassProperties, class_sockets, Description, BlockType::Stateful}
 {
 }
 
-const std::vector<node::model::BlockProperty>& node::DerivativeBlockClass::GetDefaultClassProperties()
-{
-	return ClassProperties;
-}
-
-std::vector<node::model::BlockSocketModel::SocketType>
-node::DerivativeBlockClass::CalculateSockets(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
-	return {
-		node::model::BlockSocketModel::SocketType::input, 
-		node::model::BlockSocketModel::SocketType::output 
-	};
-}
-
-bool node::DerivativeBlockClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties)
-{
-	if (properties.size() != 0)
-	{
-		return false;
-	}
-	return true;
-}
-
-const std::string_view& node::DerivativeBlockClass::GetDescription() const
-{
-	return Description;
-}
-
-node::BlockType node::DerivativeBlockClass::GetBlockType(const std::vector<model::BlockProperty>& properties)
-{
-	UNUSED_PARAM(properties);
-	return BlockType::Stateful;
-}
-
-node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties)
+node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
 	struct DerivativeState
 	{
@@ -57,45 +25,51 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 	};
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
-	return opt::NLStatefulEquation{
-		{0},
-		{1},
-		opt::NLStatefulEquation::NLStatefulFunctor{[](std::span<const double> in, std::span<double> out, const double t, const opt::NLStatefulEquation& eq)
+
+	class DerivativeClassFunction: public opt::INLStatefulEquation
+	{
+	public:
+		void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
 		{
-			const auto& old_state = eq.GetState();
-			if (old_state.contains<DerivativeState>())
+			UNUSED_PARAM(data);
+			if (m_state)
 			{
-				const auto& state = old_state.get<const DerivativeState>();
-				if (t == state.last_input_time)
+				if (t == m_state->last_input_time)
 				{
-					out[0] = state.last_out;
+					output[0] = m_state->last_out;
 				}
 				else
 				{
-					out[0] = (in[0] - state.last_input) / (t - state.last_input_time);
+					output[0] = (input[0] - m_state->last_input) / (t - m_state->last_input_time);
 				}
 			}
 			else
 			{
-				out[0] = 0;
+				output[0] = 0;
 			}
-		}},
-		opt::NLStatefulEquation::NLStatefulUpdateFunctor{[](std::span<const double> in, const double t, opt::NLStatefulEquation& eq)
+		}
+		void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
-			auto& old_state = eq.GetState();
-			if (old_state.contains<DerivativeState>())
+			UNUSED_PARAM(data);
+			if (m_state)
 			{
-				auto& state = old_state.get<DerivativeState>();
-				state.last_out = (in[0] - state.last_input) / (t - state.last_input_time);;
-				state.last_input = in[0];
-				state.last_input_time = t;
+				m_state->last_out = (input[0] - m_state->last_input) / (t - m_state->last_input_time);;
+				m_state->last_input = input[0];
+				m_state->last_input_time = t;
 			}
 			else
 			{
-				old_state = opt::FatAny{DerivativeState{in[0], t, 0}};
+				m_state = DerivativeState{ input[0], t, 0 };
 			}
 		}
-		}
+	private:
+		std::optional<DerivativeState> m_state;
+	};
+	return opt::NLStatefulEquationWrapper{
+		{0},
+		{1},
+		opt::make_NLStatefulEqn<DerivativeClassFunction>(),
+		{}
 	};
 }
 
