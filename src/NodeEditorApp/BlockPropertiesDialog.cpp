@@ -110,6 +110,11 @@ void node::BlockPropertiesDialog::OnOk()
 		SDL_Log("Update Failed!");
 		return;
 	}
+	if (!block_class->ValidateClassProperties(new_properties))
+	{
+		SDL_Log("Update Failed class verification!");
+		return;
+	}
 
 	bool renew_sockets = false;
 	std::vector<model::BlockSocketModel> new_sockets;

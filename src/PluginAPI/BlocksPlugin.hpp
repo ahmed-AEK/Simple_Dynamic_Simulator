@@ -12,7 +12,8 @@ public:
 	using GetPluginNameCallback = void(*)(void*, std::string_view);
 	virtual void GetPluginName(GetPluginNameCallback cb, void* context) = 0;
 
-	virtual std::vector<std::shared_ptr<BlockClass>> GetClasses() = 0;
+	using GetClassesCallback = void(*)(void*, std::span<IBlockClass*>);
+	virtual void GetClasses(GetClassesCallback cb, void* context) = 0;
 
 	using GetBlocksCallback = void(*)(void* context, std::span<const CBlockTemplate> blocks);
 
@@ -49,7 +50,7 @@ public:
 		cb(context, m_name);
 	}
 
-	std::vector<std::shared_ptr<BlockClass>> GetClasses()
+	std::vector<BlockClassPtr> GetClasses()
 	{
 		return m_classes;
 	}
@@ -61,7 +62,7 @@ public:
 		cb(context, group.block_templates);
 	}
 
-	void AddClass(std::shared_ptr<BlockClass> cls)
+	void AddClass(BlockClassPtr cls)
 	{
 		m_classes.push_back(cls);
 	}
@@ -71,7 +72,7 @@ public:
 		m_blocks.emplace_back(block);
 	}
 
-	std::vector<std::shared_ptr<BlockClass>> m_classes;
+	std::vector<BlockClassPtr> m_classes;
 	std::vector<BlockTemplate> m_blocks;
 	std::string m_name;
 };

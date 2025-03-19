@@ -16,7 +16,7 @@ node::ScopeDisplayClass::ScopeDisplayClass()
 {
 }
 
-std::vector<node::model::BlockSocketModel::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+std::vector<node::model::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
 {
 	UNUSED_PARAM(properties);
 	assert(ValidateClassProperties(properties));

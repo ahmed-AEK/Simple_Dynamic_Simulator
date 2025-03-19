@@ -43,6 +43,13 @@ inline constexpr SpecificManager<T> specificManager{};
 template <typename T>
 concept no_except_move_constructible = std::is_nothrow_move_constructible_v<T>;
 
+#if defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4505)
+#else
+// gcc or clang
+#endif
+
 class FatAny
 {
 public:
@@ -91,3 +98,9 @@ private:
 	const AnyManager* p_manager;
 };
 }
+
+#if defined(_MSC_VER)
+#pragma warning( pop ) 
+#else
+// gcc or clang
+#endif

@@ -5,7 +5,7 @@ BlockClass.cpp BlockClass.hpp
 BlockDialog.hpp BlockDialog.cpp
 BlockClassesManager.cpp BlockClassesManager.hpp
 BlocksPlugin.cpp BlocksPlugin.hpp
-BlockTemplate.h TestTemplates.c
+BlockTemplate.h
 BlockCClass.h
 BlockClassHelpers.hpp
 PluginRuntime.hpp PluginRuntime.cpp
@@ -14,3 +14,4 @@ PluginRuntime.hpp PluginRuntime.cpp
 target_include_directories(PluginAPI PRIVATE ".")
 target_include_directories(PluginAPI PUBLIC "..")
 target_link_libraries(PluginAPI PUBLIC NodeModels NLOptimizer)
+target_precompile_headers(PluginAPI PRIVATE pch.h)

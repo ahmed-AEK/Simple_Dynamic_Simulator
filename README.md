@@ -31,6 +31,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - google-test
 - lunasvg
 - SQLiteCpp
+- lua, sol2
 
 ### testing
 

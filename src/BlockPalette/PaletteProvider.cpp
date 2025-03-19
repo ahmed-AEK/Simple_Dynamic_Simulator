@@ -64,7 +64,6 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 		return std::nullopt;
 	}
 
-	assert(block_class->ValidateClassProperties(block_data_ptr->properties));
 	if (!block_class->ValidateClassProperties(block_data_ptr->properties))
 	{
 		return std::nullopt;

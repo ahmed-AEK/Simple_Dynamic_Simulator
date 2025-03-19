@@ -56,7 +56,7 @@
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/Release_linux_static",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "BUILD_STATIC": true,
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true

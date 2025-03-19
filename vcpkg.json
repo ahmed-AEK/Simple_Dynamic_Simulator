@@ -23,6 +23,8 @@
       "features": [
         "harfbuzz"
       ]
-    }
+    },
+    "lua",
+    "sol2"
   ]
 }

@@ -1,6 +1,6 @@
 #include "BlockClassesManager.hpp"
 
-bool node::BlockClassesManager::RegisterBlockClass(const std::shared_ptr<BlockClass>& class_ptr)
+bool node::BlockClassesManager::RegisterBlockClass(BlockClassPtr class_ptr)
 {
 	assert(class_ptr);
 	if (!class_ptr)
@@ -15,11 +15,11 @@ bool node::BlockClassesManager::RegisterBlockClass(const std::shared_ptr<BlockCl
 		assert(false);
 		return false;
 	}
-	m_classes.emplace(std::move(name), class_ptr);
+	m_classes.emplace(std::move(name), std::move(class_ptr));
 	return true;
 }
 
-std::shared_ptr<node::BlockClass> node::BlockClassesManager::GetBlockClassByName(const std::string& name)
+node::BlockClassPtr node::BlockClassesManager::GetBlockClassByName(const std::string& name)
 {
 	auto it_class = m_classes.find(name);
 	if (it_class == m_classes.end())
