@@ -27,7 +27,7 @@ PRIVATE APP_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 target_link_libraries(DynamicSimulator PRIVATE 
-toolgui GraphicsScene BlockPalette BuiltinClasses PluginAPI SceneLoader)
+toolgui GraphicsScene BlockPalette BuiltinClasses LuaPlugin PluginAPI SceneLoader)
 
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
 

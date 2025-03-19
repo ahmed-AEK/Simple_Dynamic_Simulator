@@ -1,10 +1,12 @@
 #pragma once
 #include "optimizer/FatAny.hpp"
+#include "optimizer/Equation.hpp"
+
 #include <functional>
 #include <span>
 #include <memory_resource>
-#include "optimizer/Equation.hpp"
 #include <optional>
+#include <memory>
 
 namespace opt
 {

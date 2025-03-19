@@ -13,7 +13,7 @@ public:
 
 	void GetPluginName(GetPluginNameCallback cb, void* context) override;
 
-	std::vector<std::shared_ptr<BlockClass>> GetClasses() override;
+	void GetClasses(GetClassesCallback cb, void* context) override;
 
 	void GetBlocks(GetBlocksCallback cb, void* context) override;
 };

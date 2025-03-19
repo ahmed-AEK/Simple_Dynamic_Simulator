@@ -45,6 +45,16 @@ struct BlockProperty
 	std::string to_string() const;
 	static std::optional<property_t> from_string(BlockPropertyType type, std::string_view str);
 	static std::optional<property_t> from_string(BlockPropertyType type, std::string&& str);
+
+	const uint64_t* get_uint() const { return std::get_if<uint64_t>(&prop); }
+
+	const int64_t* get_int() const { return std::get_if<int64_t>(&prop); }
+
+	const double* get_float() const { return std::get_if<double>(&prop); }
+
+	const bool* get_bool() const { return std::get_if<bool>(&prop); }
+
+	const std::string* get_str() const { return std::get_if<std::string>(&prop); }
 };
 
 struct FunctionalBlockData

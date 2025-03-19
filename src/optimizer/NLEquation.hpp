@@ -1,10 +1,12 @@
 #pragma once
 
+#include "optimizer/Equation.hpp"
+
+#include <memory>
 #include <vector>
 #include <memory_resource>
 #include <functional>
 #include <span>
-#include "optimizer/Equation.hpp"
 
 namespace opt
 {

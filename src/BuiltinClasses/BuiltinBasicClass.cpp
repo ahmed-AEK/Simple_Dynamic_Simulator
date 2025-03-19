@@ -15,7 +15,7 @@ std::span<const node::model::BlockProperty> node::BuiltinBasicClass::GetDefaultC
     return m_defaultProperties;
 }
 
-std::vector<node::model::BlockSocketModel::SocketType> node::BuiltinBasicClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+std::vector<node::model::SocketType> node::BuiltinBasicClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
 {
 	UNUSED_PARAM(properties);
 	assert(ValidateClassProperties(properties));

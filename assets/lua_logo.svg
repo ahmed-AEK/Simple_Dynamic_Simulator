@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="21mm"
+   height="21mm"
+   viewBox="0 0 21 21"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <rect
+       x="34.4888"
+       y="52.6408"
+       width="104.55552"
+       height="48.284321"
+       id="rect1" />
+  </defs>
+  <g
+     id="layer1"
+     transform="translate(-0.01794624,-0.06597519)">
+    <circle
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="path1"
+       cx="10.517946"
+       cy="10.565975"
+       r="10" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-6.3395861,-6.339586)"
+       id="text1"
+       style="font-size:32px;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect1);fill:#000000;stroke:#000000;stroke-width:0;stroke-linecap:square;stroke-linejoin:round;paint-order:fill markers stroke"><tspan
+         x="34.488281"
+         y="81.835195"
+         id="tspan2">Lua</tspan></text>
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="path2"
+       cx="13.639715"
+       cy="5.4270697"
+       r="3" />
+  </g>
+</svg>

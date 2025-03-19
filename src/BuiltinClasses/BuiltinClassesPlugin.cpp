@@ -25,24 +25,33 @@ namespace
 namespace detail
 {
 
-static std::span<const std::shared_ptr<node::BlockClass>> get_builtin_classes()
+static std::span<node::IBlockClass*> get_builtin_classes()
 {
     using namespace node;
-    static const std::shared_ptr<node::BlockClass> classes[] =
+    static const BlockClassPtr classes[] =
     {
-        std::make_shared<GainBlockClass>(),
-        std::make_shared<ConstantSourceClass>(),
-        std::make_shared<ScopeDisplayClass>(),
-        std::make_shared<RampSourceClass>(),
-        std::make_shared<IntegrationBlockClass>(),
-        std::make_shared<DerivativeBlockClass>(),
-        std::make_shared<AddSimpleBlockClass>(),
-        std::make_shared<MultiplyBlockClass>(),
-        std::make_shared<SineSourceClass>(),
-        std::make_shared<StepSourceClass>(),
-        std::make_shared<ComparatorBlockClass>()
+        make_BlockClass<GainBlockClass>(),
+        make_BlockClass<ConstantSourceClass>(),
+        make_BlockClass<ScopeDisplayClass>(),
+        make_BlockClass<RampSourceClass>(),
+        make_BlockClass<IntegrationBlockClass>(),
+        make_BlockClass<DerivativeBlockClass>(),
+        make_BlockClass<AddSimpleBlockClass>(),
+        make_BlockClass<MultiplyBlockClass>(),
+        make_BlockClass<SineSourceClass>(),
+        make_BlockClass<StepSourceClass>(),
+        make_BlockClass<ComparatorBlockClass>()
     };
-    return classes;
+    static auto classes_raw = [&]()
+        {
+            std::array<node::IBlockClass*, std::size(classes)> temp{};
+            for (size_t i = 0; i < std::size(classes); i++)
+            {
+                temp[i] = classes[i].get();
+            }
+            return temp;
+        }();
+    return classes_raw;
 }
 
 static std::span<const node::BlockTemplate> get_builtin_blocks()
@@ -223,10 +232,10 @@ void node::BuiltinClassesPlugin::GetPluginName(GetPluginNameCallback cb, void* c
     cb(context, name);
 }
 
-std::vector<std::shared_ptr<node::BlockClass>> node::BuiltinClassesPlugin::GetClasses()
+void node::BuiltinClassesPlugin::GetClasses(GetClassesCallback cb, void* context)
 {
     auto classes = ::detail::get_builtin_classes();
-    return {classes.begin(), classes.end()};
+    cb(context, classes);
 }
 
 void node::BuiltinClassesPlugin::GetBlocks(GetBlocksCallback cb, void* context)

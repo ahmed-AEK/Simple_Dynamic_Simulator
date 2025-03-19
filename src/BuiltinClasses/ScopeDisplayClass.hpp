@@ -10,7 +10,7 @@ class ScopeDisplayClass : public BuiltinBasicClass
 {
 public:
 	ScopeDisplayClass();
-	std::vector<model::BlockSocketModel::SocketType>
+	std::vector<model::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) const override;
 	GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const override;
 

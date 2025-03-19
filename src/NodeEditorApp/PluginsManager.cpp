@@ -46,7 +46,7 @@ void node::PluginsManager::AddRuntime(node::PluginRuntimePtr runtime)
 
 	node::BlocksPluginPtr block_plugin;
 
-	IBlocksPlugin* block_plugin_raw;
+	IBlocksPlugin* block_plugin_raw = nullptr;
 	it->second->GetDefaultPlugin(&block_plugin_raw);
 	if (block_plugin_raw)
 	{
@@ -78,6 +78,16 @@ static std::string GetPluginName(node::IBlocksPlugin& plugin)
 	return runtime_name;
 }
 
+template <typename Functor>
+static void get_plugin_classes(node::IBlocksPlugin* plugin_ptr, Functor&& f)
+	requires requires (std::span<node::IBlockClass*> classes) { f(classes); }
+{
+	using namespace node;
+	plugin_ptr->GetClasses([](void* context, std::span<IBlockClass*> classes) {
+		Functor* functor = static_cast<Functor*>(context);
+		(*functor)(classes);
+		}, &f);
+}
 
 void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::string loader_name)
 {
@@ -97,20 +107,23 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 	auto plugin_it = m_plugins.emplace(std::move(plugin_name), PluginRecord{ std::move(loader_name), std::move(plugin_ptr), {}, {} });
 	auto* plugin = plugin_it.first->second.plugin.get();
 
-	auto&& classes = plugin->GetClasses();
-	plugin_it.first->second.registered_class_names.reserve(classes.size());
-	for (const auto& cls : classes)
-	{
-		bool added = m_classes_mgr->RegisterBlockClass(cls);
-		if (added)
+	get_plugin_classes(plugin, [&](std::span<node::IBlockClass*> classes)
 		{
-			plugin_it.first->second.registered_class_names.push_back(std::string{ cls->GetName() });
-		}
-		else
-		{
-			SDL_Log("Failed to register class: %s", cls->GetName().data());
-		}
-	}
+			plugin_it.first->second.registered_class_names.reserve(classes.size());
+			for (const auto& cls : classes)
+			{
+				bool added = m_classes_mgr->RegisterBlockClass(BlockClassPtr{ BlockClassPtr::new_reference, cls });
+				if (added)
+				{
+					plugin_it.first->second.registered_class_names.push_back(std::string{ cls->GetName() });
+				}
+				else
+				{
+					SDL_Log("Failed to register class: %s", cls->GetName().data());
+				}
+			}
+		});
+	
 
 	GetPluginBlocks(*plugin, [&](std::span<const CBlockTemplate> blocks_span)
 		{

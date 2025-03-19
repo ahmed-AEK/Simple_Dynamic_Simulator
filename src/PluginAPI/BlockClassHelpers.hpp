@@ -4,8 +4,13 @@
 #include "BlockClass.hpp"
 #include <optional>
 
+#if defined(_MSC_VER)
 #pragma warning( push )
 #pragma warning( disable : 4505)
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#endif
 
 namespace node
 {
@@ -225,4 +230,8 @@ namespace helper
 }
 }
 // Your function
+#if defined(_MSC_VER)
 #pragma warning( pop ) 
+#else
+#pragma GCC diagnostic pop
+#endif

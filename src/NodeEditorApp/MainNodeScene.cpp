@@ -36,6 +36,7 @@
 #include "NodeSDLStylers/PropertyPrintStyler.hpp"
 
 #include "BuiltinClasses/BuiltinClassesPlugin.hpp"
+#include "LuaPlugin/LuaRuntime.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
@@ -697,7 +698,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
                     sim_data = block_it->data;
                 }
             }
-            auto dialog = class_ptr->CreateBlockDialog(*this, block_model, *block_data,sim_data);
+            auto dialog = static_cast<BlockClass*>(class_ptr.get())->CreateBlockDialog(*this, block_model, *block_data,sim_data);
             if (dialog)
             {
                 objects_dialogs[&block] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::BlockDialog };
@@ -1028,6 +1029,7 @@ void node::MainNodeScene::OnInit()
 
     m_plugins_manager = std::make_shared<PluginsManager>(m_palette_provider, m_classesManager);
     m_plugins_manager->AddRuntime(node::make_PluginRuntime<NativePluginsRuntime>());
+    m_plugins_manager->AddRuntime(node::make_PluginRuntime<LuaRuntime>());
 
     InitializeTools();
 
