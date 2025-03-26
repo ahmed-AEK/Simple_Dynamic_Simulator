@@ -1,14 +1,18 @@
 #include "NLGraphSolver.hpp"
 #include "toolgui/NodeMacros.h"
 #include <boost/range/adaptors.hpp>
-
 #include "optimizer/NLGraphSolver_private.hpp"
 
-double opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::span<double> grad)
+tl::expected<double, std::string> opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::span<double> grad)
 {
     UNUSED_PARAM(grad);
     LoadDatatoMap(x, m_current_state);
-    double main_penalty = CalcPenalty(m_current_state);
+    auto res_temp = CalcPenalty(m_current_state);
+    if (!res_temp)
+    {
+        return res_temp;
+    }
+    double main_penalty = *res_temp;
     if (grad.size())
     {
         for (size_t i = 0; i < x.size(); i++)
@@ -16,7 +20,12 @@ double opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::sp
             const double old_value = m_current_state.get(m_estimated_output_ids[i]);
             const double delta = std::abs(old_value) * 1e-3 + 1e-5;
             m_current_state.modify(m_estimated_output_ids[i], old_value + delta );
-            const double new_penalty = CalcPenalty(m_current_state);
+            auto res = CalcPenalty(m_current_state);
+            if (!res)
+            {
+                return res;
+            }
+            const double new_penalty = *res;
             grad[i] = (new_penalty - main_penalty) / delta;
             m_current_state.modify(m_estimated_output_ids[i], old_value);
         }
@@ -33,7 +42,13 @@ double opt::NLGraphSolver_impl::CostFunction(unsigned n, const double* x, double
     {
         grad_span = { grad, grad + n };
     }
-    return this_ptr->SolveInternal({ x, x + n }, grad_span);
+    auto result = this_ptr->SolveInternal({ x, x + n }, grad_span);
+    if (!result)
+    {
+        this_ptr->m_last_error = std::move(result.error());
+        throw nlopt::forced_stop{};
+    }
+    return *result;
 }
 
 void opt::NLGraphSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& state)
@@ -57,9 +72,15 @@ std::vector<double> opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state)
     return output;
 }
 
-double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
+tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 {
-    EvalSpecificFunctors(state, m_inner_solve_eqns);
+    {
+        auto res = EvalSpecificFunctors(state, m_inner_solve_eqns);
+        if (!res)
+        {
+            return tl::unexpected<std::string>{ std::move(res.error()) };
+        }
+    }
     double penalty = 0.0;
     std::array<double, 20> input_temp_buffer;
     std::array<double, 20> output_temp_buffer;
@@ -80,7 +101,11 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
             auto& output_ids = eq.output_ids;
             auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
 
-            eq.equation->Apply(input_buffer, output_buffer);
+            auto res = eq.equation->Apply(input_buffer, output_buffer);
+            if (res == Status::error)
+            {
+                return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+            }
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
                 const double new_value = output_buffer[i];
@@ -104,8 +129,11 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
             auto& output_ids = eq.output_ids;
             auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
 
-            eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
-
+            auto res = eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
+            if (res == Status::error)
+            {
+                return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+            }
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -117,7 +145,7 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
         }
         case EquationType::BufferEquation:
         {
-            auto& eq = m_buffer_equations[eq_idx.index];
+            const auto& eq = m_buffer_equations[eq_idx.index];
             const double new_value = state.get(eq.input_id);
             const auto estimated_value = state.get(eq.output_id);
             penalty += (new_value - estimated_value) * (new_value - estimated_value);
@@ -128,7 +156,7 @@ double opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
     return std::sqrt(penalty);
 }
 
-void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
+opt::NLSolveResult opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
 {
     m_last_state_time = m_current_time;
     std::array<double, 20> input_temp_buffer;
@@ -144,8 +172,13 @@ void opt::NLGraphSolver_impl::UpdateStateInternal(FlatMap& state)
             const auto val = state.get(input_ids[i]);
             input_buffer[i] = val;
         }
-        eq.equation->Update(input_buffer, m_current_time, eq.data);
+        auto res = eq.equation->Update(input_buffer, m_current_time, eq.data);
+        if (res == Status::error)
+        {
+            return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+        }
     }
+    return std::monostate{};
 }
 
 std::vector<opt::NLStatefulEquationWrapper>& opt::NLGraphSolver_impl::GetStatefulEquations()
@@ -316,7 +349,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
     }
 }
 
-void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies)
+opt::NLSolveResult opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies)
 {
     std::array<double, 20> input_temp_buffer;
     std::array<double, 20> output_temp_buffer;
@@ -339,7 +372,11 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
             auto& output_ids = eq.output_ids;
             auto output_buffer = std::span{output_temp_buffer}.subspan(0, output_ids.size());
 
-            eq.equation->Apply(input_buffer, output_buffer);
+            auto res = eq.equation->Apply(input_buffer, output_buffer);
+            if (res == Status::error)
+            {
+                return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+            }
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -362,7 +399,11 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
             auto& output_ids = eq.output_ids;
             auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
             
-            eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
+            auto res = eq.equation->Apply(input_buffer, output_buffer, m_current_time, eq.data);
+            if (res == Status::error)
+            {
+                return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+            }
             assert(output_buffer.size() == output_ids.size());
             for (size_t i = 0; i < output_buffer.size(); i++)
             {
@@ -373,13 +414,14 @@ void opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state, const std::ve
         }
         case EquationType::BufferEquation:
         {
-            auto& eq = m_buffer_equations[eq_index.index];
+            const auto& eq = m_buffer_equations[eq_index.index];
             const double new_value = state.get(eq.input_id);
             state.modify(eq.output_id, new_value);
             break;
         }
         }
     }
+    return std::monostate{};
 }
 
 void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining_output_ids)
@@ -649,23 +691,38 @@ static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, 
     }
 }
 
-void opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& time)
+opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& time)
 {
     if ( 0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size())
     {
-        return;
+        return std::monostate{};
     }
 
     m_current_time = time;
     opt::FlatMap::sync(state, m_current_state);
-    EvalSpecificFunctors(m_current_state, m_initial_solve_eqns);
+    {
+        auto res = EvalSpecificFunctors(m_current_state, m_initial_solve_eqns);
+        if (!res)
+        {
+            return res;
+        }
+    }
     if (m_estimated_output_ids.size())
     {
         std::vector<double> x = LoadMaptoVec(m_current_state);
         double min_value;
         [[maybe_unused]] nlopt::result result = m_optimizer.optimize(x, min_value);
-        EvalSpecificFunctors(m_current_state, m_inner_solve_eqns);
-
+        if (result == nlopt::FORCED_STOP)
+        {
+            return tl::unexpected{ m_last_error.value_or("") };
+        }
+        {
+            auto res = EvalSpecificFunctors(m_current_state, m_inner_solve_eqns);
+            if (!res)
+            {
+                return res;
+            }
+        }
         OffloadSpecificIndicies(m_current_state, state, m_initial_solve_output_ids);
         OffloadSpecificIndicies(m_current_state, state, m_inner_solve_output_ids);
         for (size_t idx = 0; idx < m_estimated_output_ids.size(); idx++)
@@ -678,19 +735,20 @@ void opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& time)
         OffloadSpecificIndicies(m_current_state, state, m_initial_solve_output_ids);
     }
     //LoadDatatoMap(x, state);
+    return std::monostate{};
 }
 
-void opt::NLGraphSolver_impl::UpdateState(FlatMap& state, const double& time)
+opt::NLSolveResult opt::NLGraphSolver_impl::UpdateState(FlatMap& state, const double& time)
 {
     if (0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size())
     {
-        return;
+        return std::monostate{};
     }
 
     m_current_time = time;
     opt::FlatMap::sync(state, m_current_state);
 
-    UpdateStateInternal(state);
+    return UpdateStateInternal(state);
 }
 
 opt::NLGraphSolver::NLGraphSolver()
@@ -709,14 +767,14 @@ void opt::NLGraphSolver::Initialize()
     m_impl->Initialize();
 }
 
-void opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
+opt::NLSolveResult opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
 {
-    m_impl->Solve(state, time);
+    return m_impl->Solve(state, time);
 }
 
-void opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
+opt::NLSolveResult opt::NLGraphSolver::UpdateState(FlatMap& state, const double& time)
 {
-    m_impl->UpdateState(state, time);
+    return m_impl->UpdateState(state, time);
 }
 
 void opt::NLGraphSolver::AddEquation(NLEquationWrapper eq)

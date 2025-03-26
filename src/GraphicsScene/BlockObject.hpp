@@ -31,7 +31,7 @@ public:
     ~BlockObject() override;
     void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
-    std::optional<model::BlockId> GetModelId();
+    std::optional<model::BlockId> GetModelId() { return m_id; }
     const std::vector<std::unique_ptr<BlockSocketObject>>& GetSockets() const;
     node::BlockSocketObject* GetSocketById(model::SocketId id);
 
@@ -39,7 +39,6 @@ public:
     const BlockStyler& GetStyler() const { return *m_styler; }
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
     void SetResizeHandles(BlockResizeObject& resize_object);
-    void HideResizeHandles();
 
     void SetOrientation(model::BlockOrientation orientation) { m_orientation = orientation; }
     model::BlockOrientation GetOrienation() const { return m_orientation; }

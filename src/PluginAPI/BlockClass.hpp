@@ -51,19 +51,53 @@ public:
 	virtual std::string_view GetDescription() const = 0;
 
 	virtual std::span<const model::BlockProperty> GetDefaultClassProperties() const = 0;
-	virtual bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties) const = 0;
+
+	class IValidatePropertiesNotifier
+	{
+	public:
+		virtual void error(size_t property_index, const std::string_view& error_text) = 0;
+	};
+	
+	virtual bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const = 0;
 
 	virtual std::vector<model::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) const = 0;
 	virtual BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) const = 0;
 
-	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>>;
+	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>, std::string>;
 	virtual GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const = 0;
 	virtual void increment_ref() const = 0;
 	virtual void decrement_ref() const = 0;
 	virtual bool HasBlockDialog() const { return false; }
 protected:
 	virtual ~IBlockClass() = default;
+};
+
+struct ValidatePropertiesNotifier : public IBlockClass::IValidatePropertiesNotifier
+{
+	void error(size_t property_index, const std::string_view& error_text) override
+	{
+		errors.push_back({ property_index, std::string{error_text} });
+	}
+
+	struct PropertyError
+	{
+		size_t prop_idx;
+		std::string error_text;
+	};
+	std::vector<PropertyError> errors;
+};
+
+struct LightValidatePropertiesNotifier : public IBlockClass::IValidatePropertiesNotifier
+{
+	void error(size_t property_index, const std::string_view& error_text) override
+	{
+		(void)(property_index);
+		(void)(error_text);
+		errored = true;
+	}
+
+	bool errored = false;
 };
 
 class RcBlockClass: public IBlockClass
@@ -98,6 +132,14 @@ public:
 
 	constexpr BlockClassPtr() = default;
 	constexpr BlockClassPtr(nullptr_t) :BlockClassPtr{} {};
+	constexpr BlockClassPtr& operator=(nullptr_t) {
+		if (m_ptr)
+		{
+			m_ptr->decrement_ref();
+		}
+		m_ptr = nullptr;
+		return *this;
+	}
 	constexpr BlockClassPtr(new_reference_t, IBlockClass* ptr)
 		:m_ptr{ ptr } {
 		if (m_ptr) { m_ptr->increment_ref(); }
@@ -141,8 +183,8 @@ public:
 
 	constexpr friend bool operator==(const BlockClassPtr& lhs, const BlockClassPtr& rhs) { return lhs.m_ptr == rhs.m_ptr; }
 
-	constexpr friend bool operator==(const BlockClassPtr& lhs, IBlockClass* rhs) { return lhs.get() == rhs; }
-	constexpr friend bool operator==(IBlockClass* lhs, const BlockClassPtr& rhs) { return lhs == rhs.get(); }
+	constexpr friend bool operator==(const BlockClassPtr& lhs, const IBlockClass* rhs) { return lhs.get() == rhs; }
+	constexpr friend bool operator==(const IBlockClass* lhs, const BlockClassPtr& rhs) { return lhs == rhs.get(); }
 
 	constexpr friend bool operator==(const BlockClassPtr& lhs, nullptr_t) { return lhs.get() == nullptr; }
 	constexpr friend bool operator==(nullptr_t, const BlockClassPtr& rhs) { return nullptr == rhs.get(); }
@@ -162,10 +204,10 @@ BlockClassPtr make_BlockClass(Args&&...args)
 class BlockClass: public RcBlockClass
 {
 public:
-	BlockClass(std::string name);
+	explicit BlockClass(std::string name);
 	BlockClass(const BlockClass&) = delete;
 	BlockClass& operator=(const BlockClass&) = delete;
-	virtual ~BlockClass();
+	~BlockClass() override;
 
 	void SetName(std::string name) { m_name = name; }
 	std::string_view GetName() const override { return m_name; }

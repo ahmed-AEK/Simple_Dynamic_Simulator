@@ -17,15 +17,23 @@ opt::NLDiffSolver::NLDiffSolver()
 {
 	auto preprocessor = [this](auto& state, const double time)
 		{
-			this->ApplySources(state, time);
-			m_NLSolver.Solve(state, time);
+			auto result = this->ApplySources(state, time);
+			if (!result)
+			{
+				return result;
+			}
+			return m_NLSolver.Solve(state, time);
 		};
 	m_diffSolver.SetPreprocessor(std::move(preprocessor));
 
 	auto postprocessor = [this](auto& state, const double time)
 		{
-			this->ApplySources(state, time);
-			m_NLSolver.Solve(state, time);
+			auto result = this->ApplySources(state, time);
+			if (!result)
+			{
+				return result;
+			}
+			return m_NLSolver.Solve(state, time);
 		};
 	m_diffSolver.SetPostprocessor(std::move(postprocessor));
 }
@@ -75,31 +83,52 @@ void opt::NLDiffSolver::AddSource(SourceEqWrapper source)
 	m_sources.push_back(std::move(source));
 }
 
-void opt::NLDiffSolver::Initialize(double start_time, double end_time)
+opt::NLSolveResult opt::NLDiffSolver::Initialize(double start_time, double end_time)
 {
 	m_diffSolver.Initialize(start_time, end_time);
 	m_NLSolver.Initialize();
 	for (auto& observer : m_observers)
 	{
-		observer.o.equation->Initialize(start_time, end_time);
+		auto res = observer.o.equation->Initialize(start_time, end_time);
+		if (res == Status::error)
+		{ 
+			return tl::unexpected<std::string>{observer.o.equation->GetLastError()};
+		}
 	}
+	return std::monostate{};
 }
 
-void opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
+opt::NLSolveResult opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
 {
-	ApplySources(state, GetCurrentTime());
-	m_NLSolver.Solve(state, GetCurrentTime());
-	m_NLSolver.UpdateState(state, GetCurrentTime());
-	NotifyObservers(state, GetCurrentTime());
-	NotifyZeroCrossings(state, GetCurrentTime());
+	auto result = ApplySources(state, GetCurrentTime());
+	if (!result)
+	{
+		return result;
+	}
+	result = m_NLSolver.Solve(state, GetCurrentTime());
+	if (!result)
+	{
+		return result;
+	}
+	result = m_NLSolver.UpdateState(state, GetCurrentTime());
+	if (!result)
+	{
+		return result;
+	}
+	result = NotifyObservers(state, GetCurrentTime());
+	if (!result)
+	{
+		return result;
+	}
+	return NotifyZeroCrossings(state, GetCurrentTime());
 }
 
-void opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)
+opt::NLSolveResult opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)
 {
 	std::array<double, 20> input_tmp_buffer;
 	for (auto& observer : m_observers)
 	{
-		auto& input_ids = observer.o.input_ids;
+		const auto& input_ids = observer.o.input_ids;
 		auto input_buffer = std::span{input_tmp_buffer}.subspan(0, input_ids.size());
 		assert(input_buffer.size() == input_ids.size());
 		for (size_t i = 0; i < input_buffer.size(); i++)
@@ -107,8 +136,13 @@ void opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)
 			const auto val = state.get(input_ids[i]);
 			input_buffer[i] = val;
 		}
-		observer.o.equation->Apply(input_buffer, t);
+		auto res = observer.o.equation->Apply(input_buffer, t);
+		if (res == Status::error)
+		{
+			return tl::unexpected<std::string>{observer.o.equation->GetLastError() };
+		}
 	}
+	return std::monostate{};
 }
 
 std::vector<opt::ObserverData> opt::NLDiffSolver::GetObserversData()
@@ -134,8 +168,14 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 	m_diffSolver.SetNextEventTime(next_event);
 
 	const auto result = m_diffSolver.Step(state);
-	m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
-
+	
+	{
+		auto post_result = m_diffSolver.ApplyPostProcessor(state, GetCurrentTime()); // update sources and NLEquations 
+		if (!post_result)
+		{
+			return opt::StepResult::unexpected_type{ std::move(post_result.error()) };
+		}
+	}
 	double end_time = GetCurrentTime();
 
 	if (UpdateNewZeroCrossings(state))
@@ -146,7 +186,11 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 		for (int i = 0; i < ZeroCrossingIterations; i++)
 		{
 			double current_time = (start_time + end_time) / 2;
-			InterpolateStateAt(m_new_crossed_states, current_time);
+			auto nl_result = InterpolateStateAt(m_new_crossed_states, current_time);
+			if (!nl_result)
+			{
+				return tl::unexpected<std::string>{std::move(nl_result.error())};
+			}
 			bool crossing_contained = UpdateNewZeroCrossings(m_new_crossed_states);
 			if (crossing_contained)
 			{
@@ -160,41 +204,67 @@ opt::StepResult opt::NLDiffSolver::Step(FlatMap& state)
 			}
 		}
 		FlatMap::sync(m_crossed_states, state);
-		NotifyZeroCrossings(state, crossed_time);
+		{
+			auto res = NotifyZeroCrossings(state, crossed_time);
+			if (!res)
+			{
+				return tl::unexpected<std::string>{ std::move(res.error()) };
+			}
+		}
 		m_diffSolver.SetCurrentTime(crossed_time);
 	}
 
 	if (next_event && GetCurrentTime() >= *next_event)
 	{
-		TriggerSources(GetCurrentTime());
+		auto res = TriggerSources(GetCurrentTime());
+		if (!res)
+		{
+			return tl::unexpected<std::string>{ std::move(res.error()) };
+		}
 	}
-
-	m_NLSolver.UpdateState(state, GetCurrentTime());
-
+	{
+		auto res = m_NLSolver.UpdateState(state, GetCurrentTime());
+		if (!res)
+		{
+			return tl::unexpected<std::string>{ std::move(res.error()) };
+		}
+	}
 	if (GetCurrentTime() - m_last_oberver_time >= 1e-9)
 	{
-		NotifyObservers(state, GetCurrentTime());
+		auto res = NotifyObservers(state, GetCurrentTime());
+		if (!res)
+		{
+			return tl::unexpected<std::string>{ std::move(res.error()) };
+		}
 		m_last_oberver_time = GetCurrentTime();
 	}
 
-	if (result == opt::StepResult::ReachedEnd)
+	if (result == opt::StepEnd::ReachedEnd)
 	{
 		for (auto& observer : m_observers)
 		{
-			observer.o.equation->CaptureEnd(GetCurrentTime());
+			auto res = observer.o.equation->CaptureEnd(GetCurrentTime());
+			if (res == Status::error)
+			{
+				return tl::unexpected<std::string>{ observer.o.equation->GetLastError() };
+			}
 		}
 	}
 	return result;
 }
 
-void opt::NLDiffSolver::ApplySources(FlatMap& state, const double t)
+opt::NLSolveResult opt::NLDiffSolver::ApplySources(FlatMap& state, const double t)
 {
 	std::array<double, 20> output_temp_buff;
 	for (auto& source : m_sources)
 	{
-		auto& output_ids = source.output_ids;
+		const auto& output_ids = source.output_ids;
 		auto output_buffer = std::span{output_temp_buff}.subspan(0, output_ids.size());
-		source.equation->Apply(output_buffer, t, source.ev);
+		auto apply_result = source.equation->Apply(output_buffer, t, source.ev);
+		if (apply_result == Status::error)
+		{
+			return tl::unexpected{ source.equation->GetLastError() };
+		}
 		assert(output_buffer.size() == output_ids.size());
 		for (size_t i = 0; i < output_buffer.size(); i++)
 		{
@@ -202,9 +272,10 @@ void opt::NLDiffSolver::ApplySources(FlatMap& state, const double t)
 			state.modify(output_ids[i], result);
 		}
 	}
+	return std::monostate{};
 }
 
-void opt::NLDiffSolver::TriggerSources(const double t)
+opt::NLSolveResult opt::NLDiffSolver::TriggerSources(const double t)
 {
 	for (auto& source : m_sources)
 	{
@@ -217,7 +288,11 @@ void opt::NLDiffSolver::TriggerSources(const double t)
 		if (event_ref.t <= t && !event_ref.set)
 		{
 			event_ref.set = true;
-			source.equation->EventTrigger(t, event_ref);
+			auto res = source.equation->EventTrigger(t, event_ref);
+			if (res == Status::error)
+			{
+				return tl::unexpected(source.equation->GetLastError());
+			}
 		}
 
 	}
@@ -232,12 +307,17 @@ void opt::NLDiffSolver::TriggerSources(const double t)
 		if (event_ref.t <= t && !event_ref.set)
 		{
 			event_ref.set = true;
-			eq.equation->EventTrigger(t, eq.data);
+			auto res = eq.equation->EventTrigger(t, eq.data);
+			if (res == Status::error)
+			{
+				return tl::unexpected{ eq.equation->GetLastError() };
+			}
 		}
 	}
+	return std::monostate{};
 }
 
-void opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t)
+opt::NLSolveResult opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t)
 {
 	for (auto&& eq : m_NLSolver.GetStatefulEquations())
 	{
@@ -250,7 +330,7 @@ void opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t
 		for (auto&& crossing : zero_crossings)
 		{
 			assert(eq.input_ids.size() > static_cast<size_t>(crossing.in_port_id));
-			auto& port_id = eq.input_ids[crossing.in_port_id];
+			const auto& port_id = eq.input_ids[crossing.in_port_id];
 			auto&& signal_value = state.get(port_id);
 			auto old_state = crossing.current_value;
 			auto new_state = (signal_value - crossing.value > 0) ? ZeroCrossDescriptor::Position::above : ZeroCrossDescriptor::Position::below;
@@ -262,26 +342,39 @@ void opt::NLDiffSolver::NotifyZeroCrossings(const FlatMap& state, const double t
 			{
 				crossing.last_value = crossing.current_value;
 				crossing.current_value = new_state;
-				eq.equation->CrossTrigger(t, idx, eq.data);
+				auto res = eq.equation->CrossTrigger(t, idx, eq.data);
+				if (res == Status::error)
+				{
+					return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+				}
 			}
 			else if (crossing.type == ZeroCrossDescriptor::CrossType::falling && 
 				new_state == ZeroCrossDescriptor::Position::below)
 			{
 				crossing.last_value = crossing.current_value;
 				crossing.current_value = new_state;
-				eq.equation->CrossTrigger(t, idx, eq.data);
+				auto res = eq.equation->CrossTrigger(t, idx, eq.data);
+				if (res == Status::error)
+				{
+					return tl::unexpected<std::string>{	eq.equation->GetLastError() };
+				}
 			}
 			else if (crossing.type == ZeroCrossDescriptor::CrossType::rising && 
 				new_state == ZeroCrossDescriptor::Position::above)
 			{
 				crossing.last_value = crossing.current_value;
 				crossing.current_value = new_state;
-				eq.equation->CrossTrigger(t, idx, eq.data);
+				auto res = eq.equation->CrossTrigger(t, idx, eq.data);
+				if (res == Status::error)
+				{
+					return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+				}
 			}
 			idx++;
 
 		}
 	}
+	return std::monostate{};
 }
 
 bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
@@ -291,7 +384,7 @@ bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
 	int32_t index = 0;
 	for (auto&& eq : m_NLSolver.GetStatefulEquations())
 	{
-		auto& zero_crossings = eq.data.crossings;
+		const auto& zero_crossings = eq.data.crossings;
 		if (!zero_crossings.size())
 		{
 			index++;
@@ -300,7 +393,7 @@ bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
 		for (auto&& crossing : zero_crossings)
 		{
 			assert(eq.input_ids.size() > static_cast<size_t>(crossing.in_port_id));
-			auto& port_id = eq.input_ids[crossing.in_port_id];
+			const auto& port_id = eq.input_ids[crossing.in_port_id];
 			auto&& signal_value = state.get(port_id);
 			auto old_state = crossing.current_value;
 			auto new_state = (signal_value - crossing.value > 0) ? ZeroCrossDescriptor::Position::above : ZeroCrossDescriptor::Position::below;
@@ -337,11 +430,15 @@ bool opt::NLDiffSolver::UpdateNewZeroCrossings(const FlatMap& state)
 	return m_new_zero_crossed_blocks.size(); 
 }
 
-void opt::NLDiffSolver::InterpolateStateAt(FlatMap& state, const double t)
+opt::NLSolveResult opt::NLDiffSolver::InterpolateStateAt(FlatMap& state, const double t)
 {
-	ApplySources(state, t);
+	auto res = ApplySources(state, t);
+	if (!res)
+	{
+		return res;
+	}
 	m_diffSolver.InterpolateAt(state, t);
-	m_NLSolver.Solve(state, t);
+	return m_NLSolver.Solve(state, t);
 }
 
 void opt::NLDiffSolver::UpdateSources(const double t)

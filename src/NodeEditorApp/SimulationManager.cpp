@@ -98,6 +98,9 @@ void node::SimulationManager::OnSimulationEnd(SimulationEvent& evt)
         [](SimulationEvent::RequestedBadScene&)
         {
         },
+        [](SimulationEvent::SimulationError&)
+        {
+        },
         [&](SimulationEvent::Success& e)
         {
             m_last_simulation_result = std::move(e.result);

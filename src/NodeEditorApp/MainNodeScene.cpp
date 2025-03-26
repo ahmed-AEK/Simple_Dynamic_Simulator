@@ -119,7 +119,7 @@ void node::MainNodeScene::RunSimulator()
     assert(GetApp());
     assert(m_classesManager);
     std::vector<std::reference_wrapper<const model::NodeSceneModel>> scene_models;
-    auto& scene_manager = m_sceneComponents[m_current_scene_id->manager].manager;
+    const auto& scene_manager = m_sceneComponents[m_current_scene_id->manager].manager;
     for (auto&& subscene : scene_manager->GetModels())
     {
         scene_models.push_back(subscene.second->GetModel());
@@ -307,8 +307,7 @@ void node::MainNodeScene::SaveScene()
     }
 
     auto& mgr = m_sceneComponents[m_current_scene_id->manager].manager;
-    auto& db_connector = mgr->GetDBConnector();
-    auto graphicsObjectsManager = mgr->GetManager(m_current_scene_id->subscene);
+    auto* db_connector = mgr->GetDBConnector();
     assert(db_connector);
     if (!db_connector)
     {
@@ -330,8 +329,7 @@ void node::MainNodeScene::SaveScene(std::string name)
     }
 
     auto& mgr = m_sceneComponents[m_current_scene_id->manager].manager;
-    auto& db_connector = mgr->GetDBConnector();
-    auto graphicsObjectsManager = mgr->GetManager(m_current_scene_id->subscene);
+    auto* db_connector = mgr->GetDBConnector();
     SDL_Log("scene Saved to %s", name.c_str());
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
@@ -339,7 +337,7 @@ void node::MainNodeScene::SaveScene(std::string name)
         SaveSubSceneAndChildren(*connector.connector, 
             *m_sceneComponents[m_current_scene_id->manager].manager, mgr->GetMainSubSceneId(), SubSceneId{ 0 }))
     {
-        db_connector = std::move(connector);
+        mgr->SetDBConnector(std::move(connector));
         SDL_Log("saving Scene Success!");
 
         auto scene_widget = mgr->GetManager(mgr->GetMainSubSceneId())->GetGraphicsScene();
@@ -793,7 +791,7 @@ void node::MainNodeScene::SaveSceneButtonPressed()
         return;
     }
 
-    auto& db_connector = m_sceneComponents[m_current_scene_id->manager].manager->GetDBConnector();
+    const auto* db_connector = m_sceneComponents[m_current_scene_id->manager].manager->GetDBConnector();
     if (db_connector)
     {
         SaveScene();
@@ -974,7 +972,7 @@ namespace node
 
 struct TabChangeNotifier : public SingleObserver<TabsChangeEvent>
 {
-    TabChangeNotifier(MainNodeScene& scene) : m_scene{ &scene } {}
+    explicit TabChangeNotifier(MainNodeScene& scene) : m_scene{ &scene } {}
     void OnNotify(TabsChangeEvent& e) override 
     { 
         if (std::holds_alternative<TabIndexChangeEvent>(e.e))
@@ -1012,14 +1010,14 @@ void node::MainNodeScene::OnInit()
 
     {
         auto scene_grid = std::make_unique<SceneGrid>(WidgetSize{ 100,100 }, this);
-        m_scene_grid = *scene_grid;
+        m_scene_grid.reset(*scene_grid);
         SetCenterWidget(std::move(scene_grid));
     }
 
     {
         std::unique_ptr<TabbedView> view = std::make_unique<TabbedView>(GetApp()->getFont(FontType::Label).get(), 
             WidgetSize{ 0,0 }, this);
-        m_tabbedView = *view;
+        m_tabbedView.reset(*view);
         m_scene_grid->SetMainWidget(std::move(view));
     }
 
@@ -1078,6 +1076,10 @@ void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
         {
             SDL_Log("requested bad scene with id: %d", e.subscene_id.value);
         },
+        [](const SimulationEvent::SimulationError& e)
+        {
+            SDL_Log("Simulation Error: %s", e.error.c_str());
+        },
         [&](const SimulationEvent::Success&)
         {
             SDL_Log("Success!");
@@ -1121,7 +1123,7 @@ void node::MainNodeScene::OnSettingsClicked()
             [this](const auto& result) {this->m_sim_mgr.SetSimulationSettings(result); },
             m_sim_mgr.GetSimulationSettings(), WidgetSize{ 0.0f,0.0f }, this);
         dialog->SetPosition({ 100.0f, 100.0f });
-        m_settings_dialog = *dialog;
+        m_settings_dialog.reset(*dialog);
         auto dialog_ptr = dialog.get();
         AddNormalDialog(std::move(dialog));
         SetFocus(dialog_ptr);
@@ -1140,7 +1142,7 @@ void node::MainNodeScene::OnAboutClicked()
     {
         auto dialog = std::make_unique<AboutDialog>(WidgetSize{ 0.0f,0.0f }, this);
         dialog->SetPosition({ 100.0f, 100.0f });
-        m_about_dialog = *dialog;
+        m_about_dialog.reset(*dialog);
         auto dialog_ptr = dialog.get();
         AddNormalDialog(std::move(dialog));
         SetFocus(dialog_ptr);

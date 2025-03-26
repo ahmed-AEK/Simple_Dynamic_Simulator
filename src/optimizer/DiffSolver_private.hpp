@@ -30,18 +30,18 @@ public:
     [[nodiscard]] constexpr double GetStartTime() const { return m_start_time; }
     [[nodiscard]] constexpr double GetEndTime() const { return m_end_time; }
     [[nodiscard]] constexpr double GetCurrentTime() const { return m_current_time; }
-    void StepInternal(const opt::DiffSolver_impl::state_type& x, opt::DiffSolver_impl::state_type& dxdt, const double t);
-    void SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor);
-    void SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor);
-    void ApplyPreprocessor(opt::FlatMap& state, const double t);
-    void ApplyPostProcessor(opt::FlatMap& state, const double t);
+    [[nodiscard]] NLSolveResult StepInternal(const opt::DiffSolver_impl::state_type& x, opt::DiffSolver_impl::state_type& dxdt, const double t);
+    void SetPreprocessor(std::function<NLSolveResult(opt::FlatMap&, const double&)> preprocessor);
+    void SetPostprocessor(std::function<NLSolveResult(opt::FlatMap&, const double&)> postprocessor);
+    [[nodiscard]] NLSolveResult ApplyPreprocessor(opt::FlatMap& state, const double t);
+    [[nodiscard]] NLSolveResult ApplyPostProcessor(opt::FlatMap& state, const double t);
     void SetMaxStep(double step_size);
     void SetNextEventTime(std::optional<double> t);
     void SetCurrentTime(const double& t);
     void InterpolateAt(FlatMap& state, const double& t);
 protected:
     void LoadDatatoMap(std::span<const double> x, FlatMap& state);
-    void LoadMaptoVec(FlatMap& state, std::vector<double>& target);
+    void LoadMaptoVec(const FlatMap& state, std::vector<double>& target);
 private:
     dense_stepper m_stepper{ controlled_stepper{
         boost::numeric::odeint::default_error_checker< double ,
@@ -60,8 +60,8 @@ private:
     controlled_stepper::time_type m_current_time = 0;
     controlled_stepper::time_type m_last_dt = 0.1;
     controlled_stepper::time_type m_max_step = 0.1;
-    std::function<void(opt::FlatMap&, const double&)> m_preprocessor;
-    std::function<void(opt::FlatMap&, const double&)> m_postprocessor;
+    std::function<NLSolveResult(opt::FlatMap&, const double&)> m_preprocessor;
+    std::function<NLSolveResult(opt::FlatMap&, const double&)> m_postprocessor;
     std::optional<double> m_next_event_time;
     double m_interpolation_start_time = 0;
     double m_interpolation_end_time = 0;

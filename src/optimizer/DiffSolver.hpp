@@ -3,16 +3,18 @@
 #include "optimizer/DiffEquation.hpp"
 #include "optimizer/flatmap.hpp"
 #include <memory>
+#include "optimizer/NLGraphSolver.hpp"
 
 namespace opt
 {
 
-enum class StepResult
+enum class StepEnd
 {
     Success,
-    Fail,
     ReachedEnd,
 };
+
+using StepResult = tl::expected<StepEnd, std::string>;
 
 class DiffSolver_impl;
 
@@ -29,10 +31,10 @@ public:
     [[nodiscard]] double GetStartTime() const;
     [[nodiscard]] double GetEndTime() const;
     [[nodiscard]] double GetCurrentTime() const;
-    void SetPreprocessor(std::function<void(opt::FlatMap&, const double&)> preprocessor);
-    void SetPostprocessor(std::function<void(opt::FlatMap&, const double&)> postprocessor);
-    void ApplyPreprocessor(opt::FlatMap& state, const double t);
-    void ApplyPostProcessor(opt::FlatMap& state, const double t);
+    void SetPreprocessor(std::function<NLSolveResult(opt::FlatMap&, const double&)> preprocessor);
+    void SetPostprocessor(std::function<NLSolveResult(opt::FlatMap&, const double&)> postprocessor);
+    [[nodiscard]] opt::NLSolveResult ApplyPreprocessor(opt::FlatMap& state, const double t);
+    [[nodiscard]] opt::NLSolveResult ApplyPostProcessor(opt::FlatMap& state, const double t);
     void SetMaxStep(double step_size);
     void SetNextEventTime(std::optional<double> t);
     void SetCurrentTime(const double& t) const;

@@ -49,7 +49,7 @@ void node::mixin::TooltipMixin<T>::InternalUpdateToolTip()
 			Self().GetApp()->getFont().get(), m_description,
 			WidgetSize{ 1.0f,1.0f }, &this->Self());
 		toolTipWidget->SetPosition(SDL_FPoint{ m_last_mouse_pos.x, m_last_mouse_pos.y + tooltip_y_offset } + Self().GetGlobalPosition());
-		m_toolTipWidget = *toolTipWidget;
+		m_toolTipWidget.reset(*toolTipWidget);
 		Self().GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget));
 		Self().GetApp()->RemoveUpdateTask(m_updateTaskId);
 		m_updateTaskId = 0;

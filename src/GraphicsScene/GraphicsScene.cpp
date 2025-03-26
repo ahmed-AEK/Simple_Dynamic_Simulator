@@ -48,7 +48,7 @@ void node::GraphicsScene::ClearAllObjects()
     m_objects.clear();
 }
 
-void node::GraphicsScene::BumpObjectInLayer(node::GraphicsObject* obj)
+void node::GraphicsScene::BumpObjectInLayer(const node::GraphicsObject* obj)
 {
     if (m_objects.size() < 2)
     {

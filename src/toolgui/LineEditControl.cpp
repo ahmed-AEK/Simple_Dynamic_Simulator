@@ -2,9 +2,9 @@
 #include "Scene.hpp"
 #include "Application.hpp"
 
-node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSize& size, Widget* parent)
+node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSize& size, TTF_Font* font, Widget* parent)
 	:Widget{ size, parent }, m_value{ std::move(initial_value) }, 
-	m_painter{ parent ? parent->GetApp()->getFont().get() : nullptr }, m_cursor_position{m_value.size()}
+	m_painter{ font }, m_cursor_position{m_value.size()}
 {
 	SetFocusable(true);
 	m_painter.SetText(m_value);

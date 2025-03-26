@@ -28,7 +28,7 @@ int32_t node::StackedWidget::AddWidget(std::unique_ptr<Widget> widget)
 	return static_cast<int32_t>(m_widgets.size() - 1);
 }
 
-bool node::StackedWidget::SetCurrentIndex(Widget* ptr)
+bool node::StackedWidget::SetCurrentIndex(const Widget* ptr)
 {
 	auto it = std::find_if(m_widgets.begin(), m_widgets.end(), [&](const std::unique_ptr<Widget>& tab) {return tab.get() == ptr; });
 	if (it != m_widgets.end())
@@ -104,7 +104,7 @@ node::Widget* node::StackedWidget::GetTabWidget(int32_t index)
 	return nullptr;
 }
 
-int32_t node::StackedWidget::GetWidgetIndex(Widget* widget)
+int32_t node::StackedWidget::GetWidgetIndex(const Widget* widget)
 {
 	auto it = std::find_if(m_widgets.begin(), m_widgets.end(), 
 		[&](const auto& tab) { return tab.get() == widget; });

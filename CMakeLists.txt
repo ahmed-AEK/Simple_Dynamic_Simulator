@@ -9,11 +9,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-
+# set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)  # for cppcheck
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 
-project(DynamicSim VERSION 0.4.2)
+project(DynamicSim VERSION 0.4.3)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "-W4 -EHsc -WX /GR-")
@@ -37,7 +37,6 @@ endif (UNIX AND BUILD_STATIC)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 enable_testing()
-set(DRAWRECT_ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries (DLLs).")
 
@@ -51,6 +50,7 @@ find_package(GTest CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS container_hash numeric_odeint)
 find_package(lua CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
+find_package(tl-expected CONFIG REQUIRED)
 
 add_subdirectory(src/AssetsManager)
 add_subdirectory(src/SDL_Framework)

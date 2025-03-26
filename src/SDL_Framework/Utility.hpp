@@ -62,8 +62,8 @@ namespace textures
 class DroppableTexture
 {
 public:
-    DroppableTexture() {}
-    DroppableTexture(SDLTexture&& texture);
+    DroppableTexture() = default;
+    explicit DroppableTexture(SDLTexture&& texture);
     DroppableTexture(DroppableTexture&& other) noexcept;
     DroppableTexture& operator=(DroppableTexture&& other) noexcept;
 

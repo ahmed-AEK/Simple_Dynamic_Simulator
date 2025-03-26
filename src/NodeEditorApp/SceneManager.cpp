@@ -79,9 +79,9 @@ void node::SceneManager::SetDBConnector(std::optional<DBConnector> conn)
 	m_db_connector = std::move(conn);
 }
 
-std::optional<node::DBConnector>& node::SceneManager::GetDBConnector()
+node::DBConnector* node::SceneManager::GetDBConnector()
 {
-	return m_db_connector;
+	return m_db_connector ? &(*m_db_connector) : nullptr;
 }
 
 void node::SceneManager::SetLastSimulationResults(std::vector<BlockResult> results)

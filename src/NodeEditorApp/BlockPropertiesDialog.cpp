@@ -31,28 +31,27 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 			WidgetSize{ static_cast<float>(measured_width),static_cast<float>(font_height) }, font_title, this));
 	}
 
+	auto* font_label = parent->GetApp()->getFont(FontType::Label).get();
 	auto class_ptr = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	assert(class_ptr);
 	if (class_ptr)
 	{
-		auto font = parent->GetApp()->getFont(FontType::Label).get();
-		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font, 500);
-		const int line_height = TTF_GetFontHeight(font);
+		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font_label, 500);
+		const int line_height = TTF_GetFontHeight(font_label);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
 		AddControl(std::make_unique<DialogLabel>(std::move(lines), 
-			WidgetSize{ 500.0f, static_cast<float>(line_height * static_cast<int>(lines.size()) + lines_gap) }, font, this));
+			WidgetSize{ 500.0f, static_cast<float>(line_height * static_cast<int>(lines.size()) + lines_gap) }, font_label, this));
 	}
 
 	if (block_data_ptr->properties.size())
 	{
 		AddControl(std::make_unique<SeparatorControl>(WidgetSize{ 500.0f, 2.0f }, this));
 	}
-
 	for (const auto& property : block_data_ptr->properties)
 	{
 		std::string initial_value = property.to_string();
 		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), 
-			WidgetSize{ 500.0f, 35.0f }, this);
+			WidgetSize{ 500.0f, 60.0f }, font_title, font_label, this);
 		m_property_edits.push_back(BlockPropertySlot{ ptr.get(),
 			[old_prop = property](const std::string& value) ->std::optional<model::BlockProperty>
 			{
@@ -63,7 +62,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 					return new_prop;
 				}
 				return std::nullopt;
-			} 
+			}
 			});
 		AddControl(std::move(ptr));
 	}
@@ -84,6 +83,11 @@ void node::BlockPropertiesDialog::OnOk()
 		{
 			SDL_Log("Update Failed!");
 			SDL_Log("Bad Value For Property: %s", control.property_edit->GetName().c_str());
+			for (const auto& prop : m_property_edits)
+			{
+				prop.property_edit->SetErrorText({});
+			}
+			control.property_edit->SetErrorText({ "Wrong property type" });
 			return;
 		}
 	}
@@ -110,8 +114,22 @@ void node::BlockPropertiesDialog::OnOk()
 		SDL_Log("Update Failed!");
 		return;
 	}
-	if (!block_class->ValidateClassProperties(new_properties))
+	ValidatePropertiesNotifier notifier;
+	if (!block_class->ValidateClassProperties(new_properties, notifier) || notifier.errors.size())
 	{
+		for (const auto& prop : m_property_edits)
+		{
+			prop.property_edit->SetErrorText({});
+		}
+		for (auto& error_text : notifier.errors)
+		{
+			if (m_property_edits.size() <= error_text.prop_idx)
+			{
+				SDL_Log("invalid Error index: %d", error_text.prop_idx);
+				continue;
+			}
+			m_property_edits[error_text.prop_idx].property_edit->SetErrorText({ std::move(error_text.error_text) });
+		}
 		SDL_Log("Update Failed class verification!");
 		return;
 	}

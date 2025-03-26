@@ -65,10 +65,8 @@ protected:
 
 	void OnSetSize(const WidgetSize& size) override;
 private:
-	SDL_FRect GetOuterRect() const;
 	SDL_FRect GetInnerRect() const;
 
-	SDL_FRect GetBackBtnRect() const;
 	void DrawHeader(SDL_Renderer* renderer);
 	void DrawInnerBorders(SDL_Renderer* renderer);
 	RoundRectPainter m_borders_outer_painter;

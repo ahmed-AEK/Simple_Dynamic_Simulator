@@ -45,7 +45,7 @@ class BlocksPlugin : IBlocksPlugin
 {
 public:
 
-	virtual void GetPluginName(GetPluginNameCallback cb, void* context)
+	void GetPluginName(GetPluginNameCallback cb, void* context) override
 	{
 		cb(context, m_name);
 	}

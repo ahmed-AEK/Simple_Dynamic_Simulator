@@ -89,7 +89,7 @@ anchor_t CreateStartAnchor(std::span<HandlePtrS<NetNode, GraphicsObject>> nodes,
 	}
 	else
 	{
-		auto* orig_segment = segments[0].GetObjectPtr();
+		const auto* orig_segment = segments[0].GetObjectPtr();
 		std::array<bool, 4> sides{};
 		for (int i = 0; i < 4; i++)
 		{

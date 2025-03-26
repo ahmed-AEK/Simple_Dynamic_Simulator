@@ -75,7 +75,7 @@ public:
     std::unique_ptr<node::GraphicsObject> PopObject(const node::GraphicsObject* obj);
     void ClearAllObjects();
 
-    void BumpObjectInLayer(node::GraphicsObject* obj);
+    void BumpObjectInLayer(const node::GraphicsObject* obj);
 
     void SetSpaceRect(const model::Rect& rect);
     const model::Rect& GetSpaceRect() const noexcept;

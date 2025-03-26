@@ -42,7 +42,7 @@ node::Widget* node::Widget::GetFocusable()
 
 node::Application* node::Widget::GetApp() const
 {
-    if (auto parent = GetParent())
+    if (const auto* parent = GetParent())
     {
         return parent->GetApp();
     }

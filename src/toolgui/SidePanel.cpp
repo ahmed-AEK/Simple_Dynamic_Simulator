@@ -54,12 +54,6 @@ void node::SidePanel::OnSetSize(const WidgetSize& size)
 	m_contained_widget->SetSize({ widget_rect.w, widget_rect.h });
 }
 
-void node::SidePanel::UpdateWindowSize(const WidgetSize& size)
-{
-	SetPosition({ GetPosition().x, 0 });
-	SetSize({ GetSize().w, size.h});
-}
-
 SDL_FRect node::SidePanel::CalculateChildWidgetRect()
 {
 	return { widget_margin, TitleHeight + widget_margin, GetSize().w - 2 * widget_margin, GetSize().h - 2 * widget_margin - TitleHeight };

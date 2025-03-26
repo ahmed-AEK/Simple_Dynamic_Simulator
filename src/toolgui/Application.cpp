@@ -118,7 +118,6 @@ namespace node
                 }
                 case SDL_EVENT_TEXT_INPUT:
                 {
-                    std::string_view sv{ e.text.text };
                     m_scene->SendCharPress({ e.text });
                     return true;
                 }
@@ -185,23 +184,23 @@ namespace node
     }
     void Application::HandleLMBDown(SDL_Event& e)
     {
-        m_scene->LMBDown({ e.button });
+        m_scene->LMBDown(Widget::MouseButtonEvent{ e.button });
     }
     void Application::HandleRMBDown(SDL_Event& e)
     {
-        m_scene->RMBDown({ e.button });
+        m_scene->RMBDown(Widget::MouseButtonEvent{ e.button });
     }
     void Application::HandleLMBUp(SDL_Event& e)
     {
-        m_scene->LMBUp({ e.button });
+        m_scene->LMBUp(Widget::MouseButtonEvent{ e.button });
     }
     void Application::HandleRMBUp(SDL_Event& e)
     {
-        m_scene->RMBUp({ e.button });
+        m_scene->RMBUp(Widget::MouseButtonEvent{ e.button });
     }
     void Application::HandleMouseMotion(SDL_Event& e)
     {
-        m_scene->MouseMove({ e.motion });
+        m_scene->MouseMove(Widget::MouseHoverEvent{ e.motion });
     }
     void Application::HandleMouseScroll(SDL_Event& e)
     {

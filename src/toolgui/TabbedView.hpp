@@ -50,8 +50,8 @@ public:
 	void DeleteTab(int32_t index);
 	int GetTabWidth() const { return tab_width; }
 	void SetActiveTabIndex(int32_t index);
-	void ButtonClicked(TabButton* btn);
-	void ButtonXClicked(TabButton* btn);
+	void ButtonClicked(const TabButton* btn);
+	void ButtonXClicked(const TabButton* btn);
 	int32_t TabsCount() const { return static_cast<int32_t>(m_buttons.size()); }
 	void SetTabName(int32_t idx, std::string_view name);
 
@@ -108,12 +108,12 @@ class TabbedView : public Widget, public MultiPublisher<TabsChangeEvent>
 public:
 	TabbedView(TTF_Font* font, const WidgetSize& size, Widget* parent);
 	int32_t AddTab(std::string tab_name, std::unique_ptr<Widget> widget);
-	void SetCurrentTabIndex(Widget* ptr);
+	void SetCurrentTabIndex(const Widget* ptr);
 	void SetCurrentTabIndex(int32_t index);
 	void RequestDeleteTab(int32_t index);
 	void DeleteTab(int32_t index);
 	Widget* GetTabWidget(int32_t index);
-	int32_t GetWidgetIndex(Widget* widget);
+	int32_t GetWidgetIndex(const Widget* widget);
 	int32_t TabsCount() const { return m_stacked_widget.WidgetsCount(); }
 
 	void SetTabName(int32_t idx, std::string_view name);

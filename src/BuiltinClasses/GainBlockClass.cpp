@@ -23,10 +23,11 @@ node::BlockClass::GetFunctorResult node::GainBlockClass::GetFunctor(const std::v
 	double multiplier = std::get<double>(properties[0].prop);
 	struct GainBlockFunction: public opt::INLEquation
 	{
-		GainBlockFunction(double mul) : multiplier{mul} {}
-		virtual void Apply(std::span<const double> input, std::span<double> output)
+		explicit GainBlockFunction(double mul) : multiplier{mul} {}
+		opt::Status Apply(std::span<const double> input, std::span<double> output) override
 		{
 			output[0] = input[0] * multiplier;
+			return opt::Status::ok;
 		}
 		double multiplier;
 	};

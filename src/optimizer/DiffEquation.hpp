@@ -11,8 +11,10 @@ namespace opt
 class IDiffEquation
 {
 public:
-	virtual void Apply(std::span<const double> input, std::span<double> output, const double t) = 0;
+	[[nodiscard]] virtual Status Apply(std::span<const double> input, std::span<double> output, const double t) = 0;
 	virtual void Destroy() { delete this; }
+	virtual const char* GetLastError() { return "unknown error"; }
+	virtual void ClearError() {}
 protected:
 	virtual ~IDiffEquation() = default;
 };
@@ -38,8 +40,8 @@ class FunctorDiffEquation : public IDiffEquation
 public:
 	using DiffFunctor = std::function<void(std::span<const double>, std::span<double>, const double)>;
 
-	FunctorDiffEquation(DiffFunctor functor);
-	void Apply(std::span<const double> input, std::span<double> output, const double t) override;
+	explicit FunctorDiffEquation(DiffFunctor functor);
+	Status Apply(std::span<const double> input, std::span<double> output, const double t) override;
 private:
 	DiffFunctor m_functor;
 };

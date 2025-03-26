@@ -89,7 +89,7 @@ void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::s
 		request.removed_segments.push_back(*node_to_heal.segment1->GetId());
 		request.removed_segments.push_back(*node_to_heal.segment2->GetId());
 
-		NetNode* node1 = nullptr;
+		const NetNode* node1 = nullptr;
 		if (node_to_heal.segment1->getStartNode() != node_to_heal.node)
 		{
 			node1 = node_to_heal.segment1->getStartNode();
@@ -99,7 +99,7 @@ void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::s
 			node1 = node_to_heal.segment1->getEndNode();
 		}
 
-		NetNode* node2 = nullptr;
+		const NetNode* node2 = nullptr;
 		if (node_to_heal.segment2->getStartNode() != node_to_heal.node)
 		{
 			node2 = node_to_heal.segment2->getStartNode();
@@ -136,7 +136,7 @@ void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::s
 
 MI::ClickEvent node::logic::NetDeleteLogic::OnLMBUp(const model::Point& current_mouse_point)
 {
-	auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
+	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
 	if (!m_object.isAlive() || new_hover != m_object.GetObjectPtr())
 	{
 		return MI::ClickEvent::CAPTURE_END;

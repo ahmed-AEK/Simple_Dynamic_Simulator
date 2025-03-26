@@ -26,8 +26,10 @@ TEST(testNLDiffSolver, testStep_time_advances)
     state.modify(1,0);
     double current_time = 0;
 
-    solver.CalculateInitialConditions(state);
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -46,12 +48,77 @@ TEST(testNLDiffSolver, testNLEquations_simple)
     opt::FlatMap state(2);
     state.modify(0,1);
     state.modify(1,0);
-    solver.CalculateInitialConditions(state);
+    auto result = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result);
 
     EXPECT_NEAR(state.get(1), 2, 2e-3);
 }
 
+TEST(testNLDiffSolver, testStopOnErrorNL)
+{
+    static std::string Error_string = "This Error";
+    struct ErrorTestNLFunctionNLDiff : public opt::INLEquation
+    {
+        opt::Status Apply(std::span<const double> input, std::span<double> output)
+        {
+            UNUSED_PARAM(input);
+            UNUSED_PARAM(output);
+            return opt::Status::error;
+        }
+        virtual void Destroy() { delete this; }
+        virtual const char* GetLastError() { return Error_string.c_str(); }
+        virtual void ClearError() {}
+    };
+    opt::NLEquationWrapper eq1{ { 0 }, { 1 }, opt::make_NLEqn<ErrorTestNLFunctionNLDiff>() };
+    opt::NLDiffSolver solver;
+    solver.AddNLEquation(std::move(eq1));
 
+    solver.Initialize(0, 2);
+    opt::FlatMap state(2);
+    state.modify(0, 1);
+    state.modify(1, 0);
+    auto result = solver.CalculateInitialConditions(state);
+
+    ASSERT_FALSE(result);
+    EXPECT_EQ(Error_string, result.error());
+
+}
+
+
+
+TEST(testNLDiffSolver, testStopOnErrorDiff)
+{
+    static std::string Error_string = "This Error";
+    struct ErrorTestDiffFunctionNLDiff : public opt::IDiffEquation
+    {
+        [[nodiscard]] opt::Status Apply(std::span<const double> input, std::span<double> output, const double t) override
+        {
+            UNUSED_PARAM(input);
+            UNUSED_PARAM(output);
+            UNUSED_PARAM(t);
+            return opt::Status::error;
+        }
+        virtual void Destroy() { delete this; }
+        virtual const char* GetLastError() { return Error_string.c_str(); }
+        virtual void ClearError() {}
+    };
+    opt::DiffEquationWrapper eq1{ { 0 }, { 1 }, opt::make_DiffEqn<ErrorTestDiffFunctionNLDiff>() };
+    opt::NLDiffSolver solver;
+    solver.AddDiffEquation(std::move(eq1));
+
+    solver.Initialize(0, 2);
+    opt::FlatMap state(2);
+    state.modify(0, 1);
+    state.modify(1, 0);
+    auto result = solver.CalculateInitialConditions(state);
+
+    EXPECT_TRUE(result);
+
+    auto result2 = solver.Step(state);
+    ASSERT_FALSE(result2);
+    EXPECT_EQ(Error_string, result2.error());
+
+}
 TEST(testNLDiffSolver, testNLEquations_simple_observer)
 {
     opt::NLEquationWrapper eq({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
@@ -69,7 +136,8 @@ TEST(testNLDiffSolver, testNLEquations_simple_observer)
     opt::FlatMap state(2);
     state.modify(0, 1);
     state.modify(1, 0);
-    solver.CalculateInitialConditions(state);
+    auto result = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result);
 
     EXPECT_NEAR(state.get(1), 2, 2e-3);
     EXPECT_EQ(state.get(0), observer_log[0][0]);
@@ -91,9 +159,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n)
     state.modify(2,0);
     double current_time = 0;
 
-    solver.CalculateInitialConditions(state);
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
 
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -127,9 +196,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n_observer)
     state.modify(2, 0);
     double current_time = 0;
 
-    solver.CalculateInitialConditions(state);
+    auto result = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result);
 
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -165,8 +235,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
     state.modify(3,0);
     double current_time = 0;
 
-    solver.CalculateInitialConditions(state);
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -249,8 +321,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
     state.modify(3, 0);
     double current_time = 0;
 
-    solver.CalculateInitialConditions(state);
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -297,8 +371,10 @@ TEST(testNLDiffSolver, test_SourceEvent)
 
     solver.Initialize(0, 0.5);
     solver.SetMaxStep(0.01);
-    solver.CalculateInitialConditions(state);
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -358,8 +434,10 @@ TEST(testNLDiffSolver, testZeroCrossing)
 
     solver.Initialize(0, 1);
     solver.SetMaxStep(0.01);
-    solver.CalculateInitialConditions(state);
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();

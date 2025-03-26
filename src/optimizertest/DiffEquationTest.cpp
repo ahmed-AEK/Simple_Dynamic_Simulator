@@ -16,7 +16,8 @@ TEST(testDiffEquation, testApply)
 	{
 		input_buffer[i] = inputs[i];
 	}
-	eq.equation->Apply(input_buffer, output_buffer, 1);
+	auto res = eq.equation->Apply(input_buffer, output_buffer, 1);
+	ASSERT_EQ(res, opt::Status::ok);
 
 	EXPECT_EQ(output_buffer[0], 7);
 	EXPECT_EQ(input_buffer.size(), 3);

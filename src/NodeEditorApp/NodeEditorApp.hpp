@@ -10,7 +10,7 @@ namespace node
     {
     public:
         NodeEditorApplication();
-        MainNodeScene* GetScene() noexcept;
+        MainNodeScene* GetMainScene() { return m_scene; };
     private:
         MainNodeScene* m_scene;
     };

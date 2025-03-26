@@ -123,24 +123,23 @@ namespace
 		return true;
 	}
 }
-bool node::LuaStatefulEqnClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties) const
+bool node::LuaStatefulEqnClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const
 {
 	if (properties.size() != ClassProperties.size())
 	{
+		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", ClassProperties.size(), properties.size()));
 		return false;
 	}
 	for (size_t i = 0; i < properties.size(); i++)
 	{
 		if (properties[i].name != ClassProperties[i].name)
 		{
+			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", ClassProperties[i].name, properties[i].name));
 			return false;
 		}
 		if (properties[i].GetType() != ClassProperties[i].GetType())
 		{
-			return false;
-		}
-		if (!(properties[i].prop.index() == ClassProperties[i].prop.index()))
-		{
+			error_cb.error(i, std::format("property type mismatch"));
 			return false;
 		}
 	}
@@ -148,15 +147,23 @@ bool node::LuaStatefulEqnClass::ValidateClassProperties(const std::vector<model:
 	assert(in_sockets_count);
 	if (*in_sockets_count > 6)
 	{
+		error_cb.error(0, std::format("only 6 input sockets allowed"));
 		return false;
 	}
 	auto* path = properties[1].get_str();
 	assert(path);
 	if (!path || !path->size())
 	{
+		error_cb.error(1, std::format("no path found"));
 		return false;
 	}
-	return validate_properies_lua(*in_sockets_count, *path);
+	auto validation_result = validate_properies_lua(*in_sockets_count, *path);
+	if (!validation_result)
+	{
+		error_cb.error(1, std::format("script load failed!"));
+		return false;
+	}
+	return true;
 }
 
 std::vector<node::model::SocketType> node::LuaStatefulEqnClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
@@ -196,17 +203,19 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 	struct SolNLFunctorEqn : public opt::INLStatefulEquation
 	{
 		SolNLFunctorEqn(sol::state lua, SolNLFunctions funcs) : lua{ std::move(lua) }, funcs{ std::move(funcs) } {}
-		virtual void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data)
+		opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
 		{
 			UNUSED_PARAM(data);
 			auto call_result = (*funcs.apply)(input, output, t, data);
 			if (!call_result.valid())
 			{
 				sol::error err = call_result;
-				SDL_Log("Lua Error in apply: %s", err.what());
+				last_error = err.what();
+				return opt::Status::error;
 			}
+			return opt::Status::ok;
 		}
-		virtual void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data)
+		opt::Status Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
 			UNUSED_PARAM(input);
 			UNUSED_PARAM(t);
@@ -215,13 +224,28 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 			if (!call_result.valid())
 			{
 				sol::error err = call_result;
-				SDL_Log("Lua Error in update: %s", err.what());
+				last_error = err.what();
+				return opt::Status::error;
 			}
+			return opt::Status::ok;
 		}
+		const char* GetLastError() override
+		{
+			return last_error.c_str();
+		}
+
 		sol::state lua;
 		SolNLFunctions funcs;
+		std::string last_error;
 	};
-	assert(ValidateClassProperties(properties));
+	
+	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
+	auto valid = ValidateClassProperties(properties, notifier);
+	if (notifier.errored || !valid)
+	{
+		return std::string{ "failed to validate properties" };
+	}
+
 	auto* in_sockets_count = properties[0].get_uint();
 	assert(in_sockets_count);
 	sol::state lua;
@@ -230,6 +254,19 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 	auto file_content = ReadLuaFile(*path);
 	assert(file_content);
 	auto funcs = build_lua_expr(*in_sockets_count, *file_content, lua);
+	if (!funcs)
+	{
+		return std::string{ "failed to parse lua file" };
+	}
+	if (!funcs->apply)
+	{
+		return std::string{ "missing Apply function" };
+	}
+	if (!funcs->update)
+	{
+		return std::string{ "missing Update function" };
+	}
+
 	std::vector<int32_t> inputs;
 	inputs.reserve(*in_sockets_count);
 	for (size_t i = 0; i < *in_sockets_count; i++)

@@ -31,8 +31,8 @@ namespace node
         Scene& operator=(Scene&&) = delete;
 
         void Draw(SDL::Renderer& renderer) override;
-        virtual ~Scene();
-        Application* GetApp() { return p_parent; }
+        ~Scene() override;
+        Application* GetApp() const override;
 
         void AddNormalDialog(std::unique_ptr<node::Dialog> dialog);
         void BumpDialogToTop(const node::Dialog* dialog);
@@ -47,7 +47,7 @@ namespace node
         void Start();
 
         void ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip);
-        void HideToolTip(Widget* widget);
+        void HideToolTip(const Widget* widget);
 
         void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_FPoint& p);
         void DestroyContextMenu();
@@ -66,8 +66,6 @@ namespace node
         void SendCharPress(TextInputEvent& e) { OnSendChar(e); }
         void SendCharPress(TextInputEvent&& e) { OnSendChar(e); }
 
-        Application* GetApp() const override;
-
         void SetFocus(Widget* widget);
         void SetHover(Widget* widget, MouseHoverEvent& e);
         void SetFocusLater(Widget* widget);
@@ -77,7 +75,7 @@ namespace node
     protected:
         virtual void OnStart() {};
 
-        virtual void OnSetSize(const WidgetSize& size);
+        void OnSetSize(const WidgetSize& size) override;
         void OnDraw(SDL::Renderer& renderer) override;
 
         void OnMouseMove(MouseHoverEvent& e) override;

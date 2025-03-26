@@ -31,21 +31,21 @@ public:
 	void AddBufferEquation(BufferEquation eq);
 	size_t AddObserver(ObserverWrapper obs);
 	void AddSource(SourceEqWrapper source);
-	void Initialize(double start_time, double end_time);
+	NLSolveResult Initialize(double start_time, double end_time);
 	[[nodiscard]] double GetStartTime() const { return m_diffSolver.GetStartTime(); }
 	[[nodiscard]] double GetEndTime() const { return m_diffSolver.GetEndTime(); }
 	[[nodiscard]] double GetCurrentTime() const { return m_diffSolver.GetCurrentTime(); }
-	void CalculateInitialConditions(FlatMap& state);
-	void NotifyObservers(const FlatMap& state, const double t);
+	[[nodiscard]] NLSolveResult CalculateInitialConditions(FlatMap& state);
+	[[nodiscard]] NLSolveResult NotifyObservers(const FlatMap& state, const double t);
 	std::vector<ObserverData> GetObserversData();
-	StepResult Step(FlatMap& state);
+	[[nodiscard]] StepResult Step(FlatMap& state);
 private:
-	void ApplySources(FlatMap& state, const double t);
+	[[nodiscard]] NLSolveResult ApplySources(FlatMap& state, const double t);
 	void UpdateSources(const double t);
-	void TriggerSources(const double t);
-	void NotifyZeroCrossings(const FlatMap& state, const double t);
+	[[nodiscard]] NLSolveResult TriggerSources(const double t);
+	[[nodiscard]] NLSolveResult NotifyZeroCrossings(const FlatMap& state, const double t);
 	bool UpdateNewZeroCrossings(const FlatMap& state);
-	void InterpolateStateAt(FlatMap& state, const double t);
+	[[nodiscard]] NLSolveResult InterpolateStateAt(FlatMap& state, const double t);
 
 	static constexpr int ZeroCrossingIterations = 10;
 	double m_last_oberver_time = 0;

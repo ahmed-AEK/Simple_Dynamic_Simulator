@@ -13,5 +13,5 @@ PluginRuntime.hpp PluginRuntime.cpp
 
 target_include_directories(PluginAPI PRIVATE ".")
 target_include_directories(PluginAPI PUBLIC "..")
-target_link_libraries(PluginAPI PUBLIC NodeModels NLOptimizer)
+target_link_libraries(PluginAPI PUBLIC NodeModels NLOptimizer tl::expected)
 target_precompile_headers(PluginAPI PRIVATE pch.h)

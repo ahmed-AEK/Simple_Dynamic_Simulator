@@ -44,8 +44,6 @@ void node::PluginsManager::AddRuntime(node::PluginRuntimePtr runtime)
 
 	it = result.first;
 
-	node::BlocksPluginPtr block_plugin;
-
 	IBlocksPlugin* block_plugin_raw = nullptr;
 	it->second->GetDefaultPlugin(&block_plugin_raw);
 	if (block_plugin_raw)

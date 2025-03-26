@@ -99,8 +99,6 @@ private:
 	TextPainter m_current_point_painter;
 	DroppableTexture m_data_texture;
 	SDLSurface m_data_surface;
-
-
 };
 
 class ScopeDiplayDialog : public BlockDialog

@@ -313,7 +313,7 @@ std::unique_ptr<node::Dialog> node::Scene::PopDialog(const node::Dialog* dialog)
     assert(it != m_dialogs.end());
     if (it != m_dialogs.end())
     {
-        auto* dialog_ptr = it->get();
+        const auto* dialog_ptr = it->get();
         if (dialog_ptr == m_current_keyboar_focus.GetObjectPtr())
         {
             SetFocus(nullptr);
@@ -373,7 +373,7 @@ void node::Scene::ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip)
     m_tooltip->SetParent(this);
 }
 
-void node::Scene::HideToolTip(Widget* widget)
+void node::Scene::HideToolTip(const Widget* widget)
 {
     if (m_tooltip.get() == widget)
     {

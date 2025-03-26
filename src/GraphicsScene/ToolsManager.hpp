@@ -14,7 +14,7 @@ class ToolBar;
 class ToolsManager
 {
 public:
-	ToolsManager(ToolBar* toolbar);
+	explicit ToolsManager(ToolBar* toolbar);
 	~ToolsManager();
 	void ChangeTool(const std::string& tool_name);
 	void SetTemporaryTool(const std::string& tool_name);

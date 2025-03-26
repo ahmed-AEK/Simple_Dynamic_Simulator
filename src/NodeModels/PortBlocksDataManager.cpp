@@ -3,7 +3,7 @@
 bool node::model::PortBlocksDataManager::RemovePortForId(BlockId id)
 {
 	
-	auto* block_data_ptr = GetDataForId(id);
+	const auto* block_data_ptr = GetDataForId(id);
 	auto erased_socket_id = block_data_ptr->id;
 	auto result = EraseDataForId(id);
 	if (!result)

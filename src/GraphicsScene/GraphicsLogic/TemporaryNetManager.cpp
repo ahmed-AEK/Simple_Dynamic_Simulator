@@ -21,13 +21,13 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::CreateFromLea
 		for (auto&& segment : temp_segments)
 		{
 			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
-			segment = *new_segmet;
+			segment.reset(*new_segmet);
 			scene.AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer);
 		}
 		for (auto&& node : temp_nodes)
 		{
 			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
-			node = *new_node;
+			node.reset(*new_node);
 			scene.AddObject(std::move(new_node), GraphicsScene::NetNodeLayer);
 		}
 	}
@@ -74,13 +74,13 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::Create(Graphi
 		for (auto&& segment : temp_segments)
 		{
 			auto new_segmet = std::make_unique<NetSegment>(model::NetSegmentOrientation::vertical, nullptr, nullptr);
-			segment = *new_segmet;
+			segment.reset(*new_segmet);
 			scene.AddObject(std::move(new_segmet), GraphicsScene::SegmentLayer);
 		}
 		for (auto&& node : temp_nodes)
 		{
 			auto new_node = std::make_unique<NetNode>(model::Point{ 0,0 });
-			node = *new_node;
+			node.reset(*new_node);
 			scene.AddObject(std::move(new_node), GraphicsScene::NetNodeLayer);
 		}
 	}

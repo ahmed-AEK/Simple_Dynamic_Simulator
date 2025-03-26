@@ -11,25 +11,28 @@ opt::FunctorObserver::FunctorObserver(
 {
 }
 
-void opt::FunctorObserver::Apply(std::span<const double> input, const double t)
+opt::Status opt::FunctorObserver::Apply(std::span<const double> input, const double t)
 {
 	m_functor(input, t);
+	return Status::ok;
 }
 
-void opt::FunctorObserver::Initialize(const double t_begin, const double t_end)
+opt::Status opt::FunctorObserver::Initialize(const double t_begin, const double t_end)
 {
 	if (m_init_functor)
 	{
 		m_init_functor(t_begin, t_end);
 	}
+	return Status::ok;
 }
 
-void opt::FunctorObserver::CaptureEnd(const double t_end)
+opt::Status opt::FunctorObserver::CaptureEnd(const double t_end)
 {
 	if (m_end_functor)
 	{
 		m_end_functor(t_end);
 	}
+	return Status::ok;
 }
 
 std::any opt::FunctorObserver::GetResults()

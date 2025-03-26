@@ -13,7 +13,9 @@ TEST(testSourceEq, testApply)
 	std::vector<double> output_buffer(eq.output_ids.size());
 
 	opt::SourceEvent ev{};
-	eq.equation->Apply(output_buffer, 5, ev);
+	auto res = eq.equation->Apply(output_buffer, 5, ev);
+	ASSERT_EQ(res, opt::Status::ok);
+
 	std::array<double, 4> outputs;
 	for (size_t i = 0; i < outputs.size(); i++)
 	{

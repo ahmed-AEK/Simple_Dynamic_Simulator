@@ -30,7 +30,7 @@ TEST(testDiffSolver, testStep_time_advances)
     state.modify(1,0);
     double current_time = 0;
 
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();
@@ -54,7 +54,7 @@ TEST(testDiffSolver, testPreprocessor)
     bool called = false;
     double start_time = -1;
     double input_value = -1;
-    auto preprocessor = [&](auto& state, const auto& time) -> void
+    auto preprocessor = [&](auto& state, const auto& time) -> opt::NLSolveResult
         {
             if (called == false)
             {
@@ -62,6 +62,7 @@ TEST(testDiffSolver, testPreprocessor)
                 start_time = time;
                 input_value = state.get(0);
             }
+            return std::monostate{};
         };
     solver.SetPreprocessor(preprocessor);
     solver.Step(state);
@@ -87,7 +88,7 @@ TEST(testDiffSolver, test2Eq)
     state.modify(2,0);
     double current_time = 0;
 
-    while (solver.Step(state) != opt::StepResult::ReachedEnd)
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
     {
         EXPECT_GT(solver.GetCurrentTime(), current_time);
         current_time = solver.GetCurrentTime();

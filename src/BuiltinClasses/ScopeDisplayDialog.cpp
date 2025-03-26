@@ -244,7 +244,7 @@ void node::ScopeDisplayToolsManager::AddButton(ScopeDisplayToolButton& btn)
 
 void node::ScopeDisplayToolsManager::SetWidget(PlotWidget& widget)
 {
-	m_plot_widget = widget;
+	m_plot_widget.reset(widget);
 }
 
 node::ScopeDisplayToolButton::ScopeDisplayToolButton(const WidgetSize& size, ToolBar* parent, std::string name, ScopeDisplayToolsManager& manager)

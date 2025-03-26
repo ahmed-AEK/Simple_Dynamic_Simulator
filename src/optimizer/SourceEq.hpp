@@ -21,9 +21,11 @@ struct SourceEvent
 class ISourceEq
 {
 public:
-	virtual void Apply(std::span<double> output, const double& t, SourceEvent& ev) = 0;
-	virtual void EventTrigger(const double& t, SourceEvent& ev) = 0;
+	[[nodiscard]] virtual Status Apply(std::span<double> output, const double& t, SourceEvent& ev) = 0;
+	[[nodiscard]] virtual Status EventTrigger(const double& t, SourceEvent& ev) = 0;
 	virtual void Destroy() { delete this; }
+	virtual const char* GetLastError() { return "unknown error"; }
+	virtual void ClearError() {}
 protected:
 	virtual ~ISourceEq() = default;
 };
@@ -53,12 +55,12 @@ public:
 
 	using SourceTrigger = std::function<void(const double&, SourceEvent&)>;
 
-	FunctorSourceEq(
+	explicit FunctorSourceEq(
 		SourceFunctor functor,
 		SourceTrigger trigger = {});
-	void Apply(std::span<double> output, const double& t, SourceEvent& ev);
+	Status Apply(std::span<double> output, const double& t, SourceEvent& ev) override;
 
-	void EventTrigger(const double& t, SourceEvent& ev);
+	Status EventTrigger(const double& t, SourceEvent& ev) override;
 
 private:
 	SourceFunctor m_functor;

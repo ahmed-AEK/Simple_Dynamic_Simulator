@@ -12,15 +12,16 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(
 {
 	assert(parent);
 
+	auto* title_font = parent->GetApp()->getFont(FontType::Title).get();
 	AddControl(std::make_unique<DialogLabel>(std::vector<std::string>{"Simulation Time"}, 
-		WidgetSize{100.0f,30.0f}, parent->GetApp()->getFont().get(), this));
+		WidgetSize{100.0f,30.0f}, title_font, this));
 
 	{
 		char buffer[25]{};
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.t_start);
 		std::string initial_value{ buffer };
 		auto ptr = std::make_unique<PropertyEditControl>("Start Time", 200, std::move(initial_value), 
-			WidgetSize{ 500.0f, 35.0f }, this);
+			WidgetSize{ 500.0f, 35.0f }, title_font, nullptr, this);
 		m_t_start_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}
@@ -29,7 +30,7 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.t_end);
 		std::string initial_value{ buffer };
 		auto ptr = std::make_unique<PropertyEditControl>("End Time", 200, std::move(initial_value), 
-			WidgetSize{ 500.0f, 35.0f }, this);
+			WidgetSize{ 500.0f, 35.0f }, title_font, nullptr, this);
 		m_t_end_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}
@@ -38,7 +39,7 @@ node::SimulationSettingsDialog::SimulationSettingsDialog(
 		std::to_chars(std::begin(buffer), std::end(buffer), inital_value.max_step);
 		std::string initial_value{ buffer };
 		auto ptr = std::make_unique<PropertyEditControl>("Max Step", 200, std::move(initial_value), 
-			WidgetSize{ 500.0f, 35.0f }, this);
+			WidgetSize{ 500.0f, 35.0f }, title_font, nullptr, this);
 		m_max_step_lbl = ptr.get();
 		AddControl(std::move(ptr));
 	}

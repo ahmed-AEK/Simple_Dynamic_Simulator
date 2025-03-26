@@ -40,7 +40,7 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 }
 
 node::DialogLabel::DialogLabel(std::vector<std::string> lines, const WidgetSize& size, TTF_Font* font, Dialog* parent)
-	:DialogControl{ size, parent }, m_lines{ std::move(lines) }, m_font{ font }
+	:DialogControl{ size, parent }, m_lines{ std::move(lines) }, m_font{ font }, m_color{ 50, 50, 50, 255 }
 {
 	assert(m_font);
 	assert(parent);
@@ -66,22 +66,28 @@ void node::DialogLabel::OnDraw(SDL::Renderer& renderer)
 		const auto& line = m_lines[i];
 		auto&& painter = m_painters[i];
 
-		SDL_Color Black = { 50, 50, 50, 255 };
 		painter.SetText(line);
 
 		SDL_FPoint text_start{ 0 , static_cast<float>(y) };
-		painter.Draw(renderer, text_start, Black);
+		painter.Draw(renderer, text_start, m_color);
 		y += font_height + LinesMargin;
 	}
 
 }
 
+void node::DialogLabel::SetText(std::vector<std::string> lines)
+{
+	m_lines = std::move(lines);
+	m_painters.clear();
+}
+
 node::PropertyEditControl::PropertyEditControl(std::string name, int name_width, 
-	std::string initial_value, const WidgetSize& size, Dialog* parent)
+	std::string initial_value, const WidgetSize& size, TTF_Font* title_font, TTF_Font* error_font, Dialog* parent)
 	:DialogControl{ size, parent },
-	m_edit{ std::move(initial_value), {size.w - name_width, size.h}, this },
+	m_edit{ std::move(initial_value), {size.w - name_width, EditHeight}, title_font, this },
 	m_name{ std::move(name) },
-	m_painter{ GetApp()->getFont().get() },
+	m_painter{ title_font },
+	m_error_painter{ error_font },
 	m_name_width{ name_width }
 {
 	m_edit.SetPosition({ static_cast<float>(m_name_width), 0 });
@@ -90,11 +96,18 @@ node::PropertyEditControl::PropertyEditControl(std::string name, int name_width,
 	assert(parent);
 }
 
+void node::PropertyEditControl::SetErrorText(std::string line)
+{
+	m_error_painter.SetText(std::move(line));
+}
+
 void node::PropertyEditControl::OnDraw(SDL::Renderer& renderer)
 {
 	SDL_Color Black = { 50, 50, 50, 255 };
 	SDL_FPoint text_start{};
 	m_painter.Draw(renderer, text_start, Black);	
+	text_start.y += m_edit.GetSize().h;
+	m_error_painter.Draw(renderer, text_start, ErrorColor);
 }
 
 void node::PropertyEditControl::OnSetSize(const WidgetSize& size)

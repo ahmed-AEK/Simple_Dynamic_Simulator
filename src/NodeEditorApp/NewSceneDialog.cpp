@@ -56,7 +56,9 @@ node::SingleEntryDialog::SingleEntryDialog(std::string title, std::vector<std::s
 	:OkCancelModalDialog{ std::move(title), std::move(content), size, parent }
 {
 	assert(parent);
-	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), WidgetSize{500.0f, 35.0f}, this);
+	auto* font_title = parent->GetApp()->getFont().get();
+	auto edit = std::make_unique<PropertyEditControl>("", 0, std::move(initial_value), WidgetSize{500.0f, 35.0f}, 
+		font_title, nullptr, this);
 	m_edit = edit.get();
 	AddControl(std::move(edit));
 }

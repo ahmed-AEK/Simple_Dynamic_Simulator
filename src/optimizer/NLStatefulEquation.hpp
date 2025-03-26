@@ -60,19 +60,24 @@ struct NLStatefulEquationDataRef
 class INLStatefulEquation
 {
 public:
-	virtual void Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data) = 0;
-	virtual void Update(std::span<const double> input, double t, NLStatefulEquationDataRef data) = 0;
-	virtual void CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data) {
+	[[nodiscard]] virtual Status Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data) = 0;
+	[[nodiscard]] virtual Status Update(std::span<const double> input, double t, NLStatefulEquationDataRef data) = 0;
+	[[nodiscard]] virtual Status CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data) {
 		UNUSED_PARAM(t);
 		UNUSED_PARAM(index);
 		UNUSED_PARAM(data);
+		return Status::ok;
 	}
-	virtual void EventTrigger(double t, NLStatefulEquationDataRef data)
+	[[nodiscard]] virtual Status EventTrigger(double t, NLStatefulEquationDataRef data)
 	{
 		UNUSED_PARAM(t);
 		UNUSED_PARAM(data);
+		return Status::ok;
 	}
 	virtual void Destroy() { delete this; }
+	virtual const char* GetLastError() { return "unknown error"; }
+	virtual void ClearError() {}
+
 protected:
 	virtual ~INLStatefulEquation() = default;
 };
@@ -125,10 +130,10 @@ public:
 		NLStatefulCrossFunctor cross_functor = {},
 		NLStatefulEventFunctor event_functor = {});
 
-	void Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data) override;
-	void Update(std::span<const double> input, double t, NLStatefulEquationDataRef data) override;
-	void CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data) override;
-	void EventTrigger(double t, NLStatefulEquationDataRef data) override;
+	Status Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data) override;
+	Status Update(std::span<const double> input, double t, NLStatefulEquationDataRef data) override;
+	Status CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data) override;
+	Status EventTrigger(double t, NLStatefulEquationDataRef data) override;
 private:
 	NLStatefulFunctor m_functor;
 	NLStatefulUpdateFunctor m_update_functor;

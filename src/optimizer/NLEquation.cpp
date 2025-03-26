@@ -5,7 +5,8 @@ opt::FunctorNLEquation::FunctorNLEquation(NLFunctor functor)
 {
 }
 
-void opt::FunctorNLEquation::Apply(std::span<const double> input, std::span<double> output)
+opt::Status opt::FunctorNLEquation::Apply(std::span<const double> input, std::span<double> output)
 {
 	m_functor(input, output);
+	return Status::ok;
 }

@@ -43,13 +43,17 @@ struct SimulationEvent
 	{
 		std::vector<BlockResult> result;
 	};
-
+	struct SimulationError
+	{
+		std::string error;
+	};
 	struct RequestedBadScene
 	{
 		SubSceneId subscene_id;
 	};
 
-	using Event_t = typename std::variant<Success, Stopped, NetFloatingError, OutputSocketsConflict, FloatingInput, RequestedBadScene>;
+	using Event_t = typename std::variant<Success, Stopped, NetFloatingError, OutputSocketsConflict, 
+		FloatingInput, RequestedBadScene, SimulationError>;
 	Event_t e;
 };
 
@@ -88,8 +92,8 @@ private:
 	SimulationEvent DoSimulation();
 
 	std::function<void()> m_end_callback;
-	std::atomic_bool m_ended;
-	std::atomic_bool m_stopped;
+	std::atomic_bool m_ended{};
+	std::atomic_bool m_stopped{};
 	SubSceneId m_main_subscene_id;
 	std::vector<std::unique_ptr<model::NodeSceneModel>> m_models;
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;

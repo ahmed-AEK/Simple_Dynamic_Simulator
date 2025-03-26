@@ -4,11 +4,14 @@
 #include "optimizer/NLStatefulEquation.hpp"
 #include "optimizer/flatmap.hpp"
 #include <memory>
+#include <tl/expected.hpp>
 
 namespace opt
 {
 
 class NLGraphSolver_impl;
+
+using NLSolveResult = tl::expected<std::monostate, std::string>;
 
 class NLGraphSolver
 {
@@ -19,8 +22,8 @@ public:
 	NLGraphSolver& operator=(NLGraphSolver&&) noexcept;
 
 	void Initialize();
-	void Solve(FlatMap& state, const double& time);
-	void UpdateState(FlatMap& state, const double& time);
+	[[nodiscard]] NLSolveResult Solve(FlatMap& state, const double& time);
+	[[nodiscard]] NLSolveResult UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquationWrapper eq);
 	void AddStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEquation(BufferEquation eq);

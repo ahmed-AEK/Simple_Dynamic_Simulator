@@ -2,6 +2,8 @@
 
 #include "PluginAPI/BlockClass.hpp"
 #include <map>
+#include <mutex>
+
 namespace node
 {
 
@@ -14,6 +16,7 @@ public:
 	BlockClassPtr GetBlockClassByName(const std::string& name);
 private:
 	std::unordered_map<std::string, BlockClassPtr> m_classes;
+	std::mutex m_mutex;
 };
 
 }

@@ -44,7 +44,7 @@ int node::TabbedView::GetTabsBarHeight() const
 	return 30;
 }
 
-void node::TabbedView::SetCurrentTabIndex(Widget* ptr)
+void node::TabbedView::SetCurrentTabIndex(const Widget* ptr)
 {
 	SetCurrentTabIndex(m_stacked_widget.GetWidgetIndex(ptr));
 }
@@ -165,7 +165,7 @@ void node::TabBar::SetActiveTabIndex(int32_t index)
 	}
 }
 
-void node::TabBar::ButtonClicked(TabButton* btn)
+void node::TabBar::ButtonClicked(const TabButton* btn)
 {
 	auto it = std::find_if(m_buttons.begin(), m_buttons.end(), [&](auto&& other) { return other.get() == btn; });
 	if (it != m_buttons.end())
@@ -174,7 +174,7 @@ void node::TabBar::ButtonClicked(TabButton* btn)
 	}
 }
 
-void node::TabBar::ButtonXClicked(TabButton* btn)
+void node::TabBar::ButtonXClicked(const TabButton* btn)
 {
 	auto it = std::find_if(m_buttons.begin(), m_buttons.end(), [&](auto&& other) { return other.get() == btn; });
 	if (it != m_buttons.end())
@@ -254,7 +254,7 @@ node::Widget* node::TabbedView::GetTabWidget(int32_t index)
 	return m_stacked_widget.GetTabWidget(index);
 }
 
-int32_t node::TabbedView::GetWidgetIndex(Widget* widget)
+int32_t node::TabbedView::GetWidgetIndex(const Widget* widget)
 {
 	return m_stacked_widget.GetWidgetIndex(widget);
 }

@@ -13,7 +13,7 @@ class SceneGrid : public Widget, public SingleObserver<PanelCloseRequest>
 {
 public:
 	SceneGrid(const WidgetSize& size, Widget* parent);
-	~SceneGrid();
+	~SceneGrid() override;
 
 	void SetMainWidget(std::unique_ptr<Widget> widget);
 	Widget* GetMainWidget() { return m_main_widget.get(); }
@@ -21,7 +21,7 @@ public:
 	void SetSidePanel(std::unique_ptr<SidePanel> widget);
 	SidePanel* GetSidePanel() { return m_side_panel.get(); }
 
-	void OnNotify(PanelCloseRequest& event);
+	void OnNotify(PanelCloseRequest& event) override;
 protected:
 	void OnSetSize(const WidgetSize& size) override;
 private:

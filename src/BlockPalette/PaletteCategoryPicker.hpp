@@ -20,7 +20,7 @@ public:
 
 	std::shared_ptr<PaletteProvider> GetProvider() const { return m_paletteProvider; }
 	void SetProvider(std::shared_ptr<PaletteProvider> provider);
-	virtual void OnNotify(BlockPaletteChange& e);
+	void OnNotify(BlockPaletteChange& e) override;
 protected:
 	void OnDraw(SDL::Renderer& renderer) override;
 

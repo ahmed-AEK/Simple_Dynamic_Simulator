@@ -72,16 +72,6 @@ void node::PaletteBlocksViewer::OnSetSize(const WidgetSize& size)
 	m_scrollview.SetSize({ child_rect.w, child_rect.h });
 }
 
-SDL_FRect node::PaletteBlocksViewer::GetOuterRect() const
-{
-	SDL_FRect ret = GetSize().ToRect();
-	ret.x += 5;
-	ret.w -= 10;
-	ret.y += 5 + 40;
-	ret.h -= 10 + 40;
-	return ret;
-}
-
 SDL_FRect node::PaletteBlocksViewer::GetInnerRect() const
 {
 	SDL_FRect ret = GetSize().ToRect();
@@ -90,16 +80,6 @@ SDL_FRect node::PaletteBlocksViewer::GetInnerRect() const
 	ret.y += 7 + 40;
 	ret.h -= 14 + 40;
 	return ret;
-}
-
-SDL_FRect node::PaletteBlocksViewer::GetBackBtnRect() const
-{
-	SDL_FRect btn_rect = GetSize().ToRect();
-	btn_rect.x += 20;
-	btn_rect.y += 5;
-	btn_rect.w = 35;
-	btn_rect.h = 35;
-	return btn_rect;
 }
 
 void node::PaletteBlocksViewer::DrawHeader(SDL_Renderer* renderer)

@@ -14,13 +14,13 @@ public:
 	int32_t AddWidget(std::unique_ptr<Widget> widget);
 	bool DeleteWidget(int32_t index);
 
-	bool SetCurrentIndex(Widget* ptr);
+	bool SetCurrentIndex(const Widget* ptr);
 	bool SetCurrentIndex(int32_t index);
 	Widget* GetCurrentWidget() const;
 	int32_t GetCurrentIndex() const { return m_current_widget_index; }
 
 	Widget* GetTabWidget(int32_t index);
-	int32_t GetWidgetIndex(Widget* widget);
+	int32_t GetWidgetIndex(const Widget* widget);
 
 	int32_t WidgetsCount() const { return static_cast<int32_t>(m_widgets.size()); }
 

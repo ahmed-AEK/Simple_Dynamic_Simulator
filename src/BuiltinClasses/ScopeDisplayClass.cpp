@@ -18,8 +18,10 @@ node::ScopeDisplayClass::ScopeDisplayClass()
 
 std::vector<node::model::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
 {
-	UNUSED_PARAM(properties);
-	assert(ValidateClassProperties(properties));
+	UNUSED_PARAM(properties);	
+	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
+	assert(ValidateClassProperties(properties, notifier));
+	assert(!notifier.errored);
 	uint64_t count = std::get<uint64_t>(properties[0].prop);
 	std::vector<node::model::BlockSocketModel::SocketType> result;
 	result.reserve(count);

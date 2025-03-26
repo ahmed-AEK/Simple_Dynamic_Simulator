@@ -9,30 +9,34 @@ opt::FunctorNLStatefulEquation::FunctorNLStatefulEquation(
 {
 }
 
-void opt::FunctorNLStatefulEquation::Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data)
+opt::Status opt::FunctorNLStatefulEquation::Apply(std::span<const double> input, std::span<double> output, double t, NLStatefulEquationDataCRef data)
 {
 	m_functor(input, output, t, data);
+	return Status::ok;
 }
 
-void opt::FunctorNLStatefulEquation::Update(std::span<const double> input, double t, NLStatefulEquationDataRef data)
+opt::Status opt::FunctorNLStatefulEquation::Update(std::span<const double> input, double t, NLStatefulEquationDataRef data)
 {
 	m_update_functor(input, t, data);
+	return Status::ok;
 }
 
-void opt::FunctorNLStatefulEquation::CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data)
+opt::Status opt::FunctorNLStatefulEquation::CrossTrigger(double t, size_t index, NLStatefulEquationDataRef data)
 {
 	assert(m_cross_functor);
 	if (m_cross_functor)
 	{
 		m_cross_functor(t, index, data);
 	}
+	return Status::ok;
 }
 
-void opt::FunctorNLStatefulEquation::EventTrigger(double t, NLStatefulEquationDataRef data)
+opt::Status opt::FunctorNLStatefulEquation::EventTrigger(double t, NLStatefulEquationDataRef data)
 {
 	assert(m_event_functor);
 	if (m_event_functor)
 	{
 		m_event_functor(t, data);
 	}
+	return Status::ok;
 }

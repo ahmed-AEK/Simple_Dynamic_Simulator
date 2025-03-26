@@ -16,8 +16,9 @@ TEST(testNLEquation, testApply)
 	{
 		input_buffer[i] = inputs[i];
 	}
-	eq.equation->Apply(input_buffer, output_buffer);
-	
+	auto res = eq.equation->Apply(input_buffer, output_buffer);
+	ASSERT_EQ(res, opt::Status::ok);
+
 	EXPECT_EQ(output_buffer[0], 6);
 	EXPECT_EQ(input_buffer.size(), 3);
 	EXPECT_EQ(output_buffer.size(), 1);

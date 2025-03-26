@@ -8,7 +8,7 @@ namespace node
 class LineEditControl : public Widget
 {
 public:
-	LineEditControl(std::string initial_value, const WidgetSize& size, Widget* parent);
+	LineEditControl(std::string initial_value, const WidgetSize& size, TTF_Font* font, Widget* parent);
 	const std::string& GetValue() const { return m_value; }
 	~LineEditControl() override;
 protected:

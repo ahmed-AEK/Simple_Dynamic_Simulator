@@ -30,7 +30,13 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 		bool rising;
 	};
 
-	assert(ValidateClassProperties(properties));
+	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
+	auto valid = ValidateClassProperties(properties, notifier);
+	if (!valid || notifier.errored)
+	{
+		return std::string{ "failed to validate properties" };
+	}
+
 	double threshold = std::get<double>(properties[0].prop);
 	double rise_time = std::get<double>(properties[1].prop);
 	if (rise_time < 1e-9)
@@ -46,7 +52,7 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 			: m_transition_times{std::move(transitions)}, m_rise_time{rise_time}, m_threshold{threshold}
 		{
 		}
-		void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
+		opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
 		{
 			UNUSED_PARAM(input);
 			const auto& crossings = data.crossings;
@@ -72,15 +78,16 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 					(end_value - m_transition_times.start_value) * (t - m_transition_times.trigger_time) / m_rise_time;
 				output[0] = current_value;
 			}
-
+			return opt::Status::ok;
 		}
-		virtual void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
+		opt::Status Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
 			UNUSED_PARAM(input);
 			UNUSED_PARAM(t);
 			UNUSED_PARAM(data);
+			return opt::Status::ok;
 		}
-		void CrossTrigger(double t, size_t index, opt::NLStatefulEquationDataRef data) override 
+		opt::Status CrossTrigger(double t, size_t index, opt::NLStatefulEquationDataRef data) override 
 		{
 			UNUSED_PARAM(index);
 			assert(index == 0);
@@ -128,6 +135,7 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 					data.ev.t = m_transition_times.end_time;
 				}
 			}
+			return opt::Status::ok;
 		}
 	private:
 		ComparatorOutputTransition m_transition_times;

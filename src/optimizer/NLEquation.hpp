@@ -14,8 +14,10 @@ namespace opt
 class INLEquation
 {
 public:
-	virtual void Apply(std::span<const double> input, std::span<double> output) = 0;
+	[[nodiscard]] virtual Status Apply(std::span<const double> input, std::span<double> output) = 0;
 	virtual void Destroy() { delete this; }
+	virtual const char* GetLastError() { return "unknown error"; }
+	virtual void ClearError() {}
 protected:
 	virtual ~INLEquation() = default;
 };
@@ -41,8 +43,8 @@ class FunctorNLEquation : public INLEquation
 public:
 	using NLFunctor = std::function<void(std::span<const double>, std::span<double>)>;
 
-	FunctorNLEquation(NLFunctor functor);
-	void Apply(std::span<const double> input, std::span<double> output) override;
+	explicit FunctorNLEquation(NLFunctor functor);
+	[[nodiscard]] Status Apply(std::span<const double> input, std::span<double> output) override;
 private:
 	NLFunctor m_functor;
 };

@@ -6,7 +6,8 @@ opt::FunctorDiffEquation::FunctorDiffEquation(opt::FunctorDiffEquation::DiffFunc
 {
 }
 
-void opt::FunctorDiffEquation::Apply(std::span<const double> input, std::span<double> output, const double t)
+opt::Status opt::FunctorDiffEquation::Apply(std::span<const double> input, std::span<double> output, const double t)
 {
 	m_functor(input, output, t);
+	return Status::ok;
 }

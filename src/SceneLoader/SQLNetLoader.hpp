@@ -32,12 +32,12 @@ public:
 	bool AddNetSegment(
 		const node::model::NetSegmentModel& segment) override;
 	std::vector<node::model::NetSegmentModel> GetNetSegments() override;
-	virtual bool DeleteNetSegment(const node::model::id_int id);
-	virtual bool UpdateNetSegment(
-		const node::model::NetSegmentModel& segment);
-	virtual std::optional<node::model::NetSegmentModel> GetSegment(
-		const node::model::id_int id);
-	virtual node::model::id_int GetNextSegmentId();
+	bool DeleteNetSegment(const node::model::id_int id) override;
+	bool UpdateNetSegment(
+		const node::model::NetSegmentModel& segment) override;
+	std::optional<node::model::NetSegmentModel> GetSegment(
+		const node::model::id_int id) override;
+	node::model::id_int GetNextSegmentId() override;
 
 	bool AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection) override;
 	std::vector<model::SocketNodeConnection> GetSocketNodeConnections() override;

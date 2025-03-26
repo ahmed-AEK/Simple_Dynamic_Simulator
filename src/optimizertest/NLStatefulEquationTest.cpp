@@ -3,7 +3,7 @@
 TEST(testNLStatefulEquation, testApply)
 {
 
-	double state;
+	double state{};
 	opt::NLStatefulEquationWrapper eq({ 0, 1, 2 }, { 3 },
 		opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([](auto inputs, auto output, const auto&, const auto&)
 		{
@@ -24,8 +24,12 @@ TEST(testNLStatefulEquation, testApply)
 	{
 		input_buffer[i] = inputs[i];
 	}
-	eq.equation->Update(input_buffer, 0, eq.data);
-	eq.equation->Apply(input_buffer, output_buffer, 0, eq.data);
+	auto res0 = eq.equation->Update(input_buffer, 0, eq.data);
+	ASSERT_EQ(res0, opt::Status::ok);
+
+	res0 = eq.equation->Apply(input_buffer, output_buffer, 0, eq.data);
+	ASSERT_EQ(res0, opt::Status::ok);
+
 	auto result = state;
 
 	EXPECT_EQ(result, 5.0);

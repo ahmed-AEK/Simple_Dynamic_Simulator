@@ -18,7 +18,12 @@ node::SineSourceClass::SineSourceClass()
 
 node::BlockClass::GetFunctorResult node::SineSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
 {
-	assert(ValidateClassProperties(properties));
+	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
+	auto valid = ValidateClassProperties(properties, notifier);
+	if (notifier.errored || !valid)
+	{
+		return std::string{ "failed to validate properties" };
+	}
 	double phase_rad = std::get<double>(properties[0].prop) / 180.0 * std::numbers::pi;
 	double freq_rad = std::get<double>(properties[1].prop) * 2 * std::numbers::pi;
 	return opt::SourceEqWrapper{

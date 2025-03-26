@@ -106,24 +106,23 @@ namespace
 		return true;
 	}
 }
-bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties) const
+bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const
 {
 	if (properties.size() != ClassProperties.size())
 	{
+		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", ClassProperties.size(), properties.size()));
 		return false;
 	}
 	for (size_t i = 0; i < properties.size(); i++)
 	{
 		if (properties[i].name != ClassProperties[i].name)
 		{
+			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", ClassProperties[i].name, properties[i].name));
 			return false;
 		}
 		if (properties[i].GetType() != ClassProperties[i].GetType())
 		{
-			return false;
-		}
-		if (!(properties[i].prop.index() == ClassProperties[i].prop.index()))
-		{
+			error_cb.error(i, std::format("property type mismatch"));
 			return false;
 		}
 	}
@@ -131,6 +130,7 @@ bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::
 	assert(in_sockets_count);
 	if (*in_sockets_count > 6)
 	{
+		error_cb.error(0, std::format("only 6 input sockets allowed"));
 		return false;
 	}
 	auto* code = properties[1].get_str();
@@ -139,7 +139,13 @@ bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::
 	{
 		return false;
 	}
-	return validate_properies_lua(*in_sockets_count,*code);
+	auto validation_result = validate_properies_lua(*in_sockets_count,*code);
+	if (!validation_result)
+	{
+		error_cb.error(1, std::format("LUA parse failed."));
+		return false;
+	}
+	return true;
 }
 
 std::vector<node::model::SocketType> node::LuaExpressionClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
@@ -179,22 +185,40 @@ node::IBlockClass::GetFunctorResult node::LuaExpressionClass::GetFunctor(const s
 	struct SolExprFunctorEqn : public opt::INLStatefulEquation
 	{
 		SolExprFunctorEqn(sol::state lua, sol::protected_function func) : lua{ std::move(lua) }, func{ std::move(func) } {}
-		virtual void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data)
+		opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
 		{
 			UNUSED_PARAM(data);
 			auto call_result = func(sol::as_args(input), t);
+			if (!call_result.valid())
+			{
+				sol::error err = call_result;
+				last_error = err.what();
+				return opt::Status::error;
+			}
 			output[0] = call_result.get<double>(0);
+			return opt::Status::ok;
 		}
-		virtual void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data)
+		opt::Status Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
 			UNUSED_PARAM(input);
 			UNUSED_PARAM(t);
 			UNUSED_PARAM(data);
+			return opt::Status::ok;
 		}
+		const char* GetLastError() override
+		{ return last_error.c_str(); }
+
 		sol::state lua;
 		sol::protected_function func;
+		std::string last_error;
 	};
-	assert(ValidateClassProperties(properties));
+
+	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
+	auto valid = ValidateClassProperties(properties, notifier);
+	if (notifier.errored || !valid)
+	{
+		return std::string{ "failed to validate properties" };
+	}
 	auto* in_sockets_count = properties[0].get_uint();
 	sol::state lua;
 	lua.open_libraries(sol::lib::math);

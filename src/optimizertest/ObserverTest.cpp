@@ -17,7 +17,8 @@ TEST(testObserver, testApply)
 	{
 		input_buffer[i] = inputs[i];
 	}
-	eq.equation->Apply(input_buffer, 5);
+	auto res = eq.equation->Apply(input_buffer, 5);
+	ASSERT_EQ(res, opt::Status::ok);
 
 	EXPECT_EQ(input_buffer.size(), 3);
 	for (size_t i = 0; i < inputs.size(); i++)

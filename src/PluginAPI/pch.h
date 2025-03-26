@@ -10,6 +10,7 @@
 #include "optimizer/NLStatefulEquation.hpp"
 #include "optimizer/Observer.hpp"
 #include "optimizer/SourceEq.hpp"
+#include <tl/expected.hpp>
 
 #include <cmath>
 #include <algorithm>

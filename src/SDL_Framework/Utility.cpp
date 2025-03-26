@@ -384,6 +384,10 @@ void ThickFilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& original_rect
 
 void TextPainter::Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL_Color color)
 {
+    if (!m_text.size())
+    {
+        return;
+    }
     assert(m_font);
     AssureTexture(renderer, color);
 

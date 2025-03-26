@@ -2,6 +2,7 @@
 
 bool node::BlockClassesManager::RegisterBlockClass(BlockClassPtr class_ptr)
 {
+	std::lock_guard g{ m_mutex };
 	assert(class_ptr);
 	if (!class_ptr)
 	{
@@ -21,6 +22,7 @@ bool node::BlockClassesManager::RegisterBlockClass(BlockClassPtr class_ptr)
 
 node::BlockClassPtr node::BlockClassesManager::GetBlockClassByName(const std::string& name)
 {
+	std::lock_guard g{ m_mutex };
 	auto it_class = m_classes.find(name);
 	if (it_class == m_classes.end())
 	{

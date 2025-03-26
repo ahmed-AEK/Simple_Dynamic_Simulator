@@ -29,7 +29,7 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 	class DerivativeClassFunction: public opt::INLStatefulEquation
 	{
 	public:
-		void Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
+		opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
 		{
 			UNUSED_PARAM(data);
 			if (m_state)
@@ -47,8 +47,9 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 			{
 				output[0] = 0;
 			}
+			return opt::Status::ok;
 		}
-		void Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
+		opt::Status Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override
 		{
 			UNUSED_PARAM(data);
 			if (m_state)
@@ -61,6 +62,7 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 			{
 				m_state = DerivativeState{ input[0], t, 0 };
 			}
+			return opt::Status::ok;
 		}
 	private:
 		std::optional<DerivativeState> m_state;

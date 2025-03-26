@@ -23,9 +23,10 @@ node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const s
 	struct AddBlockFunction : public opt::INLEquation
 	{
 		AddBlockFunction() {}
-		virtual void Apply(std::span<const double> input, std::span<double> output)
+		opt::Status Apply(std::span<const double> input, std::span<double> output) override
 		{
 			output[0] = input[0] + input[1];
+			return opt::Status::ok;
 		}
 		void Destroy() override
 		{

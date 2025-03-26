@@ -14,9 +14,4 @@ namespace node
         m_scene = scene.get();
         SetScene(std::move(scene));
     }
-
-    MainNodeScene* NodeEditorApplication::GetScene() noexcept
-    {
-        return m_scene;
-    }
 }

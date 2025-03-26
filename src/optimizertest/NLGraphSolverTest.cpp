@@ -23,8 +23,10 @@ TEST(testNLGraphSolver, testAddStateful)
 	opt::FlatMap state(1);
 	state.modify(0,0);
 	
-	solver.Solve(state, 1);
-	solver.UpdateState(state, 1);
+	auto result = solver.Solve(state, 1);
+	ASSERT_TRUE(result);
+	auto res = solver.UpdateState(state, 1);
+	ASSERT_TRUE(res);
 
 	EXPECT_NEAR(state.get(0), 1, 1e-4);
 }
@@ -38,14 +40,20 @@ TEST(testNLGraphSolver, testAddBuffer)
 	state.modify(0, 5);
 	state.modify(1, 0);
 	
-	solver.Solve(state, 1);
-	solver.UpdateState(state, 1);
+	auto result1 = solver.Solve(state, 1);
+	ASSERT_TRUE(result1);
+
+	auto res = solver.UpdateState(state, 1);
+	ASSERT_TRUE(res);
 
 	auto first_output = state.get(1);
 	state.modify(0, 7);
 
-	solver.Solve(state, 1);
-	solver.UpdateState(state, 1);
+	auto result2 = solver.Solve(state, 1);
+	ASSERT_TRUE(result2);
+
+	auto res2 = solver.UpdateState(state, 1);
+	ASSERT_TRUE(res2);
 
 	auto second_output = state.get(1);
 
@@ -76,12 +84,19 @@ TEST(testNLGraphSolver, testStateful_runs)
 	opt::FlatMap state(1);
 	state.modify(0,0);
 
-	solver.Solve(state, 1);
-	solver.UpdateState(state, 1);
+	auto result1 = solver.Solve(state, 1);
+	ASSERT_TRUE(result1);
+
+	auto res = solver.UpdateState(state, 1);
+	ASSERT_TRUE(res);
 
 	auto first_state = state.get(0);
-	solver.Solve(state, 2);
-	solver.UpdateState(state, 2);
+	auto result2 = solver.Solve(state, 2);
+	ASSERT_TRUE(result2);
+
+	auto res2 = solver.UpdateState(state, 2);
+	ASSERT_TRUE(res2);
+
 	auto second_state = state.get(0);
 
 	EXPECT_NEAR(first_state, 1, 1e-4);
@@ -94,7 +109,8 @@ TEST(testNLGraphSolver, testEmptyRun)
 	opt::FlatMap state;
 	opt::NLGraphSolver solver;
 	solver.Initialize();
-	solver.Solve(state, 0);
+	auto result = solver.Solve(state, 0);
+	ASSERT_TRUE(result);
 }
 
 TEST(testNLGraphSolver, testSolve)
@@ -107,11 +123,41 @@ TEST(testNLGraphSolver, testSolve)
 	opt::FlatMap state(2);
 	state.modify(0,3);
 	state.modify(1,0);
-	solver.Solve(state, 0);
-	solver.UpdateState(state, 0);
+	auto result = solver.Solve(state, 0);
+	ASSERT_TRUE(result);
+
+	auto res = solver.UpdateState(state, 0);
+	ASSERT_TRUE(res);
 	EXPECT_NEAR(3.0, state.get(1), 1e-4);
 }
 
+TEST(testNLGraphSolver, testStopOnError)
+{
+	static std::string Error_string = "This Error";
+	struct ErrorTestNLFunction : public opt::INLEquation
+	{
+		opt::Status Apply(std::span<const double> input, std::span<double> output)
+		{
+			UNUSED_PARAM(input);
+			UNUSED_PARAM(output);
+			return opt::Status::error;
+		}
+		virtual void Destroy() { delete this; }
+		virtual const char* GetLastError() { return Error_string.c_str(); }
+		virtual void ClearError() {}
+	};
+	opt::NLEquationWrapper eq1{ { 0 }, { 1 }, opt::make_NLEqn<ErrorTestNLFunction>() };
+	opt::NLGraphSolver solver;
+	solver.AddEquation(std::move(eq1));
+
+	solver.Initialize();
+	opt::FlatMap state(2);
+	state.modify(0, 3);
+	state.modify(1, 0);
+	auto result = solver.Solve(state, 0);
+	ASSERT_FALSE(result);
+	EXPECT_EQ(Error_string, result.error());
+}
 
 TEST(testNLGraphSolver, testSolve_two_equations)
 {
@@ -125,8 +171,11 @@ TEST(testNLGraphSolver, testSolve_two_equations)
 	state.modify(0,3);
 	state.modify(1,0);
 	state.modify(2,0);
-	solver.Solve(state, 0);
-	solver.UpdateState(state, 0);
+	auto result = solver.Solve(state, 0);
+	ASSERT_TRUE(result);
+
+	auto res =solver.UpdateState(state, 0);
+	ASSERT_TRUE(res);
 	EXPECT_NEAR(3.0, state.get(1), 1e-3);
 	EXPECT_NEAR(6.0, state.get(2), 1e-3);
 }
@@ -143,8 +192,11 @@ TEST(testNLGraphSolver, testSolve_two_equations_cyclic)
 	opt::FlatMap state(2);
 	state.modify(0,0);
 	state.modify(1,0);
-	solver.Solve(state, 0);
-	solver.UpdateState(state, 0);
+	auto result = solver.Solve(state, 0);
+	ASSERT_TRUE(result);
+
+	auto res = solver.UpdateState(state, 0);
+	ASSERT_TRUE(res);
 	EXPECT_NEAR(-1.0, state.get(1), 1e-4); // y = -1
 	EXPECT_NEAR(-2.0, state.get(0), 2e-4); // x = -2
 }
@@ -170,7 +222,7 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 		{
 			if (*state)
 			{
-				auto& state_val = state->value();
+				const auto& state_val = state->value();
 				if (t == state_val.last_input_time)
 				{
 					out[0] = state_val.last_out;
@@ -213,14 +265,20 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 	state.modify(1, 0);
 	state.modify(2, 0);
 	state.modify(3, 0);
-	solver.Solve(state, 0);
-	solver.UpdateState(state, 0);
-	
+	auto result1 = solver.Solve(state, 0);
+	ASSERT_TRUE(result1);
+
+	auto res = solver.UpdateState(state, 0);
+	ASSERT_TRUE(res);
+
 	state.modify(0, 0.01);
 	state.modify(1, 0.01);
-	solver.Solve(state, 1);
-	solver.UpdateState(state, 0.003);
+	auto result2 = solver.Solve(state, 1);
+	ASSERT_TRUE(result2);
 
+	auto res2 = solver.UpdateState(state, 0.003);
+	ASSERT_TRUE(res2);
+	
 	auto expected_multiply_result = 0.0001;
 
 	EXPECT_NEAR(expected_multiply_result, state.get(2), 1e-4);

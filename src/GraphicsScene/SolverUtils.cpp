@@ -248,13 +248,13 @@ void node::logic::UpdateModificationEndWithSocket(
 		{
 			if (connected_socket)
 			{
-				report.request.removed_connections.push_back(*connected_socket->GetUniqueId());
+				request.removed_connections.push_back(*connected_socket->GetUniqueId());
 				end_disconnected = true;
 			}
 			if (report.end_node_info.node_id == orig_nodes.back()->GetId())
 			{
 				// end was disconnected, a new socket needs to be connected
-				report.request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+				request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 					*end_socket->GetUniqueId(),
 					report.end_node_info.node_type,
 					report.end_node_info.node_id
@@ -273,13 +273,13 @@ void node::logic::UpdateModificationEndWithSocket(
 			auto* connected_socket = orig_nodes.back()->GetConnectedSocket();
 			if (connected_socket)
 			{
-				report.request.removed_connections.push_back(*connected_socket->GetUniqueId());
+				request.removed_connections.push_back(*connected_socket->GetUniqueId());
 				end_disconnected = true;
 			}
 		}
 
 		// connect the new socket
-		report.request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
+		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 			*end_socket->GetUniqueId(),
 			report.end_node_info.node_type,
 			report.end_node_info.node_id
@@ -292,8 +292,8 @@ void node::logic::UpdateCreationStartWithSegment(
 	NetModificationRequest& request, const node::NetSegment& start_segment)
 {
 	// connect to a new node
-	auto* node1 = start_segment.getStartNode();
-	auto* node2 = start_segment.getEndNode();
+	const auto* node1 = start_segment.getStartNode();
+	const auto* node2 = start_segment.getEndNode();
 	auto node1_side = *node1->GetSegmentSide(start_segment);
 	auto node2_side = *node2->GetSegmentSide(start_segment);
 	// make the segment between node1 and our new end node
@@ -325,7 +325,7 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 	{
 		// no end socket, just desconnect the last node
 		auto* old_end_socket = orig_nodes.back()->GetConnectedSocket();
-		if (orig_nodes.size() && old_end_socket)
+		if (old_end_socket)
 		{
 			request.removed_connections.push_back(*old_end_socket->GetUniqueId());
 		}
@@ -334,9 +334,9 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 	if (orig_nodes.size() && end_info.node_id == orig_nodes.back()->GetId())
 	{
 		// connect to existing node
-		auto* orig_node = orig_nodes.back().GetObjectPtr();
-		auto* node1 = end_segment->getStartNode();
-		auto* node2 = end_segment->getEndNode();
+		const auto* orig_node = orig_nodes.back().GetObjectPtr();
+		const auto* node1 = end_segment->getStartNode();
+		const auto* node2 = end_segment->getEndNode();
 		auto node1_side = *node1->GetSegmentSide(*end_segment);
 		auto node2_side = *node2->GetSegmentSide(*end_segment);
 		// make the segment between node1 and our new end node
@@ -363,8 +363,8 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 	else
 	{
 		// connect to a new node
-		auto* node1 = end_segment->getStartNode();
-		auto* node2 = end_segment->getEndNode();
+		const auto* node1 = end_segment->getStartNode();
+		const auto* node2 = end_segment->getEndNode();
 		auto node1_side = *node1->GetSegmentSide(*end_segment);
 		auto node2_side = *node2->GetSegmentSide(*end_segment);
 		// make the segment between node1 and our new end node

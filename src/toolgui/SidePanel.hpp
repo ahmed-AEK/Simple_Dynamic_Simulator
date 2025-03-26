@@ -28,8 +28,6 @@ namespace node
 
 		SidePanel(PanelSide side, TTF_Font* font, const WidgetSize& size, Widget* parent);
 
-		void UpdateWindowSize(const WidgetSize& rect);
-
 		void SetWidget(std::unique_ptr<Widget> widget);
 		void SetTitle(std::string title);
 		const std::string& GetTitle() const { return m_title_painter.GetText(); }

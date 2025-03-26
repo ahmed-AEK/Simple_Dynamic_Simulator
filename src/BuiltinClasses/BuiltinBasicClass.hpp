@@ -17,7 +17,7 @@ public:
 	std::vector<model::SocketType>
 		CalculateSockets(const std::vector<model::BlockProperty>& properties) const override;
 	std::string_view GetDescription() const override;
-	bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties) const override;
+	bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const override;
 	BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) const override;
 private:
 	std::span<const node::model::BlockProperty> m_defaultProperties;

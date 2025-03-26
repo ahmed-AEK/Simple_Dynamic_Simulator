@@ -55,7 +55,7 @@ public:
 	SceneManager();
     SceneManager(const SceneManager&) = delete;
     SceneManager& operator=(const SceneManager&) = delete;
-    ~SceneManager();
+    ~SceneManager() override;
 
     SubSceneId GetMainSubSceneId() const { return SubSceneId{ 1 }; }
     std::shared_ptr<GraphicsObjectsManager> GetManager(SubSceneId id);
@@ -69,7 +69,7 @@ public:
     void SetSubSceneManager(SubSceneId scene_id, std::shared_ptr<GraphicsObjectsManager> manager);
 
     void SetDBConnector(std::optional<DBConnector> conn);
-    std::optional<node::DBConnector>& GetDBConnector();
+    node::DBConnector* GetDBConnector();
     
     std::unordered_map<SubSceneId, std::shared_ptr<GraphicsObjectsManager>>& GetManagers() { return m_managers; }
     

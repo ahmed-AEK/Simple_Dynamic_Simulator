@@ -64,9 +64,10 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 		return std::nullopt;
 	}
 
-	if (!block_class->ValidateClassProperties(block_data_ptr->properties))
+	LightValidatePropertiesNotifier notifier;
+	if (!block_class->ValidateClassProperties(block_data_ptr->properties, notifier) || notifier.errored)
 	{
-		return std::nullopt;
+		SDL_Log("Validation of block '%s' in category '%s' failed", temp.template_name.c_str(), temp.category.c_str());
 	}
 
 	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);

@@ -124,7 +124,7 @@ template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 
-static void AddFunctionalBlock(node::BlockClassesManager& mgr, 
+static [[nodiscard]] tl::expected<std::monostate, std::string> AddFunctionalBlock(node::BlockClassesManager& mgr, 
 	BlocksFunctions& funcs, const node::model::FunctionalBlocksDataManager& functionalBlocksManager, 
 	const node::model::BlockModel& block)
 {
@@ -143,6 +143,10 @@ static void AddFunctionalBlock(node::BlockClassesManager& mgr,
 		[&](opt::SourceEqWrapper& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
 			}, functor);
 		};
+	if (auto* err = std::get_if<std::string>(&functor))
+	{
+		return tl::unexpected<std::string>{std::move(*err)};
+	}
 
 	std::visit(overloaded{
 		block_adder,
@@ -152,7 +156,10 @@ static void AddFunctionalBlock(node::BlockClassesManager& mgr,
 			{
 				block_adder(block);
 			}
-		} }, functor);
+		} ,
+		[](const std::string&) { assert(false); /* already checked */}
+		}, functor);
+	return std::monostate{};
 }
 
 static void AddSubSystemBlock(BlocksFunctions& funcs, 
@@ -189,7 +196,7 @@ static void AddPortBlock(BlocksFunctions& funcs,
 		block.GetId()});
 }
 
-static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr,
+static [[nodiscard]] tl::expected<BlocksFunctions, std::string> CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr,
 	SimulationSubsystemsManager& simulationSubsystemsManager)
 {
 	/*
@@ -207,7 +214,11 @@ static BlocksFunctions CreateBlocks(const node::model::NodeSceneModel& scene, no
 	{
 		if (block.GetType() == model::BlockType::Functional)
 		{
-			AddFunctionalBlock(mgr, funcs, functionalBlocksManager, block);
+			auto res = AddFunctionalBlock(mgr, funcs, functionalBlocksManager, block);
+			if (!res)
+			{
+				return tl::unexpected{ std::move(res.error()) };
+			}
 		}
 		else if (block.GetType() == model::BlockType::SubSystem)
 		{
@@ -676,7 +687,11 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 
 		assert(m_classes_mgr);
 		auto blocks = CreateBlocks(**model_it, *m_classes_mgr, simulationSubsystemsManager);
-		RemapFunctions(blocks, socket_mappings, next_net_id);
+		if (!blocks)
+		{
+			return { SimulationEvent::SimulationError{ std::move(blocks.error()) } };
+		}
+		RemapFunctions(*blocks, socket_mappings, next_net_id);
 
 		auto validation_result = ValidateNets(nets, socket_mappings, **model_it);
 		if (validation_result)
@@ -684,7 +699,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 			return std::visit([](auto& val) {return SimulationEvent{ std::move(val) }; }, *validation_result);
 		}
 
-		subsystems.emplace(*next_request, std::move(blocks));
+		subsystems.emplace(*next_request, std::move(*blocks));
 	}
 	
 	opt::NLDiffSolver solver;
@@ -703,13 +718,24 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	solver.Initialize(m_settings.t_start, m_settings.t_end);
 
 	opt::FlatMap simulation_nets{ next_net_id };
-	opt::StepResult step_result = opt::StepResult::Success;
+	opt::StepEnd step_result = opt::StepEnd::Success;
 	
-	solver.CalculateInitialConditions(simulation_nets);
-
-	while (step_result != opt::StepResult::ReachedEnd && !m_stopped.load())
 	{
-		step_result = solver.Step(simulation_nets);
+		auto initial_result = solver.CalculateInitialConditions(simulation_nets);
+		if (!initial_result)
+		{
+			return { SimulationEvent::SimulationError{std::move(initial_result.error())} };
+		}
+	}
+
+	while (step_result != opt::StepEnd::ReachedEnd && !m_stopped.load())
+	{
+		auto result_temp = solver.Step(simulation_nets);
+		if (!result_temp)
+		{
+			return { SimulationEvent::SimulationError{std::move(result_temp.error())} };
+		}
+		step_result = *result_temp;
 	}
 	
 	if (m_stopped.load())

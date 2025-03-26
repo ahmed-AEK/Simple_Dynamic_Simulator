@@ -20,10 +20,10 @@ namespace MI
     template<>
     struct MouseHoverEvent<node::Widget>
     {
-        MouseHoverEvent(const SDL_MouseMotionEvent& e)
+        explicit MouseHoverEvent(const SDL_MouseMotionEvent& e)
             :local_position{}, global_pos{e.x, e.y} {}
 
-        MouseHoverEvent(const SDL_FPoint& global_pos)
+        explicit MouseHoverEvent(const SDL_FPoint& global_pos)
             :local_position{}, global_pos{ global_pos.x, global_pos.y } {}
 
         SDL_FPoint local_position;
@@ -45,7 +45,7 @@ namespace MI
     template<>
     struct MouseButtonEvent<node::Widget>
     {
-        MouseButtonEvent(const SDL_MouseButtonEvent& e)
+        explicit MouseButtonEvent(const SDL_MouseButtonEvent& e)
             : e{ e }, local_position{} {}
 
         const SDL_MouseButtonEvent& e;
@@ -157,14 +157,14 @@ namespace node
         SDL_FPoint GetPosition() const { return m_position; }
         WidgetSize GetSize() const { return m_size; }
 
-        static SDL_FRect WidgetFRect(node::Widget& widget)
+        static SDL_FRect WidgetFRect(const node::Widget& widget)
         {
             auto pos = widget.GetPosition();
             auto size = widget.GetSize();
             return SDL_FRect{pos.x, pos.y, size.w, size.h };
         }
 
-        static SDL_Rect WidgetRect(node::Widget& widget)
+        static SDL_Rect WidgetRect(const node::Widget& widget)
         {
             auto pos = widget.GetPosition();
             auto size = widget.GetSize();

@@ -12,10 +12,10 @@ public:
 
 	inline static const std::string SVG_PATH_PROPERTY_STRING{ "svg_path" };
 
-	SVGBlockStyler(const node::model::BlockModel& block);
+	explicit SVGBlockStyler(const node::model::BlockModel& block);
 	void DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds,
 		const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected) override;
-	virtual void UpdateProperties(const model::BlockDataCRef& model);
+	void UpdateProperties(const model::BlockDataCRef& model) override;
 
 private:
 	std::optional<SVGRasterizer> m_svg_rasterizer;

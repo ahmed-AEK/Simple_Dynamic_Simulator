@@ -14,11 +14,13 @@ namespace opt
 class IObserver
 {
 public:
-	virtual void Apply(std::span<const double> input, const double t) = 0;
-	virtual void Initialize(const double t_begin, const double t_end) = 0;
-	virtual void CaptureEnd(const double t_end) = 0;
+	[[nodiscard]] virtual Status Apply(std::span<const double> input, const double t) = 0;
+	[[nodiscard]] virtual Status Initialize(const double t_begin, const double t_end) = 0;
+	[[nodiscard]] virtual Status CaptureEnd(const double t_end) = 0;
 	virtual std::any GetResults() = 0;
 	virtual void Destroy() { delete this; }
+	virtual const char* GetLastError() { return "unknown error"; }
+	virtual void ClearError() {}
 protected:
 	virtual ~IObserver() = default;
 };
@@ -49,15 +51,15 @@ public:
 	using CaptureEndFunctor = std::function<void(const double)>;
 	using GetResultsFunctor = std::function<std::any()>;
 
-	FunctorObserver(
+	explicit FunctorObserver(
 		ObserverFunctor functor,
 		InitializeFunctor init_functor = {},
 		CaptureEndFunctor end_functor = {},
 		GetResultsFunctor results_functor = {}
 	);
-	void Apply(std::span<const double> input, const double t) override;
-	void Initialize(const double t_begin, const double t_end) override;
-	void CaptureEnd(const double t_end) override;
+	[[nodiscard]] Status Apply(std::span<const double> input, const double t) override;
+	[[nodiscard]] Status Initialize(const double t_begin, const double t_end) override;
+	[[nodiscard]] Status CaptureEnd(const double t_end) override;
 	std::any GetResults() override;
 private:
 	ObserverFunctor m_functor;

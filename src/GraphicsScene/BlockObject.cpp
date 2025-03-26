@@ -86,11 +86,6 @@ void node::BlockObject::AddSocket(std::unique_ptr<BlockSocketObject> socket)
     m_sockets.back()->SetParentBlock(this);
 }
 
-std::optional<node::model::BlockId> node::BlockObject::GetModelId()
-{
-    return m_id;
-}
-
 const std::vector<std::unique_ptr<node::BlockSocketObject>>& node::BlockObject::GetSockets() const
 {
     return m_sockets;
@@ -136,12 +131,7 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
 
 void node::BlockObject::SetResizeHandles(BlockResizeObject& resize_object)
 {
-    m_resizer = resize_object;
-}
-
-void node::BlockObject::HideResizeHandles()
-{
-    m_resizer = nullptr;
+    m_resizer.reset(resize_object);
 }
 
 node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::Point& point)

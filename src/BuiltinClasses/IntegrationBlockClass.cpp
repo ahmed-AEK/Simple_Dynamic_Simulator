@@ -21,10 +21,11 @@ node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const
 	UNUSED_PARAM(properties);
 	struct SimpleIntegrator : public opt::IDiffEquation
 	{
-		void Apply(std::span<const double> input, std::span<double> output, const double t) override
+		opt::Status Apply(std::span<const double> input, std::span<double> output, const double t) override
 		{
 			UNUSED_PARAM(t);
 			output[0] = input[0];
+			return opt::Status::ok;
 		}
 	};
 	return opt::DiffEquationWrapper{

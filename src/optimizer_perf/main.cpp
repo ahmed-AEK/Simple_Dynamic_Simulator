@@ -26,8 +26,13 @@ int main()
         state.modify(2,0);
         state.modify(3,0);
         
-        solver.CalculateInitialConditions(state);
-        while (solver.Step(state) != opt::StepResult::ReachedEnd)
+        auto result1 = solver.CalculateInitialConditions(state);
+        if (!result1)
+        {
+            std::cout << "error: " << result1.error() << '\n';
+            return -1;
+        }
+        while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
         {
             iterations++;
         }
