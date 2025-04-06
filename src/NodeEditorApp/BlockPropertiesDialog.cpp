@@ -81,8 +81,8 @@ void node::BlockPropertiesDialog::OnOk()
 		}
 		else
 		{
-			SDL_Log("Update Failed!");
-			SDL_Log("Bad Value For Property: %s", control.property_edit->GetName().c_str());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Update Failed!");
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Bad Value For Property: %s", control.property_edit->GetName().c_str());
 			for (const auto& prop : m_property_edits)
 			{
 				prop.property_edit->SetErrorText({});
@@ -96,7 +96,7 @@ void node::BlockPropertiesDialog::OnOk()
 	if (!block)
 	{
 		Dialog::OnOk();
-		SDL_Log("Update Failed!");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Update Failed!");
 		return;
 	}
 
@@ -104,14 +104,14 @@ void node::BlockPropertiesDialog::OnOk()
 	if (!block_data_ptr)
 	{
 		Dialog::OnOk();
-		SDL_Log("Update Failed! data not found!");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Update Failed! data not found!");
 		return;
 	}
 	auto block_class = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
 	if (!block_class)
 	{
 		Dialog::OnOk();
-		SDL_Log("Update Failed!");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Update Failed!");
 		return;
 	}
 	ValidatePropertiesNotifier notifier;
@@ -125,12 +125,12 @@ void node::BlockPropertiesDialog::OnOk()
 		{
 			if (m_property_edits.size() <= error_text.prop_idx)
 			{
-				SDL_Log("invalid Error index: %d", error_text.prop_idx);
+				SDL_LogError(SDL_LOG_CATEGORY_ERROR, "invalid Error index: %d", static_cast<int>(error_text.prop_idx));
 				continue;
 			}
 			m_property_edits[error_text.prop_idx].property_edit->SetErrorText({ std::move(error_text.error_text) });
 		}
-		SDL_Log("Update Failed class verification!");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Update Failed class verification!");
 		return;
 	}
 

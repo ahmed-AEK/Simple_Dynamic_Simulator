@@ -29,7 +29,7 @@ void node::PluginsManager::AddRuntime(node::PluginRuntimePtr runtime)
 	std::string runtime_name = GetRuntimeName(runtime);
 	if (!runtime_name.size())
 	{
-		SDL_Log("Cannot register runtime with empty name!");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Cannot register runtime with empty name!");
 		return;
 	}
 
@@ -98,7 +98,7 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 	auto plugin_name = GetPluginName(*plugin_ptr);
 	if (m_plugins.find(plugin_name) != m_plugins.end())
 	{
-		SDL_Log("plugin already registered: %s", plugin_name.c_str());
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "plugin already registered: %s", plugin_name.c_str());
 		assert(false);
 		return;
 	}
@@ -117,7 +117,7 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 				}
 				else
 				{
-					SDL_Log("Failed to register class: %s", cls->GetName().data());
+					SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to register class: %s", cls->GetName().data());
 				}
 			}
 		});
@@ -138,12 +138,12 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 					}
 					else
 					{
-						SDL_Log("Failed to Add block to pallete: %s", std::string{ block.template_name.data, block.template_name.size }.c_str());
+						SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to Add block to pallete: %s", std::string{ block.template_name.data, block.template_name.size }.c_str());
 					}
 				}
 				catch (std::exception& e)
 				{
-					SDL_Log("Exception in GetPluginBlocks: %s", e.what());
+					SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Exception in GetPluginBlocks: %s", e.what());
 				}
 			}
 		});

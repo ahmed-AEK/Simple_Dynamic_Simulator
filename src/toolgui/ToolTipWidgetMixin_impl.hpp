@@ -59,7 +59,12 @@ void node::mixin::TooltipMixin<T>::InternalUpdateToolTip()
 template <typename T>
 void node::mixin::TooltipMixin<T>::HideToolTip()
 {
-	auto* scene = Self().GetApp()->GetScene();
+	auto* app = Self().GetApp();
+	if (!app)
+	{
+		return;
+	}
+	auto* scene = app->GetScene();
 	if (scene && m_toolTipWidget)
 	{
 		scene->HideToolTip(m_toolTipWidget.GetObjectPtr());

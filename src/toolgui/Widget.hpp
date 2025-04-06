@@ -83,6 +83,11 @@ namespace node
             return SDL_FRect{ 0,0,w,h };
         }
 
+        SDL_FRect ToRectWithOrigin(const SDL_FPoint& origin) const noexcept
+        {
+            return SDL_FRect{ origin.x, origin.y,w,h };
+        }
+
         SDL_FPoint ToFPoint() const noexcept
         {
             return SDL_FPoint{ w,h };

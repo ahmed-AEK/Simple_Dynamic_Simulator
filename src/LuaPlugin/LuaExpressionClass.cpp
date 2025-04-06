@@ -47,7 +47,7 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("exception creating Lua script: %s", e.what());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "exception creating Lua script: %s", e.what());
 		}
 
 		if (!result.valid())
@@ -66,7 +66,7 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script: %s", e.what());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "sol exception building script: %s", e.what());
 		}
 
 		return {};
@@ -99,7 +99,7 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script return: %s",e.what());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "sol exception building script return: %s",e.what());
 			return false;
 		}
 

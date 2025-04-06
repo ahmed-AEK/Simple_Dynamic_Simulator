@@ -124,7 +124,7 @@ template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 
-static [[nodiscard]] tl::expected<std::monostate, std::string> AddFunctionalBlock(node::BlockClassesManager& mgr, 
+[[nodiscard]] static tl::expected<std::monostate, std::string> AddFunctionalBlock(node::BlockClassesManager& mgr, 
 	BlocksFunctions& funcs, const node::model::FunctionalBlocksDataManager& functionalBlocksManager, 
 	const node::model::BlockModel& block)
 {
@@ -196,7 +196,7 @@ static void AddPortBlock(BlocksFunctions& funcs,
 		block.GetId()});
 }
 
-static [[nodiscard]] tl::expected<BlocksFunctions, std::string> CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr,
+[[nodiscard]] static tl::expected<BlocksFunctions, std::string> CreateBlocks(const node::model::NodeSceneModel& scene, node::BlockClassesManager& mgr,
 	SimulationSubsystemsManager& simulationSubsystemsManager)
 {
 	/*

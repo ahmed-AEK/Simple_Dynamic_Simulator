@@ -139,7 +139,9 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 void node::LineEditControl::OnKeyboardFocusIn()
 {
 	m_focused = true;
-	GetApp()->StartTextInput();
+	auto screen_position = GetGlobalPosition();
+	auto rect = ToRect(GetSize().ToRectWithOrigin(screen_position));
+	GetApp()->StartTextInput(rect);
 }
 
 void node::LineEditControl::OnKeyboardFocusOut()

@@ -13,6 +13,7 @@ NewSceneDialog.hpp NewSceneDialog.cpp
 SceneManager.hpp SceneManager.cpp
 AboutDialog.hpp AboutDialog.cpp
 PluginsManager.hpp PluginsManager.cpp
+LogHandler.hpp LogHandler.cpp
 IdTypes.hpp
 pch.h
 )

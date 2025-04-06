@@ -50,9 +50,10 @@ public:
 		cb(context, m_name);
 	}
 
-	std::vector<BlockClassPtr> GetClasses()
+	void GetClasses(GetClassesCallback cb, void* context)  override
 	{
-		return m_classes;
+		std::vector<IBlockClass*> classes_ptrs{m_classes.begin(), m_classes.end()};
+		cb(context, classes_ptrs);
 	}
 
 	void GetBlocks(GetBlocksCallback cb, void* context) override

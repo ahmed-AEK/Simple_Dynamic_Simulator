@@ -265,8 +265,9 @@ namespace node
         m_deleted_updateTasks.push_back(task_id);
     }
 
-    void Application::StartTextInput()
+    void Application::StartTextInput(const SDL_Rect& rect)
     {
+        SDL_SetTextInputArea(m_window.get(), &rect, 0);
         SDL_StartTextInput(m_window.get());
     }
 
@@ -346,8 +347,10 @@ namespace node
         if (m_scene && !UpdateTasksEmpty())
         {
             DoUpdateTasks();
-        }        
+        }
         SDL_assert(m_scene);
+
+        OnUpdateBegin();
 
         auto BG_Color = m_scene->GetBGColor();
         SDL_SetRenderDrawColor(m_renderer, BG_Color.r, BG_Color.g, BG_Color.b, BG_Color.a);

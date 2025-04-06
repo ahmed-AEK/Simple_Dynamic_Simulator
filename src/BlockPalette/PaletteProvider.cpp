@@ -27,7 +27,7 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 	}
 	else
 	{
-		SDL_Log("unknown block template !");
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "unknown block template !");
 		return std::nullopt;
 	}
 }
@@ -67,7 +67,7 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 	LightValidatePropertiesNotifier notifier;
 	if (!block_class->ValidateClassProperties(block_data_ptr->properties, notifier) || notifier.errored)
 	{
-		SDL_Log("Validation of block '%s' in category '%s' failed", temp.template_name.c_str(), temp.category.c_str());
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Validation of block '%s' in category '%s' failed", temp.template_name.c_str(), temp.category.c_str());
 	}
 
 	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);

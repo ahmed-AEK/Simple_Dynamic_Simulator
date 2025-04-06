@@ -6,6 +6,7 @@
 #include "toolgui/Dialog.hpp"
 #include "toolgui/SceneGrid.hpp"
 #include "toolgui/ScrollView.hpp"
+#include "toolgui/LogView.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -178,7 +179,7 @@ LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id)
     auto scene = db_conn.Load(id);
     if (!scene)
     {
-        SDL_Log("Failed to Load Scene %d", id.value);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to Load Scene %d", id.value);
         return std::nullopt;
     }
 
@@ -415,6 +416,11 @@ void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
     }
 }
 
+node::LogView* node::MainNodeScene::GetLogView()
+{
+    return m_logView.GetObjectPtr();
+}
+
 namespace
 {
 struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public node::SingleObserver<node::BlockDoubleClickedEvent>
@@ -535,6 +541,20 @@ void node::MainNodeScene::InitializeTools()
     m_toolsManager->ChangeTool("A");
 }
 
+void node::MainNodeScene::InitializeBotPanel()
+{
+    auto* app_font = GetApp()->getFont(FontType::Label).get();
+
+    auto bot_panel = std::make_unique<SidePanel>(PanelSide::bottom, app_font, WidgetSize{ GetSize().w, 100.0f }, this);
+
+    auto log_view = std::make_unique<LogView>(WidgetSize{ 100,100 }, app_font, bot_panel.get());
+    m_logView = HandlePtrS<LogView, Widget>{ *log_view };
+
+    bot_panel->SetWidget(std::move(log_view));
+
+    m_scene_grid->SetBotPanel(std::move(bot_panel));
+}
+
 void node::MainNodeScene::InitializeSidePanel()
 {
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, GetApp()->getFont().get(),
@@ -543,11 +563,14 @@ void node::MainNodeScene::InitializeSidePanel()
 
     auto&& palette_provider = std::make_shared<PaletteProvider>(m_classesManager, m_blockStylerFactory);
     m_palette_provider = palette_provider;
+    auto* app_font = GetApp()->getFont(FontType::Title).get();
 
     sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{200.0f,200.0f},
-        std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
+        std::move(palette_provider), app_font, sidePanel.get()));
     sidePanel->SetTitle("Block Palette");
     m_scene_grid->SetSidePanel(std::move(sidePanel));
+
+
 }
 
 void node::MainNodeScene::OpenPropertiesDialog()
@@ -1024,6 +1047,7 @@ void node::MainNodeScene::OnInit()
     m_classesManager = std::make_shared<BlockClassesManager>();
 
     InitializeSidePanel();
+    InitializeBotPanel();
 
     m_plugins_manager = std::make_shared<PluginsManager>(m_palette_provider, m_classesManager);
     m_plugins_manager->AddRuntime(node::make_PluginRuntime<NativePluginsRuntime>());
@@ -1078,7 +1102,7 @@ void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
         },
         [](const SimulationEvent::SimulationError& e)
         {
-            SDL_Log("Simulation Error: %s", e.error.c_str());
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Simulation Error: %s", e.error.c_str());
         },
         [&](const SimulationEvent::Success&)
         {

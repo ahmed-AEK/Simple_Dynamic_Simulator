@@ -1,6 +1,7 @@
 #pragma once
 
 #include "toolgui/Application.hpp"
+#include "NodeEditorApp/LogHandler.hpp"
 
 namespace node
 {
@@ -11,7 +12,12 @@ namespace node
     public:
         NodeEditorApplication();
         MainNodeScene* GetMainScene() { return m_scene; };
+        ~NodeEditorApplication();
+    protected:
+        void OnRun() override;
+        void OnUpdateBegin() override;
     private:
         MainNodeScene* m_scene;
+        LogHandler m_logger;
     };
 }

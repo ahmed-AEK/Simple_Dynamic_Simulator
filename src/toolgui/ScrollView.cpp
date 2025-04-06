@@ -2,106 +2,140 @@
 #include "SDL_Framework/SDLRenderer.hpp"
 #include <cmath>
 
+node::ScrollViewBase::ScrollViewBase(const WidgetSize& size, Widget* parent)
+	:Widget{size, parent}, m_scrollbar{ GetScrollBarSize(), this }
+{
+
+}
 node::ScrollView::ScrollView(const WidgetSize& size, Widget* parent)
-	: Widget{size, parent}, m_scrollbar{GetScrollBarSize(), this}
+	: ScrollViewBase{size, parent}
 {
 }
 
 void node::ScrollView::SetWidget(std::unique_ptr<Widget> widget)
 {
+	if (m_contained_widget)
+	{
+		SetScrollInfo(0, 0, 0);
+	}
 	m_contained_widget = std::move(widget);
 	if (m_contained_widget)
 	{
 		m_contained_widget->SetParent(this);
 		m_contained_widget->SetPosition({ 0,0 });
-		m_contained_widget->SetSize(GetContainedWidgetSize());
-		m_scrollbar.SetScrollInfo(GetSize().h, m_contained_widget->GetSize().h);
-		m_scrollbar.SetScrollPosition(0);
+		m_contained_widget->SetSize({ GetContainedAreaSize().w, m_contained_widget->GetSize().h });
+		SetScrollInfo(GetSize().h, m_contained_widget->GetSize().h - GetSize().h, 0);
 	}
 }
 
 
 
-void node::ScrollView::RequestPosition(float new_position)
+void node::ScrollViewBase::RequestPosition(float new_position)
 {
-	if (new_position < 0 || !std::isfinite(new_position))
+	if (!std::isfinite(new_position))
 	{
 		new_position = 0;
 	}
-	if (auto bar_max_pos = m_scrollbar.GetMaxPosition(); bar_max_pos < new_position)
-	{
-		m_scrollbar.SetScrollPosition(bar_max_pos);
-		m_contained_widget->SetPosition({ 0, -bar_max_pos });
-	}
-	else
-	{
-		m_scrollbar.SetScrollPosition(new_position);
-		m_contained_widget->SetPosition({ 0, -new_position });
-	}
+	OnPositionRequested(new_position);
 }
 
-bool node::ScrollView::OnScroll(const double amount, const SDL_FPoint&)
+bool node::ScrollViewBase::OnScroll(const double amount, const SDL_FPoint&)
 {
-	if (!m_contained_widget)
-	{
-		return false;
-	}
-
-	auto new_value = m_scrollbar.GetScrollPosition() - amount * 30;
+	auto new_value = m_scrollbar.GetScrollPosition() - amount * m_scroll_strength;
 	RequestPosition(static_cast<float>(new_value));
 	return true;
 }
 
-void node::ScrollView::OnSetSize(const WidgetSize& size)
+void node::ScrollViewBase::OnSetSize(const WidgetSize& size)
 {
 	Widget::OnSetSize(size);
 	m_scrollbar.SetPosition(GetScrollBarPosition());
 	m_scrollbar.SetSize(GetScrollBarSize());
+}
+
+void node::ScrollView::OnSetSize(const WidgetSize& size)
+{
+	ScrollViewBase::OnSetSize(size);
 	if (m_contained_widget)
 	{
-		m_contained_widget->SetSize(GetContainedWidgetSize());
-		m_scrollbar.SetScrollInfo(GetSize().h, m_contained_widget->GetSize().h);
-		if (auto bar_max_pos = m_scrollbar.GetMaxPosition(); bar_max_pos < m_scrollbar.GetScrollPosition())
+		m_contained_widget->SetSize({ GetContainedAreaSize().w, m_contained_widget->GetSize().h });
+		SetScrollInfo(GetSize().h, m_contained_widget->GetSize().h - GetSize().h, GetScrollInfo().position);
+		if (auto bar_max_pos = GetScrollInfo().max_position; bar_max_pos < GetScrollInfo().position)
 		{
-			m_scrollbar.SetScrollPosition(bar_max_pos);
+			SetScrollPosition(bar_max_pos);
 			m_contained_widget->SetPosition({ 0, -bar_max_pos });
 		}
 	}
 }
 
-node::WidgetSize node::ScrollView::GetScrollBarSize() const
+void node::ScrollViewBase::OnPositionRequested(float new_position)
+{
+	float current_max = m_scrollbar.GetMaxPosition();
+	float current_size = m_scrollbar.GetScrollSize();
+	SetScrollInfo(current_size, current_max, new_position);
+}
+
+node::ScrollViewBase::ScrollInfo node::ScrollViewBase::GetScrollInfo() const
+{
+	float current_max = m_scrollbar.GetMaxPosition();
+	float current_size = m_scrollbar.GetScrollSize();
+	float current_position = m_scrollbar.GetScrollPosition();
+	return ScrollInfo{ current_size, current_max, current_position };
+}
+void node::ScrollView::OnPositionRequested(float new_position)
+{
+	auto current_scroll_info = GetScrollInfo();
+	if (new_position < 0)
+	{
+		new_position = 0;
+	}
+	if (auto bar_max_pos = current_scroll_info.max_position; bar_max_pos < new_position)
+	{
+		SetScrollPosition(bar_max_pos);
+		m_contained_widget->SetPosition({ 0, -bar_max_pos });
+	}
+	else
+	{
+		SetScrollPosition(new_position);
+		m_contained_widget->SetPosition({ 0, -new_position });
+	}
+}
+
+node::WidgetSize node::ScrollViewBase::GetScrollBarSize() const
 {
 	return { scrolltools::ScrollBar::scrollbar_width, GetSize().h};
 }
 
-SDL_FPoint node::ScrollView::GetScrollBarPosition() const
+SDL_FPoint node::ScrollViewBase::GetScrollBarPosition() const
 {
 	return {GetSize().w - scrolltools::ScrollBar::scrollbar_width, 0};
 }
 
-node::WidgetSize node::ScrollView::GetContainedWidgetSize() const
+node::WidgetSize node::ScrollViewBase::GetContainedAreaSize() const
 {
-	if (m_contained_widget)
-	{
-		return { GetSize().w - scrolltools::ScrollBar::scrollbar_width, m_contained_widget->GetSize().h};
-	}
 	return { GetSize().w - scrolltools::ScrollBar::scrollbar_width, GetSize().h };
 }
 
-void node::ScrollView::SetScrollInfo(float size, float max)
+void node::ScrollViewBase::SetScrollInfo(float page_size, float max_position, float position)
 {
-	m_scrollbar.SetScrollInfo(size, max);
+	m_scrollbar.SetScrollInfo(page_size, max_position);
+	m_scrollbar.SetScrollPosition(position);
 }
 
-node::scrolltools::ScrollBar::ScrollBar(const WidgetSize& size, ScrollView* parent)
+void node::ScrollViewBase::SetScrollPosition(float position)
+{
+	m_scrollbar.SetScrollPosition(position);
+}
+
+node::scrolltools::ScrollBar::ScrollBar(const WidgetSize& size, ScrollViewBase* parent)
 	:Widget{size, parent}, m_parent_view{parent}
 {
 }
 
-void node::scrolltools::ScrollBar::SetScrollInfo(float size, float bar_extent)
+void node::scrolltools::ScrollBar::SetScrollInfo(float size, float max)
 {
 	m_bar_size = size;
-	m_bar_extent = bar_extent;
+	m_bar_extent = size + max;
 }
 
 void node::scrolltools::ScrollBar::SetScrollPosition(float position)

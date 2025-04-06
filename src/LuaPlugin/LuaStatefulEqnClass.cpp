@@ -45,7 +45,7 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("exception creating Lua script: %s", e.what());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "exception creating Lua script: %s", e.what());
 		}
 
 		if (!result.valid())
@@ -70,7 +70,7 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script: %s", e.what());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "sol exception building script: %s", e.what());
 		}
 
 		return {};
@@ -85,7 +85,7 @@ namespace
 		SDL_IOStream* file_stream = SDL_IOFromFile(full_path.c_str(), "r");
 		if (!file_stream)
 		{
-			SDL_Log("Failed to open file: %s , reason: %s", path_str.c_str(), SDL_GetError());
+			SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open file: %s , reason: %s", path_str.c_str(), SDL_GetError());
 			return {};
 		}
 		std::string file_content;
@@ -94,7 +94,7 @@ namespace
 		{
 			if (file_content.size() > 1024 * 1024 * 8)
 			{
-				SDL_Log("File too big!: %s", path_str.c_str());
+				SDL_LogError(SDL_LOG_CATEGORY_ERROR, "File too big!: %s", path_str.c_str());
 				return {};
 			}
 			file_content.insert(file_content.end(), temp_buffer.data(), temp_buffer.data() + bytes_read);
