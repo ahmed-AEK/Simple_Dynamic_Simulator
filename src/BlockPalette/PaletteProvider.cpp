@@ -1,7 +1,6 @@
 #include "PaletteProvider.hpp"
 #include "PaletteBlocksViewer.hpp"
 
-
 node::PaletteProvider::PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
 	:m_classesManager{ manager }, m_blockStyleFactory{std::move(style_factory)}
 {
@@ -27,7 +26,8 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 	}
 	else
 	{
-		SDL_Log("unknown block template !");
+		m_logger.LogError("unknown block template !");
+		
 		return std::nullopt;
 	}
 }
@@ -67,7 +67,7 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 	LightValidatePropertiesNotifier notifier;
 	if (!block_class->ValidateClassProperties(block_data_ptr->properties, notifier) || notifier.errored)
 	{
-		SDL_Log("Validation of block '%s' in category '%s' failed", temp.template_name.c_str(), temp.category.c_str());
+		m_logger.LogError("Validation of block '{}' in category '{}' failed", temp.template_name, temp.category);
 	}
 
 	auto sockets_types = block_class->CalculateSockets(block_data_ptr->properties);

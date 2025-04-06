@@ -10,21 +10,23 @@
 
 namespace node
 {
+	enum PanelSide
+	{
+		right,
+		bottom,
+	};
 	class SidePanel;
 	struct PanelCloseRequest
 	{
 		SidePanel* panel{};
+		PanelSide side;
 	};
 
 	class SidePanel : public Widget, public MultiPublisher<PanelCloseRequest>
 	{
 	public:
 
-		enum PanelSide
-		{
-			left,
-			right,
-		};
+		using PanelSide = node::PanelSide;
 
 		SidePanel(PanelSide side, TTF_Font* font, const WidgetSize& size, Widget* parent);
 
@@ -45,6 +47,7 @@ namespace node
 		SDL_FRect CalculateChildWidgetRect();
 		void OnRequestClosePanel();
 		SDL_FPoint GetCloseBtnPosition();
+		static ButtonWidget CreateCloseButton(SidePanel& panel, PanelSide side);
 
 		ButtonWidget m_close_btn;
 		RoundRectPainter m_outer_painter;

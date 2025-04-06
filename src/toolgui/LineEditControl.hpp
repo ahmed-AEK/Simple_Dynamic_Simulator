@@ -2,6 +2,7 @@
 
 #include "toolgui/Widget.hpp"
 #include "SDL_Framework/Utility.hpp"
+#include "PluginAPI/Logger.hpp"
 
 namespace node
 {
@@ -27,6 +28,7 @@ private:
 	size_t m_cursor_position;
 	int m_cursor_pixel_position{ 1 };
 	bool m_focused = false;
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 
 	static constexpr int H_Margin = 3;
 };

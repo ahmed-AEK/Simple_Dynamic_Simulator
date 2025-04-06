@@ -52,6 +52,7 @@ private:
 	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;
 	std::unordered_map<model::NetNodeId, NetNode*> m_net_nodes;
 	std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
+	logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 
 }

@@ -26,6 +26,7 @@ private:
 	GraphicsObjectsManager* m_manager;
 	SVGRasterizer m_rotate_rasterizer;
 	static constexpr int corner_width = 15;
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 
 }

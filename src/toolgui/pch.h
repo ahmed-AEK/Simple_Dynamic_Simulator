@@ -17,6 +17,8 @@
 #include "NodeModels/SubsystemBlocksDataManager.hpp"
 #include "NodeModels/PortBlocksDataManager.hpp"
 
+#include "PluginAPI/Logger.hpp"
+
 #include <cmath>
 #include <ranges>
 #include <algorithm>

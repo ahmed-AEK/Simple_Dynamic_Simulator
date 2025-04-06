@@ -8,6 +8,8 @@
 #include "toolgui/DialogControls.hpp"
 #include "toolgui/LineEditControl.hpp"
 
+#include "PluginAPI/Logger.hpp"
+
 #include "NodeModels/NodeScene.hpp"
 #include "NodeModels/SceneModelManager.hpp"
 

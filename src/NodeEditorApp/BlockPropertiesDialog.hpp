@@ -30,7 +30,7 @@ private:
 	std::shared_ptr<GraphicsObjectsManager> m_scene_manager;
 	std::shared_ptr<BlockClassesManager> m_classesManager;
 	model::BlockId m_block_id;
-	
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 
 }

@@ -5,6 +5,7 @@
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
 
 #include "PluginAPI/BlockClass.hpp"
+#include "PluginAPI/Logger.hpp"
 
 #include "optimizer/NLEquation.hpp"
 #include "optimizer/DiffEquation.hpp"

@@ -20,6 +20,8 @@
 #include "SDL_Framework/SDLRenderer.hpp"
 #include "SDL_Framework/SDL_headers.h"
 
+#include "PluginAPI/Logger.hpp"
+
 #include <cassert>
 #include <algorithm>
 #include <iterator>

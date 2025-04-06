@@ -5,9 +5,11 @@
 static float easeOut(double val) { return static_cast<float>(2 * val - val * val); }
 
 node::SceneGrid::SceneGrid(const WidgetSize& size, Widget* parent)
-	:Widget{ size, parent }, m_open_sidepanel_btn{ WidgetSize{35,50}, "Open Side Panel", "assets/arrow_left.svg", [this]() { this->OnOpenSidePanelPressed(); }, this }
+	:Widget{ size, parent }, m_open_sidepanel_btn{ WidgetSize{35,50}, "Open Side Panel", "assets/arrow_left.svg", [this]() { this->OnOpenSidePanelPressed(); }, this },
+	m_open_botpanel_btn{ WidgetSize{50,35}, "Open bottom Panel", "assets/arrow_up.svg", [this]() { this->OnOpenBotPanelPressed(); }, this }
 {
 	m_open_sidepanel_btn.SetPosition(GetSidePanelBtnPosition());
+	m_open_botpanel_btn.SetPosition(GetBotPanelBtnPosition());
 }
 
 node::SceneGrid::~SceneGrid()
@@ -32,6 +34,7 @@ void node::SceneGrid::SetMainWidget(std::unique_ptr<Widget> widget)
 
 void node::SceneGrid::SetSidePanel(std::unique_ptr<SidePanel> widget)
 {
+	assert(widget != m_side_panel);
 	if (m_side_panel && m_side_panel != widget)
 	{
 		m_side_panel->SetParent(nullptr);
@@ -40,34 +43,145 @@ void node::SceneGrid::SetSidePanel(std::unique_ptr<SidePanel> widget)
 	m_side_panel = std::move(widget);
 	if (m_side_panel)
 	{
+		m_side_panel_preferred_width = m_side_panel->GetSize().w;
 		m_side_panel->SetParent(this);
-		m_side_panel->SetPosition(GetSidePanelPosition());
-		m_side_panel->SetSize(GetSidePanelSize());
 		m_side_panel->Attach(*this);
 	}
+	RepositionWidgets();
+}
+
+void node::SceneGrid::SetBotPanel(std::unique_ptr<SidePanel> widget)
+{
+	assert(widget != m_bot_panel);
+	if (m_bot_panel)
+	{
+		m_bot_panel->SetParent(nullptr);
+		m_bot_panel->Detach(*this);
+	}
+	m_bot_panel = std::move(widget);
+	if (m_bot_panel)
+	{
+		m_bot_panel_preferred_height = m_bot_panel->GetSize().h;
+		m_bot_panel->SetParent(this);
+		m_bot_panel->Attach(*this);
+	}
+	RepositionWidgets();
 }
 
 void node::SceneGrid::OnNotify(PanelCloseRequest& event)
 {
-	if (event.panel == m_side_panel.get())
+	switch (event.side)
 	{
-		OnCloseSidePanelPressed();
+	case PanelSide::right:
+	{
+		if (event.panel == m_side_panel.get())
+		{
+			OnCloseSidePanelPressed();
+		}
+		break;
 	}
+	case PanelSide::bottom:
+	{
+		if (event.panel == m_bot_panel.get())
+		{
+			OnCloseBotPanelPressed();
+		}
+		break;
+	}
+	}
+}
+
+float node::SceneGrid::GetSidePanelExpectedHeight() const
+{
+	float bot_panel_y_offset = 0;
+	if (m_bot_panel)
+	{
+		bot_panel_y_offset = (m_bot_panel->GetSize().h + widgets_margin) * easeOut(m_bot_panel_visibility.visibility_progress);
+	}
+	return GetSize().h - 2 * widgets_margin - bot_panel_y_offset;
+}
+
+float node::SceneGrid::GetBotPanelExpectedWidth() const
+{
+	return GetSize().w - 2 * widgets_margin;
 }
 
 void node::SceneGrid::OnSetSize(const WidgetSize& size)
 {
 	Widget::OnSetSize(size);
-	if (m_main_widget)
+	RepositionWidgets();
+}
+
+MI::ClickEvent node::SceneGrid::OnLMBDown(MouseButtonEvent& e)
+{
+	if (!m_main_widget)
 	{
-		m_main_widget->SetSize(GetMainWidgetSize());
+		return MI::ClickEvent{};
 	}
-	if (m_side_panel)
+	if (m_side_panel && m_side_panel_visibility.panel_state == PanelState::opened)
 	{
-		m_side_panel->SetPosition(GetSidePanelPosition());
-		m_side_panel->SetSize(GetSidePanelSize());
+		float start_x = m_main_widget->GetPosition().x + m_main_widget->GetSize().w;
+		float start_y = m_main_widget->GetPosition().y;
+		float height = m_main_widget->GetSize().h;
+		float width = m_side_panel->GetPosition().x - start_x;
+		SDL_FRect right_gap{start_x, start_y, width, height};
+		SDL_FPoint mouse_point = e.point();
+		if (SDL_PointInRectFloat(&mouse_point, &right_gap))
+		{
+			m_drag_state = PanelsDragState::SidePanel;
+			return MI::ClickEvent::CAPTURE_START;
+		}
 	}
-	m_open_sidepanel_btn.SetPosition(GetSidePanelBtnPosition());
+	if (m_bot_panel && m_bot_panel_visibility.panel_state == PanelState::opened)
+	{
+		float start_x = widgets_margin;
+		float start_y = m_main_widget->GetSize().h + m_main_widget->GetPosition().y;
+		float height = m_bot_panel->GetPosition().y - start_y;
+		float width = m_main_widget->GetSize().w;
+
+		SDL_FRect bot_gap{ start_x, start_y, width, height };
+		SDL_FPoint mouse_point = e.point();
+		if (SDL_PointInRectFloat(&mouse_point, &bot_gap))
+		{
+			m_drag_state = PanelsDragState::BotPanel;
+			return MI::ClickEvent::CAPTURE_START;
+		}
+	}
+	UNUSED_PARAM(e);
+	return MI::ClickEvent{};
+}
+
+MI::ClickEvent node::SceneGrid::OnLMBUp(MouseButtonEvent& e)
+{
+	UNUSED_PARAM(e);
+	if (m_drag_state != PanelsDragState::None)
+	{
+		m_drag_state = PanelsDragState::None;
+		return MI::ClickEvent::CAPTURE_END;
+	}
+	return MI::ClickEvent{};
+}
+
+void node::SceneGrid::OnMouseMove(MouseHoverEvent& e)
+{
+	if (m_drag_state == PanelsDragState::SidePanel)
+	{
+		m_side_panel_preferred_width = GetSize().w - e.point().x - widgets_margin;
+		if (m_side_panel_preferred_width < min_side_panel_wdith)
+		{
+			m_side_panel_preferred_width = min_side_panel_wdith;
+		}
+		RepositionWidgets();
+	}
+	if (m_drag_state == PanelsDragState::BotPanel)
+	{
+		m_bot_panel_preferred_height = GetSize().h - e.point().y - widgets_margin;
+		if (m_bot_panel_preferred_height < min_bot_panel_height)
+		{
+			m_bot_panel_preferred_height = min_bot_panel_height;
+		}
+		RepositionWidgets();
+	}
 }
 
 SDL_FPoint node::SceneGrid::GetMainWidgetPosition() const
@@ -79,11 +193,17 @@ node::WidgetSize node::SceneGrid::GetMainWidgetSize() const
 {
 	auto&& size = GetSize();
 	float side_panel_width = 0;
+	float bot_panel_height = 0;
 	if (m_side_panel)
 	{
-		side_panel_width = m_side_panel->GetSize().w + widgets_margin;
+		side_panel_width = (m_side_panel->GetSize().w + widgets_margin) * easeOut(m_side_panel_visibility.visibility_progress) + easeOut(1 - m_side_panel_visibility.visibility_progress) * 28;
 	}
-	return {size.w - 2 * widgets_margin - side_panel_width * easeOut(m_side_panel_visibility_progress) - easeOut(1- m_side_panel_visibility_progress) * 28, size.h - widgets_margin};
+	if (m_bot_panel)
+	{
+		bot_panel_height = (m_bot_panel->GetSize().h + widgets_margin) * easeOut(m_bot_panel_visibility.visibility_progress) + easeOut(1 - m_bot_panel_visibility.visibility_progress) * 28;
+	}
+	return {size.w - 2 * widgets_margin - side_panel_width, 
+		size.h - 2* widgets_margin - bot_panel_height };
 }
 
 SDL_FPoint node::SceneGrid::GetSidePanelPosition() const
@@ -93,93 +213,136 @@ SDL_FPoint node::SceneGrid::GetSidePanelPosition() const
 	{
 		side_panel_width = m_side_panel->GetSize().w;
 	}
-	return { GetSize().w - (widgets_margin + side_panel_width) * easeOut(m_side_panel_visibility_progress), widgets_margin};
+	return { GetSize().w - (widgets_margin + side_panel_width) * easeOut(m_side_panel_visibility.visibility_progress), widgets_margin};
 }
 
-node::WidgetSize node::SceneGrid::GetSidePanelSize() const
+SDL_FPoint node::SceneGrid::GetBotPanelPosition() const
 {
-	if (m_side_panel)
+	float bot_panel_height = 0;
+	if (m_bot_panel)
 	{
-		return { m_side_panel->GetSize().w, GetSize().h - 2 * widgets_margin};
+		bot_panel_height = m_bot_panel->GetSize().h;
 	}
-	
-	return {100, GetSize().h - 2 * widgets_margin };
+	return { widgets_margin, GetSize().h - (widgets_margin + bot_panel_height) * easeOut(m_bot_panel_visibility.visibility_progress) };
 }
 
 SDL_FPoint node::SceneGrid::GetSidePanelBtnPosition() const
 {
-	return {GetSize().w - 28 * easeOut(1 - m_side_panel_visibility_progress), 10};
+	if (!m_side_panel)
+	{
+		return { GetSize().w, 10 };
+	}
+	return {GetSize().w - 28 * easeOut(1 - m_side_panel_visibility.visibility_progress), 10};
+}
+
+SDL_FPoint node::SceneGrid::GetBotPanelBtnPosition() const
+{
+	if (!m_bot_panel)
+	{
+		return { 10, GetSize().h };
+	}
+	return { 10, GetSize().h - 28 * easeOut(1 - m_bot_panel_visibility.visibility_progress) };
 }
 
 void node::SceneGrid::OnOpenSidePanelPressed()
 {
-	SDL_Log("Open SidePanel Pressed!");
-	m_last_action_time = SDL_GetTicks();
-	if (!m_updateTaskId)
+	m_logger.LogDebug("Open SidePanel Pressed!");
+	m_side_panel_visibility.last_action_time = SDL_GetTicks();
+	if (!m_side_panel_visibility.updateTaskId)
 	{
-		m_panel_state = PanelState::openning;
-		m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdateSidePanelProgress(); }));
+		m_side_panel_visibility.panel_state = PanelState::openning;
+		m_side_panel_visibility.updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this, panel = &m_side_panel_visibility]() { this->UpdatePanelProgress(*panel); }));
 	}
+}
+
+void node::SceneGrid::OnOpenBotPanelPressed()
+{
+	m_logger.LogDebug("Open BotPanel Pressed!");
+	m_bot_panel_visibility.last_action_time = SDL_GetTicks();
+	if (!m_bot_panel_visibility.updateTaskId)
+	{
+		m_bot_panel_visibility.panel_state = PanelState::openning;
+		m_bot_panel_visibility.updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this, panel = &m_bot_panel_visibility]() { this->UpdatePanelProgress(*panel); }));
+	}
+
 }
 
 void node::SceneGrid::OnCloseSidePanelPressed()
 {
-	SDL_Log("Close SidePanel Pressed!");
-	m_last_action_time = SDL_GetTicks();
-	if (!m_updateTaskId)
+	m_logger.LogDebug("Close SidePanel Pressed!");
+	m_side_panel_visibility.last_action_time = SDL_GetTicks();
+	if (!m_side_panel_visibility.updateTaskId)
 	{
-		m_panel_state = PanelState::closing;
-		m_updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this]() { this->UpdateSidePanelProgress(); }));
+		m_side_panel_visibility.panel_state = PanelState::closing;
+		m_side_panel_visibility.updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this, panel = &m_side_panel_visibility]() { this->UpdatePanelProgress(*panel); }));
 	}
 }
 
-void node::SceneGrid::UpdateSidePanelProgress()
+void node::SceneGrid::OnCloseBotPanelPressed()
 {
-	if (m_panel_state == PanelState::openning)
+	m_logger.LogDebug("Close BotPanel Pressed!");
+	m_bot_panel_visibility.last_action_time = SDL_GetTicks();
+	if (!m_bot_panel_visibility.updateTaskId)
 	{
-		auto passed_ticks = SDL_GetTicks() - m_last_action_time;
+		m_bot_panel_visibility.panel_state = PanelState::closing;
+		m_bot_panel_visibility.updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this, panel = &m_bot_panel_visibility]() { this->UpdatePanelProgress(*panel); }));
+	}
+}
+
+void node::SceneGrid::UpdatePanelProgress(PanelVisibilityData& panel_visibility)
+{
+	if (panel_visibility.panel_state == PanelState::openning)
+	{
+		auto passed_ticks = SDL_GetTicks() - panel_visibility.last_action_time;
 		auto passed_time = passed_ticks / TICKS_PER_SECOND;
-		m_side_panel_visibility_progress = static_cast<float>(passed_time / TRANSITION_TIME);
-		if (m_side_panel_visibility_progress >= 1)
+		panel_visibility.visibility_progress = static_cast<float>(passed_time / TRANSITION_TIME);
+		if (panel_visibility.visibility_progress >= 1)
 		{
-			m_side_panel_visibility_progress = 1;
-			m_panel_state = PanelState::opened;
-			GetApp()->RemoveUpdateTask(m_updateTaskId);
-			m_updateTaskId = 0;
+			panel_visibility.visibility_progress = 1;
+			panel_visibility.panel_state = PanelState::opened;
+			GetApp()->RemoveUpdateTask(panel_visibility.updateTaskId);
+			panel_visibility.updateTaskId = 0;
 		}
 		RepositionWidgets();
 	}
-	else if (m_panel_state == PanelState::closing)
+	else if (panel_visibility.panel_state == PanelState::closing)
 	{
-		auto passed_ticks = SDL_GetTicks() - m_last_action_time;
+		auto passed_ticks = SDL_GetTicks() - panel_visibility.last_action_time;
 		auto passed_time = passed_ticks / TICKS_PER_SECOND;
-		m_side_panel_visibility_progress = static_cast<float>(1 - passed_time / TRANSITION_TIME);
-		if (m_side_panel_visibility_progress <= 0)
+		panel_visibility.visibility_progress = static_cast<float>(1 - passed_time / TRANSITION_TIME);
+		if (panel_visibility.visibility_progress <= 0)
 		{
-			m_side_panel_visibility_progress = 0;
-			m_panel_state = PanelState::closed;
-			GetApp()->RemoveUpdateTask(m_updateTaskId);
-			m_updateTaskId = 0;
+			panel_visibility.visibility_progress = 0;
+			panel_visibility.panel_state = PanelState::closed;
+			GetApp()->RemoveUpdateTask(panel_visibility.updateTaskId);
+			panel_visibility.updateTaskId = 0;
 		}
 		RepositionWidgets();
 	}
 	else
 	{
 		assert(false); // we shouldn't be here!
-		GetApp()->RemoveUpdateTask(m_updateTaskId);
-		m_updateTaskId = 0;
+		GetApp()->RemoveUpdateTask(panel_visibility.updateTaskId);
+		panel_visibility.updateTaskId = 0;
 	}
 }
 
 void node::SceneGrid::RepositionWidgets()
 {
+	if (m_bot_panel)
+	{
+		m_bot_panel->SetSize({ GetBotPanelExpectedWidth(), std::min(GetSize().h - 100, m_bot_panel_preferred_height) });
+		m_bot_panel->SetPosition(GetBotPanelPosition());
+	}
+	if (m_side_panel)
+	{
+		m_side_panel->SetSize({ std::min(GetSize().w - 200, m_side_panel_preferred_width), GetSidePanelExpectedHeight() });
+		m_side_panel->SetPosition(GetSidePanelPosition());
+	}
 	if (m_main_widget)
 	{
 		m_main_widget->SetSize(GetMainWidgetSize());
 	}
-	if (m_side_panel)
-	{
-		m_side_panel->SetPosition(GetSidePanelPosition());
-	}
 	m_open_sidepanel_btn.SetPosition(GetSidePanelBtnPosition());
+	m_open_botpanel_btn.SetPosition(GetBotPanelBtnPosition());
 }

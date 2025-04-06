@@ -98,6 +98,7 @@ private:
     std::unordered_map<SubSceneId, std::unordered_map<BlockObject*, DialogSlot>> m_objects_dialogs;
     std::vector<BlockResult> m_last_sim_results;
     std::optional<DBConnector> m_db_connector;
+    logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 
 }

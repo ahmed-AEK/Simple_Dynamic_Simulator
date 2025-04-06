@@ -20,6 +20,7 @@ class SceneManager;
 class SceneGrid;
 class PaletteProvider;
 class PluginsManager;
+class LogView;
 
 class NodeSceneEventReceiver
 {
@@ -50,6 +51,7 @@ public:
     void MaybeSaveScene(std::string name);
     void OnCenterTabChanged(int32_t new_tab);
     void CloseTabRequest(int32_t tab_idx);
+    LogView* GetLogView();
 protected:
     virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
     HandlePtrS<TabbedView,Widget> m_tabbedView;
@@ -63,7 +65,8 @@ private:
 
     void InitializeTools();
     void InitializeSidePanel();
-    
+    void InitializeBotPanel();
+
     void OpenPropertiesDialog();
     void OpenPropertiesDialog(BlockObject& object);
     void OpenBlockDialog(BlockObject& block);
@@ -107,8 +110,9 @@ private:
     SimulationManager m_sim_mgr;
     HandlePtrS<Dialog, Widget> m_settings_dialog;
     HandlePtrS<Dialog, Widget> m_about_dialog;
+    HandlePtrS<LogView, Widget> m_logView;
 
-
+    logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 
 }

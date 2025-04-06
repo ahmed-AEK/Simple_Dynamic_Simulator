@@ -44,6 +44,7 @@ private:
 	std::shared_ptr<PaletteProvider> m_paletteProvider;
 	PaletteBlocksViewer* m_paletteBlocksViewer = nullptr;
 	PaletteCategoryPicker* m_paletteCategoryPicker = nullptr;
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 
 }

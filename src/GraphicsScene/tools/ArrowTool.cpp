@@ -39,7 +39,7 @@ MI::ClickEvent node::ArrowTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& sc
             scene.AddSelection(current_hover->GetMIHandlePtr());
             if (e.double_click && m_last_clicked_block.GetObjectPtr() == current_hover)
             {
-                SDL_Log("Double Click Started!");
+                m_logger.LogDebug("Double Click Started!");
                 BlockDoubleClickedEvent ev{ static_cast<BlockObject*>(current_hover) };
                 Notify(ev);
                 return MI::ClickEvent::CLICKED;

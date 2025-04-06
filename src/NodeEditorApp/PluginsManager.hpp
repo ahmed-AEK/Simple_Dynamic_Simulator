@@ -30,6 +30,7 @@ private:
 		std::vector<std::string> registered_class_names;
 	};
 	std::unordered_map<std::string, PluginRecord> m_plugins;
+	logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 
 }

@@ -338,7 +338,7 @@ void node::TabButton::SetText(std::string name)
 		static_cast<int>(GetXBtnStart() - 6), &measured_width, &measured_length);
 	if (!success)
 	{
-		SDL_Log("Failed to size string in tab!");
+		logger(logging::LogCategory::GUI).LogError("Failed to size string in tab!");
 		m_tab_text.SetText("Error!");
 		return;
 	}

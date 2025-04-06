@@ -23,6 +23,7 @@ namespace node
         void OnMouseOut(MouseHoverEvent& e) override;
         void OnMouseIn(MouseHoverEvent& e) override;
         void OnMouseMove(MouseHoverEvent& e) override;
+        MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
         MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
     private:
         constexpr static int w_margin = 5;
@@ -32,5 +33,7 @@ namespace node
         RoundRectPainter m_inner_painter;
         std::function<void(void)> m_action;
         bool m_hovered{};
+        bool m_mouse_held{};
+        logging::Logger m_logger = logger(logging::LogCategory::GUI);
     };
 }

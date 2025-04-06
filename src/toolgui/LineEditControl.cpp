@@ -88,7 +88,7 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	int key = e.e.scancode;
 	if (key == SDL_SCANCODE_BACKSPACE)
 	{
-		SDL_Log("BackSpace");
+		m_logger.LogDebug("BackSpace");
 		if (m_value.size() && m_cursor_position > 0)
 		{
 			m_value.erase(m_value.begin() + m_cursor_position - 1);
@@ -127,11 +127,11 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	}
 	else if (key == SDL_SCANCODE_RETURN || key == SDL_SCANCODE_KP_ENTER)
 	{
-		SDL_Log("Return");
+		m_logger.LogDebug("Return");
 	}
 	else
 	{
-		SDL_Log("key %d", key);
+		m_logger.LogDebug("key {}", key);
 	}
 	return false;
 }
@@ -139,7 +139,9 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 void node::LineEditControl::OnKeyboardFocusIn()
 {
 	m_focused = true;
-	GetApp()->StartTextInput();
+	auto screen_position = GetGlobalPosition();
+	auto rect = ToRect(GetSize().ToRectWithOrigin(screen_position));
+	GetApp()->StartTextInput(rect);
 }
 
 void node::LineEditControl::OnKeyboardFocusOut()
@@ -167,7 +169,7 @@ void node::LineEditControl::ReCalculateCursorPixelPosition()
 bool node::LineEditControl::OnChar(TextInputEvent& e)
 {
 	int key = e.e.text[0];
-	SDL_Log("%d", key);
+	m_logger.LogDebug("{}", key);
 	if (key < 128 && key >= 0)
 	{
 		m_value.insert(m_value.begin() + m_cursor_position, static_cast<char>(key));

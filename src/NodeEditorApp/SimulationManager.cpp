@@ -78,7 +78,7 @@ void node::SimulationManager::OnSimulationEnd(SimulationEvent& evt)
 {
     if (m_current_running_simulator && m_current_running_simulator->IsStopped())
     {
-        SDL_Log("Stopped!");
+        logger(logging::LogCategory::Simulator).LogDebug("Stopped!");
         m_current_running_simulator = nullptr;
         return;
     }

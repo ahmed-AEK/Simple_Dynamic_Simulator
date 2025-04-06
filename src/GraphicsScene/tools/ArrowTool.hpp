@@ -34,5 +34,6 @@ private:
 		HandlePtr<GraphicsObject> object;
 	};
 	ResizerObjectSlot m_current_block_resize_slot;
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 }

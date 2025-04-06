@@ -22,21 +22,21 @@ void node::PluginsManager::AddRuntime(node::PluginRuntimePtr runtime)
 	assert(runtime);
 	if (!runtime)
 	{
-		SDL_Log("null plugin runtime received!");
+		m_logger.LogError("null plugin runtime received!");
 		return;
 	}
 
 	std::string runtime_name = GetRuntimeName(runtime);
 	if (!runtime_name.size())
 	{
-		SDL_Log("Cannot register runtime with empty name!");
+		m_logger.LogError("Cannot register runtime with empty name!");
 		return;
 	}
 
 	auto it = m_plugin_runtimes.find(runtime_name);
 	if (it != m_plugin_runtimes.end())
 	{
-		SDL_Log("attempted to add runtime again: %s", runtime_name.c_str());
+		m_logger.LogError("attempted to add runtime again: {}", runtime_name);
 		return;
 	}
 
@@ -92,13 +92,13 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 	assert(plugin_ptr);
 	if (!plugin_ptr)
 	{
-		SDL_Log("null plugin received!");
+		m_logger.LogError("null plugin received!");
 		return;
 	}
 	auto plugin_name = GetPluginName(*plugin_ptr);
 	if (m_plugins.find(plugin_name) != m_plugins.end())
 	{
-		SDL_Log("plugin already registered: %s", plugin_name.c_str());
+		m_logger.LogError("plugin already registered: {}", plugin_name);
 		assert(false);
 		return;
 	}
@@ -117,7 +117,7 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 				}
 				else
 				{
-					SDL_Log("Failed to register class: %s", cls->GetName().data());
+					m_logger.LogError("Failed to register class: {}", cls->GetName());
 				}
 			}
 		});
@@ -138,12 +138,12 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 					}
 					else
 					{
-						SDL_Log("Failed to Add block to pallete: %s", std::string{ block.template_name.data, block.template_name.size }.c_str());
+						m_logger.LogError("Failed to Add block to pallete: {}", std::string_view{ block.template_name.data, block.template_name.size });
 					}
 				}
 				catch (std::exception& e)
 				{
-					SDL_Log("Exception in GetPluginBlocks: %s", e.what());
+					m_logger.LogError("Exception in GetPluginBlocks: {}", e.what());
 				}
 			}
 		});

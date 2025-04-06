@@ -6,6 +6,7 @@
 #include "toolgui/Dialog.hpp"
 #include "toolgui/SceneGrid.hpp"
 #include "toolgui/ScrollView.hpp"
+#include "toolgui/LogView.hpp"
 
 #include "ExampleContextMenu.hpp"
 #include "NodeGraphicsScene.hpp"
@@ -140,7 +141,7 @@ void node::MainNodeScene::DeleteEventReceiver(const NodeSceneEventReceiver* hand
 
 void node::MainNodeScene::NewScene()
 {
-    SDL_Log("new Scene confirmed!");
+    m_logger.LogDebug("new Scene confirmed!");
 
     if (m_sim_mgr.IsSimulationRunning())
     {
@@ -170,15 +171,15 @@ void node::MainNodeScene::NewScene()
 
 
 static std::optional<std::unordered_map<node::SubSceneId, std::shared_ptr<node::model::NodeSceneModel>>>
-LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id)
+LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id, node::logging::Logger& logger)
 {
     using namespace node;
     std::unordered_map<SubSceneId, std::shared_ptr<model::NodeSceneModel>> scenes;
-    SDL_Log("Loading Scene %d", id.value);
+    logger.LogDebug("Loading Scene %d", id.value);
     auto scene = db_conn.Load(id);
     if (!scene)
     {
-        SDL_Log("Failed to Load Scene %d", id.value);
+        logger.LogError("Failed to Load Scene {}", id.value);
         return std::nullopt;
     }
 
@@ -193,7 +194,7 @@ LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id)
 
     for (const auto& child_id : *child_scene_ids)
     {
-        auto child_scenes = LoadSceneAndSubscenes(db_conn, child_id);
+        auto child_scenes = LoadSceneAndSubscenes(db_conn, child_id, logger);
         if (!child_scenes)
         {
             return std::nullopt;
@@ -208,7 +209,7 @@ LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id)
 
 void node::MainNodeScene::LoadScene(std::string name)
 {
-    SDL_Log("load Scene: %s", name.c_str());
+    m_logger.LogDebug("load Scene: {}", name);
 
     if (m_sim_mgr.IsSimulationRunning())
     {
@@ -218,7 +219,7 @@ void node::MainNodeScene::LoadScene(std::string name)
 
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
-    if (auto new_scenes = LoadSceneAndSubscenes(*connector.connector,SubSceneId{1}))
+    if (auto new_scenes = LoadSceneAndSubscenes(*connector.connector,SubSceneId{1}, unmove(logger(logging::LogCategory::Core))))
     {
         CloseAllDialogs();
         auto manager_id = CreateNewScene();
@@ -244,7 +245,7 @@ void node::MainNodeScene::LoadScene(std::string name)
                 component.manager->AddModel(std::make_shared<SceneModelManager>(std::move(child_scene)));
             }
         }
-        SDL_Log("Loading Scene successful!");
+        m_logger.LogInfo("Loading Scene successful!");
         CreateSceneForSubsystem({ manager_id, component.manager->GetMainSubSceneId() });
         auto mgr = component.manager->GetManager(component.manager->GetMainSubSceneId());
         m_tabbedView->SetCurrentTabIndex(mgr->GetGraphicsScene());
@@ -270,14 +271,15 @@ void node::MainNodeScene::LoadScene(std::string name)
     }
 }
 
-static bool SaveSubSceneAndChildren(node::loader::SceneLoader& db_conn, node::SceneManager& components, node::SubSceneId id, node::SubSceneId parent_id)
+static bool SaveSubSceneAndChildren(node::loader::SceneLoader& db_conn, node::SceneManager& components, node::SubSceneId id, node::SubSceneId parent_id, 
+    node::logging::Logger& logger)
 {
     using namespace node;
-    SDL_Log("Saving Scene with id %d", id.value);
+    logger.LogDebug("Saving Scene with id {}", id.value);
     auto ModelManager = components.GetModel(id);
     if (!ModelManager)
     {
-        SDL_Log("Scene Model not found! %d", id.value);
+        logger.LogError("Scene Model not found! {}", id.value);
         assert(ModelManager);
         return false;
     }
@@ -290,7 +292,7 @@ static bool SaveSubSceneAndChildren(node::loader::SceneLoader& db_conn, node::Sc
     {
         if (subsystemData.URL == "Local")
         {
-            if (!SaveSubSceneAndChildren(db_conn, components, subsystemData.scene_id, id))
+            if (!SaveSubSceneAndChildren(db_conn, components, subsystemData.scene_id, id, logger))
             {
                 return false;
             }
@@ -313,12 +315,14 @@ void node::MainNodeScene::SaveScene()
     {
         return;
     }
-    SDL_Log("scene Saved to %s", db_connector->db_path.c_str());
+    m_logger.LogDebug("scene Saved to {}", db_connector->db_path);
     if (db_connector->connector->Reset())
     {
-        SaveSubSceneAndChildren(*db_connector->connector, *m_sceneComponents[m_current_scene_id->manager].manager, mgr->GetMainSubSceneId(), SubSceneId{ 0 });
+        SaveSubSceneAndChildren(*db_connector->connector, 
+            *m_sceneComponents[m_current_scene_id->manager].manager, mgr->GetMainSubSceneId(), SubSceneId{ 0 },
+            unmove(logger(logging::LogCategory::Core)));
     }
-    SDL_Log("saving Scene Success!");
+    m_logger.LogInfo("Saving Scene Successful!");
 }
 
 void node::MainNodeScene::SaveScene(std::string name)
@@ -330,15 +334,16 @@ void node::MainNodeScene::SaveScene(std::string name)
 
     auto& mgr = m_sceneComponents[m_current_scene_id->manager].manager;
     auto* db_connector = mgr->GetDBConnector();
-    SDL_Log("scene Saved to %s", name.c_str());
+    m_logger.LogDebug("scene Saved to {}", name);
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
     if (connector.connector->Reset() && 
         SaveSubSceneAndChildren(*connector.connector, 
-            *m_sceneComponents[m_current_scene_id->manager].manager, mgr->GetMainSubSceneId(), SubSceneId{ 0 }))
+            *m_sceneComponents[m_current_scene_id->manager].manager, mgr->GetMainSubSceneId(), SubSceneId{ 0 }, 
+            unmove(logger(logging::LogCategory::Core))))
     {
         mgr->SetDBConnector(std::move(connector));
-        SDL_Log("saving Scene Success!");
+        m_logger.LogInfo("Saving Scene Successful!");
 
         auto scene_widget = mgr->GetManager(mgr->GetMainSubSceneId())->GetGraphicsScene();
         auto tab_idx = m_tabbedView->GetWidgetIndex(scene_widget);
@@ -364,7 +369,7 @@ void node::MainNodeScene::SaveScene(std::string name)
 
 void node::MainNodeScene::MaybeSaveScene(std::string name)
 {
-    SDL_Log("scene Maybe Saved to %s", name.c_str());
+    m_logger.LogDebug("scene Maybe Saved to {}", name);
     if (std::filesystem::is_regular_file(name))
     {
         auto dialog = std::make_unique<ConfirmOverwriteSaveSceneDialog>(std::move(name), WidgetSize{ 0.0f,0.0f }, this);
@@ -388,7 +393,7 @@ void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
     assert(sceneId_opt);
     if (!sceneId_opt)
     {
-        SDL_Log("closing unavailable tab %d", static_cast<int>(tab_idx));
+        m_logger.LogError("closing unavailable tab {}", static_cast<int>(tab_idx));
         return;
     }
 
@@ -415,6 +420,11 @@ void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
     }
 }
 
+node::LogView* node::MainNodeScene::GetLogView()
+{
+    return m_logView.GetObjectPtr();
+}
+
 namespace
 {
 struct DoubleClickEventReceiver : public node::NodeSceneEventReceiver, public node::SingleObserver<node::BlockDoubleClickedEvent>
@@ -434,19 +444,19 @@ void node::MainNodeScene::InitializeTools()
 {
     auto toolbar = std::make_unique<ToolBar>(WidgetSize{ 0.0f, ToolBar::height }, this);
     {
-        auto new_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "New", [this]() {SDL_Log("New!"); this->NewScenePressed(); });
+        auto new_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "New", [this]() {this->m_logger.LogDebug("New!"); this->NewScenePressed(); });
         new_btn->SetSVGPath("assets/new_file.svg");
         new_btn->SetDescription("New");
         toolbar->AddButton(std::move(new_btn));
     }
     {
-        auto load_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Load", [this]() {SDL_Log("Load!"); this->LoadSceneButtonPressed(); });
+        auto load_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Load", [this]() {this->m_logger.LogDebug("Load!"); this->LoadSceneButtonPressed(); });
         load_btn->SetSVGPath("assets/load_file.svg");
         load_btn->SetDescription("Load");
         toolbar->AddButton(std::move(load_btn));
     }
     {
-        auto save_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Save", [this]() {SDL_Log("Save!"); this->SaveSceneButtonPressed(); });
+        auto save_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Save", [this]() {this->m_logger.LogDebug("Save!"); this->SaveSceneButtonPressed(); });
         save_btn->SetDescription("Save");
         save_btn->SetSVGPath("assets/save_file.svg");
         toolbar->AddButton(std::move(save_btn));
@@ -483,14 +493,14 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddSeparator();
     {
         auto undo_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "U",
-            [this]() { SDL_Log("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
+            [this]() { this->m_logger.LogDebug("Undo"); this->OnUndo(); }, [this] {return this->CanUndo(); });
         undo_btn->SetDescription("Undo");
         undo_btn->SetSVGPath("assets/undo.svg");
         toolbar->AddButton(std::move(undo_btn));
     }
     {
         auto redo_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "R",
-            [this]() { SDL_Log("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
+            [this]() { this->m_logger.LogDebug("Redo"); this->OnRedo(); }, [this] {return this->CanRedo(); });
         redo_btn->SetDescription("Redo");
         redo_btn->SetSVGPath("assets/redo.svg");
         toolbar->AddButton(std::move(redo_btn));
@@ -499,34 +509,34 @@ void node::MainNodeScene::InitializeTools()
     toolbar->AddSeparator();
     {
         auto prop_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "P",
-            [this]() {SDL_Log("Properties!"); this->OpenPropertiesDialog(); });
+            [this]() {this->m_logger.LogDebug("Properties!"); this->OpenPropertiesDialog(); });
         prop_btn->SetDescription("Properties");
         prop_btn->SetSVGPath("assets/properties.svg");
         toolbar->AddButton(std::move(prop_btn));
     }
     {
-        auto run_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "R", [this]() {SDL_Log("Run!"); this->RunSimulator(); },
+        auto run_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "R", [this]() {this->m_logger.LogDebug("Run!"); this->RunSimulator(); },
             [this]() { return !this->m_sim_mgr.IsSimulationRunning(); });
         run_btn->SetDescription("Run Simulation");
         run_btn->SetSVGPath("assets/run.svg");
         toolbar->AddButton(std::move(run_btn));
     }
     {
-        auto stop_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "S", [this]() {SDL_Log("Stop!"); this->m_sim_mgr.StopSimulator(); },
+        auto stop_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "S", [this]() {this->m_logger.LogDebug("Stop!"); this->m_sim_mgr.StopSimulator(); },
             [this]() { return this->m_sim_mgr.IsSimulationRunning(); });
         stop_btn->SetDescription("Stop Simulation");
         stop_btn->SetSVGPath("assets/stop_sim.svg");
         toolbar->AddButton(std::move(stop_btn));
     }
     {
-        auto settings_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "T", [this]() {SDL_Log("Settings!"); this->OnSettingsClicked(); });
+        auto settings_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "T", [this]() {this->m_logger.LogDebug("Settings!"); this->OnSettingsClicked(); });
         settings_btn->SetDescription("Settings");
         settings_btn->SetSVGPath("assets/settings.svg");
         toolbar->AddButton(std::move(settings_btn));
     }
     toolbar->AddSeparator();
     {
-        auto about_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "I", [this]() {SDL_Log("About!"); this->OnAboutClicked(); });
+        auto about_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "I", [this]() {this->m_logger.LogDebug("About!"); this->OnAboutClicked(); });
         about_btn->SetDescription("About Software");
         about_btn->SetSVGPath("assets/about.svg");
         toolbar->AddButton(std::move(about_btn));
@@ -535,19 +545,36 @@ void node::MainNodeScene::InitializeTools()
     m_toolsManager->ChangeTool("A");
 }
 
+void node::MainNodeScene::InitializeBotPanel()
+{
+    auto* app_font = GetApp()->getFont(FontType::Label).get();
+
+    auto bot_panel = std::make_unique<SidePanel>(PanelSide::bottom, app_font, WidgetSize{ GetSize().w, 100.0f }, this);
+
+    auto log_view = std::make_unique<LogView>(WidgetSize{ 100,100 }, app_font, bot_panel.get());
+    m_logView = HandlePtrS<LogView, Widget>{ *log_view };
+
+    bot_panel->SetWidget(std::move(log_view));
+
+    m_scene_grid->SetBotPanel(std::move(bot_panel));
+}
+
 void node::MainNodeScene::InitializeSidePanel()
 {
     auto sidePanel = std::make_unique<SidePanel>(SidePanel::PanelSide::right, GetApp()->getFont().get(),
-        WidgetSize{ 300.0f,GetSize().h}, nullptr);
+        WidgetSize{ 250.0f,GetSize().h}, nullptr);
 
 
     auto&& palette_provider = std::make_shared<PaletteProvider>(m_classesManager, m_blockStylerFactory);
     m_palette_provider = palette_provider;
+    auto* app_font = GetApp()->getFont(FontType::Title).get();
 
     sidePanel->SetWidget(std::make_unique<BlockPalette>(WidgetSize{200.0f,200.0f},
-        std::move(palette_provider), GetApp()->getFont(FontType::Title).get(), sidePanel.get()));
+        std::move(palette_provider), app_font, sidePanel.get()));
     sidePanel->SetTitle("Block Palette");
     m_scene_grid->SetSidePanel(std::move(sidePanel));
+
+
 }
 
 void node::MainNodeScene::OpenPropertiesDialog()
@@ -560,14 +587,14 @@ void node::MainNodeScene::OpenPropertiesDialog()
     auto&& selection = centerWidget->GetCurrentSelection();
     if (selection.size() != 1)
     {
-        SDL_Log("More than one object selected!");
+        m_logger.LogInfo("More than one object selected!");
         return;
     }
 
     auto object = selection[0].GetObjectPtr();
     if (!object || object->GetObjectType() != ObjectType::block)
     {
-        SDL_Log("block not selected!");
+        m_logger.LogInfo("No block selected!");
         return;
     }
 
@@ -597,14 +624,14 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
     assert(model_id);
     if (!model_id)
     {
-        SDL_Log("Block has no model!");
+        m_logger.LogError("Block has no model!");
         return;
     }
     auto graphicsObjectsManager = m_sceneComponents[m_current_scene_id->manager].manager->GetManager(m_current_scene_id->subscene);
     auto* block = graphicsObjectsManager->GetSceneModel()->GetModel().GetBlockById(*model_id);
     if (!block)
     {
-        SDL_Log("couldn't find the block model!");
+        m_logger.LogError("couldn't find the block model!");
         return;
     }
 
@@ -680,7 +707,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
         auto class_ptr = m_classesManager->GetBlockClassByName(block_data->block_class);
         if (!class_ptr)
         {
-            SDL_Log("class '%s' not found!", block_data->block_class.c_str());
+            m_logger.LogError("class '{}' not found!", block_data->block_class);
             return;
         }
         if (class_ptr->HasBlockDialog())
@@ -722,7 +749,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
 
         if (subsystem_block_data->URL != "Local")
         {
-            SDL_Log("Can only handle local blocks");
+            m_logger.LogError("Can only handle local blocks");
             return;
         }
 
@@ -736,7 +763,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
             // scene is not displayed
             if (!CreateSceneForSubsystem({ m_current_scene_id->manager, subsystem_id }))
             {
-                SDL_Log("Failed to create scene for subsystem %d,%d", 
+                m_logger.LogError("Failed to create scene for subsystem {},{}",
                     m_current_scene_id->manager.value, subsystem_id.value);
                 assert(false);
                 return;
@@ -747,7 +774,7 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     }
     else
     {
-        SDL_Log("Openning Dialog Not handled!");
+        m_logger.LogDebug("Openning Dialog Not handled!");
     }
     
 }
@@ -871,7 +898,7 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
 
 void node::MainNodeScene::OnUndo()
 {
-    SDL_Log("Undoed!");
+    m_logger.LogDebug("Undoed!");
     if (!m_current_scene_id)
     {
         return;
@@ -893,7 +920,7 @@ void node::MainNodeScene::OnUndo()
 
 void node::MainNodeScene::OnRedo()
 {
-    SDL_Log("Redoed!");
+    m_logger.LogDebug("Redoed!");
     if (!m_current_scene_id)
     {
         return;
@@ -1024,6 +1051,7 @@ void node::MainNodeScene::OnInit()
     m_classesManager = std::make_shared<BlockClassesManager>();
 
     InitializeSidePanel();
+    InitializeBotPanel();
 
     m_plugins_manager = std::make_shared<PluginsManager>(m_palette_provider, m_classesManager);
     m_plugins_manager->AddRuntime(node::make_PluginRuntime<NativePluginsRuntime>());
@@ -1055,41 +1083,42 @@ struct overloaded : Ts... { using Ts::operator()...; };
 
 void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
 {
+    auto simulation_logger = logger(logging::LogCategory::Simulator);
     std::visit(overloaded{
-        [](const SimulationEvent::NetFloatingError&)
+        [&](const SimulationEvent::NetFloatingError&)
         {
-            SDL_Log("Floating Net!");
+            simulation_logger.LogError("Floating Net!");
         },
-        [](const SimulationEvent::Stopped&)
+        [&](const SimulationEvent::Stopped&)
         {
-            SDL_Log("Stopped!");
+            simulation_logger.LogInfo("Stopped!");
         },
-        [](const SimulationEvent::OutputSocketsConflict&)
+        [&](const SimulationEvent::OutputSocketsConflict&)
         {
-            SDL_Log("Sockets Conflict!");
+            simulation_logger.LogError("Sockets Conflict!");
         },
-        [](const SimulationEvent::FloatingInput&)
+        [&](const SimulationEvent::FloatingInput&)
         {
-           SDL_Log("Floating Input!");
+           simulation_logger.LogError("Floating Input!");
         },
-        [](const SimulationEvent::RequestedBadScene& e)
+        [&](const SimulationEvent::RequestedBadScene& e)
         {
-            SDL_Log("requested bad scene with id: %d", e.subscene_id.value);
+            simulation_logger.LogError("requested bad scene with id: {}", e.subscene_id.value);
         },
-        [](const SimulationEvent::SimulationError& e)
+        [&](const SimulationEvent::SimulationError& e)
         {
-            SDL_Log("Simulation Error: %s", e.error.c_str());
+            simulation_logger.LogError("Simulation Error: {}", e.error);
         },
         [&](const SimulationEvent::Success&)
         {
-            SDL_Log("Success!");
+            simulation_logger.LogInfo("Simulation Succeed!");
             m_sceneComponents[m_current_scene_id->manager].manager->SetLastSimulationResults(std::move(m_sim_mgr.GetLastSimulationResults()));
             for (auto&& block_result : m_sceneComponents[m_current_scene_id->manager].manager->GetLastSimulationResults())
             {
                 auto session_id = m_sim_mgr.GetLastSimulationSessionId();
                 if (!session_id)
                 {
-                    SDL_Log("No Simulation session Id!");
+                    m_logger.LogError("No Simulation session Id!");
                     return;
                 }
                 auto it = std::find_if(m_sceneComponents.begin(), m_sceneComponents.end(), [&](const auto& component) { return component.first == session_id; });
@@ -1112,7 +1141,7 @@ void node::MainNodeScene::OnSimulationEnd(const SimulationEvent& event)
             }
         }
         }, event.e);
-    SDL_Log("simulation Ended!");
+    m_logger.LogDebug("simulation Ended!");
 }
 
 void node::MainNodeScene::OnSettingsClicked()

@@ -6,6 +6,7 @@
 
 #include <any>
 #include <variant>
+#include <atomic>
 
 namespace opt
 {
@@ -127,8 +128,8 @@ class BlockClassPtr
 public:
 	struct new_reference_t {};
 	struct steal_reference_t {};
-	static constexpr new_reference_t new_reference;
-	static constexpr steal_reference_t steal_reference;
+	static constexpr new_reference_t new_reference{};
+	static constexpr steal_reference_t steal_reference{};
 
 	constexpr BlockClassPtr() = default;
 	constexpr BlockClassPtr(nullptr_t) :BlockClassPtr{} {};

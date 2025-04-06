@@ -102,7 +102,7 @@ node::SubSceneId node::SceneManager::AddNewSubSceneToScene()
 void node::SceneManager::OnNotify(model::BlockPortsUpdate& report)
 {
 	UNUSED_PARAM(report);
-	SDL_Log("updated port %d on scene %d", report.block_id.value, report.scene_id.value);
+	m_logger.LogDebug("updated port {} on scene {}", report.block_id.value, report.scene_id.value);
 	std::vector<model::BlockSocketModel> sockets;
 	auto models_it = m_models.find(report.scene_id);
 	assert(models_it != m_models.end());

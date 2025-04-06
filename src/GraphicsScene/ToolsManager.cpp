@@ -27,7 +27,7 @@ void node::ToolsManager::ChangeTool(const std::string& tool_name)
 
 		m_current_tool_name = tool_name;
 		m_current_temporary_tool_name = std::string{};
-		SDL_Log("changed tool to %s", m_current_tool_name.c_str());
+		m_logger.LogDebug("changed tool to {}", m_current_tool_name);
 		m_current_tool = it->second;
 		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(tool_name));
 		if (btn2)
@@ -37,7 +37,7 @@ void node::ToolsManager::ChangeTool(const std::string& tool_name)
 	}
 	else
 	{
-		SDL_LogError(0, "failed to change tool to %s", tool_name.c_str());
+		m_logger.LogError("failed to change tool to {}", tool_name);
 	}
 }
 
@@ -63,7 +63,7 @@ void node::ToolsManager::SetTemporaryTool(const std::string& tool_name)
 		}
 
 		m_current_temporary_tool_name = tool_name;
-		SDL_Log("changed tool temporary to %s", m_current_temporary_tool_name.c_str());
+		m_logger.LogDebug("changed tool temporary to {}", m_current_temporary_tool_name);
 		m_current_tool = it->second;
 		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(tool_name));
 		if (btn2)
@@ -90,7 +90,7 @@ void node::ToolsManager::RemoveTemporaryTool(const std::string& tool_name)
 		}
 
 		m_current_temporary_tool_name.clear();
-		SDL_Log("changed tool from temporary to %s", m_current_tool_name.c_str());
+		m_logger.LogDebug("changed tool from temporary to {}", m_current_tool_name);
 		m_current_tool = it->second;
 		auto btn2 = static_cast<ToolButton*>(m_toolbar->GetButton(m_current_tool_name));
 		if (btn2)

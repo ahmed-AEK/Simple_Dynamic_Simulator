@@ -46,7 +46,7 @@ namespace node
         void InvalidateRect();
         void Start();
 
-        void ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip);
+        void ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip, const SDL_FPoint& origin, float y_offset);
         void HideToolTip(const Widget* widget);
 
         void ShowContextMenu(std::unique_ptr<node::ContextMenu> menu, const SDL_FPoint& p);

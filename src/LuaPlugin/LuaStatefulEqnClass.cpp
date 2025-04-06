@@ -1,6 +1,8 @@
 #include "LuaStatefulEqnClass.hpp"
 #include "sol/sol.hpp"
+#include "PluginAPI/Logger.hpp"
 #include <sstream>
+
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 0.0),
@@ -45,7 +47,8 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("exception creating Lua script: %s", e.what());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("exception creating Lua script: {}", std::string_view{ e.what() });
 		}
 
 		if (!result.valid())
@@ -70,7 +73,8 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script: %s", e.what());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("sol exception building script: {}", e.what());
 		}
 
 		return {};
@@ -85,7 +89,8 @@ namespace
 		SDL_IOStream* file_stream = SDL_IOFromFile(full_path.c_str(), "r");
 		if (!file_stream)
 		{
-			SDL_Log("Failed to open file: %s , reason: %s", path_str.c_str(), SDL_GetError());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("Failed to open file: {} , reason: {}", path_str, SDL_GetError());
 			return {};
 		}
 		std::string file_content;
@@ -94,14 +99,16 @@ namespace
 		{
 			if (file_content.size() > 1024 * 1024 * 8)
 			{
-				SDL_Log("File too big!: %s", path_str.c_str());
+				node::logger(node::logging::LogCategory::Extension)
+					.LogError("File too big!: {}", path_str);
 				return {};
 			}
 			file_content.insert(file_content.end(), temp_buffer.data(), temp_buffer.data() + bytes_read);
 		}
 		SDL_CloseIO(file_stream);
 		file_stream = nullptr;
-		SDL_Log("Read Lua file bytes total = %d", static_cast<int>(file_content.size()));
+		node::logger(node::logging::LogCategory::Extension)
+			.LogDebug("Read Lua file bytes total = %d", static_cast<int>(file_content.size()));
 
 		return file_content;
 	}

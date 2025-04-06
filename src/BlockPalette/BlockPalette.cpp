@@ -30,7 +30,7 @@ void node::BlockPalette::SetProvider(std::shared_ptr<PaletteProvider> provider)
 
 void node::BlockPalette::OnNotify(detail::BlockCategoryClicked& e)
 {
-	SDL_Log("Category clicked: %s", e.category_name.c_str());
+	m_logger.LogDebug("Category clicked: {}", e.category_name);
 	m_paletteBlocksViewer->SetCategory(e.category_name);
 	m_stacked_widget.SetCurrentIndex(1);
 }
@@ -38,7 +38,7 @@ void node::BlockPalette::OnNotify(detail::BlockCategoryClicked& e)
 void node::BlockPalette::OnNotify(detail::BlockViewerBackClicked& e)
 {
 	UNUSED_PARAM(e);
-	SDL_Log("Back clicked");
+	m_logger.LogDebug("Back clicked");
 	m_stacked_widget.SetCurrentIndex(0);
 }
 

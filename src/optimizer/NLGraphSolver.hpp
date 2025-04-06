@@ -5,6 +5,7 @@
 #include "optimizer/flatmap.hpp"
 #include <memory>
 #include <tl/expected.hpp>
+#include <variant>
 
 namespace opt
 {

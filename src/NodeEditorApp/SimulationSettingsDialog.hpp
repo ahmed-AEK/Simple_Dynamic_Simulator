@@ -20,6 +20,7 @@ private:
 	PropertyEditControl* m_t_start_lbl = nullptr;
 	PropertyEditControl* m_t_end_lbl = nullptr;
 	PropertyEditControl* m_max_step_lbl = nullptr;
+	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 
 }

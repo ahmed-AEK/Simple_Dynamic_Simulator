@@ -85,7 +85,7 @@ public:
     int64_t AddUpdateTask(UpdateTask task);
     void RemoveUpdateTask(int64_t task_id);
     Scene* GetScene() { return m_scene.get(); }
-    void StartTextInput();
+    void StartTextInput(const SDL_Rect& rect);
     void StopTextInput();
     int Initialize();
     int Update();
@@ -93,6 +93,7 @@ public:
     bool IsRunning() const { return b_running; }
     SDL_Window* GetWindow() const { return m_window.get(); }
 protected:
+    virtual void OnUpdateBegin() {};
     virtual void OnInit() {};
     virtual void OnRun();
     virtual void HandleLMBDown(SDL_Event& e);

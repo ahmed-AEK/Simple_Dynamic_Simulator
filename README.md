@@ -6,7 +6,7 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 
 **[Demo Video](https://youtu.be/xRRwlTSGhQI)**
 
-![alt text](https://github.com/ahmed-AEK/dummy_NodeEditor/blob/main/preview.png?raw=true)
+![alt text](https://github.com/ahmed-AEK/dummy_NodeEditor/blob/main/docs/preview.png?raw=true)
 
 ### Currently Working:
 - adding and removing nodes (use ctrl to fork an edge, and shift to delete nodes and edges)
@@ -48,15 +48,13 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 ### build instructions
 
-have vcpkg installed and VCPKG_ROOT ENV var setup correctly.
+have cmake, ninja, python and vcpkg installed and VCPKG_ROOT ENV var setup correctly.
 
 you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
 
 ```
-mkdir build
-cd build
-cmake .. --preset=vcpkg-win-rel
-cmake --build ./Release_win
+cmake . --preset=vcpkg-win-rel
+cmake --build ./build/Release_win
 ```
 
 License

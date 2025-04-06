@@ -5,11 +5,20 @@
 #include "toolgui/Application.hpp"
 #include <cmath>
 
+node::ButtonWidget node::SidePanel::CreateCloseButton(SidePanel& panel, PanelSide side)
+{
+	if (side == PanelSide::bottom)
+	{
+		return ButtonWidget{ WidgetSize{35,30}, "Close Panel", "assets/arrow_down.svg",
+				[panel_ptr = &panel]() {panel_ptr->OnRequestClosePanel(); }, &panel };
+	}
+	return ButtonWidget{ WidgetSize{30,35}, "Close Panel", "assets/arrow_right.svg",
+		[panel_ptr = &panel]() {panel_ptr->OnRequestClosePanel(); }, &panel };
+}
 
 node::SidePanel::SidePanel(PanelSide side, TTF_Font* font, const WidgetSize& size, Widget* parent)
-	: Widget(size, parent), 
-	m_close_btn{ WidgetSize{30,35}, "Close Panel", "assets/arrow_right.svg",
-	[this]() {this->OnRequestClosePanel(); }, this }, 
+	: Widget(size, parent),
+	m_close_btn{ CreateCloseButton(*this, side) },
 	m_title_painter{ font }, m_side(side)
 {
 	m_close_btn.SetPosition(GetCloseBtnPosition());
@@ -51,21 +60,34 @@ void node::SidePanel::OnSetSize(const WidgetSize& size)
 {
 	Widget::OnSetSize(size);
 	auto widget_rect = CalculateChildWidgetRect();
-	m_contained_widget->SetSize({ widget_rect.w, widget_rect.h });
+	if (m_contained_widget)
+	{
+		m_contained_widget->SetSize({ widget_rect.w, widget_rect.h });
+	}
+	m_close_btn.SetPosition(GetCloseBtnPosition());
 }
 
 SDL_FRect node::SidePanel::CalculateChildWidgetRect()
 {
+	if (m_side == PanelSide::bottom)
+	{
+		float button_space = widget_margin + 30;
+		return { button_space + widget_margin, widget_margin, GetSize().w - button_space - 2 * widget_margin, GetSize().h - 2 * widget_margin };
+	}
 	return { widget_margin, TitleHeight + widget_margin, GetSize().w - 2 * widget_margin, GetSize().h - 2 * widget_margin - TitleHeight };
 }
 
 void node::SidePanel::OnRequestClosePanel()
 {
-	Notify(PanelCloseRequest{ this });
+	Notify(PanelCloseRequest{ this, GetSide() });
 }
 
 SDL_FPoint node::SidePanel::GetCloseBtnPosition()
 {
+	if (m_side == PanelSide::bottom)
+	{
+		return SDL_FPoint{ widget_margin, GetSize().h - m_close_btn.GetSize().h - widget_margin};
+	}
 	return SDL_FPoint{GetSize().w - m_close_btn.GetSize().w - widget_margin, widget_margin};
 }
 

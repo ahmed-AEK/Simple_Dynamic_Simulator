@@ -65,24 +65,24 @@ void node::SimulationSettingsDialog::OnOk()
 		double max_step = 0.01;
 		if (!grabber(m_t_start_lbl->GetValue(), t_min))
 		{
-			SDL_Log("Bad Min!");
+			m_logger.LogError("Bad value for Min!");
 			return;
 		}
 
 		if (!grabber(m_t_end_lbl->GetValue(), t_max))
 		{
-			SDL_Log("Bad Max!");
+			m_logger.LogError("Bad value for Max!");
 			return;
 		}
 
 		if (!grabber(m_max_step_lbl->GetValue(), max_step))
 		{
-			SDL_Log("Bad Step!");
+			m_logger.LogError("Bad value for Step!");
 			return;
 		}
 
 		m_ok_callback(SimulationSettings{ t_min,t_max, max_step});
-		SDL_Log("Settings Changed!");
+		m_logger.LogInfo("Simulator Settings Changed!");
 		Dialog::OnOk();
 	}
 

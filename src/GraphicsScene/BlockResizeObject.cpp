@@ -173,7 +173,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 	if (side)
 	{
 		auto logic_obj = logic::BlockResizeLogic::TryCreate(*m_parent_block.GetObjectPtr(), *this, model::Point{e.point.x, e.point.y}, *side, scene, m_manager);
-		SDL_Log("Clicked On Resize Object!");
+		m_logger.LogDebug("Clicked On Resize Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;
 	}
@@ -185,7 +185,7 @@ MI::ClickEvent node::BlockResizeObject::OnLMBDown(MouseButtonEvent& e)
 		rotate_btn_global.x += global_pos.x;
 		rotate_btn_global.y += global_pos.y;
 		auto logic_obj = std::make_unique<logic::BlockRotateLogic>(rotate_btn_global, *m_parent_block.GetObjectPtr(), scene, m_manager);
-		SDL_Log("Clicked On Rotate Object!");
+		m_logger.LogDebug("Clicked On Rotate Object!");
 		scene->SetGraphicsLogic(std::move(logic_obj));
 		return MI::ClickEvent::CAPTURE_START;
 	}

@@ -18,6 +18,7 @@
 
 #include "PluginAPI/BlockClass.hpp"
 #include "PluginAPI/BlockClassesManager.hpp"
+#include "PluginAPI/Logger.hpp"
 
 #include <cassert>
 #include <algorithm>

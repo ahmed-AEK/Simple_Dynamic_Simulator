@@ -9,6 +9,7 @@ BlockTemplate.h
 BlockCClass.h
 BlockClassHelpers.hpp
 PluginRuntime.hpp PluginRuntime.cpp
+Logger.hpp 
 )
 
 target_include_directories(PluginAPI PRIVATE ".")

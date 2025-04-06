@@ -1,6 +1,7 @@
 #include "LuaExpressionClass.hpp"
 #include "sol/sol.hpp"
 #include <sstream>
+#include "PluginAPI/Logger.hpp"
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
 	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 0.0),
@@ -47,7 +48,8 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("exception creating Lua script: %s", e.what());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("exception creating Lua script: {}", e.what());
 		}
 
 		if (!result.valid())
@@ -66,7 +68,8 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script: %s", e.what());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("sol exception building script: {}", e.what());
 		}
 
 		return {};
@@ -99,7 +102,8 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			SDL_Log("sol exception building script return: %s",e.what());
+			node::logger(node::logging::LogCategory::Extension)
+				.LogError("sol exception building script return: {}", e.what());
 			return false;
 		}
 

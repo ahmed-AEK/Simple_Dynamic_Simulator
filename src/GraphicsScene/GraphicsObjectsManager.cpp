@@ -51,7 +51,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
         assert(it_node2 != m_net_nodes.end());
         if (it_node1 == m_net_nodes.end() || it_node2 == m_net_nodes.end())
         {
-            SDL_Log("broken scene!");
+            m_logger.LogError("broken scene!");
             return;
         }
         auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second);
@@ -68,14 +68,14 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
         assert(it_node != m_net_nodes.end());
         if (it_block == m_blocks.end() || it_node == m_net_nodes.end())
         {
-            SDL_Log("broken scene conn!");
+            m_logger.LogError("broken scene conn!");
             return;
         }
         auto&& socket = it_block->second->GetSocketById(socket_connection.socketId.socket_id);
         assert(socket);
         if (!socket)
         {
-            SDL_Log("broken scene socket!");
+            m_logger.LogError("broken scene socket!");
             return;
         }
         socket->SetConnectedNode(it_node->second);
@@ -410,14 +410,14 @@ void node::GraphicsObjectsManager::UpdateBlockStyler(BlockObject& block, const m
         assert(data_ptr);
         if (!data_ptr)
         {
-            SDL_Log("update styler data for block id not found!: %d", model.GetId().value);
+            m_logger.LogError("update styler data for block id not found!: {}", model.GetId().value);
             return;
         }
         block.UpdateStyler(model::BlockDataCRef{ model, model::BlockDataCRef::FunctionalRef{*data_ptr} });
     }
     else
     {
-        SDL_Log("unsupported styler update for block type requested!");
+        m_logger.LogError("unsupported styler update for block type requested!");
     }
 }
 
@@ -429,7 +429,7 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
         assert(data_ptr);
         if (!data_ptr)
         {
-            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            m_logger.LogError("get styler data for block id not found!: {}", model.GetId().value);
             return nullptr;
         }
         return m_blockStylerFactory->GetStyler(styler, 
@@ -441,7 +441,7 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
         assert(data_ptr);
         if (!data_ptr)
         {
-            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            m_logger.LogError("get styler data for block id not found!: {}", model.GetId().value);
             return nullptr;
         }
         return m_blockStylerFactory->GetStyler(styler,
@@ -453,7 +453,7 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
         assert(data_ptr);
         if (!data_ptr)
         {
-            SDL_Log("get styler data for block id not found!: %d", model.GetId().value);
+            m_logger.LogError("get styler data for block id not found!: {}", model.GetId().value);
             return nullptr;
         }
         return m_blockStylerFactory->GetStyler(styler,
@@ -461,7 +461,7 @@ std::unique_ptr<node::BlockStyler> node::GraphicsObjectsManager::GetBlockStyler(
     }
     else
     {
-        SDL_Log("unsupported styler for block type requested!");
+        m_logger.LogError("unsupported styler for block type requested!");
     }
     return nullptr;
 }

@@ -45,12 +45,11 @@ void node::mixin::TooltipMixin<T>::InternalUpdateToolTip()
 	if (current_time - m_last_action_time > 500 && m_updateTaskId)
 	{
 		constexpr float tooltip_y_offset = 15;
-		auto toolTipWidget = std::make_unique<ToolTipWidget>(
+		auto toolTipWidget = ToolTipWidget::Create(
 			Self().GetApp()->getFont().get(), m_description,
-			WidgetSize{ 1.0f,1.0f }, &this->Self());
-		toolTipWidget->SetPosition(SDL_FPoint{ m_last_mouse_pos.x, m_last_mouse_pos.y + tooltip_y_offset } + Self().GetGlobalPosition());
+			&this->Self());
 		m_toolTipWidget.reset(*toolTipWidget);
-		Self().GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget));
+		Self().GetApp()->GetScene()->ShowToolTip(std::move(toolTipWidget), SDL_FPoint{ m_last_mouse_pos.x, m_last_mouse_pos.y} + Self().GetGlobalPosition(), tooltip_y_offset);
 		Self().GetApp()->RemoveUpdateTask(m_updateTaskId);
 		m_updateTaskId = 0;
 	}
@@ -59,7 +58,12 @@ void node::mixin::TooltipMixin<T>::InternalUpdateToolTip()
 template <typename T>
 void node::mixin::TooltipMixin<T>::HideToolTip()
 {
-	auto* scene = Self().GetApp()->GetScene();
+	auto* app = Self().GetApp();
+	if (!app)
+	{
+		return;
+	}
+	auto* scene = app->GetScene();
 	if (scene && m_toolTipWidget)
 	{
 		scene->HideToolTip(m_toolTipWidget.GetObjectPtr());

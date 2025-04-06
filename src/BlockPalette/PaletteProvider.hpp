@@ -8,6 +8,7 @@
 #include "NodeModels/BlockData.hpp"
 #include "NodeModels/Observer.hpp"
 #include "PluginAPI/BlockClass.hpp"
+#include "PluginAPI/Logger.hpp"
 
 #include <span>
 #include <memory>
@@ -98,6 +99,7 @@ private:
 	std::vector<CategoryMapping> m_categories;
 	std::shared_ptr<BlockClassesManager> m_classesManager;
 	std::shared_ptr<BlockStylerFactory> m_blockStyleFactory;
+	logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 
 }

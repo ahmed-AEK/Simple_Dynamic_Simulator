@@ -23,6 +23,7 @@ TabbedView.hpp TabbedView.cpp
 ToolTipWidgetMixin.hpp ToolTipWidgetMixin_impl.hpp
 SceneGrid.hpp SceneGrid.cpp
 ScrollView.hpp ScrollView.cpp
+LogView.hpp LogView.cpp
 pch.h
 )
 

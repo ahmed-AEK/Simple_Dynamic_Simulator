@@ -27,6 +27,7 @@ private:
 	ToolBar* m_toolbar = nullptr;
 	std::shared_ptr<GraphicsTool> m_current_tool;
 	std::vector<std::pair<std::string, std::shared_ptr<GraphicsTool>>> m_tools;
+	logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 
 }

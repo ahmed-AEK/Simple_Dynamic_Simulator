@@ -367,10 +367,27 @@ void node::Scene::Start()
     OnStart();
 }
 
-void node::Scene::ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip)
+void node::Scene::ShowToolTip(std::unique_ptr<ToolTipWidget> tooltip, const SDL_FPoint& origin, float y_offset)
 {
+    auto target_origin = SDL_FPoint{ origin.x, origin.y + y_offset };
+    if (!tooltip)
+    {
+        assert(false);
+        return;
+    }
     m_tooltip = std::move(tooltip);
     m_tooltip->SetParent(this);
+    auto tooltip_size = m_tooltip->GetSize();
+    auto screen_size = GetSize();
+    if (tooltip_size.w + target_origin.x > screen_size.w)
+    {
+        target_origin.x -= tooltip_size.w;
+    }
+    if (tooltip_size.h + target_origin.y > screen_size.h)
+    {
+        target_origin.y -= tooltip_size.h + y_offset;
+    }
+    m_tooltip->SetPosition(target_origin);
 }
 
 void node::Scene::HideToolTip(const Widget* widget)
