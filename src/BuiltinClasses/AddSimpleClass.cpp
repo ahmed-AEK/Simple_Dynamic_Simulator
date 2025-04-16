@@ -16,7 +16,7 @@ node::AddSimpleBlockClass::AddSimpleBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::AddSimpleBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
@@ -34,10 +34,13 @@ node::BlockClass::GetFunctorResult node::AddSimpleBlockClass::GetFunctor(const s
 		}
 	};
 	static AddBlockFunction block_fn;
- 	return opt::NLEquationWrapper{
+	opt::NLEquationWrapper eq{
 		{0,1},
 		{2},
 		opt::NLEqPtr{&block_fn}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

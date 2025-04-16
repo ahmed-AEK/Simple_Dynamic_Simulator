@@ -13,12 +13,11 @@ public:
 		std::span<const model::BlockSocketModel::SocketType> sockets,
 		std::string_view description,
 		BlockType block_type);
-	std::span<const model::BlockProperty> GetDefaultClassProperties() const override;
-	std::vector<model::SocketType>
-		CalculateSockets(const std::vector<model::BlockProperty>& properties) const override;
-	std::string_view GetDescription() const override;
-	bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const override;
-	BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) const override;
+	void GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const override;
+	void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const override;
+	void GetDescription(GetDescriptionCallback cb, void* context) const override;
+	int ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const override;
+	BlockType GetBlockType(std::span<const model::BlockProperty> properties) const override;
 private:
 	std::span<const node::model::BlockProperty> m_defaultProperties;
 	std::span<const model::BlockSocketModel::SocketType> m_sockets;

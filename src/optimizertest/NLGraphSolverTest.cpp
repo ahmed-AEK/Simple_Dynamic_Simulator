@@ -17,7 +17,7 @@ TEST(testNLGraphSolver, testAddStateful)
 		},
 		[](auto, auto, auto)
 		{
-		})
+		}), {}
 		});
 	solver.Initialize();
 	opt::FlatMap state(1);
@@ -78,7 +78,7 @@ TEST(testNLGraphSolver, testStateful_runs)
 		[state = &stateful_state](auto, const auto& t, opt::NLStatefulEquationDataRef)
 		{
 			*state = t;
-		})
+		}), {}
 		});
 	solver.Initialize();
 	opt::FlatMap state(1);
@@ -252,7 +252,7 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 				*state = DerivativeStateTest{in[0], t, 0};
 			}
 		}
-		})
+		}), {}
 	};
 
 	opt::NLGraphSolver solver;

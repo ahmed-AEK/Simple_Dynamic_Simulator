@@ -52,6 +52,15 @@
       }
     },
     {
+      "name": "vcpkg-linux-rel",
+      "inherits": "vcpkg",
+      "binaryDir": "${sourceDir}/build/Release_linux",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
       "name": "vcpkg-linux-rel-static",
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/Release_linux_static",

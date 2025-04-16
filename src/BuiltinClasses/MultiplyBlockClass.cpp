@@ -16,7 +16,7 @@ node::MultiplyBlockClass::MultiplyBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::MultiplyBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::MultiplyBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
@@ -33,10 +33,13 @@ node::BlockClass::GetFunctorResult node::MultiplyBlockClass::GetFunctor(const st
 		}
 	};
 	static MultiplyBlockFunction block_fn;
-	return opt::NLEquationWrapper{
+	opt::NLEquationWrapper eq{
 		{0,1},
 		{2},
 		opt::NLEqPtr{&block_fn}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

@@ -6,20 +6,41 @@
 int main()
 {
     int iterations = 0;
-    const int count = 300000;
+    const int count = 30000;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < count; i++)
     {
+        struct BufferFunctor : opt::IDiffEquation
+        {
+        public:
+            virtual opt::Status Apply(std::span<const double> input, std::span<double> output, const double t) override
+            {
+                output[0] = input[0]; UNUSED_PARAM(t);
+                return opt::Status::ok;
+            }
+            BufferFunctor() {}
+        };
+        struct MultiplyTwoFunctor : opt::INLEquation
+        {
+        public:
+            opt::Status Apply(std::span<const double> input, std::span<double> output) override
+            {
+                output[0] = input[0] * 2;
+                return opt::Status::ok;
+            }
+            MultiplyTwoFunctor() {}
+        };
+
         iterations = 0;
         opt::DiffEquationWrapper eq({ 1 }, { 2 }, 
-            opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) -> void { out[0] = in[0]; UNUSED_PARAM(t);}));
-        opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
-        opt::NLEquationWrapper eq3({ 2 }, { 3 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
+            opt::make_DiffEqn<BufferFunctor>());
+        opt::NLEquationWrapper eq2({ 0 }, { 1 }, opt::make_NLEqn<MultiplyTwoFunctor>());
+        opt::NLEquationWrapper eq3({ 2 }, { 3 }, opt::make_NLEqn<MultiplyTwoFunctor>());
         opt::NLDiffSolver solver;
         solver.AddDiffEquation(std::move(eq));
         solver.AddNLEquation(std::move(eq2));
         solver.AddNLEquation(std::move(eq3));
-        solver.Initialize(0, 2);
+        solver.Initialize(0, 20);
         opt::FlatMap state(4);
         state.modify(0,1);
         state.modify(1,0);

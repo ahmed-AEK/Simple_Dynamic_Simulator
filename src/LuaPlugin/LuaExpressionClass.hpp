@@ -8,17 +8,16 @@ namespace node
 	class LuaExpressionClass : public RcBlockClass
 	{
 	public:
-		std::string_view GetName() const override;
-		std::string_view GetDescription() const override;
+		void GetName(GetNameCallback cb, void* context) const override;
+		void GetDescription(GetDescriptionCallback cb, void* context) const override;
 
-		std::span<const model::BlockProperty> GetDefaultClassProperties() const override;
-		bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const override;
+		void GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const override;
+		int ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const override;
 
-		std::vector<model::SocketType>
-			CalculateSockets(const std::vector<model::BlockProperty>& properties) const override;
-		BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) const override;
+		void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const override;
+		BlockType GetBlockType(std::span<const model::BlockProperty> properties) const override;
 
-		GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const override;
+		int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const override;
 	private:
 
 	};

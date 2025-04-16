@@ -141,13 +141,43 @@ private:
 	NLStatefulEventFunctor m_event_functor;
 };
 
+struct NLStatefulEquationWrapper;
+
+struct NLStatefulEquationView
+{
+	std::span<const int32_t> input_ids;
+	std::span<const int32_t> output_ids;
+	NLStatefulEqPtr& equation;
+	std::span<const ZeroCrossDescriptor> crossings;
+	StatefulEquationEvent& ev;
+
+	NLStatefulEquationWrapper ToFunctor() &&;
+};
+
 struct NLStatefulEquationWrapper
 {
 	std::vector<int32_t> input_ids;
 	std::vector<int32_t> output_ids;
 	NLStatefulEqPtr equation;
 	NLStatefulEquationData data;
+
+	operator NLStatefulEquationView()
+	{
+		return NLStatefulEquationView{
+			input_ids, output_ids, equation, data.crossings, data.ev
+		};
+	}
 };
+
+inline NLStatefulEquationWrapper NLStatefulEquationView::ToFunctor() &&
+{
+	return {
+	{input_ids.begin(), input_ids.end()},
+	{output_ids.begin(), output_ids.end()},
+	std::move(equation),
+	{{crossings.begin(), crossings.end()}, ev}
+	};
+}
 }
 
 

@@ -11,20 +11,20 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 
 static constexpr std::string_view Description = "Parses Simple expressions using lua, inputs: a,b,c,d,e,f and t for time";
 
-std::string_view node::LuaStatefulEqnClass::GetName() const
+void node::LuaStatefulEqnClass::GetName(GetNameCallback cb, void* context) const
 {
 	static constexpr std::string_view name = "LuaStatefulEqn";
-	return name;
+	cb(context, name);
 }
 
-std::string_view node::LuaStatefulEqnClass::GetDescription() const
+void node::LuaStatefulEqnClass::GetDescription(GetDescriptionCallback cb, void* context) const
 {
-	return Description;
+	cb(context, Description);
 }
 
-std::span<const node::model::BlockProperty> node::LuaStatefulEqnClass::GetDefaultClassProperties() const
+void node::LuaStatefulEqnClass::GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const
 {
-	return ClassProperties;
+	cb(context, ClassProperties);
 }
 
 struct SolNLFunctions
@@ -130,7 +130,7 @@ namespace
 		return true;
 	}
 }
-bool node::LuaStatefulEqnClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const
+int node::LuaStatefulEqnClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
 	if (properties.size() != ClassProperties.size())
 	{
@@ -173,20 +173,20 @@ bool node::LuaStatefulEqnClass::ValidateClassProperties(const std::vector<model:
 	return true;
 }
 
-std::vector<node::model::SocketType> node::LuaStatefulEqnClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+void node::LuaStatefulEqnClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
 {
 	using model::SocketType;
 	if (properties.size() < 2)
 	{
 		assert(false);
-		return {};
+		return;
 	}
 
 	auto* in_sockets_count = properties[0].get_uint();
 	if (!in_sockets_count)
 	{
 		assert(false);
-		return {};
+		return;
 	}
 
 	std::vector<SocketType> sockets;
@@ -196,16 +196,16 @@ std::vector<node::model::SocketType> node::LuaStatefulEqnClass::CalculateSockets
 		sockets.push_back(SocketType::input);
 	}
 	sockets.push_back(SocketType::output);
-	return sockets;
+	cb(context, sockets);
 }
 
-node::BlockType node::LuaStatefulEqnClass::GetBlockType(const std::vector<model::BlockProperty>& properties) const
+node::BlockType node::LuaStatefulEqnClass::GetBlockType(std::span<const model::BlockProperty> properties) const
 {
 	UNUSED_PARAM(properties);
 	return BlockType::Stateful;
 }
 
-node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::LuaStatefulEqnClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	struct SolNLFunctorEqn : public opt::INLStatefulEquation
 	{
@@ -250,7 +250,8 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 	auto valid = ValidateClassProperties(properties, notifier);
 	if (notifier.errored || !valid)
 	{
-		return std::string{ "failed to validate properties" };
+		cb.error("failed to validate properties");
+		return false;
 	}
 
 	auto* in_sockets_count = properties[0].get_uint();
@@ -263,15 +264,18 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 	auto funcs = build_lua_expr(*in_sockets_count, *file_content, lua);
 	if (!funcs)
 	{
-		return std::string{ "failed to parse lua file" };
+		cb.error("failed to parse lua file");
+		return false;
 	}
 	if (!funcs->apply)
 	{
-		return std::string{ "missing Apply function" };
+		cb.error("missing Apply function");
+		return false;
 	}
 	if (!funcs->update)
 	{
-		return std::string{ "missing Update function" };
+		cb.error("missing Update function");
+		return false;
 	}
 
 	std::vector<int32_t> inputs;
@@ -280,10 +284,13 @@ node::IBlockClass::GetFunctorResult node::LuaStatefulEqnClass::GetFunctor(const 
 	{
 		inputs.push_back(static_cast<int32_t>(i));
 	}
-	return opt::NLStatefulEquationWrapper{
+	opt::NLStatefulEquationWrapper eq{
 		std::move(inputs),
 		{static_cast<int32_t>(*in_sockets_count)},
 		opt::make_NLStatefulEqn<SolNLFunctorEqn>(std::move(lua), std::move(*funcs)),
 		{}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }

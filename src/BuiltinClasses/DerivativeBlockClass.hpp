@@ -10,7 +10,7 @@ class DerivativeBlockClass : public BuiltinBasicClass
 {
 public:
 	DerivativeBlockClass();
-	GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const override;
+	int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const override;
 };
 
 }

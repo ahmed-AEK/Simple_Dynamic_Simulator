@@ -1,5 +1,12 @@
 #include "BlockClassesManager.hpp"
 
+static std::string GetClassName(node::IBlockClass& block)
+{
+	std::string ret;
+	block.GetName([](void* context, std::string_view description) { *static_cast<std::string*>(context) = std::string{ description }; }, &ret);
+	return ret;
+}
+
 bool node::BlockClassesManager::RegisterBlockClass(BlockClassPtr class_ptr)
 {
 	std::lock_guard g{ m_mutex };
@@ -8,7 +15,7 @@ bool node::BlockClassesManager::RegisterBlockClass(BlockClassPtr class_ptr)
 	{
 		return false;
 	}
-	auto name = std::string{ class_ptr->GetName() };
+	auto name = GetClassName(*class_ptr);
 	
 	auto it = m_classes.find(name);
 	if (it != m_classes.end() && it->first == name)

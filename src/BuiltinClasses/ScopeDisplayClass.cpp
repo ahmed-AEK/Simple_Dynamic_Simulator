@@ -16,7 +16,7 @@ node::ScopeDisplayClass::ScopeDisplayClass()
 {
 }
 
-std::vector<node::model::SocketType> node::ScopeDisplayClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+void node::ScopeDisplayClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
 {
 	UNUSED_PARAM(properties);	
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
@@ -29,10 +29,10 @@ std::vector<node::model::SocketType> node::ScopeDisplayClass::CalculateSockets(c
 	{
 		result.push_back(node::model::BlockSocketModel::SocketType::input);
 	}
-	return result;
+	cb(context, result);
 }
 
-node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::ScopeDisplayClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<uint64_t>(properties[0].prop));
@@ -47,7 +47,7 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 	{
 		vec->push_back({});
 	}
-	return opt::ObserverWrapper{
+	opt::ObserverWrapper eq{
 		std::move(ports),
 		opt::make_ObserverEqn<opt::FunctorObserver>(opt::FunctorObserver{opt::FunctorObserver::ObserverFunctor{[vec](std::span<const double> out, const double& t)
 		{
@@ -63,6 +63,9 @@ node::BlockClass::GetFunctorResult node::ScopeDisplayClass::GetFunctor(const std
 			return std::any{*vec};
 		}}})
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 
 std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, 

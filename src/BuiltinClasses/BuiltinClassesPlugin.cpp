@@ -25,7 +25,7 @@ namespace
 namespace detail
 {
 
-static std::span<node::IBlockClass*> get_builtin_classes()
+static std::span<node::IBlockClass* const> get_builtin_classes()
 {
     using namespace node;
     static const BlockClassPtr classes[] =
@@ -42,7 +42,7 @@ static std::span<node::IBlockClass*> get_builtin_classes()
         make_BlockClass<StepSourceClass>(),
         make_BlockClass<ComparatorBlockClass>()
     };
-    static auto classes_raw = [&]()
+    static auto const classes_raw = [&]()
         {
             std::array<node::IBlockClass*, std::size(classes)> temp{};
             for (size_t i = 0; i < std::size(classes); i++)

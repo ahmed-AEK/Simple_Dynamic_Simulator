@@ -10,9 +10,8 @@ class ScopeDisplayClass : public BuiltinBasicClass
 {
 public:
 	ScopeDisplayClass();
-	std::vector<model::SocketType>
-		CalculateSockets(const std::vector<model::BlockProperty>& properties) const override;
-	GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const override;
+	void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const override;
+	int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const override;
 
 	std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, 
 		model::FunctionalBlockData& data, std::any& simulation_data) override;

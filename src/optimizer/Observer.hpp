@@ -68,9 +68,32 @@ private:
 	GetResultsFunctor m_results_functor;
 };
 
+struct ObserverWrapper;
+
+struct ObserverView
+{
+	std::span<const int32_t> input_ids;
+	ObserverEqPtr& equation;
+
+	ObserverWrapper ToFunctor() &&;
+};
+
 struct ObserverWrapper
 {
 	std::vector<int32_t> input_ids;
 	ObserverEqPtr equation;
+
+	operator ObserverView()
+	{
+		return ObserverView{ input_ids, equation };
+	}
 };
+
+inline ObserverWrapper ObserverView::ToFunctor() &&
+{
+	return {
+	{input_ids.begin(), input_ids.end()},
+	std::move(equation)
+	};
+}
 }
