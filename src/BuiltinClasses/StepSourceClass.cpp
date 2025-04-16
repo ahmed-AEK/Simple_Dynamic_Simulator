@@ -16,13 +16,14 @@ node::StepSourceClass::StepSourceClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::StepSourceClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
 	auto valid = ValidateClassProperties(properties, notifier);
 	if (notifier.errored || !valid)
 	{
-		return std::string{ "failed to validate properties" };
+		cb.error("failed to validate properties");
+		return false;
 	}
 	double initial_value = std::get<double>(properties[0].prop);
 	double final_value = std::get<double>(properties[1].prop);
@@ -94,6 +95,8 @@ node::BlockClass::GetFunctorResult node::StepSourceClass::GetFunctor(const std::
 		{}
 	};
 	eq.ev = opt::SourceEvent{true, false, step_time};
-	return eq;
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

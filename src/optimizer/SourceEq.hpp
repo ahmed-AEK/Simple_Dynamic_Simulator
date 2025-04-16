@@ -68,10 +68,43 @@ private:
 	opt::FatAny m_state;
 };
 
+struct SourceEqWrapper;
+
+struct SourceEqView
+{
+	std::span<const int32_t> output_ids;
+	SourceEqPtr& equation;
+	SourceEvent& ev;
+
+	SourceEqWrapper ToFunctor() &&;
+};
+
 struct SourceEqWrapper
 {
 	std::vector<int32_t> output_ids;
 	SourceEqPtr equation;
 	SourceEvent ev;
+
+	operator SourceEqView()
+	{
+		return SourceEqView{ output_ids, equation, ev };
+	}
+	static SourceEqWrapper FromView(SourceEqView&& view)
+	{
+		return {
+			{view.output_ids.begin(), view.output_ids.end()},
+			std::move(view.equation),
+			view.ev
+		};
+	}
 };
+
+inline SourceEqWrapper SourceEqView::ToFunctor() &&
+{
+	return {
+	{output_ids.begin(), output_ids.end()},
+	std::move(equation),
+	ev
+	};
+}
 }

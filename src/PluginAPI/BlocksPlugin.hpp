@@ -12,11 +12,10 @@ public:
 	using GetPluginNameCallback = void(*)(void*, std::string_view);
 	virtual void GetPluginName(GetPluginNameCallback cb, void* context) = 0;
 
-	using GetClassesCallback = void(*)(void*, std::span<IBlockClass*>);
+	using GetClassesCallback = void(*)(void*, std::span<IBlockClass* const>);
 	virtual void GetClasses(GetClassesCallback cb, void* context) = 0;
 
 	using GetBlocksCallback = void(*)(void* context, std::span<const CBlockTemplate> blocks);
-
 	virtual void GetBlocks(GetBlocksCallback cb, void* context) = 0;
 
 	virtual void Destroy() { delete this; }

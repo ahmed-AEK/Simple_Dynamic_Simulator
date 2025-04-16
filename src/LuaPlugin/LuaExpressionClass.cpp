@@ -10,20 +10,20 @@ static const std::vector<node::model::BlockProperty> ClassProperties{
 
 static constexpr std::string_view Description = "Parses Simple expressions using lua, inputs: a,b,c,d,e,f and t for time";
 
-std::string_view node::LuaExpressionClass::GetName() const
+void node::LuaExpressionClass::GetName(GetNameCallback cb, void* context) const
 {
 	static constexpr std::string_view name = "LuaExpression";
-	return name;
+	cb(context,name);
 }
 
-std::string_view node::LuaExpressionClass::GetDescription() const
+void node::LuaExpressionClass::GetDescription(GetDescriptionCallback cb, void* context) const
 {
-	return Description;
+	cb(context, Description);
 }
 
-std::span<const node::model::BlockProperty> node::LuaExpressionClass::GetDefaultClassProperties() const
+void node::LuaExpressionClass::GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const
 {
-	return ClassProperties;
+	cb(context, ClassProperties);
 }
 
 namespace 
@@ -110,7 +110,7 @@ namespace
 		return true;
 	}
 }
-bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const
+int node::LuaExpressionClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
 	if (properties.size() != ClassProperties.size())
 	{
@@ -152,20 +152,20 @@ bool node::LuaExpressionClass::ValidateClassProperties(const std::vector<model::
 	return true;
 }
 
-std::vector<node::model::SocketType> node::LuaExpressionClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+void node::LuaExpressionClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
 {
 	using model::SocketType;
 	if (properties.size() < 2)
 	{
 		assert(false);
-		return {};
+		return;
 	}
 
 	auto* in_sockets_count = properties[0].get_uint();
 	if (!in_sockets_count)
 	{
 		assert(false);
-		return {};
+		return;
 	}
 
 	std::vector<SocketType> sockets;
@@ -175,16 +175,16 @@ std::vector<node::model::SocketType> node::LuaExpressionClass::CalculateSockets(
 		sockets.push_back(SocketType::input);
 	}
 	sockets.push_back(SocketType::output);
-	return sockets;
+	cb(context, sockets);
 }
 
-node::BlockType node::LuaExpressionClass::GetBlockType(const std::vector<model::BlockProperty>& properties) const
+node::BlockType node::LuaExpressionClass::GetBlockType(std::span<const model::BlockProperty> properties) const
 {
 	UNUSED_PARAM(properties);
 	return BlockType::Stateful;
 }
 
-node::IBlockClass::GetFunctorResult node::LuaExpressionClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::LuaExpressionClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	struct SolExprFunctorEqn : public opt::INLStatefulEquation
 	{
@@ -221,7 +221,8 @@ node::IBlockClass::GetFunctorResult node::LuaExpressionClass::GetFunctor(const s
 	auto valid = ValidateClassProperties(properties, notifier);
 	if (notifier.errored || !valid)
 	{
-		return std::string{ "failed to validate properties" };
+		cb.error("failed to validate properties");
+		return false;
 	}
 	auto* in_sockets_count = properties[0].get_uint();
 	sol::state lua;
@@ -234,10 +235,13 @@ node::IBlockClass::GetFunctorResult node::LuaExpressionClass::GetFunctor(const s
 	{
 		inputs.push_back(static_cast<int32_t>(i));
 	}
-	return opt::NLStatefulEquationWrapper{
+	opt::NLStatefulEquationWrapper eq{
 		std::move(inputs),
 		{static_cast<int32_t>(*in_sockets_count)},
 		opt::make_NLStatefulEqn<SolExprFunctorEqn>(std::move(lua), std::move(*func)),
 		{}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }

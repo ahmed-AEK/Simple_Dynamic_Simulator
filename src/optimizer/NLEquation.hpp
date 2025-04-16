@@ -49,12 +49,37 @@ private:
 	NLFunctor m_functor;
 };
 
+struct NLEquationWrapper;
+
+struct NLEquationView
+{
+	std::span<const int32_t> input_ids;
+	std::span<const int32_t> output_ids;
+	NLEqPtr& equation;
+	
+	NLEquationWrapper ToFunctor() &&;
+};
+
 struct NLEquationWrapper
 {
 	std::vector<int32_t> input_ids;
 	std::vector<int32_t> output_ids;
 	NLEqPtr equation;
+
+	operator NLEquationView()
+	{
+		return NLEquationView{ input_ids, output_ids, equation };
+	}
 };
+
+inline NLEquationWrapper NLEquationView::ToFunctor() &&
+{
+	return {
+			{input_ids.begin(), input_ids.end()},
+			{output_ids.begin(), output_ids.end()},
+			std::move(equation)
+	};
+}
 
 class BufferEquation
 {

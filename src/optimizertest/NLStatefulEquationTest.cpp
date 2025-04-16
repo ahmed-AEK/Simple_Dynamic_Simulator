@@ -13,7 +13,7 @@ TEST(testNLStatefulEquation, testApply)
 		{
 			*state_ptr = 5;
 		}
-		})
+		}), {}
 		);
 
 	std::vector<double> inputs{ 1,2,3 };

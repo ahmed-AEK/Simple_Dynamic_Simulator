@@ -78,6 +78,7 @@ void opt::DiffSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& sta
 void opt::DiffSolver_impl::LoadMaptoVec(const FlatMap& state, std::vector<double>& target)
 {
     target.clear();
+    target.reserve(m_output_ids.size());
     for (size_t i = 0; i < m_output_ids.size(); i++)
     {
         target.push_back(state.get(*(m_output_ids.begin()+i)));

@@ -14,12 +14,12 @@ node::RampSourceClass::RampSourceClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::RampSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::RampSourceClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));
 	double value = std::get<double>(properties[0].prop);
-	return opt::SourceEqWrapper{
+	opt::SourceEqWrapper eq{
 		{0},
 		opt::make_SourceEqn<opt::FunctorSourceEq>([value](std::span<double> out, const double& t, opt::SourceEvent&)
 		{
@@ -27,5 +27,8 @@ node::BlockClass::GetFunctorResult node::RampSourceClass::GetFunctor(const std::
 		}),
 		{}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

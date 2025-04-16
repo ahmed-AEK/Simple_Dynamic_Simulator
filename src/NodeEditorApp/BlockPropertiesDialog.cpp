@@ -5,6 +5,24 @@
 #include "NodeSDLStylers/BlockStyler.hpp"
 #include "toolgui/DialogControls.hpp"
 
+static std::string GetClassDescription(node::IBlockClass& block)
+{
+	std::string ret;
+	block.GetDescription([](void* context, std::string_view description) { *static_cast<std::string*>(context) = std::string{ description }; }, &ret);
+	return ret;
+}
+static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
+{
+	std::vector<node::model::SocketType> ret;
+	block.CalculateSockets(properties,[](void* context, std::span<const node::model::SocketType> sockets) {
+		for (auto& entry : sockets)
+		{
+			static_cast<std::vector<node::model::SocketType>*>(context)->push_back(entry);
+		}
+
+	}, &ret);
+	return ret;
+}
 node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& block, 
 	std::shared_ptr<GraphicsObjectsManager> SceneModel, 
 	std::shared_ptr<BlockClassesManager> manager, const WidgetSize& size, Scene* parent)
@@ -36,7 +54,7 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 	assert(class_ptr);
 	if (class_ptr)
 	{
-		auto lines = DialogLabel::SplitToLinesofWidth(std::string{ class_ptr->GetDescription() }, font_label, 500);
+		auto lines = DialogLabel::SplitToLinesofWidth(GetClassDescription(*class_ptr), font_label, 500);
 		const int line_height = TTF_GetFontHeight(font_label);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
 		AddControl(std::make_unique<DialogLabel>(std::move(lines), 
@@ -136,7 +154,7 @@ void node::BlockPropertiesDialog::OnOk()
 
 	bool renew_sockets = false;
 	std::vector<model::BlockSocketModel> new_sockets;
-	auto new_sockets_type = block_class->CalculateSockets(new_properties);
+	auto new_sockets_type = CalculateBlockSockets(new_properties, *block_class);
 	auto old_sockets = block->GetSockets();
 	if (new_sockets_type.size() != old_sockets.size())
 	{

@@ -76,12 +76,19 @@ static std::string GetPluginName(node::IBlocksPlugin& plugin)
 	return runtime_name;
 }
 
+static std::string GetClassName(node::IBlockClass& block)
+{
+	std::string ret;
+	block.GetName([](void* context, std::string_view description) { *static_cast<std::string*>(context) = std::string{ description }; }, &ret);
+	return ret;
+}
+
 template <typename Functor>
 static void get_plugin_classes(node::IBlocksPlugin* plugin_ptr, Functor&& f)
 	requires requires (std::span<node::IBlockClass*> classes) { f(classes); }
 {
 	using namespace node;
-	plugin_ptr->GetClasses([](void* context, std::span<IBlockClass*> classes) {
+	plugin_ptr->GetClasses([](void* context, std::span<IBlockClass* const> classes) {
 		Functor* functor = static_cast<Functor*>(context);
 		(*functor)(classes);
 		}, &f);
@@ -105,19 +112,20 @@ void node::PluginsManager::AddPlugin(node::BlocksPluginPtr plugin_ptr, std::stri
 	auto plugin_it = m_plugins.emplace(std::move(plugin_name), PluginRecord{ std::move(loader_name), std::move(plugin_ptr), {}, {} });
 	auto* plugin = plugin_it.first->second.plugin.get();
 
-	get_plugin_classes(plugin, [&](std::span<node::IBlockClass*> classes)
+	get_plugin_classes(plugin, [&](std::span<node::IBlockClass* const> classes)
 		{
 			plugin_it.first->second.registered_class_names.reserve(classes.size());
 			for (const auto& cls : classes)
 			{
 				bool added = m_classes_mgr->RegisterBlockClass(BlockClassPtr{ BlockClassPtr::new_reference, cls });
+				auto class_name = GetClassName(*cls);
 				if (added)
 				{
-					plugin_it.first->second.registered_class_names.push_back(std::string{ cls->GetName() });
+					plugin_it.first->second.registered_class_names.push_back(class_name);
 				}
 				else
 				{
-					m_logger.LogError("Failed to register class: {}", cls->GetName());
+					m_logger.LogError("Failed to register class: {}", class_name);
 				}
 			}
 		});

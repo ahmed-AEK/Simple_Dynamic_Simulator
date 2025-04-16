@@ -260,8 +260,10 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
         double last_out;
     };
     std::optional<DerivativeStateTest> deriv_state;
-    auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } )};
-    auto s2 = opt::SourceEqWrapper{ {1} , opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } )};
+    auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>(
+        [](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } ), {}};
+    auto s2 = opt::SourceEqWrapper{ {1} , opt::make_SourceEqn<opt::FunctorSourceEq>(
+        [](std::span<double> out, const double& t, opt::SourceEvent&) { out[0] = std::sin(2 * std::numbers::pi * t); } ), {}};
     auto mul = opt::NLEquationWrapper{ {0,1}, {2}, 
         opt::make_NLEqn<opt::FunctorNLEquation>([](std::span<const double> in, std::span<double> out) {out[0] = in[0] * in[1]; })};
     auto diff = opt::NLStatefulEquationWrapper{
@@ -304,8 +306,8 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
                 old_state = DerivativeStateTest{in[0], t, 0};
             }
         }
-    })
-    };
+    }
+    ), {}};
 
     opt::NLDiffSolver solver;
     solver.AddSource(std::move(s1));
@@ -344,7 +346,7 @@ TEST(testNLDiffSolver, test_SourceEvent)
         {
             event1_set = true;
             event1_time = t;
-        })
+        }), {}
     };
     s1.ev = opt::SourceEvent{ true, false, 0.2 };
 
@@ -358,7 +360,7 @@ TEST(testNLDiffSolver, test_SourceEvent)
             event2_set = true;
             event2_time = t;
         }
-    )
+    ), {}
     };
     s2.ev = opt::SourceEvent{true, false, 0.201};
 
@@ -390,7 +392,7 @@ TEST(testNLDiffSolver, testZeroCrossing)
 {
     auto s1 = opt::SourceEqWrapper{ {0} , opt::make_SourceEqn<opt::FunctorSourceEq>([&](std::span<double> out, const double& t, opt::SourceEvent&) {
             out[0] = t;
-        })
+        }), {}
     };
     double trigger_planned_time = 0.49;
     bool triggered = false;
@@ -416,7 +418,7 @@ TEST(testNLDiffSolver, testZeroCrossing)
         opt::FunctorNLStatefulEquation::NLStatefulCrossFunctor{[&](double t, size_t, opt::NLStatefulEquationDataRef) {
             triggered_time = t;
             triggered = true;
-        }})
+        }}), {}
     };
     comparator.data.crossings.push_back(
         opt::ZeroCrossDescriptor{ trigger_planned_time, 0, 

@@ -10,26 +10,26 @@ node::BuiltinBasicClass::BuiltinBasicClass(std::string name,std::span<const node
 {
 }
 
-std::span<const node::model::BlockProperty> node::BuiltinBasicClass::GetDefaultClassProperties() const
+void node::BuiltinBasicClass::GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const
 {
-    return m_defaultProperties;
+    cb(context, m_defaultProperties);
 }
 
-std::vector<node::model::SocketType> node::BuiltinBasicClass::CalculateSockets(const std::vector<model::BlockProperty>& properties) const
+void node::BuiltinBasicClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
 {
 	UNUSED_PARAM(properties);
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
 	assert(ValidateClassProperties(properties, notifier));
 	assert(!notifier.errored);
-    return { m_sockets.begin(), m_sockets.end() };
+	cb(context, m_sockets);
 }
 
-std::string_view node::BuiltinBasicClass::GetDescription() const
+void node::BuiltinBasicClass::GetDescription(GetDescriptionCallback cb, void* context) const
 {
-    return m_description;
+	cb(context, m_description);
 }
 
-bool node::BuiltinBasicClass::ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const
+int node::BuiltinBasicClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
 	if (properties.size() != m_defaultProperties.size())
 	{
@@ -52,7 +52,7 @@ bool node::BuiltinBasicClass::ValidateClassProperties(const std::vector<model::B
 	return true;
 }
 
-node::BlockType node::BuiltinBasicClass::GetBlockType(const std::vector<model::BlockProperty>& properties) const
+node::BlockType node::BuiltinBasicClass::GetBlockType(std::span<const model::BlockProperty> properties) const
 {
 	UNUSED_PARAM(properties);
     return m_block_type;

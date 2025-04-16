@@ -11,10 +11,15 @@
 namespace opt
 {
 	struct DiffEquationWrapper;
+	struct DiffEquationView;
 	struct NLEquationWrapper;
+	struct NLEquationView;
 	struct NLStatefulEquationWrapper;
+	struct NLStatefulEquationView;
 	struct ObserverWrapper;
+	struct ObserverView;
 	struct SourceEqWrapper;
+	struct SourceEqView;
 }
 
 namespace node
@@ -35,6 +40,9 @@ enum class BlockType
 using BlockFunctor = typename std::variant<opt::DiffEquationWrapper, opt::NLEquationWrapper, 
 	opt::NLStatefulEquationWrapper, opt::ObserverWrapper, opt::SourceEqWrapper>;
 
+using BlockView = typename std::variant<opt::DiffEquationView, opt::NLEquationView,
+	opt::NLStatefulEquationView, opt::ObserverView, opt::SourceEqView>;
+
 struct BlockTemplate
 {
 	std::string category;
@@ -47,26 +55,34 @@ struct BlockTemplate
 class IBlockClass
 {
 public:
+	using GetNameCallback = void(*)(void* context, std::string_view name);
+	virtual void GetName(GetNameCallback cb, void* context) const = 0;
 
-	virtual std::string_view GetName() const = 0;
-	virtual std::string_view GetDescription() const = 0;
+	using GetDescriptionCallback = void(*)(void* context, std::string_view description);
+	virtual void GetDescription(GetDescriptionCallback cb, void* context) const = 0;
 
-	virtual std::span<const model::BlockProperty> GetDefaultClassProperties() const = 0;
+	using GetDefaultClassPropertiesCallback = void(*)(void* context, std::span<const model::BlockProperty> properties);
+	virtual void GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const = 0;
 
 	class IValidatePropertiesNotifier
 	{
 	public:
 		virtual void error(size_t property_index, const std::string_view& error_text) = 0;
 	};
-	
-	virtual bool ValidateClassProperties(const std::vector<model::BlockProperty>& properties, IValidatePropertiesNotifier& error_cb) const = 0;
+	virtual int ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const = 0;
 
-	virtual std::vector<model::SocketType>
-		CalculateSockets(const std::vector<model::BlockProperty>& properties) const = 0;
-	virtual BlockType GetBlockType(const std::vector<model::BlockProperty>& properties) const = 0;
+	using CalculateSocketCallback = void(*)(void* context, std::span<const model::SocketType> sockets);
+	virtual void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const = 0;
 
-	using GetFunctorResult = std::variant<BlockFunctor, std::vector<BlockFunctor>, std::string>;
-	virtual GetFunctorResult GetFunctor(const std::vector<model::BlockProperty>& properties) const = 0;
+	virtual BlockType GetBlockType(std::span<const model::BlockProperty> properties) const = 0;
+
+	class IGetFunctorCallback
+	{
+	public:
+		virtual void error(std::string_view error_text) = 0;
+		virtual void call(std::span<BlockView> blocks) = 0;
+	};
+	virtual int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const = 0;
 	virtual void increment_ref() const = 0;
 	virtual void decrement_ref() const = 0;
 	virtual bool HasBlockDialog() const { return false; }
@@ -211,7 +227,7 @@ public:
 	~BlockClass() override;
 
 	void SetName(std::string name) { m_name = name; }
-	std::string_view GetName() const override { return m_name; }
+	void GetName(GetNameCallback cb, void* context) const override { cb(context, m_name.c_str()); }
 
 
 	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model,

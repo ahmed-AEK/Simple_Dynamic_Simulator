@@ -15,7 +15,7 @@ node::DerivativeBlockClass::DerivativeBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::DerivativeBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	struct DerivativeState
 	{
@@ -67,11 +67,14 @@ node::BlockClass::GetFunctorResult node::DerivativeBlockClass::GetFunctor(const 
 	private:
 		std::optional<DerivativeState> m_state;
 	};
-	return opt::NLStatefulEquationWrapper{
+	opt::NLStatefulEquationWrapper eq{
 		{0},
 		{1},
 		opt::make_NLStatefulEqn<DerivativeClassFunction>(),
 		{}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

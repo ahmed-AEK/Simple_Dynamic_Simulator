@@ -123,6 +123,45 @@ struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
+static tl::expected<std::vector<node::BlockFunctor>, std::string> GetBlockFunctor(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
+{
+	struct BlocksGrabber : public node::BlockClass::IGetFunctorCallback
+	{
+		bool errored = false;
+		std::string error_value;
+		std::vector<node::BlockFunctor> functors;
+		void error(std::string_view error_text) override
+		{
+			errored = true;
+			error_value = std::string{ error_text };
+		}
+		void call(std::span<node::BlockView> views) override
+		{
+			auto view_to_functor = [](auto& view) -> node::BlockFunctor { return std::move(view).ToFunctor(); };
+			if (views.size() == 1)
+			{
+				functors.push_back(std::visit(view_to_functor, views[0]));
+			}
+			else
+			{
+				functors.reserve(views.size());
+				for (auto& view : views)
+				{
+					functors.push_back(std::visit(view_to_functor, view));
+				}
+			}
+		}
+	};
+
+	BlocksGrabber grabber;
+	auto result = block.GetFunctor(properties, grabber);
+	if (!result || grabber.errored)
+	{
+		return tl::unexpected{std::move(grabber.error_value)};
+	}
+	assert(grabber.functors.size());
+	return std::move(grabber.functors);
+}
 
 [[nodiscard]] static tl::expected<std::monostate, std::string> AddFunctionalBlock(node::BlockClassesManager& mgr, 
 	BlocksFunctions& funcs, const node::model::FunctionalBlocksDataManager& functionalBlocksManager, 
@@ -132,7 +171,7 @@ overloaded(Ts...) -> overloaded<Ts...>;
 	assert(block_data_ptr);
 	auto block_class = mgr.GetBlockClassByName(block_data_ptr->block_class);
 	assert(block_class);
-	auto functor = block_class->GetFunctor(block_data_ptr->properties);
+	auto functor_vec = GetBlockFunctor(block_data_ptr->properties, *block_class);
 
 	auto block_adder = [&](node::BlockFunctor& functor) {
 		std::visit(overloaded{
@@ -143,22 +182,15 @@ overloaded(Ts...) -> overloaded<Ts...>;
 		[&](opt::SourceEqWrapper& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
 			}, functor);
 		};
-	if (auto* err = std::get_if<std::string>(&functor))
+	if (!functor_vec.has_value())
 	{
-		return tl::unexpected<std::string>{std::move(*err)};
+		return tl::unexpected<std::string>{std::move(functor_vec.error())};
 	}
 
-	std::visit(overloaded{
-		block_adder,
-		[&](std::vector<node::BlockFunctor>& blocks)
-		{
-			for (auto& block : blocks)
-			{
-				block_adder(block);
-			}
-		} ,
-		[](const std::string&) { assert(false); /* already checked */}
-		}, functor);
+	for (auto& functor : *functor_vec)
+	{
+		block_adder(functor);
+	}
 	return std::monostate{};
 }
 

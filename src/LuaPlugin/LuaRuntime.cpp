@@ -8,7 +8,7 @@ namespace
 {
     using namespace node;
 
-    static std::span<node::IBlockClass*> get_lua_classes()
+    static std::span<node::IBlockClass* const> get_lua_classes()
     {
         using namespace node;
         static const node::BlockClassPtr classes[] =
@@ -17,7 +17,7 @@ namespace
             make_BlockClass<LuaStatefulEqnClass>(),
         };
 
-        static auto classes_raw = [&]()
+        static const auto classes_raw = [&]()
             {
                 std::array<node::IBlockClass*, std::size(classes)> temp{};
                 for (size_t i = 0; i < std::size(classes); i++)

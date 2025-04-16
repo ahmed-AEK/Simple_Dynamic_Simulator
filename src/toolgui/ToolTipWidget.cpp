@@ -28,7 +28,6 @@ node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text,
 void node::ToolTipWidget::OnDraw(SDL::Renderer& renderer)
 {
     SDL_Color Black = { 50, 50, 50, 255 };
-    SDL_FRect text_rect = m_painter.GetRect(renderer, Black);
 
     auto current_rect = GetSize().ToRect();
 

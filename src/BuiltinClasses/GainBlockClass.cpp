@@ -16,7 +16,7 @@ node::GainBlockClass::GainBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::GainBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::GainBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));
@@ -31,10 +31,14 @@ node::BlockClass::GetFunctorResult node::GainBlockClass::GetFunctor(const std::v
 		}
 		double multiplier;
 	};
-	return opt::NLEquationWrapper{
+
+	opt::NLEquationWrapper eq{
 		{0},
 		{1},
 		opt::make_NLEqn<GainBlockFunction>(multiplier)
 	};
+	node::BlockView view{ eq };
+	cb.call({&view,1});
+	return true;
 }
 

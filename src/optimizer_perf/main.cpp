@@ -6,7 +6,7 @@
 int main()
 {
     int iterations = 0;
-    const int count = 300000;
+    const int count = 30000;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < count; i++)
     {
@@ -19,7 +19,7 @@ int main()
         solver.AddDiffEquation(std::move(eq));
         solver.AddNLEquation(std::move(eq2));
         solver.AddNLEquation(std::move(eq3));
-        solver.Initialize(0, 2);
+        solver.Initialize(0, 20);
         opt::FlatMap state(4);
         state.modify(0,1);
         state.modify(1,0);

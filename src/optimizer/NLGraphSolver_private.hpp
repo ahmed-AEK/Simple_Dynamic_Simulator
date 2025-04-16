@@ -25,7 +25,7 @@ protected:
 	[[nodiscard]] tl::expected<double, std::string> SolveInternal(std::span<const double> x, std::span<double> grad);
 	static double CostFunction(unsigned n, const double* x, double* grad, void* data);
 	void LoadDatatoMap(std::span<const double> x, FlatMap& state);
-	[[nodiscard]] std::vector<double> LoadMaptoVec(FlatMap& state);
+	void LoadMaptoVec(FlatMap& state, std::vector<double>& output);
 	[[nodiscard]] tl::expected<double, std::string> CalcPenalty(FlatMap& state);
 	[[nodiscard]] NLSolveResult UpdateStateInternal(FlatMap& state);
 
@@ -39,6 +39,7 @@ private:
 	double m_current_time = 0;
 	nlopt::opt m_optimizer;
 	std::optional<std::string> m_last_error;
+	std::vector<double> m_current_x;
 
 	enum class EquationType
 	{

@@ -15,12 +15,12 @@ node::ConstantSourceClass::ConstantSourceClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::ConstantSourceClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::ConstantSourceClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 1);
 	assert(std::holds_alternative<double>(properties[0].prop));
 	double value = std::get<double>(properties[0].prop);
-	return opt::SourceEqWrapper{
+	opt::SourceEqWrapper eq{
 		{0},
 		opt::make_SourceEqn<opt::FunctorSourceEq>([value](std::span<double> out, const double&, opt::SourceEvent&)
 		{
@@ -28,5 +28,8 @@ node::BlockClass::GetFunctorResult node::ConstantSourceClass::GetFunctor(const s
 		}),
 		{}
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

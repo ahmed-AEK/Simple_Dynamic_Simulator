@@ -60,16 +60,15 @@ void opt::NLGraphSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& 
     }
 }
 
-std::vector<double> opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state)
+void opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state, std::vector<double>& output)
 {
     auto state_data = state.data();
-    std::vector<double> output;
+    output.clear();
     output.reserve(state_data.size());
     for (size_t i = 0; i < m_estimated_output_ids.size(); i++)
     {
         output.push_back(state.get(m_estimated_output_ids[i]));
     }
-    return output;
 }
 
 tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
@@ -709,9 +708,9 @@ opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& 
     }
     if (m_estimated_output_ids.size())
     {
-        std::vector<double> x = LoadMaptoVec(m_current_state);
+        LoadMaptoVec(m_current_state, m_current_x);
         double min_value;
-        [[maybe_unused]] nlopt::result result = m_optimizer.optimize(x, min_value);
+        [[maybe_unused]] nlopt::result result = m_optimizer.optimize(m_current_x, min_value);
         if (result == nlopt::FORCED_STOP)
         {
             return tl::unexpected{ m_last_error.value_or("") };
@@ -727,7 +726,7 @@ opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& 
         OffloadSpecificIndicies(m_current_state, state, m_inner_solve_output_ids);
         for (size_t idx = 0; idx < m_estimated_output_ids.size(); idx++)
         {
-            state.modify(m_estimated_output_ids[idx], x[idx]);
+            state.modify(m_estimated_output_ids[idx], m_current_x[idx]);
         }
     }
     else

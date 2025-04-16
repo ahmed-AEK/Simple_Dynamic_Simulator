@@ -19,7 +19,7 @@ node::ComparatorBlockClass::ComparatorBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::ComparatorBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 
 	struct ComparatorOutputTransition
@@ -34,7 +34,8 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 	auto valid = ValidateClassProperties(properties, notifier);
 	if (!valid || notifier.errored)
 	{
-		return std::string{ "failed to validate properties" };
+		cb.error("failed to validate properties");
+		return false;
 	}
 
 	double threshold = std::get<double>(properties[0].prop);
@@ -156,7 +157,9 @@ node::BlockClass::GetFunctorResult node::ComparatorBlockClass::GetFunctor(const 
 		opt::ZeroCrossDescriptor::Position::undefined,
 		});
 	ret.data.ev = opt::StatefulEquationEvent{true, true, 0};
-	return ret;
+	node::BlockView view{ ret };
+	cb.call({ &view,1 });
+	return true;
 }
 
 

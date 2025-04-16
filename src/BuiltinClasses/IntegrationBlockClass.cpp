@@ -15,7 +15,7 @@ node::IntegrationBlockClass::IntegrationBlockClass()
 {
 }
 
-node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const std::vector<model::BlockProperty>& properties) const
+int node::IntegrationBlockClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
 	assert(properties.size() == 0);
 	UNUSED_PARAM(properties);
@@ -28,10 +28,13 @@ node::BlockClass::GetFunctorResult node::IntegrationBlockClass::GetFunctor(const
 			return opt::Status::ok;
 		}
 	};
-	return opt::DiffEquationWrapper{
+	opt::DiffEquationWrapper eq{
 		{0},
 		{1},
 		opt::make_DiffEqn<SimpleIntegrator>()
 	};
+	node::BlockView view{ eq };
+	cb.call({ &view,1 });
+	return true;
 }
 

@@ -46,11 +46,36 @@ private:
 	DiffFunctor m_functor;
 };
 
+struct DiffEquationWrapper;
+
+struct DiffEquationView
+{
+	std::span<const int32_t> input_ids;
+	std::span<const int32_t> output_ids;
+	DiffEqPtr& equation;
+
+	DiffEquationWrapper ToFunctor() &&;
+};
+
 struct DiffEquationWrapper
 {
 	std::vector<int32_t> input_ids;
 	std::vector<int32_t> output_ids;
 	DiffEqPtr equation;
+
+	operator DiffEquationView()
+	{
+		return  DiffEquationView{ input_ids, output_ids, equation };
+	}
 };
+
+inline DiffEquationWrapper DiffEquationView::ToFunctor() &&
+{
+	return {
+		{input_ids.begin(), input_ids.end()},
+		{output_ids.begin(), output_ids.end()},
+		std::move(equation)
+	};
+}
 
 }
