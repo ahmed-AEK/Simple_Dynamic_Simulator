@@ -1,13 +1,15 @@
 #pragma once
 
 #include "PluginAPI/BlockClass.hpp"
+#include "PluginAPI/Logger.hpp"
 
 namespace node
 {
 
-	class LuaStatefulEqnClass: public RcBlockClass
+	class LuaStandaloneStatefulEqnClass: public BlockClass
 	{
 	public:
+		LuaStandaloneStatefulEqnClass();
 		void GetName(GetNameCallback cb, void* context) const override;
 		void GetDescription(GetDescriptionCallback cb, void* context) const override;
 
@@ -18,9 +20,13 @@ namespace node
 		BlockType GetBlockType(std::span<const model::BlockProperty> properties) const override;
 
 		int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const override;
-	private:
-		tl::expected<std::monostate, std::string> validate_lua_script(std::string_view path) const;
 
+		bool HasBlockDialog() const override;
+
+		std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, std::shared_ptr<IBlockPropertiesUpdater> model_updater, model::BlockModel& model,
+			model::FunctionalBlockData& data, std::any& simulation_data) override;
+	private:
+		tl::expected<std::monostate, std::string> validate_lua_script(const std::string& code) const;
 		logging::Logger m_logger = logger(logging::LogCategory::Extension);
 	};
 }

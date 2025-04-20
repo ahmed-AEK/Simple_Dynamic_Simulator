@@ -1,6 +1,7 @@
 #include "LuaRuntime.hpp"
 #include "LuaPlugin/LuaExpressionClass.hpp"
 #include "LuaPlugin/LuaStatefulEqnClass.hpp"
+#include "LuaPlugin/LuaStandaloneStatefulEqnClass.hpp"
 
 #include "NodeSDLStylers/SVGBlockStyler.hpp"
 
@@ -15,6 +16,7 @@ namespace
         {
             make_BlockClass<LuaExpressionClass>(),
             make_BlockClass<LuaStatefulEqnClass>(),
+            make_BlockClass<LuaStandaloneStatefulEqnClass>(),
         };
 
         static const auto classes_raw = [&]()
@@ -47,12 +49,24 @@ namespace
             "SVG Styler",
             model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
         },
-
         {
             "Lua",
             "Stateful Equation",
             model::FunctionalBlockData{
                 "LuaStatefulEqn",
+                {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "DerivativeBlock.lua"),
+                },
+            },
+            "SVG Styler",
+            model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
+        },
+        {
+            "Lua",
+            "Standalone Stateful Equation",
+            model::FunctionalBlockData{
+                "LuaStandaloneStatefulEqn",
                 {
                 *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
                 *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "DerivativeBlock.lua"),

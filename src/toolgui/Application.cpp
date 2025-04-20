@@ -99,13 +99,20 @@ namespace node
                         SDL_SCANCODE_RETURN == e.key.scancode || 
                         SDL_SCANCODE_KP_ENTER == e.key.scancode ||
                         SDL_SCANCODE_LEFT == e.key.scancode || 
+                        SDL_SCANCODE_UP == e.key.scancode ||
+                        SDL_SCANCODE_DOWN == e.key.scancode ||
                         SDL_SCANCODE_RIGHT == e.key.scancode ||
                         SDL_SCANCODE_RSHIFT == e.key.scancode ||
                         SDL_SCANCODE_LSHIFT == e.key.scancode ||
                         SDL_SCANCODE_RCTRL == e.key.scancode ||
                         SDL_SCANCODE_LCTRL == e.key.scancode ||
                         SDL_SCANCODE_ESCAPE == e.key.scancode ||
-                        SDL_SCANCODE_Z == e.key.scancode)
+                        SDL_SCANCODE_Z == e.key.scancode ||
+                        SDL_SCANCODE_C == e.key.scancode ||
+                        SDL_SCANCODE_V == e.key.scancode ||
+                        SDL_SCANCODE_X == e.key.scancode ||
+                        SDL_SCANCODE_A == e.key.scancode
+                        )
                     {
                         if (e.key.scancode == SDL_SCANCODE_ESCAPE)
                         {
@@ -450,4 +457,65 @@ bool node::TaskQueue::IsEmpty()
 node::UpdateTask node::UpdateTask::FromWidget(Widget& widget, std::function<void()> task)
 {
     return UpdateTask{ [handle = widget.GetMIHandlePtr()]() {return handle.isAlive(); }, std::move(task) };
+}
+
+
+node::Application::ClipboardString node::Application::GetClipboardText()
+{
+    if (!SDL_HasClipboardText())
+    {
+        return ClipboardString{};
+    }
+    char* clipboard_text = SDL_GetClipboardText();
+    if (!clipboard_text)
+    {
+        return ClipboardString{};
+    }
+    return ClipboardString{ clipboard_text };
+}
+
+bool node::Application::SetClipboardText(const std::string& text)
+{
+    if (SDL_SetClipboardText(text.c_str()))
+    {
+        m_logger.LogDebug("copied {} characters to clipboard", text.size());
+        return true;
+    }
+    m_logger.LogDebug("failed to copy text to clipboard");
+    return false;
+}
+
+node::Application::ClipboardString::ClipboardString()
+{
+}
+
+node::Application::ClipboardString::ClipboardString(char* str)
+    :m_str{ str }, m_size{ str ? strlen(str) : 0}
+{
+}
+
+node::Application::ClipboardString::ClipboardString(ClipboardString&& other) noexcept
+    :m_str{std::exchange(other.m_str, nullptr)}, m_size{std::exchange(other.m_size, 0)}
+{
+}
+
+node::Application::ClipboardString& node::Application::ClipboardString::operator=(ClipboardString&& other) noexcept
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+    m_str = std::exchange(other.m_str, nullptr);
+    m_size = std::exchange(other.m_size, 0);
+    return *this;
+}
+
+node::Application::ClipboardString::~ClipboardString()
+{
+    SDL_free(static_cast<void*>(m_str));
+}
+
+std::string_view node::Application::ClipboardString::view() const
+{
+    return std::string_view{ m_str, m_size };
 }

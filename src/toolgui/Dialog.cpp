@@ -353,7 +353,7 @@ void node::Dialog::RepositionControls()
 		if (control->GetSizingMode() == DialogControl::SizingMode::expanding)
 		{
 			control->SetPosition({ x, y });
-			control->SetSize({ GetSize().w, control->GetSizeHint().h + static_cast<int>(m_excess_height / m_var_height_elements) });
+			control->SetSize({ GetSize().w - ControlsMargin * 2, control->GetSizeHint().h + static_cast<int>(m_excess_height / m_var_height_elements) });
 		}
 		else
 		{
@@ -376,6 +376,10 @@ void node::Dialog::RepositionButtons()
 		return buttons_widths;
 	}();
 	float current_x = GetSize().w - buttons_widths - ButtonsMargin * static_cast<int>(m_buttons.size());
+	if (m_resizable)
+	{
+		current_x -= GetResizeGripRect().w;
+	}
 	const float current_y = GetSize().h - ButtonsMargin - ButtonHeight;
 	for (auto&& button : m_buttons)
 	{
@@ -543,11 +547,19 @@ node::WidgetSize node::Dialog::CalculateMinSize() const
 	{
 		min_height += ButtonHeight + ButtonsMargin;
 	}
+	else if (m_resizable)
+	{
+		min_height += ControlsMargin + ButtonsMargin;
+	}
 	min_width += ControlsMargin * 2; // pad both sides
 	float buttons_width = ButtonsMargin; // pad left
 	for (const auto& button : m_buttons)
 	{
 		buttons_width += button->GetSize().w + ButtonsMargin;
+	}
+	if (m_resizable)
+	{
+		buttons_width += GetResizeGripRect().w;
 	}
 	min_width = std::max(min_width, buttons_width);
 	min_width = std::max(min_width, MinWidth);
@@ -605,6 +617,7 @@ MI::ClickEvent node::DialogButton::OnLMBUp(MouseButtonEvent& e)
 	UNUSED_PARAM(e);
 	if (b_being_clicked)
 	{
+		b_being_clicked = false;
 		m_onClick();
 		return MI::ClickEvent::CLICKED;
 	}

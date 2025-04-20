@@ -11,36 +11,23 @@ static std::string GetClassDescription(node::IBlockClass& block)
 	block.GetDescription([](void* context, std::string_view description) { *static_cast<std::string*>(context) = std::string{ description }; }, &ret);
 	return ret;
 }
-static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
-{
-	std::vector<node::model::SocketType> ret;
-	block.CalculateSockets(properties,[](void* context, std::span<const node::model::SocketType> sockets) {
-		for (auto& entry : sockets)
-		{
-			static_cast<std::vector<node::model::SocketType>*>(context)->push_back(entry);
-		}
 
-	}, &ret);
-	return ret;
-}
-node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& block, 
-	std::shared_ptr<GraphicsObjectsManager> SceneModel, 
-	std::shared_ptr<BlockClassesManager> manager, const WidgetSize& size, Scene* parent)
-	:Dialog{"Block Properties", size, parent}, m_scene_manager{std::move(SceneModel)}, 
-	m_classesManager{std::move(manager)}, m_block_id{block.GetId()}
+node::BlockPropertiesDialog::BlockPropertiesDialog(std::shared_ptr<IBlockPropertiesUpdater> updater, 
+	BlockClassPtr block_class,
+	const model::FunctionalBlockData& block_data,
+	const WidgetSize& size, Scene* parent)
+	:Dialog{ "Block Properties", size, parent }, m_updater{ std::move(updater)}, 
+	m_block_class{ std::move(block_class) }
 {
 	assert(parent);
-	assert(m_scene_manager);
-	assert(m_classesManager);
-	assert(block.GetType() == model::BlockType::Functional);
+	assert(m_updater);
+	assert(m_block_class);
 
-	auto block_data_ptr = m_scene_manager->GetSceneModel()->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
-	assert(block_data_ptr);
 	TTF_Font* font_title = GetApp()->getFont().get();
 	int font_height = TTF_GetFontHeight(font_title);
 
 	{
-		std::string title = block_data_ptr->block_class + " Block";
+		std::string title = block_data.block_class + " Block";
 		int measured_width = 0;
 		size_t measured_length = 0;
 		TTF_MeasureString(font_title, title.c_str(), title.size(), 500, &measured_width, &measured_length);
@@ -50,22 +37,21 @@ node::BlockPropertiesDialog::BlockPropertiesDialog(const model::BlockModel& bloc
 	}
 
 	auto* font_label = parent->GetApp()->getFont(FontType::Label).get();
-	auto class_ptr = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
-	assert(class_ptr);
-	if (class_ptr)
+	assert(m_block_class);
+	if (m_block_class)
 	{
-		auto lines = DialogLabel::SplitToLinesofWidth(GetClassDescription(*class_ptr), font_label, 500);
+		auto lines = DialogLabel::SplitToLinesofWidth(GetClassDescription(*m_block_class), font_label, 500);
 		const int line_height = TTF_GetFontHeight(font_label);
 		int lines_gap = (lines.size() == 0) ? 0 : DialogLabel::LinesMargin * static_cast<int>(lines.size() - 1);
 		AddControl(std::make_unique<DialogLabel>(std::move(lines), 
 			WidgetSize{ 500.0f, static_cast<float>(line_height * static_cast<int>(lines.size()) + lines_gap) }, font_label, this));
 	}
 
-	if (block_data_ptr->properties.size())
+	if (block_data.properties.size())
 	{
 		AddControl(std::make_unique<SeparatorControl>(WidgetSize{ 500.0f, 2.0f }, this));
 	}
-	for (const auto& property : block_data_ptr->properties)
+	for (const auto& property : block_data.properties)
 	{
 		std::string initial_value = property.to_string();
 		auto ptr = std::make_unique<PropertyEditControl>(property.name, 200, std::move(initial_value), 
@@ -110,36 +96,18 @@ void node::BlockPropertiesDialog::OnOk()
 		}
 	}
 
-	auto block = m_scene_manager->GetSceneModel()->GetModel().GetBlockById(m_block_id);
-	if (!block)
+	auto result = m_updater->UpdateBlockProperties(new_properties);
+	if (result)
 	{
 		Dialog::OnOk();
-		m_logger.LogError("Update Failed!");
-		return;
 	}
-
-	auto block_data_ptr = m_scene_manager->GetSceneModel()->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
-	if (!block_data_ptr)
-	{
-		Dialog::OnOk();
-		m_logger.LogError("Update Failed! data not found!");
-		return;
-	}
-	auto block_class = m_classesManager->GetBlockClassByName(block_data_ptr->block_class);
-	if (!block_class)
-	{
-		Dialog::OnOk();
-		m_logger.LogError("Update Failed!");
-		return;
-	}
-	ValidatePropertiesNotifier notifier;
-	if (!block_class->ValidateClassProperties(new_properties, notifier) || notifier.errors.size())
+	else
 	{
 		for (const auto& prop : m_property_edits)
 		{
 			prop.property_edit->SetErrorText({});
 		}
-		for (auto& error_text : notifier.errors)
+		for (auto& error_text : result.error())
 		{
 			if (m_property_edits.size() <= error_text.prop_idx)
 			{
@@ -151,53 +119,5 @@ void node::BlockPropertiesDialog::OnOk()
 		m_logger.LogError("Update Failed class verification!");
 		return;
 	}
-
-	bool renew_sockets = false;
-	std::vector<model::BlockSocketModel> new_sockets;
-	auto new_sockets_type = CalculateBlockSockets(new_properties, *block_class);
-	auto old_sockets = block->GetSockets();
-	if (new_sockets_type.size() != old_sockets.size())
-	{
-		renew_sockets = true;
-	}
-	else
-	{
-		for (size_t i = 0; i < new_sockets_type.size(); i++)
-		{
-			if (new_sockets_type[i] != old_sockets[i].GetType())
-			{
-				renew_sockets = true;
-				break;
-			}
-		}
-	}
-	if (renew_sockets)
-	{
-		new_sockets.reserve(new_sockets_type.size());
-		for (size_t i = 0; i < new_sockets_type.size(); i++)
-		{
-			new_sockets.push_back(model::BlockSocketModel{ new_sockets_type[i],model::SocketId{static_cast<model::id_int>(i)} });
-		}
-		auto&& block_registry = m_scene_manager->getBlocksRegistry();
-		auto it = block_registry.find(m_block_id);
-		assert(it != block_registry.end());
-		if (it != block_registry.end())
-		{
-			it->second->GetStyler().PositionSockets(new_sockets, block->GetBounds(), block->GetOrienation());
-		}
-	}
-	
-	auto model_manager = m_scene_manager->GetSceneModel();
-	auto block_id = m_block_id;
-	Dialog::OnOk();
-	if (renew_sockets)
-	{
-		model_manager->ModifyBlockPropertiesAndSockets(block_id, std::move(new_properties), std::move(new_sockets));
-	}
-	else
-	{
-		model_manager->ModifyBlockProperties(block_id, std::move(new_properties));
-	}
-	m_logger.LogInfo("Update Done!");
 	return;
 }

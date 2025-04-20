@@ -29,7 +29,7 @@ void node::LuaExpressionClass::GetDefaultClassProperties(GetDefaultClassProperti
 namespace 
 {
 
-	std::optional<sol::protected_function> build_lua_expr(uint64_t in_sockets, std::string_view code, sol::state& lua)
+	tl::expected<sol::protected_function, std::string> build_lua_expr(uint64_t in_sockets, std::string_view code, sol::state& lua)
 	{
 		assert(in_sockets < 7);
 		static constexpr std::array<char, 6> arg_mapping{ 'a','b','c','d','e','f' };
@@ -48,13 +48,13 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			node::logger(node::logging::LogCategory::Extension)
-				.LogError("exception creating Lua script: {}", e.what());
+			return tl::unexpected<std::string>{std::format("exception creating Lua script: {}", e.what())};
 		}
 
 		if (!result.valid())
 		{
-			return {};
+			sol::error err = result;
+			return tl::unexpected<std::string>{err.what()};
 		}
 
 		try
@@ -62,27 +62,24 @@ namespace
 			auto func = lua["func"];
 			if (func.get_type() != sol::type::function)
 			{
-				return {};
+				return tl::unexpected<std::string>{std::string_view{ "unknown internal error in lua!"}};
 			}
 			return sol::protected_function{ func };
 		}
 		catch (std::exception& e)
 		{
-			node::logger(node::logging::LogCategory::Extension)
-				.LogError("sol exception building script: {}", e.what());
+			return tl::unexpected<std::string>{std::format("sol exception building script: {}", e.what())};
 		}
-
-		return {};
 	}
 
-	bool validate_properies_lua(uint64_t in_sockets, std::string_view code)
+	tl::expected<std::monostate, std::string> validate_properies_lua(uint64_t in_sockets, std::string_view code)
 	{
 		sol::state lua;
 		lua.open_libraries(sol::lib::math);
 		auto expr_opt = build_lua_expr(in_sockets, code, lua);
 		if (!expr_opt)
 		{
-			return false;
+			return tl::unexpected<std::string>{std::move(expr_opt.error())};
 		}
 
 		sol::protected_function func = *expr_opt;
@@ -90,11 +87,17 @@ namespace
 		auto call_result = func(sol::as_args(func_inputs));
 		if (!call_result.valid())
 		{
-			return false;
+			sol::error err = call_result;
+			return tl::unexpected<std::string>{err.what()};
 		}
 		if (call_result.return_count() != 1 || call_result.get_type(0) != sol::type::number)
 		{
-			return false;
+			auto type = call_result.get_type(0);
+			if (type == sol::type::nil)
+			{
+				return tl::unexpected<std::string>{"expression contains undefined value, only t,a,b,c,d,e,f are allowed!"};
+			}
+			return tl::unexpected<std::string>{std::format("expression did not result in a number!, expression type id: {}", static_cast<int>(type))};
 		}
 		try
 		{
@@ -102,12 +105,10 @@ namespace
 		}
 		catch (std::exception& e)
 		{
-			node::logger(node::logging::LogCategory::Extension)
-				.LogError("sol exception building script return: {}", e.what());
-			return false;
+			return tl::unexpected<std::string>{std::format("sol exception building script return: {}", e.what())};
 		}
 
-		return true;
+		return std::monostate{};
 	}
 }
 int node::LuaExpressionClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
@@ -146,7 +147,7 @@ int node::LuaExpressionClass::ValidateClassProperties(std::span<const model::Blo
 	auto validation_result = validate_properies_lua(*in_sockets_count,*code);
 	if (!validation_result)
 	{
-		error_cb.error(1, std::format("LUA parse failed."));
+		error_cb.error(1, validation_result.error());
 		return false;
 	}
 	return true;

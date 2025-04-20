@@ -68,11 +68,12 @@ int node::ScopeDisplayClass::GetFunctor(std::span<const model::BlockProperty> pr
 	return true;
 }
 
-std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, model::BlockModel& model, 
+std::unique_ptr<node::BlockDialog> node::ScopeDisplayClass::CreateBlockDialog(Scene& scene, std::shared_ptr<IBlockPropertiesUpdater> model_updater, model::BlockModel& model,
 	model::FunctionalBlockData& data, std::any& simulation_data)
 {
 	UNUSED_PARAM(model);
 	UNUSED_PARAM(data);
+	UNUSED_PARAM(model_updater);
 
 	auto dialog = std::make_unique<ScopeDiplayDialog>(WidgetSize{ 500.0f,500.0f }, &scene);
 

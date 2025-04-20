@@ -3,7 +3,9 @@
 #include "NodeModels/BlockModel.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
 #include "NodeModels/BlockData.hpp"
+#include "NodeModels/SceneModelManager.hpp"
 
+#include "tl/expected.hpp"
 #include <any>
 #include <variant>
 #include <atomic>
@@ -218,6 +220,13 @@ BlockClassPtr make_BlockClass(Args&&...args)
 	return BlockClassPtr{ BlockClassPtr::steal_reference, new T{std::forward<Args>(args)...} };
 }
 
+class IBlockPropertiesUpdater
+{
+public:
+	virtual std::optional<model::FunctionalBlockData> GetFunctionalBlockData() = 0;
+	virtual tl::expected<std::monostate, std::vector<ValidatePropertiesNotifier::PropertyError>> UpdateBlockProperties(std::span<const model::BlockProperty> new_properties) = 0;
+};
+
 class BlockClass: public RcBlockClass
 {
 public:
@@ -230,7 +239,7 @@ public:
 	void GetName(GetNameCallback cb, void* context) const override { cb(context, m_name.c_str()); }
 
 
-	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model,
+	virtual std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, std::shared_ptr<IBlockPropertiesUpdater> model_updater, model::BlockModel& model,
 		model::FunctionalBlockData& data, std::any& simulation_data);
 private:
 	std::string m_name;

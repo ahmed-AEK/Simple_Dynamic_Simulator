@@ -84,7 +84,7 @@ private:
 	static constexpr size_t y_ticks_count = 9;
 	static constexpr float top_margin = 20;
 	static constexpr float bottom_margin = 40;
-	static constexpr float right_margin = 20;
+	static constexpr float right_margin = 1;
 	static constexpr float text_margin = 5;
 
 	TTF_Font* m_font;

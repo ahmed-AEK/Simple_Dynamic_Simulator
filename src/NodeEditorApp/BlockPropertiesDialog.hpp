@@ -2,6 +2,7 @@
 
 #include "toolgui/Dialog.hpp"
 #include "NodeModels/FunctionalBlocksDataManager.hpp"
+#include "PluginAPI/BlockClass.hpp"
 
 class SDLFont;
 
@@ -14,9 +15,11 @@ class PropertyEditControl;
 class BlockPropertiesDialog: public Dialog
 {
 public:
-	BlockPropertiesDialog(const model::BlockModel& block, 
-		std::shared_ptr<GraphicsObjectsManager> SceneModel, 
-		std::shared_ptr<BlockClassesManager> manager, const WidgetSize& size, Scene* parent);
+	BlockPropertiesDialog( 
+		std::shared_ptr<IBlockPropertiesUpdater> updater, 
+		BlockClassPtr block_class,
+		const model::FunctionalBlockData& block_data,
+		const WidgetSize& size, Scene* parent);
 protected:
 	void OnOk() override;
 private:
@@ -26,10 +29,9 @@ private:
 		std::function<std::optional<model::BlockProperty>(const std::string&)> grabber;
 	};
 
+	std::shared_ptr<IBlockPropertiesUpdater> m_updater;
 	std::vector<BlockPropertySlot> m_property_edits;
-	std::shared_ptr<GraphicsObjectsManager> m_scene_manager;
-	std::shared_ptr<BlockClassesManager> m_classesManager;
-	model::BlockId m_block_id;
+	BlockClassPtr m_block_class;
 	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 

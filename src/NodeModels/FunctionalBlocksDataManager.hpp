@@ -32,6 +32,15 @@ struct BlockProperty
 		BlockPropertyType operator()(const uint64_t&) const { return BlockPropertyType::UnsignedInteger; }
 		BlockPropertyType operator()(const bool&) const { return BlockPropertyType::Boolean; }
 	};
+
+	struct TypeGetterString
+	{
+		std::string_view operator()(const std::string&) const { return "String"; }
+		std::string_view operator()(const double&) const { return "FloatNumber"; }
+		std::string_view operator()(const int64_t&) const { return "Integer"; }
+		std::string_view operator()(const uint64_t&) const { return "UnsignedInteger"; }
+		std::string_view operator()(const bool&) const { return "Boolean"; }
+	};
 	using property_t = std::variant<std::string, double, int64_t, uint64_t, bool>;
 	BlockProperty(std::string name, property_t prop)
 		:name{ name }, prop{ prop } {}
@@ -41,6 +50,7 @@ struct BlockProperty
 	property_t prop;
 	
 	BlockPropertyType GetType() const { return std::visit(TypeGetter{}, prop); }
+	std::string_view GetTypeAsString() const { return std::visit(TypeGetterString{}, prop); }
 
 	std::string to_string() const;
 	static std::optional<property_t> from_string(BlockPropertyType type, std::string_view str);

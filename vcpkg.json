@@ -26,6 +26,6 @@
     },
     "lua",
     "sol2",
-	"tl-expected"
+    "tl-expected"
   ]
 }

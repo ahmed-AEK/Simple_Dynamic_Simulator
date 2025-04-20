@@ -511,3 +511,91 @@ SDL_Texture* DroppableTexture::GetTexture()
 {
     return m_stored_texture.get();
 }
+
+
+TruncatedTextPainter::TruncatedTextPainter(TTF_Font* font)
+    :m_painter{font}
+{
+
+}
+
+void TruncatedTextPainter::Draw(SDL::Renderer& renderer, const SDL_FPoint point, const SDL_Color color)
+{
+    if (m_dirty)
+    {
+        UpdatePainter();
+    }
+
+    m_painter.Draw(renderer, { point.x - static_cast<float>(m_local_offset), point.y }, color);
+}
+
+int TruncatedTextPainter::GetHeight() const
+{
+    return TTF_GetFontHeight(m_painter.GetFont());
+}
+
+void TruncatedTextPainter::SetPixelOffset(size_t offset)
+{
+    if (m_pixel_offset != offset)
+    {
+        m_dirty = true;
+    }
+    m_pixel_offset = offset;
+}
+
+void TruncatedTextPainter::SetWidth(size_t width)
+{
+    if (m_width != static_cast<int>(width))
+    {
+        m_dirty = true;
+    }
+    m_width = static_cast<int>(width);
+}
+
+void TruncatedTextPainter::SetText(std::string text)
+{
+    m_text = std::move(text);
+    m_dirty = true;
+}
+TTF_Font* TruncatedTextPainter::GetFont() const
+{
+    return m_painter.GetFont();
+}
+void TruncatedTextPainter::UpdatePainter()
+{
+    assert(m_painter.GetFont());
+    m_dirty = false;
+    int measured_width = 0;
+    size_t measured_length = 0;
+    if (m_pixel_offset == 0)
+    {
+        m_local_offset = 0;
+        measured_length = 0;
+        measured_width = 0;
+    }
+    else
+    {
+        TTF_MeasureString(m_painter.GetFont(), m_text.c_str(), m_text.size(), static_cast<int>(m_pixel_offset), &measured_width, &measured_length);
+        m_local_offset = static_cast<uint16_t>(m_pixel_offset - measured_width);
+        if (measured_length == m_text.size())
+        {
+            m_painter.SetText("");
+            return;
+        }
+    }
+    std::string_view rest_of_text = std::string_view{ m_text }.substr(measured_length);
+    if (TTF_MeasureString(m_painter.GetFont(), rest_of_text.data(), rest_of_text.size(), m_width, &measured_width, &measured_length))
+    {
+        if (measured_length != rest_of_text.size())
+        {
+            measured_length++;
+        }
+        if (measured_length != rest_of_text.size())
+        {
+            measured_length++;
+        }
+        m_painter.SetText(std::string{ rest_of_text.begin(), rest_of_text.begin() + measured_length });
+
+    }
+    
+}

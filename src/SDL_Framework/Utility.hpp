@@ -2,6 +2,7 @@
 
 #include "SDL_Framework/SDL_headers.h"
 #include "SDL_Framework/SDLCPP.hpp"
+#include "SDL_Framework/SDLRenderer.hpp"
 #include <unordered_map>
 #include <mutex>
 #include <optional>
@@ -129,4 +130,28 @@ private:
     TTF_Font* m_font;
     SDL_Color m_stored_color{ 0,0,0,0 };
 
+};
+
+
+class TruncatedTextPainter
+{
+public:
+    explicit TruncatedTextPainter(TTF_Font* font);
+    void Draw(SDL::Renderer& renderer, const SDL_FPoint point, const SDL_Color color);
+    int GetHeight() const;
+    void SetPixelOffset(size_t offset);
+    size_t GetPixelOffset() const { return m_pixel_offset; }
+    void SetWidth(size_t width);
+    size_t GetWidth() const { return m_width; }
+    void SetText(std::string text);
+    std::string_view GetText() const { return m_text; }
+    TTF_Font* GetFont() const;
+private:
+    void UpdatePainter();
+    std::string m_text;
+    TextPainter m_painter;
+    size_t m_pixel_offset = 0;
+    int m_width = 100;
+    uint16_t m_local_offset = 0;
+    bool m_dirty = true;
 };

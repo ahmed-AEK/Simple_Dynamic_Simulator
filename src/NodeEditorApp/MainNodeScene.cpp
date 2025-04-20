@@ -54,6 +54,19 @@
 
 #define USE_SDL_DIALOGS 1
 
+static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
+{
+    std::vector<node::model::SocketType> ret;
+    block.CalculateSockets(properties, [](void* context, std::span<const node::model::SocketType> sockets) {
+        for (auto& entry : sockets)
+        {
+            static_cast<std::vector<node::model::SocketType>*>(context)->push_back(entry);
+        }
+
+        }, &ret);
+    return ret;
+}
+
 static void AddInitialNodes_forScene(node::SceneManager& manager)
 {
     using namespace node;
@@ -105,6 +118,23 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
         sceneModel->AddBlock(std::move(model));
     }
 
+    {
+        auto block_id = model::BlockId{ 6 };
+        model::BlockModel model{ block_id, model::BlockType::Functional, model::Rect{ 200,10,100,100 } };
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::input, model::SocketId{ 0 } });
+        model.AddSocket(model::BlockSocketModel{ model::BlockSocketModel::SocketType::output, model::SocketId{ 1 } });
+        model.SetStyler("SVG Styler");
+        model.SetStylerProperties(model::BlockStyleProperties{ {{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}} });
+        sceneModel->GetFunctionalBlocksManager().SetDataForId(block_id,
+            model::FunctionalBlockData{ "LuaStandaloneStatefulEqn" ,
+            {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, "Here Should be some code!\nAnd more code!"),
+            }
+            });
+        sceneModel->AddBlock(std::move(model));
+    }
+
     auto model = std::make_shared<SceneModelManager>(std::move(sceneModel));
     model->SetSubSceneId(manager.GetMainSubSceneId());
     manager.AddModel(model);
@@ -125,6 +155,7 @@ void node::MainNodeScene::RunSimulator()
     {
         scene_models.push_back(subscene.second->GetModel());
     }
+    m_logger.LogInfo("Starting Simulation!");
     m_sim_mgr.RunSimulator(m_current_scene_id->manager, scene_models, scene_manager->GetMainSubSceneId(), 
         m_classesManager, *GetApp());
 }
@@ -577,6 +608,129 @@ void node::MainNodeScene::InitializeSidePanel()
 
 }
 
+namespace node
+{
+
+class BlockPropertiesUpdater : public node::IBlockPropertiesUpdater
+{
+public:
+    BlockPropertiesUpdater(model::BlockId block_id,
+        std::weak_ptr<SceneModelManager> model_manager,
+        BlockClassPtr block_class,
+        std::weak_ptr<GraphicsObjectsManager> scene_manager)
+        : m_block_id{ block_id }, m_model_manager{ model_manager }, m_block_class{ block_class },
+        m_scene_manager{ scene_manager }
+    {
+
+    }
+    std::optional<model::FunctionalBlockData> GetFunctionalBlockData() override
+    {
+        std::optional<model::FunctionalBlockData> ret;
+        auto model_manager = m_model_manager.lock();
+        auto* data = model_manager->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
+        if (data)
+        {
+            ret.emplace(*data);
+        }
+        return ret;
+    }
+    tl::expected<std::monostate, std::vector<ValidatePropertiesNotifier::PropertyError>> UpdateBlockProperties(std::span<const model::BlockProperty> new_properties) override
+    {
+        auto model_manager = m_model_manager.lock();
+        if (!model_manager)
+        {
+            m_logger.LogDebug("Update Failed!");
+            return tl::unexpected{ std::vector<ValidatePropertiesNotifier::PropertyError>{} };
+        }
+        auto scene_manager = m_scene_manager.lock();
+        if (!scene_manager)
+        {
+            m_logger.LogDebug("Update Failed!");
+            return tl::unexpected{ std::vector<ValidatePropertiesNotifier::PropertyError>{} };
+        }
+        auto block = model_manager->GetModel().GetBlockById(m_block_id);
+        if (!block)
+        {
+            m_logger.LogDebug("Update Failed!");
+            return tl::unexpected{ std::vector<ValidatePropertiesNotifier::PropertyError>{} };
+        }
+
+        auto block_data_ptr = model_manager->GetModel().GetFunctionalBlocksManager().GetDataForId(m_block_id);
+        if (!block_data_ptr)
+        {
+            m_logger.LogDebug("Update Failed! data not found!");
+            return tl::unexpected{ std::vector<ValidatePropertiesNotifier::PropertyError>{} };
+        }
+
+        assert(m_block_class.get());
+        ValidatePropertiesNotifier notifier;
+        if (!m_block_class->ValidateClassProperties(new_properties, notifier) || notifier.errors.size())
+        {
+            for (auto& error_text : notifier.errors)
+            {
+                m_logger.LogDebug("invalid Error index: {}", static_cast<int>(error_text.prop_idx));
+            }
+            m_logger.LogDebug("Update Failed class verification!");
+            return tl::unexpected{ std::move(notifier.errors) };
+        }
+
+        bool renew_sockets = false;
+        std::vector<model::BlockSocketModel> new_sockets;
+        auto new_sockets_type = CalculateBlockSockets(new_properties, *m_block_class);
+        auto old_sockets = block->GetSockets();
+        if (new_sockets_type.size() != old_sockets.size())
+        {
+            renew_sockets = true;
+        }
+        else
+        {
+            for (size_t i = 0; i < new_sockets_type.size(); i++)
+            {
+                if (new_sockets_type[i] != old_sockets[i].GetType())
+                {
+                    renew_sockets = true;
+                    break;
+                }
+            }
+        }
+        if (renew_sockets)
+        {
+            new_sockets.reserve(new_sockets_type.size());
+            for (size_t i = 0; i < new_sockets_type.size(); i++)
+            {
+                new_sockets.push_back(model::BlockSocketModel{ new_sockets_type[i],model::SocketId{static_cast<model::id_int>(i)} });
+            }
+
+            auto&& block_registry = scene_manager->getBlocksRegistry();
+            auto it = block_registry.find(m_block_id);
+            assert(it != block_registry.end());
+            if (it != block_registry.end())
+            {
+                it->second->GetStyler().PositionSockets(new_sockets, block->GetBounds(), block->GetOrienation());
+            }
+        }
+
+        if (renew_sockets)
+        {
+            model_manager->ModifyBlockPropertiesAndSockets(m_block_id, std::vector<model::BlockProperty>{ new_properties.begin(), new_properties.end() }, std::move(new_sockets));
+        }
+        else
+        {
+            model_manager->ModifyBlockProperties(m_block_id, std::vector<model::BlockProperty>{ new_properties.begin(), new_properties.end() });
+        }
+        m_logger.LogDebug("Update Done!");
+        return std::monostate{};
+    }
+private:
+    logging::Logger m_logger = logger(logging::LogCategory::Core);
+    model::BlockId m_block_id;
+    std::weak_ptr<SceneModelManager> m_model_manager;
+    BlockClassPtr m_block_class;
+    std::weak_ptr<GraphicsObjectsManager> m_scene_manager;
+};
+
+}
+
 void node::MainNodeScene::OpenPropertiesDialog()
 {
     if (!m_current_scene_id)
@@ -634,10 +788,14 @@ void node::MainNodeScene::OpenPropertiesDialog(BlockObject& object)
         m_logger.LogError("couldn't find the block model!");
         return;
     }
+    auto* block_data = graphicsObjectsManager->GetSceneModel()->GetModel().GetFunctionalBlocksManager().GetDataForId(block->GetId());
 
     assert(m_classesManager);
-    auto dialog = std::make_unique<BlockPropertiesDialog>(*block, graphicsObjectsManager, 
-        m_classesManager, WidgetSize{ 0.0f,0.0f }, this);
+    auto class_ptr = m_classesManager->GetBlockClassByName(block_data->block_class);
+    auto updater = std::make_shared<BlockPropertiesUpdater>(block->GetId(), graphicsObjectsManager->GetSceneModel(),
+        class_ptr, graphicsObjectsManager);
+    auto dialog = std::make_unique<BlockPropertiesDialog>(updater,
+        class_ptr, *block_data, WidgetSize{ 0.0f,0.0f }, this);
     dialog->SetPosition({ 100.0f,100.0f });
     objects_dialogs[static_cast<BlockObject*>(&object)] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::PropertiesDialog };
     auto dialog_ptr = dialog.get();
@@ -696,7 +854,6 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
     auto& block_model = *block_model_ptr;
     if (block_model.GetType() == model::BlockType::Functional)
     {
-
         auto* block_data = manager.GetModel(m_current_scene_id->subscene)->GetModel().GetFunctionalBlocksManager().GetDataForId(block_model.GetId());
         assert(block_data);
         if (!block_data)
@@ -723,7 +880,9 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
                     sim_data = block_it->data;
                 }
             }
-            auto dialog = static_cast<BlockClass*>(class_ptr.get())->CreateBlockDialog(*this, block_model, *block_data,sim_data);
+            auto updater = std::make_shared<BlockPropertiesUpdater>(block_model.GetId(), graphicsObjectsManager->GetSceneModel(),
+                class_ptr, graphicsObjectsManager);
+            auto dialog = static_cast<BlockClass*>(class_ptr.get())->CreateBlockDialog(*this, updater,block_model, *block_data,sim_data);
             if (dialog)
             {
                 objects_dialogs[&block] = DialogSlot{ HandlePtrS<Dialog,Widget>{*dialog}, DialogType::BlockDialog };
@@ -731,6 +890,10 @@ void node::MainNodeScene::OpenBlockDialog(node::BlockObject& block)
                 dialog_ptr->SetPosition({ 100.0f,100.0f });
                 AddNormalDialog(std::move(dialog));
                 SetFocus(dialog_ptr);
+            }
+            else
+            {
+                OpenPropertiesDialog(block);
             }
         }
         else

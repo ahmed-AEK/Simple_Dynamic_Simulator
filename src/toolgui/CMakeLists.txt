@@ -16,6 +16,7 @@ ToolBar.hpp ToolBar.cpp
 Dialog.hpp Dialog.cpp
 MessageBox.hpp MessageBox.cpp
 LineEditControl.hpp LineEditControl.cpp
+MultiLineEditControl.hpp MultiLineEditControl.cpp
 DialogControls.hpp DialogControls.cpp
 ToolTipWidget.hpp ToolTipWidget.cpp
 StackedWidget.hpp StackedWidget.cpp

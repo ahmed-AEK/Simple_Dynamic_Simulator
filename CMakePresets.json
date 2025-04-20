@@ -25,7 +25,7 @@
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/Release_win_static",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
         "BUILD_STATIC": true,

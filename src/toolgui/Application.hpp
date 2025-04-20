@@ -5,6 +5,7 @@
 #include "SDL_Framework/SDLFramework.hpp"
 #include "SDL_Framework/SDLRenderer.hpp"
 #include "SDL_Framework/SDLCPP.hpp"
+#include "PluginAPI/Logger.hpp"
 
 #include <memory>
 #include <string>
@@ -92,6 +93,23 @@ public:
     bool virtual HandleEvent(SDL_Event& e);
     bool IsRunning() const { return b_running; }
     SDL_Window* GetWindow() const { return m_window.get(); }
+
+    class ClipboardString
+    {
+    public:
+        explicit ClipboardString(char* str);
+        ClipboardString();
+        ClipboardString(ClipboardString&& other) noexcept;
+        ClipboardString& operator=(ClipboardString&& other) noexcept;
+        ~ClipboardString();
+
+        std::string_view view() const;
+    private:
+        char* m_str = nullptr;
+        size_t m_size = 0;
+    };
+    ClipboardString GetClipboardText();
+    bool SetClipboardText(const std::string& text);
 protected:
     virtual void OnUpdateBegin() {};
     virtual void OnInit() {};
@@ -127,5 +145,6 @@ private:
     int64_t m_current_task_id = 1;
     TaskQueue m_mainThreadTasks;
     FrameRateController m_framerateController;
+    logging::Logger m_logger = logger(logging::LogCategory::General);
 };
 }

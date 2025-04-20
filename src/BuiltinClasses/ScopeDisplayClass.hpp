@@ -13,7 +13,7 @@ public:
 	void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const override;
 	int GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const override;
 
-	std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, model::BlockModel& model, 
+	std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, std::shared_ptr<IBlockPropertiesUpdater> model_updater, model::BlockModel& model,
 		model::FunctionalBlockData& data, std::any& simulation_data) override;
 	bool HasBlockDialog() const override;
 };

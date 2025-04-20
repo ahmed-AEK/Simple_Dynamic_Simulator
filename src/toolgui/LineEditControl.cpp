@@ -8,7 +8,8 @@ node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSi
 {
 	SetFocusable(true);
 	m_painter.SetText(m_value);
-	ReCalculateCursorPixelPosition();
+	m_painter.SetWidth(static_cast<size_t>(GetTextArea().w));
+	ReCalculateCursorsPixelPosition();
 }
 
 void node::LineEditControl::OnDraw(SDL::Renderer& renderer)
@@ -16,23 +17,54 @@ void node::LineEditControl::OnDraw(SDL::Renderer& renderer)
 	const SDL_FRect edit_box = GetSize().ToRect();
 	ThickFilledRoundRect(renderer, edit_box, 8, 1, { 0,0,0,255 }, { 255,255,255,255 }, m_outer_painter, m_inner_painter);
 
-	SDL_FRect inner_rect{ edit_box };
-	inner_rect.x += 1;
-	inner_rect.y += 1;
-	inner_rect.w -= 2;
-	inner_rect.h -= 2;
+	
+	DrawSelectionRect(renderer);
+	SDL_FRect inner_rect = GetTextArea();
 	{
 		SDL_Color Black = { 50, 50, 50, 255 };
-		auto text_Rect = m_painter.GetRect(renderer, Black);
-		SDL_FPoint text_start{ inner_rect.x + H_Margin, inner_rect.y + inner_rect.h - 5 - text_Rect.h };
+		auto text_height = static_cast<float>(m_painter.GetHeight());
+		SDL_FPoint text_start{ inner_rect.x, inner_rect.y + (inner_rect.h - text_height) * 0.5f};
 		m_painter.Draw(renderer, text_start, Black);
 	}
 	if (m_focused)
 	{
-		SDL_FRect cursor_rect{ inner_rect.x + H_Margin + m_cursor_pixel_position, inner_rect.y + 4, 2, inner_rect.h - 8 };
+		SDL_FRect cursor_rect{ inner_rect.x + m_cursor_pixel_position - m_painter.GetPixelOffset(), inner_rect.y + 4, 2, inner_rect.h - 8};
 		SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
 		SDL_RenderFillRect(renderer, &cursor_rect);
 	}
+}
+
+void node::LineEditControl::DrawSelectionRect(SDL::Renderer& renderer)
+{
+	if (!m_selection_active)
+	{
+		return;
+	}
+	SDL_FRect inner_rect = GetTextArea();
+	size_t pixel_inner_start = m_painter.GetPixelOffset();
+	size_t pixel_inner_end = static_cast<size_t>(m_painter.GetPixelOffset() + inner_rect.w);
+	SDL_Color Blue{ 50, 153, 255, 255 };
+	auto start_pos = std::min(m_selection_anchor_pixel_pos, m_selection_start_pixel_pos);
+	auto end_pos = std::max(m_selection_anchor_pixel_pos, m_selection_start_pixel_pos);
+	if (start_pos < pixel_inner_start && end_pos < pixel_inner_start)
+	{
+		return;
+	}
+	if (start_pos > pixel_inner_end && end_pos > pixel_inner_end)
+	{
+		return;
+	}
+	if (start_pos < pixel_inner_start)
+	{
+		start_pos = pixel_inner_start;
+	}
+	if (end_pos > pixel_inner_end)
+	{
+		end_pos = pixel_inner_end;
+	}
+	SDL_FRect selection_rect{ start_pos - pixel_inner_start + inner_rect.x, inner_rect.y, static_cast<float>(end_pos - start_pos), inner_rect.h };
+	SDL_SetRenderDrawColor(renderer, Blue.r, Blue.g, Blue.b, Blue.a);
+	SDL_RenderFillRect(renderer, &selection_rect);
 }
 
 node::LineEditControl::~LineEditControl()
@@ -51,32 +83,68 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 		return MI::ClickEvent::CLICKED;
 	}
 	SDL_FPoint current_mouse_point{ e.point() };
-	int click_pos_x = static_cast<int>(current_mouse_point.x - H_Margin);
-	int extent = 0;
-	size_t count = 0;
-	if (!TTF_MeasureString(m_painter.GetFont(), m_value.c_str(), m_value.size(), click_pos_x, &extent, &count))
-	{
-		// failed for some reason
-		return MI::ClickEvent::CLICKED;
-	}
-	size_t new_cursor_pos = count;
+	
 
-	if (count && static_cast<size_t>(count) < m_value.size())
+	auto clicked_character = GetCharacterAtScreenPosition(current_mouse_point.x);
+	m_cursor_position = clicked_character.character_offset;
+	m_cursor_pixel_position = clicked_character.pixel_offset;
+	m_selection_start = m_cursor_position;
+	m_selection_start_pixel_pos = m_cursor_pixel_position;
+	m_selection_active = false;
+	m_dragging = true;
+	UpdateOffset();
+
+	return MI::ClickEvent::CAPTURE_START;
+}
+
+MI::ClickEvent node::LineEditControl::OnLMBUp(MouseButtonEvent& e)
+{
+	if (!m_dragging)
 	{
-		// compare it with next character too
-		int w = 0, h = 0;
-		TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), new_cursor_pos + 1, &w, &h);
-		if (click_pos_x - extent > w - click_pos_x)
-		{
-			new_cursor_pos++;
-		}
+		return MI::ClickEvent::CAPTURE_END;
 	}
-	if (new_cursor_pos != m_cursor_position)
+	m_dragging = false;
+
+	if (!m_value.size())
 	{
-		m_cursor_position = new_cursor_pos;
-		ReCalculateCursorPixelPosition();
+		return MI::ClickEvent::CAPTURE_END;
 	}
-	return MI::ClickEvent::CLICKED;
+	if (e.e.clicks == 2)
+	{
+		m_selection_active = true;
+		m_selection_start = 0;
+		m_selection_anchor = m_value.size();
+		m_cursor_position = m_value.size();
+		ReCalculateCursorsPixelPosition();
+		return MI::ClickEvent::CAPTURE_END;
+	}
+
+	SDL_FPoint current_mouse_point{ e.point() };
+	auto clicked_character = GetCharacterAtScreenPosition(current_mouse_point.x);
+	m_cursor_position = clicked_character.character_offset;
+	m_cursor_pixel_position = clicked_character.pixel_offset;
+	m_selection_anchor = m_cursor_position;
+	m_selection_anchor_pixel_pos = m_cursor_pixel_position;
+	m_selection_active = m_selection_anchor != m_selection_start;
+	UpdateOffset();
+
+	return MI::ClickEvent::CAPTURE_END;
+}
+
+void node::LineEditControl::OnMouseMove(MouseHoverEvent& e)
+{
+	if (!m_dragging)
+	{
+		return;
+	}
+
+	auto clicked_character = GetCharacterAtScreenPosition(e.point().x);
+	m_cursor_position = clicked_character.character_offset;
+	m_cursor_pixel_position = clicked_character.pixel_offset;
+	m_selection_anchor = m_cursor_position;
+	m_selection_anchor_pixel_pos = m_cursor_pixel_position;
+	m_selection_active = m_selection_anchor != m_selection_start;
+	UpdateOffset();
 }
 
 bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
@@ -89,18 +157,26 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	if (key == SDL_SCANCODE_BACKSPACE)
 	{
 		m_logger.LogDebug("BackSpace");
-		if (m_value.size() && m_cursor_position > 0)
+		if (DeleteSelection())
+		{
+			ReCalculateCursorsPixelPosition();
+		}
+		else if (m_value.size() && m_cursor_position > 0)
 		{
 			m_value.erase(m_value.begin() + m_cursor_position - 1);
 			m_painter.SetText(m_value);
 			m_cursor_position--;
-			ReCalculateCursorPixelPosition();
+			ReCalculateCursorsPixelPosition();
 		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_DELETE)
 	{
-		if (m_cursor_position < m_value.size())
+		if (DeleteSelection())
+		{
+			ReCalculateCursorsPixelPosition();
+		}
+		else if (m_cursor_position < m_value.size())
 		{
 			m_value.erase(m_value.begin() + m_cursor_position);
 			m_painter.SetText(m_value);
@@ -109,25 +185,90 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	}
 	else if (key == SDL_SCANCODE_LEFT)
 	{
+		m_selection_active = false;
 		if (m_cursor_position > 0)
 		{
 			m_cursor_position--;
-			ReCalculateCursorPixelPosition();
+			ReCalculateCursorsPixelPosition();
 		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_RIGHT)
 	{
+		m_selection_active = false;
 		if (m_cursor_position < m_value.size())
 		{
 			m_cursor_position++;
-			ReCalculateCursorPixelPosition();
+			ReCalculateCursorsPixelPosition();
 		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_RETURN || key == SDL_SCANCODE_KP_ENTER)
 	{
 		m_logger.LogDebug("Return");
+	}
+	else if (key == SDL_SCANCODE_C && e.e.mod & SDL_KMOD_LCTRL)
+	{
+		if (!m_selection_active)
+		{
+			return false;
+		}
+		return CopySelection();
+	}
+	else if (key == SDL_SCANCODE_V && e.e.mod & SDL_KMOD_LCTRL)
+	{
+		auto* app = GetApp();
+		if (!app)
+		{
+			return false;
+		}
+		DeleteSelection();
+		auto clipboard_text = app->GetClipboardText();
+		auto view = clipboard_text.view();
+		if (view.size())
+		{
+			m_value.insert(m_value.begin() + m_cursor_position, view.begin(), view.end());
+			m_painter.SetText(m_value);
+			m_cursor_position += clipboard_text.view().size();
+		}
+		ReCalculateCursorsPixelPosition();
+	}
+	else if (key == SDL_SCANCODE_X && e.e.mod & SDL_KMOD_LCTRL)
+	{
+		if (!m_selection_active)
+		{
+			return false;
+		}
+		auto* app = GetApp();
+		if (!app)
+		{
+			return false;
+		}
+
+		if (!CopySelection())
+		{
+			return false;
+		}
+
+		if (!DeleteSelection())
+		{
+			return false;
+		}
+		ReCalculateCursorsPixelPosition();
+		return true;
+	}
+	else if (key == SDL_SCANCODE_A && e.e.mod & SDL_KMOD_LCTRL)
+	{
+		if (!m_value.size())
+		{
+			return false;
+		}
+		m_selection_active = true;
+		m_selection_start = 0;
+		m_selection_anchor = m_value.size();
+		m_cursor_position = m_value.size();
+		ReCalculateCursorsPixelPosition();
+		return true;
 	}
 	else
 	{
@@ -140,30 +281,164 @@ void node::LineEditControl::OnKeyboardFocusIn()
 {
 	m_focused = true;
 	auto screen_position = GetGlobalPosition();
-	auto rect = ToRect(GetSize().ToRectWithOrigin(screen_position));
-	GetApp()->StartTextInput(rect);
+	auto text_rect = GetTextArea();
+	text_rect.x += screen_position.x;
+	text_rect.y += screen_position.y;
+	GetApp()->StartTextInput(ToRect(text_rect));
 }
 
 void node::LineEditControl::OnKeyboardFocusOut()
 {
+	m_selection_active = false;
 	m_focused = false;
 	GetApp()->StopTextInput();
 }
 
-void node::LineEditControl::ReCalculateCursorPixelPosition()
+void node::LineEditControl::OnSetSize(const WidgetSize& size)
 {
-	int w = 0, h = 0;
+	Widget::OnSetSize(size);
+	m_painter.SetWidth(static_cast<size_t>(GetTextArea().w));
+	ReCalculateCursorsPixelPosition();
+}
+
+void node::LineEditControl::ReCalculateCursorsPixelPosition()
+{
+	ReCalculateMainCursorPixelPosition();
+	if (m_selection_active)
+	{
+		ReCalculateSelectionCursorsPixelPosition(m_selection_anchor, m_selection_anchor_pixel_pos);
+		ReCalculateSelectionCursorsPixelPosition(m_selection_start, m_selection_start_pixel_pos);
+	}
+}
+
+void node::LineEditControl::ReCalculateMainCursorPixelPosition()
+{
 	if (m_cursor_position == 0)
 	{
 		m_cursor_pixel_position = 0;
+		m_painter.SetPixelOffset(0);
+		return;
 	}
-	else
+
+	int w = 0, h = 0;
+	if (!TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), m_cursor_position, &w, &h))
 	{
-		if (TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), m_cursor_position, &w, &h))
+		return;
+	}
+
+	m_cursor_pixel_position = w;
+	UpdateOffset();
+}
+
+void node::LineEditControl::ReCalculateSelectionCursorsPixelPosition(const size_t position, size_t& pixel_position)
+{
+	if (position == 0)
+	{
+		pixel_position = 0;
+		return;
+	}
+
+	int w = 0, h = 0;
+	if (!TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), position, &w, &h))
+	{
+		pixel_position = 0;
+		return;
+	}
+
+	pixel_position = w;
+}
+
+void node::LineEditControl::UpdateOffset()
+{
+	size_t width = static_cast<size_t>(GetTextArea().w);
+	if (m_cursor_pixel_position > min_cursor_distance_from_side && width > min_cursor_distance_from_side &&
+		m_cursor_pixel_position > width + m_painter.GetPixelOffset() - min_cursor_distance_from_side)
+	{
+		m_painter.SetPixelOffset(m_cursor_pixel_position - width + min_cursor_distance_from_side);
+	}
+	else if (width > min_cursor_distance_from_side && m_painter.GetPixelOffset() > m_cursor_pixel_position)
+	{
+		if (m_cursor_pixel_position > min_cursor_distance_from_side)
 		{
-			m_cursor_pixel_position = w;
+			m_painter.SetPixelOffset(m_cursor_pixel_position - min_cursor_distance_from_side);
+		}
+		else
+		{
+			m_painter.SetPixelOffset(static_cast<size_t>(0));
 		}
 	}
+}
+
+node::LineEditControl::CharacterPosition node::LineEditControl::GetCharacterAtScreenPosition(float x)
+{
+	auto text_rect = GetTextArea();
+	if (x <= text_rect.x)
+	{
+		return { 0,0 };
+	}
+	int click_pos_x = static_cast<int>(x - text_rect.x + m_painter.GetPixelOffset());
+	int extent = 0;
+	size_t count = 0;
+	if (!TTF_MeasureString(m_painter.GetFont(), m_value.c_str(), m_value.size(), click_pos_x, &extent, &count))
+	{
+		// failed for some reason
+		return { 0,0 };
+	}
+	size_t new_cursor_pos = count;
+	size_t pixel_offset = extent;
+	if (count && static_cast<size_t>(count) < m_value.size())
+	{
+		// compare it with next character too
+		int w = 0, h = 0;
+		TTF_GetStringSize(m_painter.GetFont(), m_value.c_str(), new_cursor_pos + 1, &w, &h);
+		if (click_pos_x - extent > w - click_pos_x)
+		{
+			new_cursor_pos++;
+			pixel_offset = w;
+		}
+	}
+	return { new_cursor_pos, pixel_offset };
+}
+
+SDL_FRect node::LineEditControl::GetTextArea() const
+{
+	SDL_FRect inner_rect = GetSize().ToRect();
+	inner_rect.x += 1 + H_Margin;
+	inner_rect.y += 1;
+	inner_rect.w -= 2 + 2 * H_Margin;
+	inner_rect.h -= 2;
+	return inner_rect;
+}
+
+bool node::LineEditControl::DeleteSelection()
+{
+	if (!m_selection_active)
+	{
+		return false;
+	}
+	m_selection_active = false;
+	auto selection_start_pos = std::min(m_selection_start, m_selection_anchor);
+	auto selection_end_pos = std::max(m_selection_start, m_selection_anchor);
+	m_value.erase(m_value.begin() + selection_start_pos, m_value.begin() + selection_end_pos);
+	m_painter.SetText(m_value);
+	m_cursor_position = selection_start_pos;
+	return true;
+
+}
+
+bool node::LineEditControl::CopySelection()
+{
+	auto* app = GetApp();
+	if (!app)
+	{
+		return false;
+	}
+	auto start_pos = std::min(m_selection_anchor, m_selection_start);
+	auto end_pos = std::max(m_selection_anchor, m_selection_start);
+	assert(start_pos <= m_value.size());
+	assert(end_pos <= m_value.size());
+	std::string selected_part{ m_value.begin() + start_pos, m_value.begin() + end_pos };
+	return app->SetClipboardText(selected_part);;
 }
 
 bool node::LineEditControl::OnChar(TextInputEvent& e)
@@ -172,10 +447,11 @@ bool node::LineEditControl::OnChar(TextInputEvent& e)
 	m_logger.LogDebug("{}", key);
 	if (key < 128 && key >= 0)
 	{
+		DeleteSelection();
 		m_value.insert(m_value.begin() + m_cursor_position, static_cast<char>(key));
 		m_painter.SetText(m_value);
 		m_cursor_position++;
-		ReCalculateCursorPixelPosition();
+		ReCalculateCursorsPixelPosition();
 		return true;
 	}
 	return false;
