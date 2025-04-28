@@ -25,6 +25,8 @@ namespace node
 
 		std::unique_ptr<BlockDialog> CreateBlockDialog(Scene& scene, std::shared_ptr<IBlockPropertiesUpdater> model_updater, model::BlockModel& model,
 			model::FunctionalBlockData& data, std::any& simulation_data) override;
+
+		static const std::string_view DEFAULT_CODE;
 	private:
 		tl::expected<std::monostate, std::string> validate_lua_script(const std::string& code) const;
 		logging::Logger m_logger = logger(logging::LogCategory::Extension);

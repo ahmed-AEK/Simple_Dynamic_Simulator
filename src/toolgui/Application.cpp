@@ -12,7 +12,7 @@
 namespace node
 {
     Application::Application(int width, int height, std::string title)
-    :m_title(title), m_framework(), m_width(width), m_height(height), m_rect_base{0,0, width, height},
+    :m_title(title), m_framework(), m_width(width), m_height(height),
         m_rect{ 0,0,width,height }
     {
     }

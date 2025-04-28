@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include <set>
 
 node::NetUtils::StringNetResult node::NetUtils::CreateStringNet(const StringNetDescription& d)
 {

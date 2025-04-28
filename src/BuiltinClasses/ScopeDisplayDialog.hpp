@@ -26,6 +26,7 @@ public:
 	void Cancel() { OnCancel(); }
 	const std::string& GetName() const { return m_name; }
 	PlotWidget* GetWidget();
+	virtual ~ScopeDisplayTool() = default;
 protected:
 	virtual MI::ClickEvent OnLMBDown(const SDL_FPoint& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }
 	virtual MI::ClickEvent OnLMBUp(const SDL_FPoint& point) { UNUSED_PARAM(point); return MI::ClickEvent::NONE; }

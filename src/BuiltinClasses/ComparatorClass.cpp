@@ -49,8 +49,8 @@ int node::ComparatorBlockClass::GetFunctor(std::span<const model::BlockProperty>
 	class ComparatorClassFunction: public opt::INLStatefulEquation
 	{
 	public:
-		ComparatorClassFunction(ComparatorOutputTransition transitions, double rise_time, double threshold)
-			: m_transition_times{std::move(transitions)}, m_rise_time{rise_time}, m_threshold{threshold}
+		ComparatorClassFunction(ComparatorOutputTransition transitions, double rise_time)
+			: m_transition_times{std::move(transitions)}, m_rise_time{rise_time}
 		{
 		}
 		opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override
@@ -141,12 +141,11 @@ int node::ComparatorBlockClass::GetFunctor(std::span<const model::BlockProperty>
 	private:
 		ComparatorOutputTransition m_transition_times;
 		double m_rise_time;
-		double m_threshold;
 	};
 	auto ret = opt::NLStatefulEquationWrapper{
 		{0},
 		{1},
-		opt::make_NLStatefulEqn<ComparatorClassFunction>(transition, rise_time, threshold),
+		opt::make_NLStatefulEqn<ComparatorClassFunction>(transition, rise_time),
 		{}
 	};
 	ret.data.crossings.push_back({

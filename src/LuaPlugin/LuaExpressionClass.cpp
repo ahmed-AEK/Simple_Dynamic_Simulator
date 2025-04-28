@@ -113,23 +113,9 @@ namespace
 }
 int node::LuaExpressionClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
-	if (properties.size() != ClassProperties.size())
+	if (!ValidateEqualPropertyTypes(properties, ClassProperties, error_cb))
 	{
-		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", ClassProperties.size(), properties.size()));
 		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", ClassProperties[i].name, properties[i].name));
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			error_cb.error(i, std::format("property type mismatch"));
-			return false;
-		}
 	}
 	auto* in_sockets_count = properties[0].get_uint();
 	assert(in_sockets_count);

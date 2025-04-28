@@ -19,7 +19,6 @@ public:
 protected:
 	void OnSetSize(const WidgetSize& size) override;
 private:
-	TTF_Font* m_font;
 	MultiLineEditControl m_edit;
 };
 

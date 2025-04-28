@@ -19,8 +19,7 @@ class BlocksElementsViewer: public Widget
 {
 public:
 	BlocksElementsViewer(const WidgetSize& size,
-		std::shared_ptr<PaletteProvider> provider,
-		TTF_Font* font, Widget* parent);
+		std::shared_ptr<PaletteProvider> provider, Widget* parent);
 	void SetCategory(std::string category);
 	const std::string& GetCategory() const { return m_current_category; }
 	void SetProvider(std::shared_ptr<PaletteProvider> provider);
@@ -40,7 +39,6 @@ private:
 
 	std::string m_current_category{ "All" };
 	std::shared_ptr<PaletteProvider> m_paletteProvider;
-	TTF_Font* m_font;
 };
 
 }

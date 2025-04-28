@@ -6,12 +6,49 @@
 #include "LuaPlugin/LuaStatefulEqn.hpp"
 #include <sstream>
 
+
+const std::string_view node::LuaStandaloneStatefulEqnClass::DEFAULT_CODE = R"(
+last_input_time = 0
+last_input = 0
+last_out = 0
+data_available = false
+
+function apply(input, output, t, data)
+    if not data_available then
+        output[1] = 0
+        return
+    end
+    if t == last_out then
+        output[1] = last_out
+    else
+        output[1] = (input[1] - last_input) / (t - last_input_time)
+    end
+    return
+end
+
+function update(input, t, data)
+    if not data_available then
+        data_available = true
+        last_input = input[1]
+        last_out = 0
+        last_input_time = t
+        return
+    end
+    last_out = (input[1] - last_input) / (t - last_input_time)
+    last_input = input[1]
+    last_input_time = t
+    return
+end
+)";
+
+
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 0.0),
-	*node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, "Here Should be some code!"),
+	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+	*node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+	* node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, std::string{node::LuaStandaloneStatefulEqnClass::DEFAULT_CODE}),
 };
 
-static constexpr std::string_view Description = "Parses Simple expressions using lua, inputs: a,b,c,d,e,f and t for time";
+static constexpr std::string_view Description = "Parses the Lua code into a StatefulEqn";
 
 node::LuaStandaloneStatefulEqnClass::LuaStandaloneStatefulEqnClass()
 	:node::BlockClass{""}
@@ -36,23 +73,9 @@ void node::LuaStandaloneStatefulEqnClass::GetDefaultClassProperties(GetDefaultCl
 
 int node::LuaStandaloneStatefulEqnClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
-	if (properties.size() != ClassProperties.size())
+	if (!ValidateEqualPropertyTypes(properties, ClassProperties, error_cb))
 	{
-		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", ClassProperties.size(), properties.size()));
 		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", ClassProperties[i].name, properties[i].name));
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			error_cb.error(i, std::format("property type mismatch"));
-			return false;
-		}
 	}
 	auto* in_sockets_count = properties[0].get_uint();
 	assert(in_sockets_count);
@@ -61,7 +84,13 @@ int node::LuaStandaloneStatefulEqnClass::ValidateClassProperties(std::span<const
 		error_cb.error(0, std::format("only 6 input sockets allowed"));
 		return false;
 	}
-	auto* code = properties[1].get_str();
+	auto* out_sockets_count = properties[1].get_uint();
+	if (*out_sockets_count > 6)
+	{
+		error_cb.error(0, std::format("only 6 output sockets allowed"));
+		return false;
+	}
+	auto* code = properties[2].get_str();
 	assert(code);
 	if (!code || !code->size())
 	{
@@ -93,20 +122,30 @@ void node::LuaStandaloneStatefulEqnClass::CalculateSockets(std::span<const model
 		return;
 	}
 
+	auto* out_sockets_count = properties[1].get_uint();
+	if (!in_sockets_count)
+	{
+		assert(false);
+		return;
+	}
+
 	std::vector<SocketType> sockets;
-	sockets.reserve(1 + *in_sockets_count);
+	sockets.reserve(*out_sockets_count + *in_sockets_count);
 	for (size_t i = 0; i < *in_sockets_count; i++)
 	{
 		sockets.push_back(SocketType::input);
 	}
-	sockets.push_back(SocketType::output);
+	for (size_t i = 0; i < *out_sockets_count; i++)
+	{
+		sockets.push_back(SocketType::output);
+	}
 	cb(context, sockets);
 }
 
 node::BlockType node::LuaStandaloneStatefulEqnClass::GetBlockType(std::span<const model::BlockProperty> properties) const
 {
 	UNUSED_PARAM(properties);
-	return BlockType::Stateful;
+	return BlockType::Stateless;
 }
 
 int node::LuaStandaloneStatefulEqnClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
@@ -120,13 +159,15 @@ int node::LuaStandaloneStatefulEqnClass::GetFunctor(std::span<const model::Block
 	}
 
 	auto* in_sockets_count = properties[0].get_uint();
-	assert(in_sockets_count);
+	auto* out_sockets_count = properties[1].get_uint();
+
 	sol::state lua;
 	lua.open_libraries(sol::lib::base, sol::lib::math);
-	auto* code = properties[1].get_str();
+	auto* code = properties[2].get_str();
 	assert(code);
 
 	lua::NLStatefulEqnBuilder builder{ m_logger };
+	builder.AddUserTypes(lua);
 
 	auto funcs = builder.build_lua_functions(*code, lua);
 	if (!funcs)
@@ -141,12 +182,26 @@ int node::LuaStandaloneStatefulEqnClass::GetFunctor(std::span<const model::Block
 	{
 		inputs.push_back(static_cast<int32_t>(i));
 	}
+	std::vector<int32_t> outputs;
+	outputs.reserve(*out_sockets_count);
+	for (size_t i = *in_sockets_count; i < *out_sockets_count + *in_sockets_count; i++)
+	{
+		outputs.push_back(static_cast<int32_t>(i));
+	}
 	opt::NLStatefulEquationWrapper eq{
 		std::move(inputs),
-		{static_cast<int32_t>(*in_sockets_count)},
+		std::move(outputs),
 		opt::make_NLStatefulEqn<lua::NLStatefulEqn>(std::move(lua), std::move(*funcs)),
 		{}
 	};
+
+	auto setup_result = static_cast<lua::NLStatefulEqn*>(eq.equation.get())->Setup(eq.data);
+	if (setup_result == opt::Status::error)
+	{
+		cb.error(eq.equation->GetLastError());
+		return false;
+	}
+
 	node::BlockView view{ eq };
 	cb.call({ &view,1 });
 	return true;
@@ -159,14 +214,14 @@ bool node::LuaStandaloneStatefulEqnClass::HasBlockDialog() const
 
 static bool ValidateCanOpenEditor(node::model::FunctionalBlockData& data, node::logging::Logger& logger)
 {
-	if (data.properties.size() < 2)
+	if (data.properties.size() < 3)
 	{
-		logger.LogError("cannot open editor, expected 2 properties, found: {}", data.properties.size());
+		logger.LogError("cannot open editor, expected 3 properties, found: {}", data.properties.size());
 		return false;
 	}
-	if (data.properties[1].GetType() != node::model::BlockPropertyType::String)
+	if (data.properties[2].GetType() != node::model::BlockPropertyType::String)
 	{
-		logger.LogError("cannot open editor, expected string property, found: {}", data.properties[1].GetTypeAsString());
+		logger.LogError("cannot open editor, expected string property, found: {}", data.properties[2].GetTypeAsString());
 		return false;
 	}
 	return true;

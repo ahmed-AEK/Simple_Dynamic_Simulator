@@ -2,6 +2,10 @@
 #include "LuaPlugin/LuaExpressionClass.hpp"
 #include "LuaPlugin/LuaStatefulEqnClass.hpp"
 #include "LuaPlugin/LuaStandaloneStatefulEqnClass.hpp"
+#include "LuaPlugin/LuaStandaloneNLEqnClass.hpp"
+#include "LuaPlugin/LuaNLEqnClass.hpp"
+#include "LuaPlugin/LuaStandaloneDiffEqnClass.hpp"
+#include "LuaPlugin/LuaDiffEqnClass.hpp"
 
 #include "NodeSDLStylers/SVGBlockStyler.hpp"
 
@@ -17,6 +21,10 @@ namespace
             make_BlockClass<LuaExpressionClass>(),
             make_BlockClass<LuaStatefulEqnClass>(),
             make_BlockClass<LuaStandaloneStatefulEqnClass>(),
+            make_BlockClass<LuaNLEqnClass>(),
+            make_BlockClass<LuaStandaloneNLEqnClass>(),
+            make_BlockClass<LuaDiffEqnClass>(),
+            make_BlockClass<LuaStandaloneDiffEqnClass>(),
         };
 
         static const auto classes_raw = [&]()
@@ -39,39 +47,99 @@ namespace
         {
             "Lua",
             "Expression",
-            model::FunctionalBlockData{
+            {model::FunctionalBlockData{
                 "LuaExpression",
                 {
                 *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 0),
                 * node::model::BlockProperty::Create("Expression", node::model::BlockPropertyType::String, "t")
                 },
-            },
+            }},
             "SVG Styler",
             model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
         },
+#if FILESYSTEM_SUPPORTED
         {
             "Lua",
-            "Stateful Equation",
-            model::FunctionalBlockData{
+            "Stateful Block",
+            {model::FunctionalBlockData{
                 "LuaStatefulEqn",
                 {
                 *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
                 *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "DerivativeBlock.lua"),
                 },
-            },
+            }},
+            "SVG Styler",
+            model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
+        },
+            {
+            "Lua",
+            "Nonlinear Block",
+            {model::FunctionalBlockData{
+                "LuaNLEqn",
+                {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 2),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "MultiplyBlock.lua"),
+                },
+            }},
             "SVG Styler",
             model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
         },
         {
             "Lua",
-            "Standalone Stateful Equation",
-            model::FunctionalBlockData{
+            "Differential Block",
+            {model::FunctionalBlockData{
+                "LuaDiffEqn",
+                {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "IntegrateBlock.lua"),
+                },
+            }},
+            "SVG Styler",
+            model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
+        },
+#endif // FILESYSTEM_SUPPORTED
+        {
+            "Lua",
+            "Edit Stateful Block",
+            {model::FunctionalBlockData{
                 "LuaStandaloneStatefulEqn",
                 {
                 *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
-                *node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "DerivativeBlock.lua"),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, std::string{node::LuaStandaloneStatefulEqnClass::DEFAULT_CODE}),
                 },
-            },
+            }},
+            "SVG Styler",
+            model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
+        },
+        {
+            "Lua",
+            "Edit Nonlinear Block",
+            {model::FunctionalBlockData{
+                "LuaStandaloneNLEqn",
+                {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 2),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, std::string{node::LuaStandaloneNLEqnClass::DEFAULT_CODE}),
+                },
+            }},
+            "SVG Styler",
+            model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
+        },
+        {
+            "Lua",
+            "Edit Differential Block",
+            {model::FunctionalBlockData{
+                "LuaStandaloneDiffEqn",
+                {
+                *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, std::string{node::LuaStandaloneDiffEqnClass::DEFAULT_CODE}),
+                },
+            }},
             "SVG Styler",
             model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/lua_logo.svg"}}}
         },

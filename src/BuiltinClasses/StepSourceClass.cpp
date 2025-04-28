@@ -73,7 +73,7 @@ int node::StepSourceClass::GetFunctor(std::span<const model::BlockProperty> prop
 		}
 		},
 		opt::FunctorSourceEq::SourceTrigger{
-		[event_set, triggered = false](const double&, opt::SourceEvent& ev) mutable
+		[event_set](const double&, opt::SourceEvent& ev) mutable
 		{
 			auto& event = ev;
 			if (!event_set->first_triggered)

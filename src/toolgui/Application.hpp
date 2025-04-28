@@ -132,10 +132,8 @@ private:
     std::unique_ptr<Scene> m_scene;
     int m_width;
     int m_height;
-    SDL_Rect m_rect_base;
     SDL_Rect m_rect;
     bool b_running = false;
-    bool b_dragging = false;
     bool b_redrawScene = true;
     std::array<TTFFont,2> m_appFonts;
 

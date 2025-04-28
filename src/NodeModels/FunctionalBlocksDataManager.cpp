@@ -1,4 +1,5 @@
 #include "FunctionalBlocksDataManager.hpp"
+#include <boost/charconv.hpp>
 
 // helper type for the visitor #4
 template<class... Ts>
@@ -61,8 +62,6 @@ std::optional<node::model::BlockProperty> node::model::BlockProperty::Create(std
 	return std::nullopt;
 }
 
-
-
 std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty::from_string(BlockPropertyType type, std::string_view str)
 {
 	switch (type)
@@ -71,7 +70,7 @@ std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty
 	case Integer:
 	{
 		int64_t new_value = 0;
-		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		auto res = boost::charconv::from_chars(str.data(), str.data() + str.size(), new_value);
 		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
 		{
 			return std::nullopt;
@@ -81,7 +80,7 @@ std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty
 	case UnsignedInteger:
 	{
 		uint64_t new_value = 0;
-		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		auto res = boost::charconv::from_chars(str.data(), str.data() + str.size(), new_value);
 		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
 		{
 			return std::nullopt;
@@ -91,7 +90,7 @@ std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty
 	case FloatNumber:
 	{
 		double new_value = 0;
-		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		auto res = boost::charconv::from_chars(str.data(), str.data() + str.size(), new_value);
 		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
 		{
 			return std::nullopt;
@@ -101,7 +100,7 @@ std::optional<node::model::BlockProperty::property_t> node::model::BlockProperty
 	case Boolean:
 	{
 		int64_t new_value = 0;
-		auto res = std::from_chars(str.data(), str.data() + str.size(), new_value);
+		auto res = boost::charconv::from_chars(str.data(), str.data() + str.size(), new_value);
 		if (res.ec != std::errc{} || res.ptr != str.data() + str.size())
 		{
 			return std::nullopt;
@@ -132,7 +131,7 @@ std::string node::model::BlockProperty::to_string() const
 				[](const bool& prop)->std::string { return prop ? "1" : "0"; },
 				[](const auto& prop) ->std::string {
 					char buffer[25];
-					auto [ptr, ec] = std::to_chars(std::begin(buffer), std::end(buffer), prop);
+					auto [ptr, ec] = boost::charconv::to_chars(std::begin(buffer), std::end(buffer), prop);
 					if (ec == std::errc{})
 					{
 						return std::string(std::string_view{ buffer, ptr });

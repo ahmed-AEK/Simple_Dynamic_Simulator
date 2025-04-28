@@ -22,5 +22,10 @@ private:
 	HandlePtr<GraphicsObject> m_object;
 };
 
+
+}
+namespace NetUtils
+{
+	std::optional<NetModificationRequest> GetDeletionRequestForNet(std::span<node::HandlePtr<node::GraphicsObject>> objects);
 }
 }

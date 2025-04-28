@@ -3,7 +3,7 @@
   "configurePresets": [
     {
       "name": "vcpkg",
-	  "hidden": true,
+      "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
@@ -69,6 +69,34 @@
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "BUILD_STATIC": true,
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+      }
+    },
+    {
+      "name": "vcpkg-wasm",
+      "inherits": "vcpkg",
+      "hidden":true,
+      "cacheVariables": {
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg_support",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten-exceptions",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/vcpkg_support/wasm_platform.cmake",
+        "BUILD_STATIC": true
+      }
+    },
+    {
+      "name": "vcpkg-wasm-dbg",
+      "inherits": "vcpkg-wasm",
+      "binaryDir": "${sourceDir}/build/Debug_wasm",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "vcpkg-wasm-rel",
+      "inherits": "vcpkg-wasm",
+      "binaryDir": "${sourceDir}/build/Release_wasm",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
       }
     }
   ]

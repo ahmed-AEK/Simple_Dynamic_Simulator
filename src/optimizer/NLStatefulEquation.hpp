@@ -33,11 +33,11 @@ struct ZeroCrossDescriptor
 		below,
 	};
 
-	double value;
-	int16_t in_port_id;
-	CrossType type;
-	Position last_value;
-	Position current_value;
+	double value{};
+	int16_t in_port_id{};
+	CrossType type{};
+	Position last_value{};
+	Position current_value{};
 };
 
 struct NLStatefulEquationDataCRef

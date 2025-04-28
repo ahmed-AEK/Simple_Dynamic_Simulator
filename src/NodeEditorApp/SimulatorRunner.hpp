@@ -74,10 +74,6 @@ public:
 		std::shared_ptr<BlockClassesManager> classes_mgr, std::function<void()> end_callback, 
 		SimulationSettings settings);
 	~SimulatorRunner();
-	SimulatorRunner(const SimulatorRunner&) = default;
-	SimulatorRunner(SimulatorRunner&&) = default;
-	SimulatorRunner& operator=(const SimulatorRunner&) = default;
-	SimulatorRunner& operator=(SimulatorRunner&&) = default;
 
 	std::optional<SimulationEvent>& GetResult() {
 		return m_evt;

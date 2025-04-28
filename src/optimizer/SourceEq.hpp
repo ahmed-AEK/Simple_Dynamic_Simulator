@@ -61,7 +61,8 @@ public:
 	Status Apply(std::span<double> output, const double& t, SourceEvent& ev) override;
 
 	Status EventTrigger(const double& t, SourceEvent& ev) override;
-
+	FunctorSourceEq(FunctorSourceEq&&) = delete;
+	FunctorSourceEq& operator=(FunctorSourceEq&&) = delete;
 private:
 	SourceFunctor m_functor;
 	SourceTrigger m_trigger;

@@ -38,7 +38,7 @@ DiffEqPtr make_DiffEqn(Args&&...args)
 class FunctorDiffEquation : public IDiffEquation
 {
 public:
-	using DiffFunctor = std::function<void(std::span<const double>, std::span<double>, const double)>;
+	using DiffFunctor = std::function<void(std::span<const double> input, std::span<double> output, const double t)>;
 
 	explicit FunctorDiffEquation(DiffFunctor functor);
 	Status Apply(std::span<const double> input, std::span<double> output, const double t) override;

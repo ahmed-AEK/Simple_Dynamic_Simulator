@@ -19,7 +19,7 @@ pch.h
 target_include_directories(NodeModels PRIVATE ".")
 target_include_directories(NodeModels PUBLIC "..")
 
-target_link_libraries(NodeModels PUBLIC Boost::container_hash)
+target_link_libraries(NodeModels PUBLIC Boost::container_hash Boost::charconv)
 # file(COPY ../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
 
 target_precompile_headers(NodeModels PRIVATE pch.h)

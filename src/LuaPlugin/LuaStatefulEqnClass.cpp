@@ -3,11 +3,13 @@
 #include "PluginAPI/Logger.hpp"
 #include <sstream>
 
+#include "LuaPlugin/Utility.hpp"
 #include "LuaPlugin/LuaStatefulEqn.hpp"
 
 
 static const std::vector<node::model::BlockProperty> ClassProperties{
-	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 0.0),
+	*node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+	*node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
 	*node::model::BlockProperty::Create("Path", node::model::BlockPropertyType::String, "DerivativeBlock.lua"),
 };
 
@@ -31,23 +33,9 @@ void node::LuaStatefulEqnClass::GetDefaultClassProperties(GetDefaultClassPropert
 
 int node::LuaStatefulEqnClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
-	if (properties.size() != ClassProperties.size())
+	if (!ValidateEqualPropertyTypes(properties, ClassProperties, error_cb))
 	{
-		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", ClassProperties.size(), properties.size()));
 		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != ClassProperties[i].name)
-		{
-			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", ClassProperties[i].name, properties[i].name));
-			return false;
-		}
-		if (properties[i].GetType() != ClassProperties[i].GetType())
-		{
-			error_cb.error(i, std::format("property type mismatch"));
-			return false;
-		}
 	}
 	auto* in_sockets_count = properties[0].get_uint();
 	assert(in_sockets_count);
@@ -56,14 +44,20 @@ int node::LuaStatefulEqnClass::ValidateClassProperties(std::span<const model::Bl
 		error_cb.error(0, std::format("only 6 input sockets allowed"));
 		return false;
 	}
-	auto* path = properties[1].get_str();
-	assert(path);
-	if (!path || !path->size())
+	auto* out_sockets_count = properties[1].get_uint();
+	if (*out_sockets_count > 6)
 	{
-		error_cb.error(1, std::format("no path found"));
+		error_cb.error(0, std::format("only 6 output sockets allowed"));
 		return false;
 	}
-	auto validation_result = validate_lua_script(*path);
+	auto* code = properties[2].get_str();
+	assert(code);
+	if (!code || !code->size())
+	{
+		error_cb.error(1, std::format("no code found"));
+		return false;
+	}
+	auto validation_result = validate_lua_script(*code);
 	if (!validation_result)
 	{
 		error_cb.error(1, validation_result.error());
@@ -88,13 +82,23 @@ void node::LuaStatefulEqnClass::CalculateSockets(std::span<const model::BlockPro
 		return;
 	}
 
+	auto* out_sockets_count = properties[1].get_uint();
+	if (!in_sockets_count)
+	{
+		assert(false);
+		return;
+	}
+
 	std::vector<SocketType> sockets;
-	sockets.reserve(1 + *in_sockets_count);
+	sockets.reserve(*out_sockets_count + *in_sockets_count);
 	for (size_t i = 0; i < *in_sockets_count; i++)
 	{
 		sockets.push_back(SocketType::input);
 	}
-	sockets.push_back(SocketType::output);
+	for (size_t i = 0; i < *out_sockets_count; i++)
+	{
+		sockets.push_back(SocketType::output);
+	}
 	cb(context, sockets);
 }
 
@@ -106,8 +110,6 @@ node::BlockType node::LuaStatefulEqnClass::GetBlockType(std::span<const model::B
 
 int node::LuaStatefulEqnClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const
 {
-	
-	
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
 	auto valid = ValidateClassProperties(properties, notifier);
 	if (notifier.errored || !valid)
@@ -117,14 +119,16 @@ int node::LuaStatefulEqnClass::GetFunctor(std::span<const model::BlockProperty> 
 	}
 
 	auto* in_sockets_count = properties[0].get_uint();
-	assert(in_sockets_count);
+	auto* out_sockets_count = properties[1].get_uint();
+	
 	sol::state lua;
 	lua.open_libraries(sol::lib::base, sol::lib::math);
-	auto* path = properties[1].get_str();
+	auto* path = properties[2].get_str();
 
 	lua::NLStatefulEqnBuilder builder{ m_logger };
+	builder.AddUserTypes(lua);
 
-	auto file_content = builder.ReadLuaFile(*path);
+	auto file_content = lua::ReadLuaFile(*path);
 	assert(file_content);
 	auto funcs = builder.build_lua_functions(*file_content, lua);
 	if (!funcs)
@@ -132,18 +136,33 @@ int node::LuaStatefulEqnClass::GetFunctor(std::span<const model::BlockProperty> 
 		cb.error(funcs.error());
 		return false;
 	}
+
 	std::vector<int32_t> inputs;
 	inputs.reserve(*in_sockets_count);
 	for (size_t i = 0; i < *in_sockets_count; i++)
 	{
 		inputs.push_back(static_cast<int32_t>(i));
 	}
+	std::vector<int32_t> outputs;
+	outputs.reserve(*out_sockets_count);
+	for (size_t i = *in_sockets_count; i < *out_sockets_count + *in_sockets_count; i++)
+	{
+		outputs.push_back(static_cast<int32_t>(i));
+	}
 	opt::NLStatefulEquationWrapper eq{
 		std::move(inputs),
-		{static_cast<int32_t>(*in_sockets_count)},
+		std::move(outputs),
 		opt::make_NLStatefulEqn<lua::NLStatefulEqn>(std::move(lua), std::move(*funcs)),
 		{}
 	};
+
+	auto setup_result = static_cast<lua::NLStatefulEqn*>(eq.equation.get())->Setup(eq.data);
+	if (setup_result == opt::Status::error)
+	{
+		cb.error(eq.equation->GetLastError());
+		return false;
+	}
+
 	node::BlockView view{ eq };
 	cb.call({ &view,1 });
 	return true;
@@ -153,7 +172,7 @@ tl::expected<std::monostate, std::string> node::LuaStatefulEqnClass::validate_lu
 {
 	lua::NLStatefulEqnBuilder builder{m_logger};
 
-	auto file_content = builder.ReadLuaFile(path);
+	auto file_content = lua::ReadLuaFile(path);
 	if (!file_content)
 	{
 		return tl::unexpected<std::string>{std::move(file_content.error())};

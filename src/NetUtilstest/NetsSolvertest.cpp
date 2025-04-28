@@ -245,7 +245,7 @@ TEST(testNetsSolver, testLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node1.point, NetSegmentOrientation::vertical},
-				{node1.point.x, node2.point.y, NetSegmentOrientation::horizontal},
+				{{node1.point.x, node2.point.y}, NetSegmentOrientation::horizontal},
 				{node2.point, {}},
 			}
 			);
@@ -292,7 +292,7 @@ TEST(testNetsSolver, testLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node2.point, NetSegmentOrientation::horizontal},
-				{node1.point.x, node2.point.y, NetSegmentOrientation::vertical},
+				{{node1.point.x, node2.point.y}, NetSegmentOrientation::vertical},
 				{node1.point, {}},
 			}
 			);
@@ -354,7 +354,7 @@ TEST(testNetsSolver, testVerticalFlippedLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node1.point, NetSegmentOrientation::vertical},
-				{node1.point.x, node2.point.y, NetSegmentOrientation::horizontal},
+				{{node1.point.x, node2.point.y}, NetSegmentOrientation::horizontal},
 				{node2.point, {}},
 			}
 			);
@@ -401,7 +401,7 @@ TEST(testNetsSolver, testVerticalFlippedLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node2.point, NetSegmentOrientation::horizontal},
-				{node1.point.x, node2.point.y, NetSegmentOrientation::vertical},
+				{{node1.point.x, node2.point.y}, NetSegmentOrientation::vertical},
 				{node1.point, {}},
 			}
 			);
@@ -462,7 +462,7 @@ TEST(testNetsSolver, testHorizontalFlippedLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node1.point, NetSegmentOrientation::horizontal},
-				{node2.point.x, node1.point.y, NetSegmentOrientation::vertical},
+				{{node2.point.x, node1.point.y}, NetSegmentOrientation::vertical},
 				{node2.point, {}},
 			}
 			);
@@ -509,7 +509,7 @@ TEST(testNetsSolver, testHorizontalFlippedLShape)
 		auto expected_result = NetUtils::CreateStringNet(
 			NetUtils::StringNetDescription{
 				{node2.point, NetSegmentOrientation::vertical},
-				{node2.point.x, node1.point.y, NetSegmentOrientation::horizontal},
+				{{node2.point.x, node1.point.y}, NetSegmentOrientation::horizontal},
 				{node1.point, {}},
 			}
 			);

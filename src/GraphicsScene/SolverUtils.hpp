@@ -2,8 +2,6 @@
 
 #include "GraphicsScene/NetObject.hpp"
 #include "NetUtils/NetsSolver.hpp"
-#include "NodeModels/SceneModelManager.hpp"
-#include <span>
 
 namespace node
 {

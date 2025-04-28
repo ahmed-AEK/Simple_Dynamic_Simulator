@@ -63,134 +63,134 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
     {
         "Subsystem",
         "Subsystem",
-        model::SubsystemBlockData{
+        {model::SubsystemBlockData{
             "Local",
             SubSceneId{0}
-        },
+        }},
         "Default",
         model::BlockStyleProperties{}
     },
     {
         "Subsystem",
         "Input",
-        model::PortBlockData{
+        {model::PortBlockData{
             model::SocketId{0},
             model::SocketType::input
-        },
+        }},
         "Default",
         model::BlockStyleProperties{}
     },
     {
         "Subsystem",
         "Output",
-        model::PortBlockData{
+        {model::PortBlockData{
             model::SocketId{0},
             model::SocketType::output
-        },
+        }},
         "Default",
         model::BlockStyleProperties{}
     },
     {
         "Math",
         "Gain",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Gain",
             std::vector<model::BlockProperty>{
                 *model::BlockProperty::Create("Multiplier", model::BlockPropertyType::FloatNumber, 1.0)
             }
-        },
+        }},
         "Gain",
         model::BlockStyleProperties{}
     },
     {
         "Math",
         "Add",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Add Simple", {}
-        },
+        }},
         "Text",
         model::BlockStyleProperties{{{TextBlockStyler::key_text, "+"}}}
     },
     {
         "Math",
         "Integration",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Integration", {}
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/integral.svg"}}}
     },
     {
         "Math",
         "Derivative",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Derivative", {}
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/derivative.svg"}}}
     },
     {
         "Sources",
         "Constant Source",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Constant Source",
             std::vector<model::BlockProperty>{
                 *model::BlockProperty::Create("Value", model::BlockPropertyType::FloatNumber, 1.0)
             }
-        },
+        }},
         "Property Printer",
         model::BlockStyleProperties{{{PropertyPrintStyler::printed_key_text, "Value"}}}
     },
     {
         "Sources",
         "Ramp",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Ramp",
             std::vector<model::BlockProperty>{
                 *model::BlockProperty::Create("Slope", model::BlockPropertyType::FloatNumber, 1.0)
             }
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/ramp.svg"}}}
     },
     {
         "Sinks",
         "Scope",
-        model::FunctionalBlockData {
+        {model::FunctionalBlockData {
             "Scope Display",
             std::vector<model::BlockProperty>{
                 *model::BlockProperty::Create("Inputs", model::BlockPropertyType::UnsignedInteger, static_cast<uint64_t>(1))
             },
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/scope.svg"}}}
     },
     {
         "Math",
         "Multiply",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Multiply", {}
-        },
+        }},
         "Text",
         model::BlockStyleProperties{{{TextBlockStyler::key_text, "X"}}}
     },
     {
         "Sources",
         "Sine",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Sine",
             std::vector<model::BlockProperty>{
                 *model::BlockProperty::Create("Phase_deg", model::BlockPropertyType::FloatNumber, 0.0),
                 *model::BlockProperty::Create("Freq_hz", model::BlockPropertyType::FloatNumber, 1.0),
             }
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/sine.svg"}}}
     },
     {
         "Sources",
         "Step",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Step",
             std::vector<model::BlockProperty>{
                 *node::model::BlockProperty::Create("Initial Value", node::model::BlockPropertyType::FloatNumber, 0.0 ),
@@ -198,20 +198,20 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
                 *node::model::BlockProperty::Create("Step Time", node::model::BlockPropertyType::FloatNumber, 1.0 ),
                 *node::model::BlockProperty::Create("Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 ),
             }
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/step.svg"}}}
     },
     {
         "Math",
         "Comparator",
-        model::FunctionalBlockData{
+        {model::FunctionalBlockData{
             "Comparator",
             std::vector<model::BlockProperty>{
                 *node::model::BlockProperty::Create("threshold", node::model::BlockPropertyType::FloatNumber, 0.0 ),
                 *node::model::BlockProperty::Create("Rise Time", node::model::BlockPropertyType::FloatNumber, 1e-6 ),
             }
-        },
+        }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
     }

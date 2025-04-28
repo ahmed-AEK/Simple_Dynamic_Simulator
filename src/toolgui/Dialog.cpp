@@ -468,12 +468,12 @@ void node::Dialog::DrawOutline(SDL_Renderer* renderer, const SDL_FRect& rect)
 		// draw resize handle in bottom right corner
 		std::array<SDL_Vertex, 3> arrow_verts =
 			std::array<SDL_Vertex, 3>{
-			SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w - 20), static_cast<float>(inner_rect.y + inner_rect.h)
-			, {0,0,0,0}, {0,0} },
-				SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h),
+			SDL_Vertex{ {static_cast<float>(inner_rect.x + inner_rect.w - 20), static_cast<float>(inner_rect.y + inner_rect.h)},
 				{0,0,0,0}, {0,0} },
-				SDL_Vertex{ static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h - 20)
-				, {0,0,0,0}, {0,0} },
+				SDL_Vertex{ {static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h)},
+				{0,0,0,0}, {0,0} },
+				SDL_Vertex{ {static_cast<float>(inner_rect.x + inner_rect.w), static_cast<float>(inner_rect.y + inner_rect.h - 20)},
+				{0,0,0,0}, {0,0} },
 		};
 		SDL_RenderGeometry(renderer, nullptr, arrow_verts.data(), 3, nullptr, 0);
 	}

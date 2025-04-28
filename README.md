@@ -17,11 +17,13 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - customized block shapes
 - persistent storing and loading blocks (experimental)
 - undo/redo
+- log in the bottom panel for important information
+- lua custom user defined blocks
 
 ### Not Implemented yet:
-- ability to add user defined blocks
-- scripting engine
 - more blocks, saving output to disk, etc..
+- more scripting languages.
+- extensions management
 
 
 ### Dependencies:
@@ -39,12 +41,14 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 - NLDiffsolver has full test coverage. 
 - SceneLoader has full tests to catch any changes in schema.
 - NetsSolver has tests to gurantee correctness
+- lua extension has tests for the interop
 
 testing is done using ctest, just run `ctest .` in the appropriate build directory.
 
 ### supported platforms
-- Windows on MSVC
+- Windows using MSVC
 - Linux using GCC
+- Wasm using emscripten
 
 ### build instructions
 

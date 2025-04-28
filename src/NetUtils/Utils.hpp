@@ -1,6 +1,8 @@
 #pragma once
 
 #include "NodeModels/NetModel.hpp"
+#include "NodeModels/SceneModelManager.hpp"
+#include "GraphicsScene/NetObject.hpp"
 
 namespace node
 {

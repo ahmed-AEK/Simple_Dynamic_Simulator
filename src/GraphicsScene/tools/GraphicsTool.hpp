@@ -23,7 +23,7 @@ public:
 	};
 
 	GraphicsTool() {}
-	~GraphicsTool() = default;
+	virtual ~GraphicsTool() = default;
 	bool IsCapturingMouse() const noexcept { return m_capturing_mouse; }
 	virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) 
 	{

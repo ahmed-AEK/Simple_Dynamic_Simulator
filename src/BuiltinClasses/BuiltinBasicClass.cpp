@@ -31,25 +31,7 @@ void node::BuiltinBasicClass::GetDescription(GetDescriptionCallback cb, void* co
 
 int node::BuiltinBasicClass::ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const
 {
-	if (properties.size() != m_defaultProperties.size())
-	{
-		error_cb.error(0, std::format("size mismatch, expected: {}, got: {}", m_defaultProperties.size(), properties.size()));
-		return false;
-	}
-	for (size_t i = 0; i < properties.size(); i++)
-	{
-		if (properties[i].name != m_defaultProperties[i].name)
-		{
-			error_cb.error(i, std::format("property name mismatch, expected: {}, got: {}", m_defaultProperties[i].name, properties[i].name));
-			return false;
-		}
-		if (properties[i].GetType() != m_defaultProperties[i].GetType())
-		{
-			error_cb.error(i, std::format("property type mismatch"));
-			return false;
-		}
-	}
-	return true;
+	return ValidateEqualPropertyTypes(properties, m_defaultProperties, error_cb);
 }
 
 node::BlockType node::BuiltinBasicClass::GetBlockType(std::span<const model::BlockProperty> properties) const

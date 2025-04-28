@@ -78,7 +78,7 @@ public:
 	void SetWidget(std::unique_ptr<Widget> widget);
 protected:
 	void OnSetSize(const WidgetSize& size) override;
-	virtual void OnPositionRequested(float new_position);
+	virtual void OnPositionRequested(float new_position) override;
 private:
 	std::unique_ptr<Widget> m_contained_widget;
 

@@ -245,4 +245,7 @@ private:
 	std::string m_name;
 };
 
+
+int ValidateEqualPropertyTypes(std::span<const model::BlockProperty> properties, std::span<const model::BlockProperty> default_properties, IBlockClass::IValidatePropertiesNotifier& error_cb);
+
 }

@@ -6,7 +6,6 @@ namespace PaletteData {
 	static constexpr int ElementTotalHeight = node::palette_viewer::BlocksElementsViewer::ElementHeight + ElementHPadding;
 	static constexpr int ElementWPadding = 10;
 	static constexpr int ElementTotalWidth = node::palette_viewer::BlocksElementsViewer::ElementWidth + ElementWPadding;
-	static constexpr int scrollbarWidth = 10;
 }
 
 node::PaletteBlocksViewer::PaletteBlocksViewer(const WidgetSize& size,
@@ -20,7 +19,7 @@ node::PaletteBlocksViewer::PaletteBlocksViewer(const WidgetSize& size,
 	m_scrollview.SetSize({ child_rect.w, child_rect.h });
 
 	auto elements_viewer = std::make_unique<palette_viewer::BlocksElementsViewer>(
-		WidgetSize{ child_rect.w, 1000 }, provider, font, nullptr);
+		WidgetSize{ child_rect.w, 1000 }, provider, nullptr);
 	m_elements_viewer = elements_viewer.get();
 	m_scrollview.SetWidget(std::move(elements_viewer));
 		
@@ -106,8 +105,9 @@ void node::PaletteBlocksViewer::DrawInnerBorders(SDL_Renderer* renderer)
 
 }
 
-node::palette_viewer::BlocksElementsViewer::BlocksElementsViewer(const WidgetSize& size, std::shared_ptr<PaletteProvider> provider, TTF_Font* font, Widget* parent)
-	:Widget{size, parent}, m_paletteProvider{std::move(provider)}, m_font{font}
+node::palette_viewer::BlocksElementsViewer::BlocksElementsViewer(const WidgetSize& size, 
+	std::shared_ptr<PaletteProvider> provider, Widget* parent)
+	:Widget{size, parent}, m_paletteProvider{std::move(provider)}
 {
 }
 

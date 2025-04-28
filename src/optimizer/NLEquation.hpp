@@ -41,7 +41,7 @@ NLEqPtr make_NLEqn(Args&&...args)
 class FunctorNLEquation : public INLEquation
 {
 public:
-	using NLFunctor = std::function<void(std::span<const double>, std::span<double>)>;
+	using NLFunctor = std::function<void(std::span<const double> input, std::span<double> output)>;
 
 	explicit FunctorNLEquation(NLFunctor functor);
 	[[nodiscard]] Status Apply(std::span<const double> input, std::span<double> output) override;

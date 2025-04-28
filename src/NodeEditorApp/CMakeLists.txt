@@ -21,6 +21,8 @@ pch.h
 target_include_directories(DynamicSimulator PRIVATE ".")
 target_include_directories(DynamicSimulator INTERFACE "..")
 
+target_compile_definitions(DynamicSimulator PRIVATE "FILESYSTEM_SUPPORTED=${FILESYSTEM_SUPPORTED_FLAG}")
+
 target_compile_definitions(DynamicSimulator 
 PRIVATE APP_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
 PRIVATE APP_VERSION_MINOR=${PROJECT_VERSION_MINOR}

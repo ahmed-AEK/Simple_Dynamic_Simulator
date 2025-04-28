@@ -102,7 +102,7 @@ private:
 	
 }
 
-static logging::Logger logger(logging::LogCategory category)
+static inline logging::Logger logger(logging::LogCategory category)
 {
 	return logging::Logger{ category };
 }

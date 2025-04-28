@@ -6,6 +6,8 @@
 #include "toolgui/Application.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
+#include "NetUtils/Utils.hpp"
+#include "GraphicsScene/GraphicsLogic/NetDeleteLogic.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(const WidgetSize& size, node::Widget* parent)
     : node::GraphicsScene{ size, parent }
@@ -123,6 +125,11 @@ bool node::NodeGraphicsScene::OnKeyPress(KeyboardEvent& e)
             }
             break;
         }
+        case SDL_SCANCODE_DELETE:
+        {
+            SetGraphicsLogic(nullptr);
+            return DeleteSelection();
+        }
         default:
         {
             break;
@@ -191,6 +198,44 @@ void node::NodeGraphicsScene::DrawCoords(SDL_Renderer* renderer) const
 
     SDL_RenderTexture(renderer, Message.get(), NULL, &Message_rect);
 }
+
+bool node::NodeGraphicsScene::DeleteSelection()
+{
+    auto selection_temp = GetCurrentSelection();
+    std::vector<HandlePtr<GraphicsObject>> selection{ selection_temp.begin(), selection_temp.end() };
+    if (selection.size() == 0)
+    {
+        return false;
+    }
+    auto objects_manager = m_objects_manager.lock();
+    if (!objects_manager)
+    {
+        return false;
+    }
+    for (auto& item: selection)
+    {
+        if (!item.GetObjectPtr() || !(item->GetObjectType() == ObjectType::block))
+        {
+            continue;
+        }
+        auto* block = static_cast<BlockObject*>(selection[0].GetObjectPtr());
+        auto id = block->GetModelId();
+        if (!id)
+        {
+            continue;
+        }
+        objects_manager->GetSceneModel()->RemoveBlockById(*id);
+    }
+
+    auto deletion_request = NetUtils::GetDeletionRequestForNet(selection);
+    if (deletion_request)
+    {
+        objects_manager->GetSceneModel()->UpdateNet(std::move(*deletion_request));
+    }
+    ClearCurrentSelection();
+    return true;
+}
+
 MI::ClickEvent node::NodeGraphicsScene::OnRMBUp(MouseButtonEvent& e)
 {
     MI::ClickEvent ret =  GraphicsScene::OnRMBUp(e);

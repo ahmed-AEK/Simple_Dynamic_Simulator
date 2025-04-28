@@ -98,6 +98,7 @@ void node::PaletteCategoryPicker::ResetCategories()
 	{
 		m_categories[i].painter.SetText(labels[i].name);
 	}
+	std::sort(m_categories.begin(), m_categories.end(), [](const BlockCategorySlot& lhs, const BlockCategorySlot& rhs) {return lhs.painter.GetText() < rhs.painter.GetText(); });
 }
 
 void node::PaletteCategoryPicker::OnDraw(SDL::Renderer& renderer)

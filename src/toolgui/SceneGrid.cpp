@@ -5,8 +5,8 @@
 static float easeOut(double val) { return static_cast<float>(2 * val - val * val); }
 
 node::SceneGrid::SceneGrid(const WidgetSize& size, Widget* parent)
-	:Widget{ size, parent }, m_open_sidepanel_btn{ WidgetSize{35,50}, "Open Side Panel", "assets/arrow_left.svg", [this]() { this->OnOpenSidePanelPressed(); }, this },
-	m_open_botpanel_btn{ WidgetSize{50,35}, "Open bottom Panel", "assets/arrow_up.svg", [this]() { this->OnOpenBotPanelPressed(); }, this }
+	:Widget{ size, parent }, m_open_sidepanel_btn{ WidgetSize{35,50}, "Open Blocks Panel", "assets/arrow_left.svg", [this]() { this->OnOpenSidePanelPressed(); }, this },
+	m_open_botpanel_btn{ WidgetSize{50,35}, "Open Log", "assets/arrow_up.svg", [this]() { this->OnOpenBotPanelPressed(); }, this }
 {
 	m_open_sidepanel_btn.SetPosition(GetSidePanelBtnPosition());
 	m_open_botpanel_btn.SetPosition(GetBotPanelBtnPosition());

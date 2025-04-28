@@ -23,6 +23,7 @@ namespace node
         void OnDraw(SDL::Renderer& renderer) override;
     private:
         void DrawCoords(SDL_Renderer* renderer) const;
+        bool DeleteSelection();
         int m_dotspace = 20;
         model::Point m_current_hover_point{};
         SDL_FPoint m_screen_hover_point{};

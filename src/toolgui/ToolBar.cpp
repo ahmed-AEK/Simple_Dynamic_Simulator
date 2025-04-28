@@ -63,7 +63,7 @@ void node::ToolBar::AddSeparator(int position)
 
 	if (static_cast<size_t>(position) < m_buttons.size())
 	{
-		m_buttons.insert(m_buttons.begin() + position, std::move(ToolBarSeparator{}));
+		m_buttons.insert(m_buttons.begin() + position, ToolBarSeparator{});
 	}
 	else
 	{

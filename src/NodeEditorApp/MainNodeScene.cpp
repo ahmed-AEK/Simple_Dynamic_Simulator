@@ -38,6 +38,7 @@
 
 #include "BuiltinClasses/BuiltinClassesPlugin.hpp"
 #include "LuaPlugin/LuaRuntime.hpp"
+#include "LuaPlugin/LuaStandaloneStatefulEqnClass.hpp"
 
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeEditorApp/BlockPropertiesDialog.hpp"
@@ -117,7 +118,7 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
             });
         sceneModel->AddBlock(std::move(model));
     }
-
+    /*
     {
         auto block_id = model::BlockId{ 6 };
         model::BlockModel model{ block_id, model::BlockType::Functional, model::Rect{ 200,10,100,100 } };
@@ -129,12 +130,13 @@ static void AddInitialNodes_forScene(node::SceneManager& manager)
             model::FunctionalBlockData{ "LuaStandaloneStatefulEqn" ,
             {
                 *node::model::BlockProperty::Create("Inputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
-                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, "Here Should be some code!\nAnd more code!"),
+                *node::model::BlockProperty::Create("Outputs Count", node::model::BlockPropertyType::UnsignedInteger, 1),
+                *node::model::BlockProperty::Create("Code", node::model::BlockPropertyType::String, std::string{node::LuaStandaloneStatefulEqnClass::DEFAULT_CODE}),
             }
             });
         sceneModel->AddBlock(std::move(model));
     }
-
+    */
     auto model = std::make_shared<SceneModelManager>(std::move(sceneModel));
     model->SetSubSceneId(manager.GetMainSubSceneId());
     manager.AddModel(model);
@@ -480,6 +482,7 @@ void node::MainNodeScene::InitializeTools()
         new_btn->SetDescription("New");
         toolbar->AddButton(std::move(new_btn));
     }
+#if FILESYSTEM_SUPPORTED
     {
         auto load_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "Load", [this]() {this->m_logger.LogDebug("Load!"); this->LoadSceneButtonPressed(); });
         load_btn->SetSVGPath("assets/load_file.svg");
@@ -492,6 +495,7 @@ void node::MainNodeScene::InitializeTools()
         save_btn->SetSVGPath("assets/save_file.svg");
         toolbar->AddButton(std::move(save_btn));
     }
+#endif // FILESYSTEM_SUPPORTED
     toolbar->AddSeparator();
     m_toolsManager = std::make_shared<ToolsManager>(toolbar.get());
     {
@@ -611,7 +615,7 @@ void node::MainNodeScene::InitializeSidePanel()
 namespace node
 {
 
-class BlockPropertiesUpdater : public node::IBlockPropertiesUpdater
+class BlockPropertiesUpdater final: public node::IBlockPropertiesUpdater
 {
 public:
     BlockPropertiesUpdater(model::BlockId block_id,

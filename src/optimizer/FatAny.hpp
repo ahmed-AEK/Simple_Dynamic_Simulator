@@ -5,6 +5,7 @@
 #include <new>
 #include <cstddef>
 #include "toolgui/NodeMacros.h"
+#include <concepts>
 
 namespace opt
 {
@@ -53,8 +54,9 @@ concept no_except_move_constructible = std::is_nothrow_move_constructible_v<T>;
 class FatAny
 {
 public:
-	template <no_except_move_constructible T>
-	explicit constexpr FatAny(T obj)
+	template <typename T>
+	requires(!std::same_as<std::decay<T>, FatAny>)
+	explicit constexpr FatAny(T obj) requires(no_except_move_constructible<T>)
 		: p_manager{&specificManager<T>}
 	{
 		static_assert(sizeof(T) <= sizeof(m_data.buff));

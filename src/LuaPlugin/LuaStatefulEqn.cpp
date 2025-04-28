@@ -3,7 +3,7 @@
 #include "PluginAPI/Logger.hpp"
 #include <sstream>
 
-tl::expected<node::lua::StatefulFunctions, std::string> node::lua::NLStatefulEqnBuilder::build_lua_functions(const std::string& code, sol::state& lua)
+tl::expected<node::lua::StatefulFunctions, std::string> node::lua::NLStatefulEqnBuilder::build_lua_functions(const std::string& code, sol::state& lua) const
 {
 	sol::protected_function_result result;
 
@@ -36,6 +36,11 @@ tl::expected<node::lua::StatefulFunctions, std::string> node::lua::NLStatefulEqn
 		{
 			return tl::unexpected<std::string>{"couldn't find 'update' function"};
 		}
+		auto setup_func = lua["setup"];
+		if (setup_func.valid() && setup_func.get_type() == sol::type::function)
+		{
+			funcs.setup = std::move(setup_func);
+		}
 		funcs.update = std::move(update_func);
 		return funcs;
 	}
@@ -45,39 +50,77 @@ tl::expected<node::lua::StatefulFunctions, std::string> node::lua::NLStatefulEqn
 	}
 }
 
-tl::expected<std::string, std::string> node::lua::NLStatefulEqnBuilder::ReadLuaFile(std::string_view file_name)
+tl::expected<std::monostate, std::string> node::lua::NLStatefulEqnBuilder::AddUserTypes(sol::state& lua) const
 {
-	std::string path_str{ file_name };
-	auto* current_dir = SDL_GetCurrentDirectory();
-	std::string full_path = std::string{ current_dir } + "LuaScripts/" + path_str;
-	SDL_free(current_dir);
-	SDL_IOStream* file_stream = SDL_IOFromFile(full_path.c_str(), "r");
-	if (!file_stream)
-	{
-		return tl::unexpected<std::string>{std::format("Failed to open file: {} , reason: {}", path_str, SDL_GetError())};
-	}
-	std::string file_content;
-	std::array<char, 1024> temp_buffer;
-	while (auto bytes_read = SDL_ReadIO(file_stream, temp_buffer.data(), 1024))
-	{
-		if (file_content.size() > 1024 * 1024 * 8)
-		{
-			return tl::unexpected<std::string>{std::format("File too big!: {}", path_str)};
-		}
-		file_content.insert(file_content.end(), temp_buffer.data(), temp_buffer.data() + bytes_read);
-	}
-	SDL_CloseIO(file_stream);
-	file_stream = nullptr;
-	node::logger(node::logging::LogCategory::Extension)
-		.LogDebug("Read Lua file bytes total = %d", static_cast<int>(file_content.size()));
+	using opt::StatefulEquationEvent;
 
-	return file_content;
+	lua.new_usertype<StatefulEquationEvent>("StatefulEquationEvent",
+		"enabled", &StatefulEquationEvent::enabled,
+		"set", &StatefulEquationEvent::set,
+		"t", &StatefulEquationEvent::t
+	);
+
+	lua.new_usertype<LuaNLStatefulEquationDataCRef>("NLStatefulEquationDataCRef",
+		"crossings", sol::readonly(&LuaNLStatefulEquationDataCRef::crossings),
+		"ev", sol::readonly(&LuaNLStatefulEquationDataCRef::ev)
+	);
+
+	lua.new_usertype<LuaNLStatefulEquationDataRef>("NLStatefulEquationDataRef",
+		"crossings", sol::readonly(&LuaNLStatefulEquationDataRef::crossings),
+		"ev", sol::readonly(&LuaNLStatefulEquationDataRef::ev)
+	);
+
+	using opt::ZeroCrossDescriptor;
+
+	lua.new_enum("CrossType", 
+		"rising", ZeroCrossDescriptor::CrossType::rising,
+		"falling", ZeroCrossDescriptor::CrossType::falling,
+		"both", ZeroCrossDescriptor::CrossType::both
+		);
+
+	lua.new_enum("CrossPosition",
+		"undefined", ZeroCrossDescriptor::Position::undefined,
+		"above", ZeroCrossDescriptor::Position::above,
+		"below", ZeroCrossDescriptor::Position::below
+		);
+
+	lua.new_usertype<ZeroCrossDescriptor>("ZeroCrossDescriptor",
+		"value", &ZeroCrossDescriptor::value,
+		"in_port_id", &ZeroCrossDescriptor::in_port_id,
+		"type", &ZeroCrossDescriptor::type,
+		"last_value", &ZeroCrossDescriptor::last_value,
+		"current_value", &ZeroCrossDescriptor::current_value
+	);
+
+	using opt::NLStatefulEquationData;
+	lua.new_usertype<NLStatefulEquationData>("NLStatefulEquationData",
+		"crossings", sol::readonly(&NLStatefulEquationData::crossings),
+		"ev", sol::readonly(&NLStatefulEquationData::ev)
+		);
+	return std::monostate{};
+}
+
+
+opt::Status node::lua::NLStatefulEqn::Setup(opt::NLStatefulEquationData& data)
+{
+	if (!funcs.setup)
+	{
+		return opt::Status::ok;
+	}
+	auto call_result = (*funcs.setup)(data);
+	if (!call_result.valid())
+	{
+		sol::error err = call_result;
+		last_error = err.what();
+		return opt::Status::error;
+	}
+	return opt::Status::ok;
 }
 
 opt::Status node::lua::NLStatefulEqn::Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data)
 {
-	UNUSED_PARAM(data);
-	auto call_result = funcs.apply(input, output, t, data);
+	LuaNLStatefulEquationDataCRef data_lua{ &data.crossings, &data.ev };
+	auto call_result = funcs.apply(input, output, t, data_lua);
 	if (!call_result.valid())
 	{
 		sol::error err = call_result;

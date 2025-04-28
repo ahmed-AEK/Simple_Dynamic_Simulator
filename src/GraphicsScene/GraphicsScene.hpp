@@ -48,6 +48,7 @@ public:
     virtual void OnMouseMove(GraphicsTool::MouseHoverEvent& e) = 0;
     virtual MI::ClickEvent OnLMBDown(GraphicsTool::MouseButtonEvent& e) = 0;
     virtual MI::ClickEvent OnLMBUp(GraphicsTool::MouseButtonEvent& e) = 0;
+    virtual ~ToolHandler() = default;
 };
 
 class GRAPHICSSCENE_API GraphicsScene: public node::Widget, public node::SinglePublisher<BlockObjectDropped>
@@ -120,6 +121,7 @@ protected:
     void OnDraw(SDL::Renderer& renderer) override;
     virtual void OnDrawObjects(SDL::Renderer& renderer);
 
+    logging::Logger m_logger = logger(logging::LogCategory::GUI);
 private:
 
     struct DragDropDrawObject

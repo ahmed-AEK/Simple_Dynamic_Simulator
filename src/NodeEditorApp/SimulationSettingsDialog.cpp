@@ -4,6 +4,7 @@
 #include "toolgui/Scene.hpp"
 #include "toolgui/Application.hpp"
 #include <charconv>
+#include <boost/charconv.hpp>
 
 node::SimulationSettingsDialog::SimulationSettingsDialog(
 	std::function<void(const SimulationSettings&)> ok_callback, 
@@ -53,7 +54,7 @@ void node::SimulationSettingsDialog::OnOk()
 	{
 		auto grabber = [](const std::string& value, double& result)-> bool
 			{
-				auto res = std::from_chars(value.data(), value.data() + value.size(), result);
+				auto res = boost::charconv::from_chars(value.data(), value.data() + value.size(), result);
 				if (res.ec != std::errc{} || res.ptr != value.data() + value.size())
 				{
 					return false;

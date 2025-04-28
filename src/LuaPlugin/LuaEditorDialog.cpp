@@ -115,7 +115,7 @@ constexpr std::array<T, N> create_array(const U& value)
 }
 
 node::LuaCodeEditor::LuaCodeEditor(TTF_Font* font, const WidgetSize& size, Dialog* parent)
-	:DialogControl{ size,parent }, m_font{ font }, m_edit{size, font, this}
+	:DialogControl{ size,parent }, m_edit{size, font, this}
 {
 	SetSizingMode(DialogControl::SizingMode::expanding);
 }

@@ -251,7 +251,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
 
     for (size_t i = 0; i < m_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::NLEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::NLEquation}, 0 });
         auto&& inputs = m_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
@@ -269,7 +269,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
     }
     for (size_t i = 0; i < m_stateful_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::statefulNLEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::statefulNLEquation}, 0 });
         auto&& inputs = m_stateful_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
@@ -287,7 +287,7 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::vector<int32_t>& remaini
     }
     for (size_t i = 0; i < m_buffer_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::BufferEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::BufferEquation}, 0 });
         auto&& input_id = m_buffer_equations[i].input_id;
         auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
         if (it != remaining_output_ids.end())
@@ -436,7 +436,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
 
     for (size_t i = 0; i < m_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::NLEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::NLEquation}, 0 });
         auto&& inputs = m_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
@@ -450,7 +450,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
     }
     for (size_t i = 0; i < m_stateful_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::statefulNLEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::statefulNLEquation}, 0 });
         auto&& inputs = m_stateful_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
@@ -464,7 +464,7 @@ void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining
     }
     for (size_t i = 0; i < m_buffer_equations.size(); i++)
     {
-        all_blocks.push_back({ i, EquationType::BufferEquation, 0 });
+        all_blocks.push_back({ {i, EquationType::BufferEquation}, 0 });
         auto&& input_id = m_buffer_equations[i].input_id;
         auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), input_id);
         if (it != remaining_output_ids.end())

@@ -16,6 +16,5 @@ namespace SDL
     private:
         bool m_SDL_init_done;
         bool m_SDL_TTF_init_done;
-        bool m_SDL_Image_init_done;
     };
 }

@@ -2,8 +2,10 @@
 #include "NetObject.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsObjectsManager.hpp"
-#include "BlockSocketObject.hpp"
-#include "BlockObject.hpp"
+#include "NetUtils/Utils.hpp"
+
+#include "GraphicsScene/BlockSocketObject.hpp"
+#include "NodeModels/SceneModelManager.hpp"
 
 #include <set>
 
@@ -21,6 +23,26 @@ void node::logic::NetDeleteLogic::OnMouseMove(const model::Point& current_mouse_
 	}
 }
 
+MI::ClickEvent node::logic::NetDeleteLogic::OnLMBUp(const model::Point& current_mouse_point)
+{
+	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
+	if (!m_object.isAlive() || new_hover != m_object.GetObjectPtr())
+	{
+		return MI::ClickEvent::CAPTURE_END;
+	}
+
+	auto request = NetUtils::GetDeletionRequestForNet(GetScene()->GetCurrentSelection());
+	if (!request)
+	{
+		return MI::ClickEvent::CAPTURE_END;
+	}
+
+	GetObjectsManager()->GetSceneModel()->UpdateNet(std::move(*request));
+	return MI::ClickEvent::CAPTURE_END;
+}
+
+
+
 struct NodeToHealDescriptor
 {
 	node::NetNode* node;
@@ -37,8 +59,8 @@ static std::set<NodeToHealDescriptor> GetNodesToHeal(std::set<node::NetSegment*>
 	std::set<NodeToHealDescriptor> result;
 	for (auto* segment : segments_to_remove)
 	{
-		std::array<NetNode*, 2> nodes_to_check{segment->getStartNode(), segment->getEndNode()};
-		for (auto* node: nodes_to_check)
+		std::array<NetNode*, 2> nodes_to_check{ segment->getStartNode(), segment->getEndNode() };
+		for (auto* node : nodes_to_check)
 		{
 			if (node->GetConnectedSegmentsCount() < 3 || !node->GetId().has_value())
 			{
@@ -78,7 +100,7 @@ static std::set<NodeToHealDescriptor> GetNodesToHeal(std::set<node::NetSegment*>
 	return result;
 }
 
-void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::set<NodeToHealDescriptor>& nodes_to_heal)
+static void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::set<NodeToHealDescriptor>& nodes_to_heal)
 {
 	using namespace node;
 	using namespace node::model;
@@ -131,22 +153,21 @@ void AddHealedNodesToRequest(node::NetModificationRequest& request, const std::s
 			*node2->GetId()
 			});
 	}
-
 }
 
-MI::ClickEvent node::logic::NetDeleteLogic::OnLMBUp(const model::Point& current_mouse_point)
+std::optional<node::NetModificationRequest> node::NetUtils::GetDeletionRequestForNet(std::span<node::HandlePtr<node::GraphicsObject>> objects)
 {
-	const auto* new_hover = GetScene()->GetObjectAt(current_mouse_point);
-	if (!m_object.isAlive() || new_hover != m_object.GetObjectPtr())
+	using namespace node;
+	if (objects.size() == 0)
 	{
-		return MI::ClickEvent::CAPTURE_END;
+		return {};
 	}
 
 	NetModificationRequest request;
-	
+
 	std::set<NetSegment*> segments_to_remove;
 	std::set<NetNode*> nodes_to_remove;
-	for (auto&& object : GetScene()->GetCurrentSelection())
+	for (auto&& object : objects)
 	{
 		auto* object_ptr = object.GetObjectPtr();
 		if (!object_ptr)
@@ -185,13 +206,12 @@ MI::ClickEvent node::logic::NetDeleteLogic::OnLMBUp(const model::Point& current_
 			}
 		}
 	}
-
+	if (segments_to_remove.size() == 0 && nodes_to_remove.size() == 0)
+	{
+		return {};
+	}
 	auto nodes_to_heal = GetNodesToHeal(segments_to_remove, nodes_to_remove);
 	AddHealedNodesToRequest(request, nodes_to_heal);
-	
-	GetObjectsManager()->GetSceneModel()->UpdateNet(std::move(request));
-	return MI::ClickEvent::CAPTURE_END;
+
+	return request;
 }
-
-
-

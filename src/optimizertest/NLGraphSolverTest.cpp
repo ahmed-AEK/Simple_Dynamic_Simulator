@@ -13,7 +13,6 @@ TEST(testNLGraphSolver, testAddStateful)
 	solver.AddStatefulEquation({ {}, { 0 }, opt::make_NLStatefulEqn<opt::FunctorNLStatefulEquation>([](auto, auto out, const auto& t, const auto&)
 		{
 			out[0] = t;
-			return opt::FatAny{ t };
 		},
 		[](auto, auto, auto)
 		{
