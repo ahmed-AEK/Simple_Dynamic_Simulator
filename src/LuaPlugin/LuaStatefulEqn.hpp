@@ -15,6 +15,8 @@ struct StatefulFunctions
 	sol::protected_function apply;
 	sol::protected_function update;
 	std::optional<sol::protected_function> setup;
+	std::optional<sol::protected_function> cross_trigger;
+	std::optional<sol::protected_function> event_trigger;
 };
 
 struct LuaNLStatefulEquationDataCRef
@@ -48,6 +50,8 @@ struct NLStatefulEqn : public opt::INLStatefulEquation
 	opt::Status Setup(opt::NLStatefulEquationData& data);
 	opt::Status Apply(std::span<const double> input, std::span<double> output, double t, opt::NLStatefulEquationDataCRef data) override;
 	opt::Status Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data) override;
+	[[nodiscard]] opt::Status CrossTrigger(double t, size_t index, opt::NLStatefulEquationDataRef data) override;
+	[[nodiscard]] opt::Status EventTrigger(double t, opt::NLStatefulEquationDataRef data) override;
 	const char* GetLastError() override
 	{
 		return last_error.c_str();

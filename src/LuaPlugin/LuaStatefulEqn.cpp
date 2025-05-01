@@ -41,6 +41,16 @@ tl::expected<node::lua::StatefulFunctions, std::string> node::lua::NLStatefulEqn
 		{
 			funcs.setup = std::move(setup_func);
 		}
+		auto cross_trigger_func = lua["cross_trigger"];
+		if (cross_trigger_func.valid() && cross_trigger_func.get_type() == sol::type::function)
+		{
+			funcs.cross_trigger = std::move(cross_trigger_func);
+		}
+		auto event_trigger_func = lua["event_trigger"];
+		if (event_trigger_func.valid() && event_trigger_func.get_type() == sol::type::function)
+		{
+			funcs.event_trigger = std::move(event_trigger_func);
+		}
 		funcs.update = std::move(update_func);
 		return funcs;
 	}
@@ -132,10 +142,39 @@ opt::Status node::lua::NLStatefulEqn::Apply(std::span<const double> input, std::
 
 opt::Status node::lua::NLStatefulEqn::Update(std::span<const double> input, double t, opt::NLStatefulEquationDataRef data)
 {
-	UNUSED_PARAM(input);
-	UNUSED_PARAM(t);
-	UNUSED_PARAM(data);
 	auto call_result = funcs.update(input, t, data);
+	if (!call_result.valid())
+	{
+		sol::error err = call_result;
+		last_error = err.what();
+		return opt::Status::error;
+	}
+	return opt::Status::ok;
+}
+
+opt::Status node::lua::NLStatefulEqn::CrossTrigger(double t, size_t index, opt::NLStatefulEquationDataRef data)
+{
+	if (funcs.cross_trigger)
+	{
+		return opt::Status::ok;
+	}
+	auto call_result = (*funcs.cross_trigger)(t, index + 1, data);
+	if (!call_result.valid())
+	{
+		sol::error err = call_result;
+		last_error = err.what();
+		return opt::Status::error;
+	}
+	return opt::Status::ok;
+}
+
+opt::Status node::lua::NLStatefulEqn::EventTrigger(double t, opt::NLStatefulEquationDataRef data)
+{
+	if (funcs.event_trigger)
+	{
+		return opt::Status::ok;
+	}
+	auto call_result = (*funcs.event_trigger)(t, data);
 	if (!call_result.valid())
 	{
 		sol::error err = call_result;

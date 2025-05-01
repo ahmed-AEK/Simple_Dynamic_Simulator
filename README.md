@@ -4,7 +4,7 @@ A trial implementation of a node editor for solving differential algebraic syste
 Implementation is heavily optimized, so it can acheive 60 fps on a potato using under 1% of CPU
 # [Try It Online](https://ahmed-aek.github.io/DynamicSimulator-Online/)
 
-**[Demo Video](https://youtu.be/xRRwlTSGhQI)**
+see the **[Demo Video](https://youtu.be/uQ1XzY0SoTk)**  and also check the **[Documentation](https://simple-dynamic-simulator.readthedocs.io/en/latest/)**
 
 ![alt text](https://github.com/ahmed-AEK/dummy_NodeEditor/blob/main/docs/preview.png?raw=true)
 
@@ -27,13 +27,14 @@ Implementation is heavily optimized, so it can acheive 60 fps on a potato using 
 
 
 ### Dependencies:
-- Boost (containers, odeint)
+- Boost (containers, odeint, charconv)
 - nlopt
 - SDL3, SDL3-TTF, SDL3-image
 - google-test
 - lunasvg
 - SQLiteCpp
 - lua, sol2
+- tl-expected
 
 ### testing
 
@@ -52,7 +53,7 @@ testing is done using ctest, just run `ctest .` in the appropriate build directo
 
 ### build instructions
 
-have cmake, ninja, python and vcpkg installed and VCPKG_ROOT ENV var setup correctly.
+have python installed. on linux you also need cmake, ninja and vcpkg and VCPKG_ROOT environment variable setup correctly. x64 Native Tools Command Prompt for VS sets them up on windows.
 
 you need to run `python AssetsPacker/packer.py` to create the `AssetsManager` project, then:
 
@@ -61,10 +62,10 @@ cmake . --preset=vcpkg-win-rel
 cmake --build ./build/Release_win
 ```
 
+replace `win` with `linux` for the linux version, and you will need to use `python3` instead of `python`.
+
 License
 -----------
 GPL-3.0 license (@ 2024 ahmed-AEK)
 
-This prevents re-packaging and selling the software, but it can still use commercial proprietary plugins.
-
-[def]: https://dynamicsimulator-beta.static.domains/
+Any change to the application source needs to be made publicly available at no cost under the GPL. But the application can use commercial proprietary plugins without disclosing the plugin source code.
