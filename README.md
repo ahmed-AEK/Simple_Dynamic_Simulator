@@ -4,7 +4,7 @@ A trial implementation of a node editor for solving differential algebraic syste
 Implementation is heavily optimized, so it can acheive 60 fps on a potato using under 1% of CPU
 # [Try It Online](https://ahmed-aek.github.io/DynamicSimulator-Online/)
 
-**[Demo Video](https://youtu.be/xRRwlTSGhQI)**
+**[Demo Video](https://youtu.be/xRRwlTSGhQI)** , also check the **[Documentation](https://simple-dynamic-simulator.readthedocs.io/en/latest/)**
 
 ![alt text](https://github.com/ahmed-AEK/dummy_NodeEditor/blob/main/docs/preview.png?raw=true)
 

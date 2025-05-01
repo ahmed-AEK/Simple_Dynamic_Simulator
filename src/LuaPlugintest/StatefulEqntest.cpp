@@ -207,3 +207,76 @@ TEST(testStatefulEqn, testCallUpdate)
     EXPECT_EQ(ref2.ev->t, 5);
     EXPECT_EQ(ref2.crossings->data()[0].value, 3);
 }
+
+TEST(testStatefulEqn, testCallCrossTriger)
+{
+    std::string code = R"(
+    function apply(input, output, t, cdata)
+    end
+
+    function update(input, t, data)
+    end
+    
+    function cross_trigger(t, index, data)
+        data.ev.t = t
+        data.crossings[1].value = index
+    end
+)";
+    node::logging::Logger log = node::logger(node::logging::LogCategory::Extension);
+    NLStatefulEqnBuilder builder{ log };
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::math);
+    builder.AddUserTypes(lua);
+    auto funcs = builder.build_lua_functions(code, lua);
+
+    ASSERT_TRUE(funcs);
+
+    opt::NLStatefulEquationData data;
+    data.ev.enabled = true;
+    data.ev.t = 0;
+    data.crossings.push_back({});
+    opt::NLStatefulEquationDataRef ref{ data.crossings, data.ev };
+    LuaNLStatefulEquationDataRef ref2{ &ref.crossings, &ref.ev };
+
+    ASSERT_TRUE(funcs->cross_trigger);
+
+    auto result = (*funcs->cross_trigger)(3, 5, ref2);
+    ASSERT_TRUE(result.valid());
+    EXPECT_EQ(ref2.ev->t, 3);
+    EXPECT_EQ(ref2.crossings->data()[0].value, 5);
+}
+
+TEST(testStatefulEqn, testCallEventTriger)
+{
+    std::string code = R"(
+    function apply(input, output, t, cdata)
+    end
+
+    function update(input, t, data)
+    end
+
+    function event_trigger(t, data)
+        data.ev.t = t
+    end
+)";
+    node::logging::Logger log = node::logger(node::logging::LogCategory::Extension);
+    NLStatefulEqnBuilder builder{ log };
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::math);
+    builder.AddUserTypes(lua);
+    auto funcs = builder.build_lua_functions(code, lua);
+
+    ASSERT_TRUE(funcs);
+
+    opt::NLStatefulEquationData data;
+    data.ev.enabled = true;
+    data.ev.t = 0;
+    opt::NLStatefulEquationDataRef ref{ data.crossings, data.ev };
+    LuaNLStatefulEquationDataRef ref2{ &ref.crossings, &ref.ev };
+
+    ASSERT_TRUE(funcs->event_trigger);
+
+    auto result = (*funcs->event_trigger)(3, ref2);
+    ASSERT_TRUE(result.valid());
+    EXPECT_EQ(ref2.ev->t, 3);
+}
