@@ -125,6 +125,7 @@ void node::Widget::SetSize(const WidgetSize& size)
 
 void node::Widget::Draw(SDL::Renderer& renderer)
 {
+    auto palette_scope = renderer.SetColorPalette(m_color_palette);
     OnDraw(renderer);
     for (auto* child : m_children)
     {
@@ -151,4 +152,35 @@ node::Widget* node::Widget::OnGetInteractableAtPoint(const SDL_FPoint &point)
         }
     }
     return this;
+}
+
+void node::Widget::NotifyParentPaletteUpdate(const ColorPalette& palette)
+{
+    if (m_color_palette.empty())
+    {
+        OnPaletteChanged(palette);
+        NotifyPaletteUpdate(palette);
+    }
+    else
+    {
+        OnParentPaletteChanged(palette);
+    }
+}
+
+void node::Widget::NotifyPaletteUpdate(const ColorPalette& palette)
+{
+    for (auto* child : m_children)
+    {
+        child->NotifyParentPaletteUpdate(palette);
+    }
+}
+
+void node::Widget::SetColorPalette(ColorPalette color_palette)
+{
+    if (color_palette != m_color_palette)
+    {
+        m_color_palette = std::move(color_palette);
+        OnPaletteChanged(m_color_palette);
+        NotifyPaletteUpdate(m_color_palette);
+    }
 }

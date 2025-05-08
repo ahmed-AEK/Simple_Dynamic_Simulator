@@ -163,7 +163,8 @@ void node::LogView::OnDraw(SDL::Renderer& renderer)
 
 void node::LogView::DrawOutline(SDL::Renderer& renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline);
+	SDL_SetRenderDrawColor(renderer, outline_color.r, outline_color.g, outline_color.b, outline_color.a);
 	const auto& rect = GetSize().ToRect();
 	SDL_RenderRect(renderer, &rect);
 }
@@ -189,8 +190,8 @@ void node::LogView::DrawLinesDownFrom(SDL::Renderer& renderer, size_t start_idx)
 {
 	float current_y = 0;
 	size_t text_index{};
-	SDL_Color Black{ 50,50,50,255 };
-	SDL_Color Red{ 180, 50, 50, 255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	const SDL_Color Red = renderer.GetColor(ColorRole::red_close_clicked);
 	auto DrawArea = GetContainedAreaSize();
 	for (text_index = 0; text_index + start_idx < m_log_lines.size() &&
 		current_y < GetSize().h; text_index++)
@@ -202,7 +203,7 @@ void node::LogView::DrawLinesDownFrom(SDL::Renderer& renderer, size_t start_idx)
 		auto& painter = m_text_lines[text_index];
 		painter.SetText(m_log_lines[text_index + start_idx].text);
 		int priority = m_log_lines[text_index + start_idx].priority;
-		painter.Draw(renderer, { x_margin, current_y }, priority >= SDL_LOG_PRIORITY_ERROR ? Red : Black);
+		painter.Draw(renderer, { x_margin, current_y }, priority >= SDL_LOG_PRIORITY_ERROR ? Red : text_color);
 		current_y += painter.GetHeight();
 	}
 	while (text_index > m_text_lines.size())
@@ -221,8 +222,8 @@ void node::LogView::DrawLinesUpFrom(SDL::Renderer& renderer, size_t end_idx)
 
 	float current_y = GetSize().h;
 	size_t text_index = m_text_lines.size();;
-	SDL_Color Black{ 50,50,50,255 };
-	SDL_Color Red{ 180, 50, 50, 255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	const SDL_Color Red = renderer.GetColor(ColorRole::red_close_clicked);
 	for (size_t index_offset_up = 0; end_idx - index_offset_up < m_log_lines.size() &&
 		current_y > 0; index_offset_up++)
 	{
@@ -238,7 +239,7 @@ void node::LogView::DrawLinesUpFrom(SDL::Renderer& renderer, size_t end_idx)
 		painter.SetText(m_log_lines[end_idx - index_offset_up].text);
 		int priority = m_log_lines[end_idx - index_offset_up].priority;
 		current_y -= painter.GetHeight();
-		painter.Draw(renderer, { x_margin, current_y }, priority >= SDL_LOG_PRIORITY_ERROR ? Red : Black);
+		painter.Draw(renderer, { x_margin, current_y }, priority >= SDL_LOG_PRIORITY_ERROR ? Red : text_color);
 	}
 	while (text_index != 0)
 	{

@@ -14,6 +14,7 @@
 
 void node::Scene::Draw(SDL::Renderer& renderer)
 {
+    auto palette_scope = renderer.SetColorPalette(GetColorPalette());
     OnDraw(renderer);
     if (m_current_mouse_hover.isAlive() && m_dragObject)
     {
@@ -291,7 +292,14 @@ node::Widget* node::Scene::OnGetInteractableAtPoint(const SDL_FPoint& p)
 
 void node::Scene::AddNormalDialog(std::unique_ptr<node::Dialog> dialog)
 {
+    assert(dialog);
+    if (!dialog)
+    {
+        return;
+    }
+    auto* dialog_ptr = static_cast<Widget*>(dialog.get());
     m_dialogs.push_back(std::move(dialog));
+    dialog_ptr->NotifyParentPaletteUpdate(GetColorPalette());
 }
 
 void node::Scene::BumpDialogToTop(const node::Dialog* dialog)
@@ -715,6 +723,12 @@ void node::Scene::OnSendChar(TextInputEvent& e)
             current_widget = current_widget->GetParent();
         }
     }
+}
+
+void node::Scene::OnPaletteChanged(const ColorPalette& palette)
+{
+    auto bg_color = palette.GetColor(ColorRole::frame_background_alternate);
+    SetBGColor(SDL_Color{ bg_color->r, bg_color->g, bg_color->b, 255 });
 }
 
 node::Scene::Scene(const WidgetSize& size, Application* parent)

@@ -12,7 +12,9 @@ node::MultiLineEditControl::MultiLineEditControl(const WidgetSize& size, TTF_Fon
 void node::MultiLineEditControl::OnDraw(SDL::Renderer& renderer)
 {
 	const SDL_FRect edit_box = GetSize().ToRect();
-	ThickFilledRoundRect(renderer, edit_box, 8, 1, { 0,0,0,255 }, { 255,255,255,255 }, m_outer_painter, m_inner_painter);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline);
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	ThickFilledRoundRect(renderer, edit_box, 8, 1, outline_color, background_color, m_outer_painter, m_inner_painter);
 	if (m_cursor_dirty)
 	{
 		m_cursor_dirty = false;
@@ -468,7 +470,7 @@ SDL_FRect node::MultiLineEditControl::GetTextArea() const
 void node::MultiLineEditControl::DrawText(SDL::Renderer& renderer)
 {
 	SDL_FRect inner_rect = GetTextArea();
-	SDL_Color Black = { 50, 50, 50, 255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 	size_t row = 0;
 	int row_height = TTF_GetFontHeight(m_font);
 	size_t rows_to_draw = static_cast<size_t>(inner_rect.h / row_height);
@@ -501,7 +503,7 @@ void node::MultiLineEditControl::DrawText(SDL::Renderer& renderer)
 			DrawLineSelection(renderer, inner_rect, y, static_cast<float>(row_height), text_idx, selection_start, selection_end);
 		}
 
-		m_painters[row].Draw(renderer, { inner_rect.x, y }, Black);
+		m_painters[row].Draw(renderer, { inner_rect.x, y }, text_color);
 		y += static_cast<float>(row_height);
 	}
 }
@@ -526,7 +528,8 @@ void node::MultiLineEditControl::DrawCursor(SDL::Renderer& renderer)
 		2,cursor_height
 	};
 
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 	SDL_RenderFillRect(renderer, &cursor_rect);
 }
 
@@ -547,7 +550,7 @@ void node::MultiLineEditControl::DrawLineSelection(SDL::Renderer& renderer,
 	{
 		return; // zero area
 	}
-	SDL_Color Blue{ 50, 153, 255, 255 };
+	const SDL_Color Blue = renderer.GetColor(ColorRole::blue_select);
 	SDL_FRect selection_rect{ start_x, y, end_x - start_x, row_height };
 	SDL_SetRenderDrawColor(renderer, Blue.r, Blue.g, Blue.b, Blue.a);
 	SDL_RenderFillRect(renderer, &selection_rect);

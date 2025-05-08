@@ -15,21 +15,24 @@ node::LineEditControl::LineEditControl(std::string initial_value, const WidgetSi
 void node::LineEditControl::OnDraw(SDL::Renderer& renderer)
 {
 	const SDL_FRect edit_box = GetSize().ToRect();
-	ThickFilledRoundRect(renderer, edit_box, 8, 1, { 0,0,0,255 }, { 255,255,255,255 }, m_outer_painter, m_inner_painter);
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline);
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	ThickFilledRoundRect(renderer, edit_box, 8, 1, outline_color, background_color, m_outer_painter, m_inner_painter);
 
 	
 	DrawSelectionRect(renderer);
 	SDL_FRect inner_rect = GetTextArea();
 	{
-		SDL_Color Black = { 50, 50, 50, 255 };
 		auto text_height = static_cast<float>(m_painter.GetHeight());
 		SDL_FPoint text_start{ inner_rect.x, inner_rect.y + (inner_rect.h - text_height) * 0.5f};
-		m_painter.Draw(renderer, text_start, Black);
+		m_painter.Draw(renderer, text_start, text_color);
 	}
 	if (m_focused)
 	{
-		SDL_FRect cursor_rect{ inner_rect.x + m_cursor_pixel_position - m_painter.GetPixelOffset(), inner_rect.y + 4, 2, inner_rect.h - 8};
-		SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+		SDL_FRect cursor_rect{ inner_rect.x + m_cursor_pixel_position - m_painter.GetPixelOffset(), 
+			inner_rect.y + 4, 2, inner_rect.h - 8};
+		SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 		SDL_RenderFillRect(renderer, &cursor_rect);
 	}
 }
@@ -43,7 +46,7 @@ void node::LineEditControl::DrawSelectionRect(SDL::Renderer& renderer)
 	SDL_FRect inner_rect = GetTextArea();
 	size_t pixel_inner_start = m_painter.GetPixelOffset();
 	size_t pixel_inner_end = static_cast<size_t>(m_painter.GetPixelOffset() + inner_rect.w);
-	SDL_Color Blue{ 50, 153, 255, 255 };
+	const SDL_Color Blue = renderer.GetColor(ColorRole::blue_select);
 	auto start_pos = std::min(m_selection_anchor_pixel_pos, m_selection_start_pixel_pos);
 	auto end_pos = std::max(m_selection_anchor_pixel_pos, m_selection_start_pixel_pos);
 	if (start_pos < pixel_inner_start && end_pos < pixel_inner_start)

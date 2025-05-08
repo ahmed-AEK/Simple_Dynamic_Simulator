@@ -89,7 +89,7 @@ void node::BlockStyler::PositionSockets(std::span<model::BlockSocketModel> socke
 	}
 }
 
-void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model, const SpaceScreenTransformer& transformer, bool selected)
+void node::BlockStyler::DrawBlock(SDL::Renderer& renderer, const model::BlockModel& model, const SpaceScreenTransformer& transformer, bool selected)
 {
 	auto&& bounds = model.GetBounds();
 	DrawBlockOutline(renderer, bounds, transformer, model.GetOrienation(), selected);
@@ -102,7 +102,7 @@ void node::BlockStyler::DrawBlock(SDL_Renderer* renderer, const model::BlockMode
 	DrawBlockDetails(renderer, bounds, transformer, model.GetOrienation(), selected);
 }
 
-void node::BlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, 
+void node::BlockStyler::DrawBlockDetails(SDL::Renderer& renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer,
 	model::BlockOrientation orientation, bool selected)
 {
 	UNUSED_PARAM(orientation);

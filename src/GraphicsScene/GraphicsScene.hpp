@@ -113,7 +113,7 @@ protected:
     bool OnScroll(const double amount, const SDL_FPoint& p) override;
 
     void OnDropObject(DragDropObject& object, const SDL_FPoint& p) override;
-    void OnDrawDropObject(SDL_Renderer* renderer,
+    void OnDrawDropObject(SDL::Renderer& renderer,
         const DragDropObject& object, const SDL_FPoint& p) override;
     void OnDropEnter(const DragDropObject& object) override;
     void OnDropExit(const DragDropObject& object) override;

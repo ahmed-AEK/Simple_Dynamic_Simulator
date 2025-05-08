@@ -81,18 +81,18 @@ SDL_FRect node::PaletteBlocksViewer::GetInnerRect() const
 	return ret;
 }
 
-void node::PaletteBlocksViewer::DrawHeader(SDL_Renderer* renderer)
+void node::PaletteBlocksViewer::DrawHeader(SDL::Renderer& renderer)
 {
 	SDL_FRect rect = GetSize().ToRect();
 
-	SDL_Color Black{ 50,50,50,255 };
-	SDL_FRect title_rect = m_title_painter.GetRect(renderer, Black);
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	SDL_FRect title_rect = m_title_painter.GetRect(renderer, text_color);
 	title_rect.x = rect.x + rect.w / 2 - title_rect.w / 2;
 	title_rect.y = rect.y + 10;
-	m_title_painter.Draw(renderer, { title_rect.x, title_rect.y }, Black);
+	m_title_painter.Draw(renderer, { title_rect.x, title_rect.y }, text_color);
 }
 
-void node::PaletteBlocksViewer::DrawInnerBorders(SDL_Renderer* renderer)
+void node::PaletteBlocksViewer::DrawInnerBorders(SDL::Renderer& renderer)
 {
 	const auto& inner_rect = GetInnerRect();
 	auto outer_rect = inner_rect;
@@ -101,7 +101,7 @@ void node::PaletteBlocksViewer::DrawInnerBorders(SDL_Renderer* renderer)
 	outer_rect.w += 4;
 	outer_rect.h += 4;
 	ThickFilledRoundRect(renderer, outer_rect, 8, 2, 
-		SDL_Color{ 0,0,0,255 }, SDL_Color{ 255,255,255,255 }, m_borders_outer_painter, m_borders_inner_painter);
+		renderer.GetColor(ColorRole::frame_outline), renderer.GetColor(ColorRole::frame_background), m_borders_outer_painter, m_borders_inner_painter);
 
 }
 
@@ -212,7 +212,7 @@ void node::palette_viewer::BlocksElementsViewer::ResizeToElementsHeight()
 	SetSize({ GetSize().w, static_cast<float>(next_height)});
 }
 
-void node::palette_viewer::BlocksElementsViewer::DrawElement(SDL_Renderer* renderer, const PaletteElement& element, const SDL_FRect& area)
+void node::palette_viewer::BlocksElementsViewer::DrawElement(SDL::Renderer& renderer, const PaletteElement& element, const SDL_FRect& area)
 {
 	SDL_FRect contained_rect = { area.x + PaletteData::ElementWPadding / 2,
 		area.y,
@@ -224,7 +224,7 @@ void node::palette_viewer::BlocksElementsViewer::DrawElement(SDL_Renderer* rende
 	DrawElementText(renderer, element, TextArea);
 }
 
-void node::palette_viewer::BlocksElementsViewer::DrawElementText(SDL_Renderer* renderer, const PaletteElement& element, const SDL_FRect& area)
+void node::palette_viewer::BlocksElementsViewer::DrawElementText(SDL::Renderer& renderer, const PaletteElement& element, const SDL_FRect& area)
 {
 	if (!element.text_painter->GetFont())
 	{
@@ -232,10 +232,10 @@ void node::palette_viewer::BlocksElementsViewer::DrawElementText(SDL_Renderer* r
 		element.text_painter->SetText(element.block_template);
 	}
 
-	SDL_Color Black = { 50, 50, 50, 255 };
+	SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 
-	SDL_FRect text_rect = element.text_painter->GetRect(renderer, Black);
+	SDL_FRect text_rect = element.text_painter->GetRect(renderer, text_color);
 	text_rect.x = area.x + area.w / 2 - text_rect.w / 2;
 	text_rect.y = area.y + area.h / 2 - text_rect.h / 2 - 10;
-	element.text_painter->Draw(renderer, { text_rect.x, text_rect.y }, Black);
+	element.text_painter->Draw(renderer, { text_rect.x, text_rect.y }, text_color);
 }

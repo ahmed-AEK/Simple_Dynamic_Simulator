@@ -19,11 +19,13 @@ void node::NetSegment::Draw(SDL::Renderer& renderer, const SpaceScreenTransforme
 {
 	if (IsSelected())
 	{
-		SDL_SetRenderDrawColor(renderer, 255, 180, 0, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::netsegment_selected);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	}
 	else
 	{
-		SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::netsegment_normal);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	}
 	SDL_FRect ScreenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &ScreenRect);
@@ -122,11 +124,13 @@ void node::NetNode::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& 
 {
 	if (IsSelected())
 	{
-		SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::netnode_selected);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	}
 	else
 	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::netnode_normal);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	}
 	SDL_FRect screenRect = transformer.SpaceToScreenRect(GetSize().ToRect());
 	SDL_RenderFillRect(renderer, &screenRect);

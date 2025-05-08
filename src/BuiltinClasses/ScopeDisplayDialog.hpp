@@ -22,7 +22,7 @@ public:
 	void MouseMove(const SDL_FPoint& point) { OnMouseMove(point); }
 	void Activate() { OnActivate(); }
 	void Deactivate() { OnDeactivate(); }
-	virtual void Draw(SDL_Renderer* renderer) { UNUSED_PARAM(renderer); }
+	virtual void Draw(SDL::Renderer& renderer) { UNUSED_PARAM(renderer); }
 	void Cancel() { OnCancel(); }
 	const std::string& GetName() const { return m_name; }
 	PlotWidget* GetWidget();
@@ -72,10 +72,10 @@ protected:
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
 	void OnMouseOut(MouseHoverEvent& e) override;
 private:
-	void DrawAxes(SDL_Renderer* renderer);
-	void DrawData(SDL_Renderer* renderer);
-	void DrawAxesTicks(SDL_Renderer* renderer);
-	void DrawCoords(SDL_Renderer* renderer);
+	void DrawAxes(SDL::Renderer& renderer);
+	void DrawData(SDL::Renderer& renderer);
+	void DrawAxesTicks(SDL::Renderer& renderer);
+	void DrawCoords(SDL::Renderer& renderer);
 	SDL_Rect GetInnerRect();
 	void ResetPainters();
 

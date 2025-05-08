@@ -26,7 +26,7 @@ protected:
 
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 private:
-	SDL_FRect DrawPanelBorder(SDL_Renderer* renderer);
+	SDL_FRect DrawPanelBorder(SDL::Renderer& renderer);
 	void ResetCategories();
 
 	struct BlockCategorySlot

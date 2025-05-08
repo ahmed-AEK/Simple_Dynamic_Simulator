@@ -16,7 +16,7 @@ namespace node
     protected:
         virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;
         virtual void OnMouseMove(MouseHoverEvent& e) override;
-        void DrawDots(SDL_Renderer* renderer) const;
+        void DrawDots(SDL::Renderer& renderer) const;
         void DrawCurrentInsertMode(SDL_Renderer* renderer) const;
         bool OnKeyPress(KeyboardEvent& e) override;
         void OnKeyboardFocusIn() override;

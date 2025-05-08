@@ -151,8 +151,8 @@ void node::scrolltools::ScrollBar::OnDraw(SDL::Renderer& renderer)
 	}
 
 	auto rect = GetBarRect();
-	SDL_Color Black{ 50,50,50,255 };
-	m_painter.Draw(renderer, rect, 5, Black);
+	const SDL_Color scrollbar_color = renderer.GetColor(ColorRole::scrollbar);
+	m_painter.Draw(renderer, rect, 5, scrollbar_color);
 
 }
 

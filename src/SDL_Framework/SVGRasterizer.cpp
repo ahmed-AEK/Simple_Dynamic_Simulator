@@ -4,12 +4,13 @@
 #include <cmath>
 
 node::SVGRasterizer::SVGRasterizer(std::string path, int width, int height)
-	:m_path{std::move(path)}, m_width{width}, m_height{ height }
+	:m_path{std::move(path)}, m_width{static_cast<int16_t>(width)}, m_height{ static_cast<int16_t>(height) }
 {
 }
 
-bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, float x, float y)
+bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, float x, float y, bool is_dark_mode)
 {
+    SetDarkMode(is_dark_mode);
 	if (!m_texture.GetTexture())
 	{
         if (!ReCreateTexture(renderer))
@@ -34,8 +35,8 @@ void node::SVGRasterizer::SetSize(int width, int height)
 	{
 		m_texture.DropTexture();
 	}
-	m_width = width;
-	m_height = height;
+	m_width = static_cast<int16_t>(width);
+	m_height = static_cast<int16_t>(height);
 }
 
 std::optional<SDL_FPoint> node::SVGRasterizer::GetSVGSize() const
@@ -70,6 +71,35 @@ static SDL_Point scaleWithFixedAspectRatio(float width, float height, int desire
     return { target_width, desired_height };
 }
 
+static void ApplyDarkTheme(lunasvg::Element& node)
+{
+    if (node.hasAttribute("stroke") && node.getAttribute("stroke") == "#000000")
+    {
+        node.setAttribute("stroke", "#C8C8C8");
+    }
+    if (node.hasAttribute("fill") && node.getAttribute("fill") == "#000000")
+    {
+        node.setAttribute("fill", "#C8C8C8");
+    }
+    for (auto& child : node.children())
+    {
+        auto element = child.toElement();
+        if (!element.isNull())
+        {
+            ApplyDarkTheme(element);
+        }
+    }
+}
+
+void node::SVGRasterizer::SetDarkMode(bool value)
+{
+    if (m_dark_mode != value)
+    {
+        m_dark_mode = value;
+        m_texture.DropTexture();
+    }
+}
+
 bool node::SVGRasterizer::ReCreateTexture(SDL_Renderer* renderer)
 {
     AssetsManager assets_manager;
@@ -78,12 +108,16 @@ bool node::SVGRasterizer::ReCreateTexture(SDL_Renderer* renderer)
     {
         return false;
     }
-
     auto document = lunasvg::Document::loadFromData(reinterpret_cast<const char*>(resource->data()), resource->size());
     if (document == nullptr)
     {
         SDL_Log("Failed to load SVG! : %s", m_path.c_str());
         return false;
+    }
+    if (m_dark_mode)
+    {
+        auto node = document->documentElement();
+        ApplyDarkTheme(node);
     }
     m_actual_size = scaleWithFixedAspectRatio(document->width(), document->height(), m_width, m_height);
     auto bitmap = document->renderToBitmap(m_actual_size.x, m_actual_size.y);

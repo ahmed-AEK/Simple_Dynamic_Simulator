@@ -55,6 +55,74 @@
 
 #define USE_SDL_DIALOGS 1
 
+static ColorPalette GetLightPalette()
+{
+    static ColorPalette palette =  ColorPalette{ ColorTable{std::initializer_list<ColorTable::ColorEntry>{
+            {ColorRole::frame_background, 255, 255, 255},
+            {ColorRole::frame_outline, 0, 0, 0},
+            {ColorRole::frame_background_alternate, 235, 235, 235},
+            {ColorRole::frame_outline_alternate, 204, 204, 204},
+            {ColorRole::dialog_background, 250, 250, 250},
+            {ColorRole::dialog_outline, 0, 0, 0},
+            {ColorRole::dialog_title_background, 255, 255, 255},
+            {ColorRole::text_normal, 50, 50, 50},
+            {ColorRole::btn_normal, 255, 255, 255},
+            {ColorRole::btn_disable, 190, 190, 190},
+            {ColorRole::btn_hover, 235, 235, 235},
+            {ColorRole::btn_outline, 210, 210, 210},
+            {ColorRole::scrollbar, 50, 50, 50},
+            {ColorRole::red_close, 255, 60, 60},
+            {ColorRole::red_close_clicked, 180, 60, 60},
+            {ColorRole::blue_select, 50, 153, 255},
+            {ColorRole::block_outline, 0, 0, 0},
+            {ColorRole::block_outline_selected, 255, 165, 0},
+            {ColorRole::block_background, 220, 220, 220},
+            {ColorRole::input_socket, 0, 255, 0},
+            {ColorRole::output_socket, 0, 0, 255},
+            {ColorRole::netnode_normal, 0, 0, 0},
+            {ColorRole::netnode_selected, 40, 40, 40},
+            {ColorRole::netsegment_normal, 100, 100, 100},
+            {ColorRole::netsegment_selected, 255, 180, 0},
+
+    }} };
+    palette.SetDarkMode(false);
+    return palette;
+}
+
+static ColorPalette GetDarkPalette()
+{
+    static ColorPalette palette = ColorPalette{ ColorTable{std::initializer_list<ColorTable::ColorEntry>{
+            {ColorRole::frame_background, 48, 48, 48},
+            {ColorRole::frame_outline, 63, 63, 63},
+            {ColorRole::frame_background_alternate, 15, 15, 15},
+            {ColorRole::frame_outline_alternate, 124, 124, 124},
+            {ColorRole::dialog_background, 15, 15, 15},
+            {ColorRole::dialog_outline, 124, 124, 124},
+            {ColorRole::dialog_title_background, 48, 48, 48},
+            {ColorRole::text_normal, 200, 200, 200},
+            {ColorRole::btn_normal, 63, 63, 63},
+            {ColorRole::btn_disable, 42, 42, 42},
+            {ColorRole::btn_hover, 82, 82, 82},
+            {ColorRole::btn_outline, 82, 82, 82},
+            {ColorRole::scrollbar, 124, 124, 124},
+            {ColorRole::red_close, 255, 60, 60},
+            {ColorRole::red_close_clicked, 180, 60, 60},
+            {ColorRole::blue_select, 13, 65, 171},
+            {ColorRole::block_outline, 124, 124, 124},
+            {ColorRole::block_outline_selected, 255, 165, 0},
+            {ColorRole::block_background, 15, 15, 15},
+            {ColorRole::input_socket, 0, 255, 0},
+            {ColorRole::output_socket, 0, 0, 255},
+            {ColorRole::netnode_normal, 10, 10, 10},
+            {ColorRole::netnode_selected, 40, 40, 40},
+            {ColorRole::netsegment_normal, 100, 100, 100},
+            {ColorRole::netsegment_selected, 255, 180, 0},
+
+    }} };
+    palette.SetDarkMode();
+    return palette;
+}
+
 static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
 {
     std::vector<node::model::SocketType> ret;
@@ -571,6 +639,12 @@ void node::MainNodeScene::InitializeTools()
     }
     toolbar->AddSeparator();
     {
+        auto dark_mode_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "K", [this]() {this->m_logger.LogDebug("DarkMode!"); this->OnDarkModeClicked(); });
+        dark_mode_btn->SetDescription("Dark/Light Mode");
+        dark_mode_btn->SetSVGPath("assets/dark_mode.svg");
+        toolbar->AddButton(std::move(dark_mode_btn));
+    }
+    {
         auto about_btn = std::make_unique<ToolBarCommandButton>(WidgetSize{ ToolBarButton::width,ToolBarButton::height }, toolbar.get(), "I", [this]() {this->m_logger.LogDebug("About!"); this->OnAboutClicked(); });
         about_btn->SetDescription("About Software");
         about_btn->SetSVGPath("assets/about.svg");
@@ -592,6 +666,21 @@ void node::MainNodeScene::InitializeBotPanel()
     bot_panel->SetWidget(std::move(log_view));
 
     m_scene_grid->SetBotPanel(std::move(bot_panel));
+}
+
+void node::MainNodeScene::OnDarkModeClicked()
+{
+    m_dark_mode_active = !m_dark_mode_active;
+    if (m_dark_mode_active)
+    {
+        SetColorPalette(GetDarkPalette());
+        m_logger.LogDebug("activated dark mode!");
+    }
+    else
+    {
+        SetColorPalette(GetLightPalette());
+        m_logger.LogDebug("activated light mode!");
+    }
 }
 
 void node::MainNodeScene::InitializeSidePanel()
@@ -1158,7 +1247,6 @@ std::optional<node::SceneId> node::MainNodeScene::GetSceneIdForTab(int32_t index
 node::MainNodeScene::MainNodeScene(const WidgetSize& size, node::Application* parent)
 :Scene(size, parent)
 {
-    SetBGColor({ 235,235,235,255 });
 }
 
 namespace node
@@ -1188,7 +1276,7 @@ struct TabChangeNotifier : public SingleObserver<TabsChangeEvent>
 void node::MainNodeScene::OnInit()
 {
     using namespace node;
-    
+
     m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
 
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
@@ -1240,6 +1328,15 @@ void node::MainNodeScene::OnInit()
 
     GetToolBar()->SetFocusProxy(m_scene_grid.GetObjectPtr());
     SetFocus(GetCenterWidget());
+    if (SDL_GetSystemTheme() == SDL_SYSTEM_THEME_DARK)
+    {
+        m_dark_mode_active = true;
+        SetColorPalette(GetDarkPalette());
+    }
+    else
+    {
+        SetColorPalette(GetLightPalette());
+    }
 }
 
 node::MainNodeScene::~MainNodeScene() = default;

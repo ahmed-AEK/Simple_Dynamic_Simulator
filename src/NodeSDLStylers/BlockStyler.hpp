@@ -22,16 +22,16 @@ public:
 	virtual void PositionSockets(std::span<model::BlockSocketModel> sockets, const model::Rect& bounds, 
 		model::BlockOrientation orientation) const;
 
-	void DrawBlock(SDL_Renderer* renderer, const model::BlockModel& model,
+	void DrawBlock(SDL::Renderer& renderer, const model::BlockModel& model,
 		const SpaceScreenTransformer& transformer, bool selected);
 
-	virtual void DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds,
+	virtual void DrawBlockOutline(SDL::Renderer& renderer, const model::Rect& bounds,
 		const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected) = 0;
 
-	virtual void DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center,
+	virtual void DrawBlockSocket(SDL::Renderer& renderer, const model::Point& center,
 		const SpaceScreenTransformer& transformer, const model::BlockSocketModel::SocketType& type) = 0;
 
-	virtual void DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds,
+	virtual void DrawBlockDetails(SDL::Renderer& renderer, const model::Rect& bounds,
 		const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected);
 
 	virtual void UpdateProperties(const model::BlockDataCRef& model);

@@ -18,7 +18,6 @@ private:
 	std::vector<std::string> m_lines;
 	TTF_Font* m_font;
 	std::vector<TextPainter> m_painters;
-	SDL_Color m_color;
 };
 
 class PropertyEditControl : public DialogControl
@@ -40,7 +39,6 @@ private:
 	TextPainter m_error_painter;
 	int m_name_width;
 
-	static constexpr SDL_Color ErrorColor{ 180, 0, 0, 255 };
 	static constexpr float EditHeight = 35.0f;
 };
 

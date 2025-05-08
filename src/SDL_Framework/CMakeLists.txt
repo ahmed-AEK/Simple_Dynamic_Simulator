@@ -6,7 +6,7 @@ SDLRenderer.cpp SDLRenderer.hpp
 SDLCPP.hpp SDL_headers.h
 SVGRasterizer.hpp SVGRasterizer.cpp
 Utility.hpp Utility.cpp
-SDL_Math.hpp
+SDL_Math.hpp IntrusivePtr.hpp
 pch.h
 )
 

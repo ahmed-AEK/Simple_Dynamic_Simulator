@@ -34,8 +34,8 @@ protected:
 
 private:
 	void ResizeToElementsHeight();
-	void DrawElement(SDL_Renderer* renderer, const PaletteElement& element, const SDL_FRect& area);
-	void DrawElementText(SDL_Renderer* renderer, const PaletteElement& element, const SDL_FRect& area);
+	void DrawElement(SDL::Renderer& renderer, const PaletteElement& element, const SDL_FRect& area);
+	void DrawElementText(SDL::Renderer& renderer, const PaletteElement& element, const SDL_FRect& area);
 
 	std::string m_current_category{ "All" };
 	std::shared_ptr<PaletteProvider> m_paletteProvider;
@@ -65,8 +65,8 @@ protected:
 private:
 	SDL_FRect GetInnerRect() const;
 
-	void DrawHeader(SDL_Renderer* renderer);
-	void DrawInnerBorders(SDL_Renderer* renderer);
+	void DrawHeader(SDL::Renderer& renderer);
+	void DrawInnerBorders(SDL::Renderer& renderer);
 	RoundRectPainter m_borders_outer_painter;
 	RoundRectPainter m_borders_inner_painter;
 

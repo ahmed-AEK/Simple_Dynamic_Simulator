@@ -7,6 +7,10 @@ option(FILESYSTEM_SUPPORTED "denotes whether there's a readable and writeable fi
 
 cmake_policy(SET CMP0091 NEW)
 
+if (${CMAKE_VERSION} VERSION_GREATER "3.29")
+cmake_policy(SET CMP0167 NEW)
+endif()
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -15,7 +19,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 
-project(DynamicSim VERSION 0.5.0)
+project(DynamicSim VERSION 0.5.1)
 
 if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " -W4 -EHsc -WX /GR- ")

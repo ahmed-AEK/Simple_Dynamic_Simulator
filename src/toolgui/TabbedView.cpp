@@ -36,7 +36,9 @@ void node::TabbedView::OnDraw(SDL::Renderer& renderer)
 	float bar_height = static_cast<float>(GetTabsBarHeight() - 2);
 	auto size = GetSize();
 	SDL_FRect child_widget_rect{0, bar_height, size.w, size.h - bar_height};
-	ThickFilledRoundRect(renderer, child_widget_rect, 8, 2, { 204,204,204,255 }, { 255,255,255,255 }, m_outer_bg_painter, m_inner_bg_painter);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline_alternate);
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	ThickFilledRoundRect(renderer, child_widget_rect, 8, 2, outline_color, background_color, m_outer_bg_painter, m_inner_bg_painter);
 }
 
 int node::TabbedView::GetTabsBarHeight() const
@@ -283,21 +285,21 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 {
 	auto rect = GetSize().ToRect();
 
-	SDL_Color background_color{ 255,255,255,255 };
+	SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
 	if (!IsActiveBtn())
 	{
 		if (m_mouse_hovered)
 		{
-			background_color = SDL_Color{ 240,240,240,255 };
+			background_color = renderer.GetColor(ColorRole::btn_hover);
 		}
 		else
 		{
-			background_color = SDL_Color{ 204, 204, 204, 255};
+			background_color = renderer.GetColor(ColorRole::btn_disable);
 		}
 	}
 
 
-	SDL_Color outlineColor{ 204,204,204,255 };
+	const SDL_Color outlineColor = renderer.GetColor(ColorRole::frame_outline_alternate);
 	if (IsActiveBtn())
 	{
 		auto new_rect = rect;
@@ -318,15 +320,15 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 		}
 	}
 
-	SDL_Color Black{ 50,50,50,255 };
-	m_tab_text.Draw(renderer, { rect.x + 6, rect.y + 6}, Black);
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	m_tab_text.Draw(renderer, { rect.x + 6, rect.y + 6}, text_color);
 
-	if (m_mouse_hovered)
+	if (m_mouse_hovered) // draw X button
 	{
 		auto X_Rect = GetXBtnRect();
-		ThickFilledRoundRect(renderer, X_Rect, 6, 1, { 180,180,180,255 }, background_color, m_X_btn_painter_outer, m_X_btn_painter_inner);
-		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer, Black);
-		m_X_painter.Draw(renderer, { X_Rect.x + X_Rect.w / 2 - X_Rect_inner.w / 2 , X_Rect.y + X_Rect.h / 2 - X_Rect_inner.h / 2 }, Black);
+		ThickFilledRoundRect(renderer, X_Rect, 6, 1, outlineColor, background_color, m_X_btn_painter_outer, m_X_btn_painter_inner);
+		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer, text_color);
+		m_X_painter.Draw(renderer, { X_Rect.x + X_Rect.w / 2 - X_Rect_inner.w / 2 , X_Rect.y + X_Rect.h / 2 - X_Rect_inner.h / 2 }, text_color);
 	}
 }
 

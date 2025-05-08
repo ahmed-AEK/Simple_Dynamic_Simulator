@@ -2,10 +2,145 @@
 
 #include <utility>
 #include <cassert>
+#include <ranges>
 
 void swap(SDL::Renderer& first, SDL::Renderer& second) noexcept
 {
     std::swap(first.p_renderer, second.p_renderer); 
+}
+
+ColorTable::ColorTable(std::initializer_list<ColorEntry> colors)
+{
+    for (auto& color : colors)
+    {
+        SetColor(color.role, {color.r, color.g, color.b});
+    }
+}
+
+void ColorTable::SetColor(ColorRole role, Color color)
+{
+    assert(role != ColorRole::None);
+    const size_t position = static_cast<size_t>(role);
+    assert(position < m_inplace_colors.size());
+    m_valid_roles[position] = true;
+    m_inplace_colors[position] = color;
+}
+
+std::optional<ColorTable::Color> ColorTable::GetColor(ColorRole color_role) const
+{
+    const size_t position = static_cast<size_t>(color_role);
+    assert(position < m_inplace_colors.size());
+    if (!m_valid_roles[position])
+    {
+        return {};
+    }
+    return m_inplace_colors[position];
+}
+
+ColorNode::ColorNode(ColorNodePtr parent, const ColorTable& current)
+    :m_parent{std::move(parent)}, m_current(std::move(current))
+{
+
+}
+ColorNode::ColorNode(const ColorTable& current)
+    :m_current{std::move(current)}
+{
+
+}
+
+void ColorNode::SetColor(ColorRole role, ColorTable::Color color)
+{
+    m_current.SetColor(role, color);
+}
+
+bool ColorNode::IsDarkMode() const
+{
+    if (m_is_darkmode)
+    {
+        return *m_is_darkmode;
+    }
+    auto* parent = m_parent.get();
+    while (parent)
+    {
+        if (parent->m_is_darkmode)
+        {
+            return *parent->m_is_darkmode;
+        }
+        parent = parent->GetParent().get();
+    }
+    return false;
+}
+
+std::optional<ColorTable::Color> ColorNode::GetColor(ColorRole color_role) const
+{
+
+    if (auto color = m_current.GetColor(color_role))
+    {
+        return color;
+    }
+    
+    auto parent = m_parent;
+    while (parent)
+    {
+        if (auto color = parent->m_current.GetColor(color_role))
+        {
+            return color;
+        }
+        parent = parent->m_parent;
+    }
+    return {};
+}
+
+ColorNodePtr ColorNode::CloneTable() const
+{
+    return make_intrusive<ColorNode>(m_parent, m_current);
+}
+
+ColorPalette::ColorPalette(ColorNodePtr node)
+    :m_node{std::move(node)}
+{
+}
+
+ColorPalette::ColorPalette(ColorNodePtr parent, const ColorTable& current)
+    :m_node{make_intrusive<ColorNode>(std::move(parent), std::move(current))}
+{
+}
+
+ColorPalette::ColorPalette(const ColorTable& current)
+    :m_node{make_intrusive<ColorNode>(std::move(current))}
+{
+}
+
+void ColorPalette::SetColor(ColorRole role, ColorTable::Color color)
+{
+    if (!m_node)
+    {
+        m_node = make_intrusive<ColorNode>();
+    }
+    if (m_node->get_refcount() != 1)
+    {
+        m_node = m_node->CloneTable();
+    }
+    m_node->SetColor(role, color);
+}
+
+void ColorPalette::SetTable(const ColorTable& table)
+{
+    if (!m_node)
+    {
+        m_node = make_intrusive<ColorNode>(std::move(table));
+        return;
+    }
+    m_node = make_intrusive<ColorNode>(m_node->GetParent(), std::move(table));
+}
+
+std::optional<ColorTable::Color> ColorPalette::GetColor(ColorRole color_role) const
+{
+    if (!m_node)
+    {
+        return {};
+    }
+    return m_node->GetColor(color_role);
 }
 
 namespace SDL
@@ -174,13 +309,13 @@ namespace SDL
         m_success = renderer.AddClipRect(rect);
     }
 
-    RenderClip::RenderClip(RenderClip&& other)
+    RenderClip::RenderClip(RenderClip&& other) noexcept
     {
         m_renderer = std::exchange(other.m_renderer, nullptr);
         m_success = std::exchange(other.m_success, false);
     }
 
-    RenderClip& RenderClip::operator=(RenderClip&& other)
+    RenderClip& RenderClip::operator=(RenderClip&& other) noexcept
     {
         m_renderer = std::exchange(other.m_renderer, nullptr);
         m_success = std::exchange(other.m_success, false);
@@ -194,6 +329,91 @@ namespace SDL
             m_renderer->PopClipRect();
         }
     }
-}
+    PaletteScope::PaletteScope()
+    {
+    }
 
+    PaletteScope::PaletteScope(Renderer& renderer, ColorPalette palette)
+        : m_renderer{ &renderer }, m_palette { palette }
+    {
+        renderer.AddPalette(std::move(palette));
+    }
+    PaletteScope::PaletteScope(PaletteScope&& other) noexcept
+        : m_renderer{std::exchange(other.m_renderer, nullptr)},
+        m_palette{std::exchange(other.m_palette, ColorPalette{})}
+    {
+    }
+
+    PaletteScope& PaletteScope::operator=(PaletteScope&& other) noexcept
+    {
+        if (this != &other)
+        {
+            m_renderer = std::exchange(other.m_renderer, nullptr);
+            m_palette = std::exchange(other.m_palette, ColorPalette{});
+        }
+        return *this;
+    }
+
+    PaletteScope::~PaletteScope()
+    {
+        if (m_renderer)
+        {
+            m_renderer->PopPalette(m_palette);
+        }
+    }
+
+    PaletteScope Renderer::SetColorPalette(ColorPalette palette)
+    {
+        if (palette.empty())
+        {
+            return PaletteScope{};
+        }
+        if (m_color_palettes.size() == 0 || palette != m_color_palettes.back())
+        {
+            return PaletteScope{ *this, std::move(palette) };
+        }
+        return PaletteScope{};
+    }
+
+    SDL_Color Renderer::GetColor(ColorRole color_type)
+    {
+        constexpr SDL_Color error_color{ 255,8,255,255 };
+        if (!m_color_palettes.size())
+        {
+            return error_color;
+        }
+        for (auto& palette : std::ranges::reverse_view(m_color_palettes))
+        {
+            auto color = palette.GetColor(color_type);
+            if (color)
+            {
+                return { .r = color->r, .g = color->g, .b = color->b, .a = 255 };
+            }
+        }
+        return error_color;
+    }
+
+    bool Renderer::IsDarkMode() const
+    {
+        if (!m_color_palettes.size())
+        {
+            return false;
+        }
+        return m_color_palettes.back().IsDarkMode();
+    }
+
+    void Renderer::AddPalette(ColorPalette palette)
+    {
+        m_color_palettes.push_back(std::move(palette));
+    }
+
+    void Renderer::PopPalette(ColorPalette palette)
+    {
+        assert(m_color_palettes.size());
+        if (m_color_palettes.size() && palette == m_color_palettes.back())
+        {
+            m_color_palettes.pop_back();
+        }
+    }
+}
 

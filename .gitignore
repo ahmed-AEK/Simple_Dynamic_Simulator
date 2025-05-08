@@ -39,3 +39,4 @@ build_linux_static/
 Testing/
 .vscode/
 .vs/
+.idea/

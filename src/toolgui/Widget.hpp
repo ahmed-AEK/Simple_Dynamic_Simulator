@@ -4,15 +4,11 @@
 #include "toolgui/NodeMacros.h"
 #include "toolgui/MouseInteractable_interface.hpp"
 #include "toolgui/DragDropObject.hpp"
-
+#include "SDL_Framework/SDLRenderer.hpp"
 
 namespace node
 {
     class Widget;
-}
-namespace SDL
-{
-    class Renderer;
 }
 
 namespace MI
@@ -116,7 +112,7 @@ namespace node
         virtual ~Widget();
         bool Scroll(const double amount, const SDL_FPoint& p) {return OnScroll(amount, p);}
         
-        bool IsDropTarget() const { return m_isDropTarget; }
+        bool IsDropTarget() const { return m_flags[static_cast<size_t>(Flags::isDropTarget)]; }
         void DropEnter(const DragDropObject& object) { OnDropEnter(object); }
         void DropExit(const DragDropObject& object) { OnDropExit(object); }
         void DropHover(const DragDropObject& object, const SDL_FPoint& p) 
@@ -127,7 +123,7 @@ namespace node
         {
             OnDropObject(object, p);
         }
-        void DrawDropObject(SDL_Renderer* renderer, 
+        void DrawDropObject(SDL::Renderer& renderer,
             const DragDropObject& object, const SDL_FPoint& p)
         {
             OnDrawDropObject(renderer, object, p);
@@ -137,10 +133,14 @@ namespace node
         bool CharPress(TextInputEvent&& e) { return OnChar(e); }
         bool KeyPress(KeyboardEvent& e) { return OnKeyPress(e); }
         bool KeyPress(KeyboardEvent&& e) { return OnKeyPress(e); }
-        void SetFocusable(bool value = true) { b_focusable = value; }
-        bool IsFocusable() const { return b_focusable; }
+        void SetFocusable(bool value = true) { m_flags[static_cast<size_t>(Flags::isFocusable)] = value; }
+        bool IsFocusable() const { return m_flags[static_cast<size_t>(Flags::isFocusable)]; }
         void SetFocused(bool value = true) { 
-            b_focused = value;
+            if (m_flags[static_cast<size_t>(Flags::isFocused)] == value)
+            {
+                return;
+            }
+            m_flags[static_cast<size_t>(Flags::isFocused)] = value;
             if (value)
             {
                 OnKeyboardFocusIn();
@@ -179,6 +179,12 @@ namespace node
                 static_cast<int>(size.w),
                 static_cast<int>(size.h) };
         }
+        ColorPalette GetColorPalette() const
+        {
+            return m_color_palette;
+        }
+        void SetColorPalette(ColorPalette color_palette);
+        void NotifyParentPaletteUpdate(const ColorPalette& palette);
     protected:
         virtual bool OnChar(TextInputEvent& e) { UNUSED_PARAM(e); return false; } // a or A, etc..
         virtual bool OnKeyPress(KeyboardEvent& e) { UNUSED_PARAM(e); return false;  } // SDLK_BACKSPACE and SDLK_RETURN, left and right
@@ -197,24 +203,35 @@ namespace node
             UNUSED_PARAM(object);
             UNUSED_PARAM(p);
         };
-        virtual void OnDrawDropObject(SDL_Renderer* renderer, 
+        virtual void OnDrawDropObject(SDL::Renderer& renderer,
             const DragDropObject& object, const SDL_FPoint& p)
         {
             object.Draw(renderer, p);
         }
         virtual void OnDraw(SDL::Renderer& renderer);
-        void SetDropTarget(bool value = true) { m_isDropTarget = value; }
+        void SetDropTarget(bool value = true) { m_flags[static_cast<size_t>(Flags::isDropTarget)] = value; }
         virtual void OnSetPosition(const SDL_FPoint& pos);
         virtual void OnSetSize(const WidgetSize& size);
         virtual bool OnScroll(const double amount, const SDL_FPoint& p);
         Widget* OnGetInteractableAtPoint(const SDL_FPoint& point) override;
-    private:
+        virtual void OnPaletteChanged(const ColorPalette& palette) { UNUSED_PARAM(palette); }
+        virtual void OnParentPaletteChanged(const ColorPalette& palette) { UNUSED_PARAM(palette); }
+        void NotifyPaletteUpdate(const ColorPalette& palette);
+    private: 
         Widget* m_parent = nullptr;
         SDL_FPoint m_position{};
         WidgetSize m_size{};
-        bool m_isDropTarget = false;
-        bool b_focusable = false;
-        bool b_focused = false;
+
+        enum class Flags : uint8_t
+        {
+            isDropTarget,
+            isFocusable,
+            isFocused,
+            Flags_COUNT,
+        };
+        static constexpr size_t Flags_COUNT = static_cast<size_t>(Flags::Flags_COUNT);
+        std::bitset<Flags_COUNT> m_flags{};
+        ColorPalette m_color_palette;
         HandlePtr<Widget> m_focus_proxy;
         std::vector<Widget*> m_children;
     };

@@ -27,18 +27,21 @@ node::ToolTipWidget::ToolTipWidget(TTF_Font* font, std::string text,
 
 void node::ToolTipWidget::OnDraw(SDL::Renderer& renderer)
 {
-    SDL_Color Black = { 50, 50, 50, 255 };
+    const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 
     auto current_rect = GetSize().ToRect();
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline);
+    SDL_SetRenderDrawColor(renderer, outline_color.r, outline_color.g, outline_color.b, outline_color.a);
     SDL_RenderFillRect(renderer, &current_rect);
     current_rect.x += 2;
     current_rect.y += 2;
     current_rect.w -= 4;
     current_rect.h -= 4;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+    const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+    SDL_SetRenderDrawColor(renderer, background_color.r, background_color.g, background_color.b, background_color.a);
     SDL_RenderFillRect(renderer, &current_rect);
 
-    m_painter.Draw(renderer, { current_rect.x + 2, current_rect.y + 2 }, Black);
+    m_painter.Draw(renderer, { current_rect.x + 2, current_rect.y + 2 }, text_color);
 }

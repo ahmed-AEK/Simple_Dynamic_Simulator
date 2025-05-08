@@ -45,10 +45,12 @@ void node::SidePanel::OnDraw(SDL::Renderer& renderer)
 {
 	SDL_FRect draw_area = GetSize().ToRect();
 	// draw main widget part
-	ThickFilledRoundRect(renderer, draw_area, 8, 2, SDL_Color{ 204,204,204,255 }, SDL_Color{ 255, 255, 255, 255 }, m_outer_painter, m_inner_painter);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline_alternate);
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	ThickFilledRoundRect(renderer, draw_area, 8, 2, outline_color, background_color, m_outer_painter, m_inner_painter);
 	
-	SDL_Color Black{ 50,50,50,255 };
-	m_title_painter.Draw(renderer, { widget_margin + 5, widget_margin + 5 }, Black);
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	m_title_painter.Draw(renderer, { widget_margin + 5, widget_margin + 5 }, text_color);
 }
 
 MI::ClickEvent node::SidePanel::OnLMBDown(MouseButtonEvent&)
