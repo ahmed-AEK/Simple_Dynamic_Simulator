@@ -196,6 +196,7 @@ public:
 	constexpr BlockClassPtr& operator=(BlockClassPtr&& other) noexcept
 	{
 		if (this == &other) { return *this; }
+		if (m_ptr) { m_ptr->decrement_ref(); }
 		m_ptr = std::exchange(other.m_ptr, nullptr);
 		return *this;
 	}

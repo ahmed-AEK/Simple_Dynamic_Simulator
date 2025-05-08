@@ -88,11 +88,12 @@ namespace node
         virtual void OnSendKeyPress(KeyboardEvent& e);
         virtual void OnSendChar(TextInputEvent& e);
 
+        void OnPaletteChanged(const ColorPalette& palette) override;
+
         node::Widget* OnGetInteractableAtPoint(const SDL_FPoint& p) override;
         std::unique_ptr<node::ContextMenu> m_pContextMenu;
         Application* p_parent;
         SDL_FRect m_rect_base;
-
     private:
         std::unique_ptr<ToolTipWidget> m_tooltip;
         std::vector<std::unique_ptr<Dialog>> m_dialogs;

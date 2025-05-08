@@ -25,7 +25,7 @@ node::SVGBlockStyler::SVGBlockStyler(const node::model::BlockModel& block)
 {
 }
 
-void node::SVGBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected)
+void node::SVGBlockStyler::DrawBlockDetails(SDL::Renderer& renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, model::BlockOrientation orientation, bool selected)
 {
 	if (!m_svg_rasterizer)
 	{
@@ -64,7 +64,7 @@ void node::SVGBlockStyler::DrawBlockDetails(SDL_Renderer* renderer, const model:
 
 	SDL_FPoint start_point{ screen_center.x - width / 2, screen_center.y - height / 2 };
 	m_svg_rasterizer->SetSize(width, height);
-	if (!m_svg_rasterizer->Draw(renderer, start_point.x, start_point.y))
+	if (!m_svg_rasterizer->Draw(renderer, start_point.x, start_point.y, renderer.IsDarkMode()))
 	{
 		m_svg_rasterizer = std::nullopt;
 	}

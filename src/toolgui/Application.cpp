@@ -359,7 +359,7 @@ namespace node
 
         OnUpdateBegin();
 
-        auto BG_Color = m_scene->GetBGColor();
+        const SDL_Color BG_Color = m_scene->GetBGColor();
         SDL_SetRenderDrawColor(m_renderer, BG_Color.r, BG_Color.g, BG_Color.b, BG_Color.a);
         SDL_RenderClear(m_renderer);
         m_scene->Draw(m_renderer);

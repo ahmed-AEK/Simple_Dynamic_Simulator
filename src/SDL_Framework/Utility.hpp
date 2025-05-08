@@ -3,11 +3,13 @@
 #include "SDL_Framework/SDL_headers.h"
 #include "SDL_Framework/SDLCPP.hpp"
 #include "SDL_Framework/SDLRenderer.hpp"
-#include <unordered_map>
-#include <mutex>
+
 #include <optional>
 #include <cmath>
 #include <array>
+#include <atomic>
+#include <utility>
+#include <string>
 
 void FilledRoundRect(SDL_Renderer* renderer, const SDL_FRect& rect, int radius, const SDL_Color& color);
 

@@ -40,7 +40,7 @@ std::vector<std::string> node::DialogLabel::SplitToLinesofWidth(const std::strin
 }
 
 node::DialogLabel::DialogLabel(std::vector<std::string> lines, const WidgetSize& size, TTF_Font* font, Dialog* parent)
-	:DialogControl{ size, parent }, m_lines{ std::move(lines) }, m_font{ font }, m_color{ 50, 50, 50, 255 }
+	:DialogControl{ size, parent }, m_lines{ std::move(lines) }, m_font{ font }
 {
 	assert(m_font);
 	assert(parent);
@@ -69,7 +69,7 @@ void node::DialogLabel::OnDraw(SDL::Renderer& renderer)
 		painter.SetText(line);
 
 		SDL_FPoint text_start{ 0 , static_cast<float>(y) };
-		painter.Draw(renderer, text_start, m_color);
+		painter.Draw(renderer, text_start, renderer.GetColor(ColorRole::text_normal));
 		y += font_height + LinesMargin;
 	}
 
@@ -103,11 +103,15 @@ void node::PropertyEditControl::SetErrorText(std::string line)
 
 void node::PropertyEditControl::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_Color Black = { 50, 50, 50, 255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 	SDL_FPoint text_start{};
-	m_painter.Draw(renderer, text_start, Black);	
+	m_painter.Draw(renderer, text_start, text_color);
 	text_start.y += m_edit.GetSize().h;
-	m_error_painter.Draw(renderer, text_start, ErrorColor);
+	if (m_error_painter.GetText().size())
+	{
+		const SDL_Color error_color = renderer.GetColor(ColorRole::red_close_clicked);
+		m_error_painter.Draw(renderer, text_start, error_color);
+	}
 }
 
 void node::PropertyEditControl::OnSetSize(const WidgetSize& size)
@@ -124,7 +128,8 @@ MI::ClickEvent node::PropertyEditControl::OnLMBDown(MouseButtonEvent& e)
 
 void node::SeparatorControl::OnDraw(SDL::Renderer& renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color color = renderer.GetColor(ColorRole::frame_outline);
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	auto rect = GetSize().ToRect();
 	SDL_RenderFillRect(renderer, &rect);
 }

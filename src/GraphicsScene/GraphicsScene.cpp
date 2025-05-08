@@ -151,7 +151,7 @@ void node::GraphicsScene::OnDropObject(DragDropObject& object, const SDL_FPoint&
     m_dragDropDrawObject = std::nullopt;
 }
 
-void node::GraphicsScene::OnDrawDropObject(SDL_Renderer* renderer, const DragDropObject& object, const SDL_FPoint& p)
+void node::GraphicsScene::OnDrawDropObject(SDL::Renderer& renderer, const DragDropObject& object, const SDL_FPoint& p)
 {
     UNUSED_PARAM(object);
     model::Rect bounds = m_dragDropDrawObject->model.GetBounds();

@@ -17,21 +17,21 @@ node::ButtonWidget::ButtonWidget(const WidgetSize& size,
 void node::ButtonWidget::OnDraw(SDL::Renderer& renderer)
 {
     SDL_FRect btn_rect = GetSize().ToRect();
-    SDL_Color bg_color{ 255,255,255,255 };
+    SDL_Color bg_color = renderer.GetColor(ColorRole::btn_normal);
 
     if (m_hovered)
     {
-        bg_color = { 245, 245, 245, 255 };
+        bg_color = renderer.GetColor(ColorRole::btn_hover);
     }
 
-    ThickFilledRoundRect(renderer, btn_rect, 8, 2, SDL_Color{ 204,204,204,255 }, bg_color, m_outer_painter, m_inner_painter);
+    ThickFilledRoundRect(renderer, btn_rect, 8, 2, renderer.GetColor(ColorRole::btn_outline), bg_color, m_outer_painter, m_inner_painter);
 
     btn_rect.x += 4;
     btn_rect.y += 4;
     btn_rect.w -= 4;
     btn_rect.h -= 4;
 
-    m_btn_painter.Draw(renderer, btn_rect.x, btn_rect.y);
+    m_btn_painter.Draw(renderer, btn_rect.x, btn_rect.y, renderer.IsDarkMode());
 }
 
 void node::ButtonWidget::OnMouseOut(MouseHoverEvent&)

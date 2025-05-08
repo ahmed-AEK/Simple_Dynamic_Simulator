@@ -64,18 +64,20 @@ MI::ClickEvent node::PaletteCategoryPicker::OnLMBDown(MouseButtonEvent& e)
 	return MI::ClickEvent::NONE;
 }
 
-SDL_FRect node::PaletteCategoryPicker::DrawPanelBorder(SDL_Renderer* renderer)
+SDL_FRect node::PaletteCategoryPicker::DrawPanelBorder(SDL::Renderer& renderer)
 {
 	SDL_FRect draw_area = GetSize().ToRect();
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color frame_color = renderer.GetColor(ColorRole::frame_outline);
+	SDL_SetRenderDrawColor(renderer, frame_color.r, frame_color.g, frame_color.b, frame_color.a);
 	SDL_RenderFillRect(renderer, &draw_area);
 
 	draw_area.x += 2;
 	draw_area.w -= 4;
 	draw_area.y += 2;
 	draw_area.h -= 4;
-	SDL_FRect inner_rect = draw_area;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	const SDL_FRect inner_rect = draw_area;
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	SDL_SetRenderDrawColor(renderer, background_color.r, background_color.g, background_color.b, background_color.a);
 	SDL_RenderFillRect(renderer, &draw_area);
 	return inner_rect;
 }
@@ -110,17 +112,19 @@ void node::PaletteCategoryPicker::OnDraw(SDL::Renderer& renderer)
 	float y_value = rect.y + y_pad;
 	m_categories_draw_area = rect;
 
-	SDL_Color Black{ 50,50,50,255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	const SDL_Color category_btn_outline = renderer.GetColor(ColorRole::frame_outline);
 	for (auto&& category : m_categories)
 	{
 		auto&& painter = category.painter;
-		auto&& text_rect = painter.GetRect(renderer, Black);
+		auto&& text_rect = painter.GetRect(renderer, text_color);
 		
 		category.height = text_rect.h; // needed for click events
 
-		painter.Draw(renderer, { x_value, y_value }, Black);
+		painter.Draw(renderer, { x_value, y_value }, text_color);
 		float line_y = y_value + y_pad + text_rect.h;
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_SetRenderDrawColor(renderer, 
+			category_btn_outline.r, category_btn_outline.g, category_btn_outline.b, category_btn_outline.a);
 		SDL_RenderLine(renderer, rect.x, line_y, rect.x + rect.w, line_y);
 		y_value += text_rect.h + 2 * y_pad;
 	}

@@ -94,7 +94,9 @@ void node::ToolBar::OnDraw(SDL::Renderer& renderer)
 	inner_rect.y += 5;
 	inner_rect.w -= 2 * 5;
 	inner_rect.h -= 2 * 5;
-	ThickFilledRoundRect(renderer, inner_rect, 8, 2, { 204,204,204,255 }, { 255,255,255,255 }, m_outer_bg_painter, m_inner_bg_painter);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline_alternate);
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	ThickFilledRoundRect(renderer, inner_rect, 8, 2, outline_color, background_color, m_outer_bg_painter, m_inner_bg_painter);
 	inner_rect.x += 2;
 	inner_rect.y += 2;
 	inner_rect.w -= 4;
@@ -110,7 +112,7 @@ void node::ToolBar::OnDraw(SDL::Renderer& renderer)
 			SDL_FRect separator_rect{ AsSeparator(button).position_x, inner_rect.y + ToolBarSeparator::VMargin, 
 				ToolBarSeparator::width, inner_rect.h - 2 * ToolBarSeparator::VMargin };
 			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-			SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
+			SDL_SetRenderDrawColor(renderer, outline_color.r, outline_color.g, outline_color.b, outline_color.a);
 			SDL_RenderFillRect(renderer, &separator_rect);
 		}
 	}
@@ -153,9 +155,9 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 	const int thickness = 2;
 	{
 		const int radius = 8;
-		SDL_Color outline_color{190, 190, 190, 255};
-		SDL_Color inactive_color = b_held_down ? SDL_Color{ 210, 210, 210, 255 } : (b_hovered ? SDL_Color{ 230, 230, 230, 235 } : SDL_Color{ 255, 255, 255, 255 });
-		SDL_Color color_inner = IsDisabled() ? SDL_Color{190, 190, 190, 255} : inactive_color;
+		const SDL_Color outline_color = renderer.GetColor(ColorRole::btn_outline);
+		const SDL_Color inactive_color = b_held_down ? renderer.GetColor(ColorRole::btn_outline) : (b_hovered ? renderer.GetColor(ColorRole::btn_hover) : renderer.GetColor(ColorRole::btn_normal));
+		const SDL_Color color_inner = IsDisabled() ? renderer.GetColor(ColorRole::btn_outline) : inactive_color;
 		ThickFilledRoundRect(renderer, GetSize().ToRect(), radius, 2, outline_color, color_inner, *m_painter_outer, *m_painter_inner);
 	}
 	
@@ -176,7 +178,7 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 				}
 			}
 
-			SDL_Color Black = { 50, 50, 50, 255 };
+			const SDL_Color Black = renderer.GetColor(ColorRole::text_normal);
 			SDL_FRect text_rect = m_text_painter->GetRect(renderer, Black);
 			text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
 			text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;
@@ -191,7 +193,7 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 		constexpr float margin = 3;
 		// draw the svg
 		m_svg_painter->SetSize(static_cast<int>(inner_rect.w - 2 * margin), static_cast<int>(inner_rect.h - 2 * margin));
-		if (!m_svg_painter->Draw(renderer, inner_rect.x + margin, inner_rect.y + margin))
+		if (!m_svg_painter->Draw(renderer, inner_rect.x + margin, inner_rect.y + margin, renderer.IsDarkMode()))
 		{
 			m_svg_painter = std::nullopt;
 			text_drawer();

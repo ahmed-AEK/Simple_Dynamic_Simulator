@@ -33,13 +33,14 @@ node::GainBlockStyler::GainBlockStyler(const model::BlockDataCRef& model, TTF_Fo
 
 }
 
-void node::GainBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, 
+void node::GainBlockStyler::DrawBlockOutline(SDL::Renderer& renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer,
 	model::BlockOrientation orientation, bool selected)
 {
 	auto screen_bounds = transformer.SpaceToScreenRect(bounds);
 	
-	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
-	SDL_Color inner_color{ 220,220,220,255 };
+	const SDL_Color outer_color = selected ?
+		renderer.GetColor(ColorRole::block_outline_selected) : renderer.GetColor(ColorRole::block_outline);
+	const SDL_Color inner_color = renderer.GetColor(ColorRole::block_background);
 	SDL_SetRenderDrawColor(renderer, outer_color.r, outer_color.g, outer_color.b, 255);
 	
 	SDL_FColor outer_color_f{ToFColor(outer_color)};

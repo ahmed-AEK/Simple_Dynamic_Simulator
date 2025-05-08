@@ -2,19 +2,20 @@
 #include <algorithm>
 #include "SDL_Framework/Utility.hpp"
 
-void node::DefaultBlockStyler::DrawBlockOutline(SDL_Renderer* renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer, 
+void node::DefaultBlockStyler::DrawBlockOutline(SDL::Renderer& renderer, const model::Rect& bounds, const SpaceScreenTransformer& transformer,
 	model::BlockOrientation orientation, bool selected)
 {
 	UNUSED_PARAM(orientation);
 	SDL_FRect screenRect = transformer.SpaceToScreenRect(bounds);
-	SDL_Color outer_color = selected ? SDL_Color{ 255,165,0,255 } : SDL_Color{ 0,0,0,255 };
-	SDL_Color inner_color{ 220,220,220,255 };
+	SDL_Color outer_color = selected ?
+		renderer.GetColor(ColorRole::block_outline_selected) : renderer.GetColor(ColorRole::block_outline);
+	SDL_Color inner_color = renderer.GetColor(ColorRole::block_background);
 
 	ThickFilledRoundRect(renderer, screenRect, static_cast<int>(screenRect.w / 10), 2, outer_color, inner_color,
 		m_outer_painter, m_inner_painter);
 }
 
-void node::DefaultBlockStyler::DrawBlockSocket(SDL_Renderer* renderer, const model::Point& center, const SpaceScreenTransformer& transformer,
+void node::DefaultBlockStyler::DrawBlockSocket(SDL::Renderer& renderer, const model::Point& center, const SpaceScreenTransformer& transformer,
 	const model::BlockSocketModel::SocketType& type)
 {
 	SDL_FPoint socket_length = transformer.SpaceToScreenVector({ SocketLength, SocketLength });
@@ -22,13 +23,15 @@ void node::DefaultBlockStyler::DrawBlockSocket(SDL_Renderer* renderer, const mod
 	{
 	case model::BlockSocketModel::SocketType::input:
 	{
-		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::input_socket);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 
 		break;
 	}
 	case model::BlockSocketModel::SocketType::output:
 	{
-		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+		const SDL_Color color = renderer.GetColor(ColorRole::output_socket);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 		break;
 	}
 	default:

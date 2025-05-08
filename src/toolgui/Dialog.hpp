@@ -100,9 +100,9 @@ private:
 	void RepositionControls();
 	void RepositionButtons();
 	void ResizeToFitChildren();
-	void DrawTitle(SDL_Renderer* renderer, const SDL_FPoint& start);
-	void DrawXButton(SDL_Renderer* renderer, const SDL_FRect& rect);
-	void DrawOutline(SDL_Renderer* renderer, const SDL_FRect& rect);
+	void DrawTitle(SDL::Renderer& renderer, const SDL_FPoint& start);
+	void DrawXButton(SDL::Renderer& renderer, const SDL_FRect& rect);
+	void DrawOutline(SDL::Renderer& renderer, const SDL_FRect& rect);
 	SDL_FRect GetXButtonRect() const;
 	SDL_FRect GetResizeGripRect() const;
 	WidgetSize CalculateMinSize() const;

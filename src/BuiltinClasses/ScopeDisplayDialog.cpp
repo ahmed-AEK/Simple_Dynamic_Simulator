@@ -163,14 +163,15 @@ protected:
 		b_held_down = false;
 	}
 
-	void Draw(SDL_Renderer* renderer) override
+	void Draw(SDL::Renderer& renderer) override
 	{
 		if (b_held_down)
 		{
 			auto start_point = SDL_FPoint{ std::min(m_drag_start_point.x, m_current_drag_point.x), std::min(m_drag_start_point.y, m_current_drag_point.y) };
 			auto end_point = SDL_FPoint{ std::max(m_drag_start_point.x, m_current_drag_point.x), std::max(m_drag_start_point.y, m_current_drag_point.y) };
 			auto draw_rect = SDL_FRect{ start_point.x, start_point.y, end_point.x - start_point.x, end_point.y - start_point.y };
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+			auto color = renderer.GetColor(ColorRole::frame_outline);
+			SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 			SDL_RenderRect(renderer, &draw_rect);
 		}
 	}
@@ -496,12 +497,14 @@ void node::PlotWidget::OnMouseOut(MouseHoverEvent&)
 	m_current_point = std::nullopt;
 }
 
-void node::PlotWidget::DrawAxes(SDL_Renderer* renderer)
+void node::PlotWidget::DrawAxes(SDL::Renderer& renderer)
 {
-	SDL_FRect inner_rect = ToFRect(GetInnerRect());
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	const SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	const SDL_Color background_color = renderer.GetColor(ColorRole::frame_background);
+	SDL_SetRenderDrawColor(renderer, background_color.r, background_color.g, background_color.b, background_color.a);
 	SDL_RenderFillRect(renderer, &inner_rect);
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color axes_color = renderer.GetColor(ColorRole::frame_outline);
+	SDL_SetRenderDrawColor(renderer, axes_color.r, axes_color.g, axes_color.b, axes_color.a);
 	SDL_FRect axes[]{ 
 		{ inner_rect.x, inner_rect.y + inner_rect.h, inner_rect.w + 1, 1 },
 		{ inner_rect.x, inner_rect.y, 1, inner_rect.h + 1 },
@@ -517,7 +520,7 @@ SDL_Rect node::PlotWidget::GetInnerRect()
 
 void node::PlotWidget::ResetPainters()
 {
-	SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	const SDL_FRect inner_rect = ToFRect(GetInnerRect());
 	m_data_texture.DropTexture();
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
 	bool draw_text = true;
@@ -838,11 +841,11 @@ void node::PlotWidget::ReDrawSurface()
 	}
 }
 
-void node::PlotWidget::DrawData(SDL_Renderer* renderer)
+void node::PlotWidget::DrawData(SDL::Renderer& renderer)
 {
 	float tex_w, tex_h;
 	SDL_GetTextureSize(m_data_texture.GetTexture(), &tex_w, &tex_h);
-	SDL_FRect inner_rect = ToFRect(GetInnerRect());
+	const SDL_FRect inner_rect = ToFRect(GetInnerRect());
 
 	if (!m_data_texture || inner_rect.w != tex_w || inner_rect.h != tex_h)
 	{
@@ -852,21 +855,22 @@ void node::PlotWidget::DrawData(SDL_Renderer* renderer)
 	SDL_RenderTexture(renderer, m_data_texture.GetTexture(), nullptr, &inner_rect);
 }
 
-void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
+void node::PlotWidget::DrawAxesTicks(SDL::Renderer& renderer)
 {
 	SDL_FRect inner_rect = GetSize().ToRect();
 	inner_rect.y += top_margin;
 	inner_rect.h -= bottom_margin + top_margin;
 	const int tick_length = 5;
 	//bool draw_text = m_space_extent.w > std::abs(m_space_extent.x * 0.1) && m_space_extent.h > std::abs(m_space_extent.y * 0.1);
-	SDL_Color Black = { 50, 50, 50, 255 };
+	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
+	const SDL_Color ticks_color = renderer.GetColor(ColorRole::frame_outline);
 	float x_inner_offset = 0;
 	bool draw_text = true;
 	{
 		std::array<SDL_FRect, y_ticks_count> painters_rects;
 		for (size_t i = 0; i < painters_rects.size(); i++)
 		{
-			painters_rects[i] = m_y_painters[i].GetRect(renderer, Black);
+			painters_rects[i] = m_y_painters[i].GetRect(renderer, text_color);
 			x_inner_offset = std::max(painters_rects[i].w + 2 * text_margin + tick_length, x_inner_offset);
 		}
 
@@ -885,14 +889,14 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 					SDL_FRect text_rect = painters_rects[i];
 					text_rect.x = x_inner_offset - text_rect.w - text_margin - tick_length;
 					text_rect.y = y - text_rect.h / 2;
-					m_y_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, Black);
+					m_y_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, text_color);
 				}
 
 				left_ticks[i] = SDL_FRect{ inner_rect.x - tick_length, y, tick_length + 1, 1 };
 				y += spacing;
 			}
 		}
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_SetRenderDrawColor(renderer, ticks_color.r, ticks_color.g, ticks_color.b, ticks_color.a);
 		SDL_RenderFillRects(renderer, left_ticks.data(), static_cast<int>(std::size(left_ticks)));
 	}
 
@@ -905,10 +909,10 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 			{
 				if (draw_text)
 				{					
-					SDL_FRect text_rect = m_x_painters[i].GetRect(renderer, Black);
+					SDL_FRect text_rect = m_x_painters[i].GetRect(renderer, text_color);
 					text_rect.x = x - text_rect.w/2;
 					text_rect.y = inner_rect.y + inner_rect.h + tick_length + 5;
-					m_x_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, Black);
+					m_x_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, text_color);
 				}
 				
 
@@ -916,19 +920,19 @@ void node::PlotWidget::DrawAxesTicks(SDL_Renderer* renderer)
 				x += spacing;
 			}
 		}
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_SetRenderDrawColor(renderer, ticks_color.r, ticks_color.g, ticks_color.b, ticks_color.a);
 		SDL_RenderFillRects(renderer, bottom_ticks.data(), static_cast<int>(std::size(bottom_ticks)));
 	}
 }
 
-void node::PlotWidget::DrawCoords(SDL_Renderer* renderer)
+void node::PlotWidget::DrawCoords(SDL::Renderer& renderer)
 {
 	if (m_current_point)
 	{
-		SDL_Color black{ 50, 50, 50, 255};
+		const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 		auto&& rect = GetInnerRect();
-		auto text_rect = m_current_point_painter.GetRect(renderer, black);
-		SDL_FPoint start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};
-		m_current_point_painter.Draw(renderer, start_point, black);
+		auto text_rect = m_current_point_painter.GetRect(renderer, text_color);
+		const SDL_FPoint start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};
+		m_current_point_painter.Draw(renderer, start_point, text_color);
 	}
 }

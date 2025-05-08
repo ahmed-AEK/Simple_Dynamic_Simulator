@@ -67,6 +67,8 @@ private:
     void InitializeSidePanel();
     void InitializeBotPanel();
 
+    void OnDarkModeClicked();
+
     void OpenPropertiesDialog();
     void OpenPropertiesDialog(BlockObject& object);
     void OpenBlockDialog(BlockObject& block);
@@ -113,6 +115,7 @@ private:
     HandlePtrS<LogView, Widget> m_logView;
 
     logging::Logger m_logger = logger(logging::LogCategory::GUI);
+    bool m_dark_mode_active = false;
 };
 
 }

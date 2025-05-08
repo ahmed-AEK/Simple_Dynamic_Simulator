@@ -26,7 +26,8 @@ void node::BlockResizeObject::Draw(SDL::Renderer& renderer, const SpaceScreenTra
 	{
 		return;
 	}
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	const SDL_Color outline_color = renderer.GetColor(ColorRole::frame_outline);
+	SDL_SetRenderDrawColor(renderer, outline_color.r, outline_color.g, outline_color.b, 255);
 	SDL_FRect screen_rect = transformer.SpaceToScreenRect(GetInnerRect());
 	SDL_RenderRect(renderer, &screen_rect);
 
@@ -55,7 +56,8 @@ void node::BlockResizeObject::Draw(SDL::Renderer& renderer, const SpaceScreenTra
 	rotate_btn_screen.y += 2;
 	rotate_btn_screen.w -= 4;
 	rotate_btn_screen.h -= 4;
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	const SDL_Color btn_color = renderer.GetColor(ColorRole::btn_normal);
+	SDL_SetRenderDrawColor(renderer, btn_color.r, btn_color.g, btn_color.b, 255);
 	SDL_RenderFillRect(renderer, &rotate_btn_screen);
 
 	rotate_btn_screen.x += 1;
@@ -63,7 +65,7 @@ void node::BlockResizeObject::Draw(SDL::Renderer& renderer, const SpaceScreenTra
 	rotate_btn_screen.w -= 2;
 	rotate_btn_screen.h -= 2;
 	m_rotate_rasterizer.SetSize(static_cast<int>(rotate_btn_screen.w), static_cast<int>(rotate_btn_screen.h));
-	m_rotate_rasterizer.Draw(renderer, rotate_btn_screen.x, rotate_btn_screen.y);
+	m_rotate_rasterizer.Draw(renderer, rotate_btn_screen.x, rotate_btn_screen.y, renderer.IsDarkMode());
 	
 }
 
