@@ -4,15 +4,11 @@
 #include "toolgui/NodeMacros.h"
 #include "toolgui/MouseInteractable_interface.hpp"
 #include "toolgui/DragDropObject.hpp"
-
+#include "SDL_Framework/SDLRenderer.hpp"
 
 namespace node
 {
     class Widget;
-}
-namespace SDL
-{
-    class Renderer;
 }
 
 namespace MI
@@ -179,6 +175,14 @@ namespace node
                 static_cast<int>(size.w),
                 static_cast<int>(size.h) };
         }
+        ColorPalettePtr GetColorPalette() const
+        {
+            return m_color_palette;
+        }
+        void SetColorPalette(ColorPalettePtr color_palette)
+        {
+            m_color_palette = std::move(color_palette);
+        }
     protected:
         virtual bool OnChar(TextInputEvent& e) { UNUSED_PARAM(e); return false; } // a or A, etc..
         virtual bool OnKeyPress(KeyboardEvent& e) { UNUSED_PARAM(e); return false;  } // SDLK_BACKSPACE and SDLK_RETURN, left and right
@@ -215,6 +219,7 @@ namespace node
         bool m_isDropTarget = false;
         bool b_focusable = false;
         bool b_focused = false;
+        ColorPalettePtr m_color_palette;
         HandlePtr<Widget> m_focus_proxy;
         std::vector<Widget*> m_children;
     };

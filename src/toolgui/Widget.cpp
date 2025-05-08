@@ -125,6 +125,7 @@ void node::Widget::SetSize(const WidgetSize& size)
 
 void node::Widget::Draw(SDL::Renderer& renderer)
 {
+    auto palette_scope = renderer.SetColorPalette(m_color_palette);
     OnDraw(renderer);
     for (auto* child : m_children)
     {

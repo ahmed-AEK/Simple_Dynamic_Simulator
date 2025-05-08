@@ -1188,7 +1188,14 @@ struct TabChangeNotifier : public SingleObserver<TabsChangeEvent>
 void node::MainNodeScene::OnInit()
 {
     using namespace node;
-    
+    SetColorPalette(
+        make_intrusive<ColorPalette>(std::initializer_list<ColorPalette::Color>{
+            {ColorRole::text_normal, 50, 50, 50},
+            {ColorRole::btn_normal, 255, 255, 255},
+            {ColorRole::btn_hover, 235, 235, 235},
+            {ColorRole::btn_outline, 190, 190, 190},
+    })
+    );
     m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
 
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();

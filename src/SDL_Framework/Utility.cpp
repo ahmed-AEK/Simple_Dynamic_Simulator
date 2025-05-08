@@ -599,3 +599,73 @@ void TruncatedTextPainter::UpdatePainter()
     }
     
 }
+
+ColorPalette::ColorPalette(IntrusivePtr<ColorPalette> parent) : m_parent{ parent }
+{
+}
+
+ColorPalette::ColorPalette(std::initializer_list<Color> colors)
+{
+    for (auto& color : colors)
+    {
+        SetColor(color);
+    }
+}
+
+ColorPalette::ColorPalette(std::initializer_list<Color> colors, IntrusivePtr<ColorPalette> parent)
+    :m_parent{ parent }
+{
+    for (auto& color : colors)
+    {
+        SetColor(color);
+    }
+}
+
+void ColorPalette::SetColor(Color color)
+{
+    assert(color.type != ColorRole::None);
+    auto it = std::find_if(m_inplace_colors.begin(), m_inplace_colors.end(), [](const Color& item) {return item.type == ColorRole::None; });
+    if (it != m_inplace_colors.end())
+    {
+        *it = color;
+        return;
+    }
+    auto it2 = std::find_if(m_heap_colors.begin(), m_heap_colors.end(), [](const Color& item) {return item.type == ColorRole::None; });
+    if (it2 != m_heap_colors.end())
+    {
+        *it = color;
+        return;
+    }
+    m_heap_colors.push_back(color);
+}
+
+ColorPalette::Color ColorPalette::GetColor(ColorRole color_type) const
+{
+    for (auto& color : m_inplace_colors)
+    {
+        if (color.type == ColorRole::None)
+        {
+            if (m_parent)
+            {
+                return m_parent->GetColor(color_type);
+            }
+            return { .type = ColorRole::None };
+        }
+        if (color.type == color_type)
+        {
+            return color;
+        }
+    }
+    for (auto& color : m_heap_colors)
+    {
+        if (color.type == color_type)
+        {
+            return color;
+        }
+    }
+    if (m_parent)
+    {
+        return m_parent->GetColor(color_type);
+    }
+    return { .type = ColorRole::None };
+}

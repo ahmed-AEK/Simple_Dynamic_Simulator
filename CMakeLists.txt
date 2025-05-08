@@ -6,6 +6,7 @@ option(EMSCRIPTEN "EMSCRIPTEN" OFF)
 option(FILESYSTEM_SUPPORTED "denotes whether there's a readable and writeable filesystem" ON)
 
 cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0167 NEW)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

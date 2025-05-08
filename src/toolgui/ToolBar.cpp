@@ -153,9 +153,9 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 	const int thickness = 2;
 	{
 		const int radius = 8;
-		SDL_Color outline_color{190, 190, 190, 255};
-		SDL_Color inactive_color = b_held_down ? SDL_Color{ 210, 210, 210, 255 } : (b_hovered ? SDL_Color{ 230, 230, 230, 235 } : SDL_Color{ 255, 255, 255, 255 });
-		SDL_Color color_inner = IsDisabled() ? SDL_Color{190, 190, 190, 255} : inactive_color;
+		SDL_Color outline_color = renderer.GetColor(ColorRole::btn_outline);
+		SDL_Color inactive_color = b_held_down ? renderer.GetColor(ColorRole::btn_outline) : (b_hovered ? renderer.GetColor(ColorRole::btn_hover) : renderer.GetColor(ColorRole::btn_normal));
+		SDL_Color color_inner = IsDisabled() ? renderer.GetColor(ColorRole::btn_outline) : inactive_color;
 		ThickFilledRoundRect(renderer, GetSize().ToRect(), radius, 2, outline_color, color_inner, *m_painter_outer, *m_painter_inner);
 	}
 	
@@ -176,7 +176,7 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 				}
 			}
 
-			SDL_Color Black = { 50, 50, 50, 255 };
+			SDL_Color Black = renderer.GetColor(ColorRole::text_normal);
 			SDL_FRect text_rect = m_text_painter->GetRect(renderer, Black);
 			text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
 			text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;

@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <cassert>
+#include <ranges>
 
 void swap(SDL::Renderer& first, SDL::Renderer& second) noexcept
 {
@@ -174,13 +175,13 @@ namespace SDL
         m_success = renderer.AddClipRect(rect);
     }
 
-    RenderClip::RenderClip(RenderClip&& other)
+    RenderClip::RenderClip(RenderClip&& other) noexcept
     {
         m_renderer = std::exchange(other.m_renderer, nullptr);
         m_success = std::exchange(other.m_success, false);
     }
 
-    RenderClip& RenderClip::operator=(RenderClip&& other)
+    RenderClip& RenderClip::operator=(RenderClip&& other) noexcept
     {
         m_renderer = std::exchange(other.m_renderer, nullptr);
         m_success = std::exchange(other.m_success, false);
@@ -192,6 +193,81 @@ namespace SDL
         if (m_renderer && m_success)
         {
             m_renderer->PopClipRect();
+        }
+    }
+    PaletteScope::PaletteScope()
+    {
+    }
+
+    PaletteScope::PaletteScope(Renderer& renderer, ColorPalettePtr palette)
+        : m_renderer{ &renderer }, m_palette { palette.get() }
+    {
+        assert(palette);
+        renderer.AddPalette(std::move(palette));
+
+    }
+    PaletteScope::PaletteScope(PaletteScope&& other) noexcept
+        : m_renderer{std::exchange(other.m_renderer, nullptr)},
+        m_palette{std::exchange(other.m_palette, nullptr)}
+    {
+    }
+
+    PaletteScope& PaletteScope::operator=(PaletteScope&& other) noexcept
+    {
+        if (this != &other)
+        {
+            m_renderer = std::exchange(other.m_renderer, nullptr);
+            m_palette = std::exchange(other.m_palette, nullptr);
+        }
+        return *this;
+    }
+
+    PaletteScope::~PaletteScope()
+    {
+        if (m_renderer)
+        {
+            m_renderer->PopPalette(m_palette);
+        }
+    }
+
+    PaletteScope Renderer::SetColorPalette(ColorPalettePtr palette)
+    {
+        if (palette)
+        {
+            return PaletteScope{ *this, std::move(palette) };
+        }
+        return PaletteScope{};
+    }
+
+    SDL_Color Renderer::GetColor(ColorPalette::ColorRole color_type)
+    {
+        constexpr SDL_Color error_color{ 255,8,255,255 };
+        if (!m_color_palettes.size())
+        {
+            return error_color;
+        }
+        for (auto& palette : std::ranges::reverse_view(m_color_palettes))
+        {
+            auto color = palette->GetColor(color_type);
+            if (color.type != ColorPalette::ColorRole::None)
+            {
+                return { .r = color.r, .g = color.g, .b = color.b, .a = 255 };
+            }
+        }
+        return error_color;
+    }
+
+    void Renderer::AddPalette(ColorPalettePtr palette)
+    {
+        m_color_palettes.push_back(std::move(palette));
+    }
+
+    void Renderer::PopPalette(ColorPalette* palette)
+    {
+        assert(m_color_palettes.size());
+        if (m_color_palettes.size() && palette == m_color_palettes.back())
+        {
+            m_color_palettes.pop_back();
         }
     }
 }

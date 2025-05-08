@@ -14,6 +14,7 @@
 
 void node::Scene::Draw(SDL::Renderer& renderer)
 {
+    auto palette_scope = renderer.SetColorPalette(GetColorPalette());
     OnDraw(renderer);
     if (m_current_mouse_hover.isAlive() && m_dragObject)
     {
