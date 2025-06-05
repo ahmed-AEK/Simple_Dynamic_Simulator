@@ -34,13 +34,25 @@ void node::GraphicsScene::AddObject(std::unique_ptr<node::GraphicsObject> obj, i
 std::unique_ptr<node::GraphicsObject> node::GraphicsScene::PopObject(const node::GraphicsObject* obj)
 {
     auto iter = std::find_if(m_objects.begin(), m_objects.end(), [=](const auto& item) {return item.m_ptr.get() == obj;});
-    if (iter != m_objects.end())
+    if (iter == m_objects.end())
     {
-        std::unique_ptr<node::GraphicsObject> ret_obj = std::move(iter->m_ptr);
-        m_objects.erase(iter);
-        return ret_obj;
+        return nullptr;
     }
-    return nullptr;
+
+    std::unique_ptr<node::GraphicsObject> ret_obj = std::move(iter->m_ptr);
+    m_objects.erase(iter);
+    if (ret_obj->IsSelected())
+    {
+        ret_obj->SetSelected(false);
+        auto handle = ret_obj->GetMIHandlePtr();
+        auto it = std::find(m_current_selection.begin(), m_current_selection.end(), handle);
+        if (it != m_current_selection.end())
+        {
+            m_current_selection.erase(it);
+        }
+    }
+    return ret_obj;
+
 }
 
 void node::GraphicsScene::ClearAllObjects()

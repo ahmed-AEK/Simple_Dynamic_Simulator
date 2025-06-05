@@ -23,6 +23,7 @@ namespace node
 		static void LogSDLMessage(void* userdata, int category, SDL_LogPriority priority, const char* message);
 
 		void AddMessage(std::string message, int category, SDL_LogPriority priority);
+		void SetOnError(std::function<void()> functor);
 
 		void DispatchLogs();
 		void SetDefaultLogger(SDL_LogOutputFunction default_logger);
@@ -36,6 +37,8 @@ namespace node
 		Application* m_app = nullptr;
 		SDL_LogOutputFunction m_default_logger = nullptr;
 		HandlePtrS<LogView, Widget> m_logView;
+		
+		std::function<void()> m_on_error_functor;
 
 		bool m_update_requested = false;
 	};

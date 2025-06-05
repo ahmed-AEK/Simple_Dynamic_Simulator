@@ -17,7 +17,7 @@ namespace model
     struct BlockDataCRef;
 }
 class BlockStyler;
-class BlockResizeObject;
+class ObjectAttachment;
 
 class GRAPHICSSCENE_API BlockObject: public GraphicsObject
 {
@@ -38,7 +38,6 @@ public:
     void UpdateStyler(const model::BlockDataCRef& model);
     const BlockStyler& GetStyler() const { return *m_styler; }
     void RenewSockets(std::span<const model::BlockSocketModel> new_sockets);
-    void SetResizeHandles(BlockResizeObject& resize_object);
 
     void SetOrientation(model::BlockOrientation orientation) { m_orientation = orientation; }
     model::BlockOrientation GetOrienation() const { return m_orientation; }
@@ -53,7 +52,6 @@ private:
     std::vector<std::unique_ptr<BlockSocketObject>> m_sockets;
     std::optional<model::BlockId> m_id;
     std::unique_ptr<BlockStyler> m_styler;
-    HandlePtrS<BlockResizeObject, GraphicsObject> m_resizer;
     model::BlockOrientation m_orientation;
 };
 

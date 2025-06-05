@@ -67,6 +67,7 @@ class GraphicsObject;
 
 using GraphicsObjectMouseInteractable = MI::MouseInteractable<GraphicsObject, model::ObjectSize, model::Point>;
 class SpaceScreenTransformer;
+class ObjectAttachment;
 
 class GRAPHICSSCENE_API GraphicsObject: protected GraphicsObjectMouseInteractable
 {
@@ -110,7 +111,8 @@ public:
     void SetParent(GraphicsObject* parent);
     void UnParent();
     GraphicsScene* GetScene() const { return m_pScene; }
-
+    void SetAttachment(ObjectAttachment* resize_object);
+    ObjectAttachment* GetAttachment() const;
     model::Rect GetSceneRect() const;
 protected:
     virtual GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
@@ -133,6 +135,22 @@ private:
     model::ObjectSize m_size{};
     ObjectType m_obj_type;
     node::HandleOwnigPtr<GraphicsObject> m_focusHandle = node::HandleAllocator<GraphicsObject>::CreateHandle(this); 
+    node::HandlePtrS<ObjectAttachment, GraphicsObject> m_attachment;
+};
+
+
+class ObjectAttachment: public GraphicsObject
+{
+public:
+    using GraphicsObject::GraphicsObject;
+    virtual void OnAttachObject(GraphicsObject& object) = 0;
+    virtual void OnDetachObject() = 0;
+    virtual void OnObjectRectUpdate(const model::Rect& rect) = 0;
+    GraphicsObject* GetAttachedToObject() const { return m_attached_to_object; }
+    virtual ~ObjectAttachment() = default;
+private:
+    friend class GraphicsObject;
+    GraphicsObject* m_attached_to_object = nullptr;
 };
 
 }

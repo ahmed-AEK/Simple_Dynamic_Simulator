@@ -31,6 +31,7 @@ namespace node
 
         Application::OnRun();
         m_logger.SetLogView(m_scene->GetLogView());
+        m_logger.SetOnError([this] {this->m_scene->OpenBotPanel(); });
     }
     void NodeEditorApplication::OnUpdateBegin()
     {

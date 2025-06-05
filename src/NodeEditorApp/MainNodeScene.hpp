@@ -51,6 +51,9 @@ public:
     void MaybeSaveScene(std::string name);
     void OnCenterTabChanged(int32_t new_tab);
     void CloseTabRequest(int32_t tab_idx);
+    
+    void OpenBotPanel();
+
     LogView* GetLogView();
 protected:
     virtual MI::ClickEvent OnRMBUp(MouseButtonEvent& e) override;

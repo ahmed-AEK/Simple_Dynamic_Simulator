@@ -68,6 +68,20 @@ void node::SceneGrid::SetBotPanel(std::unique_ptr<SidePanel> widget)
 	RepositionWidgets();
 }
 
+void node::SceneGrid::OpenBotPanel()
+{
+	if (m_bot_panel_visibility.panel_state == PanelState::opened || m_bot_panel_visibility.panel_state == PanelState::openning)
+	{
+		return;
+	}
+	m_bot_panel_visibility.last_action_time = SDL_GetTicks();
+	m_bot_panel_visibility.panel_state = PanelState::openning;
+	if (!m_bot_panel_visibility.updateTaskId)
+	{
+		m_bot_panel_visibility.updateTaskId = GetApp()->AddUpdateTask(UpdateTask::FromWidget(*this, [this, panel = &m_bot_panel_visibility]() { this->UpdatePanelProgress(*panel); }));
+	}
+}
+
 void node::SceneGrid::OnNotify(PanelCloseRequest& event)
 {
 	switch (event.side)

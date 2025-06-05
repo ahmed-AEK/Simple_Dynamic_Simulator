@@ -35,6 +35,11 @@ void node::LogHandler::AddMessage(std::string message, int category, SDL_LogPrio
 	SetEvent();
 }
 
+void node::LogHandler::SetOnError(std::function<void()> functor)
+{
+	m_on_error_functor = std::move(functor);
+}
+
 void node::LogHandler::DispatchLogs()
 {
 	std::vector<logging::LogLine> result;
@@ -52,7 +57,12 @@ void node::LogHandler::DispatchLogs()
 	{
 		for (auto& log_line : result)
 		{
+			auto line_priority = log_line.priority;
 			logView->AddLine(std::move(log_line));
+			if (line_priority == SDL_LOG_PRIORITY_ERROR && m_on_error_functor)
+			{
+				m_on_error_functor();
+			}
 		}
 	}
 }

@@ -42,6 +42,7 @@ enum class ColorRole : uint8_t
     netnode_selected,
     netsegment_normal,
     netsegment_selected,
+    object_hover_outline,
     COLOR_ROLE_COUNT,
 };
 

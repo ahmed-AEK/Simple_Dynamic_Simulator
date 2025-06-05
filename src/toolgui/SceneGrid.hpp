@@ -24,6 +24,8 @@ public:
 	SidePanel* GetSidePanel() { return m_side_panel.get(); }
 	SidePanel* GetBotPanel() { return m_bot_panel.get(); }
 
+	void OpenBotPanel();
+
 	void OnNotify(PanelCloseRequest& event) override;
 protected:
 	void OnSetSize(const WidgetSize& size) override;

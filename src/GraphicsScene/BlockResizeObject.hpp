@@ -9,11 +9,15 @@ namespace node
 class GraphicsObjectsManager;
 class BlockObject;
 
-class BlockResizeObject : public GraphicsObject
+class BlockResizeObject : public ObjectAttachment
 {
 public:
 	static model::Rect RectForBlockRect(const model::Rect& rect);
 	BlockResizeObject(BlockObject& parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size);
+
+	virtual void OnAttachObject(GraphicsObject& object);
+	virtual void OnDetachObject();
+	virtual void OnObjectRectUpdate(const model::Rect& rect);
 
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 protected:

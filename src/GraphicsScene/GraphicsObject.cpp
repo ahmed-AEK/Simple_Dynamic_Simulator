@@ -17,6 +17,11 @@ node::GraphicsObject::GraphicsObject(const node::model::ObjectSize& size, Object
 node::GraphicsObject::~GraphicsObject()
 {
     UnParent();
+    if (auto attachment = GetAttachment())
+    {
+        attachment->m_attached_to_object = nullptr;
+        attachment->OnDetachObject();
+    }
 }
 
 
@@ -50,6 +55,38 @@ void node::GraphicsObject::UnParent()
     }
 }
 
+
+void node::GraphicsObject::SetAttachment(ObjectAttachment* attachment)
+{
+    auto* current_attachment = m_attachment.GetObjectPtr();
+    if (current_attachment == attachment)
+    {
+        return;
+    }
+    if (current_attachment)
+    {
+        current_attachment->m_attached_to_object = nullptr;
+        m_attachment = {};
+        current_attachment->OnDetachObject();
+    }
+
+    if (!attachment)
+    {
+        return;
+    }
+    if (attachment->m_attached_to_object)
+    {
+        attachment->m_attached_to_object->SetAttachment(nullptr);
+    }
+    m_attachment.reset(*attachment);
+    attachment->m_attached_to_object = this;
+    attachment->OnAttachObject(*this);
+}
+
+node::ObjectAttachment* node::GraphicsObject::GetAttachment() const
+{
+    return m_attachment.GetObjectPtr();
+}
 
 void node::GraphicsObject::InvalidateRect()
 {

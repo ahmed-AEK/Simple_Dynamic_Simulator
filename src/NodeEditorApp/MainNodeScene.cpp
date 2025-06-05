@@ -21,7 +21,7 @@
 #include "GraphicsScene/ToolButton.hpp"
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include "GraphicsScene/ToolsManager.hpp"
-#include "GraphicsScene/tools/GraphicsToolHandler.hpp"
+#include "GraphicsScene/tools/GraphicsToolsHandler.hpp"
 #include "GraphicsScene/GraphicsLogic/GraphicsLogic.hpp"
 
 #include "PluginAPI/BlockClassesManager.hpp"
@@ -83,7 +83,7 @@ static ColorPalette GetLightPalette()
             {ColorRole::netnode_selected, 40, 40, 40},
             {ColorRole::netsegment_normal, 100, 100, 100},
             {ColorRole::netsegment_selected, 255, 180, 0},
-
+            {ColorRole::object_hover_outline, 0, 255, 0},
     }} };
     palette.SetDarkMode(false);
     return palette;
@@ -117,7 +117,7 @@ static ColorPalette GetDarkPalette()
             {ColorRole::netnode_selected, 40, 40, 40},
             {ColorRole::netsegment_normal, 100, 100, 100},
             {ColorRole::netsegment_selected, 255, 180, 0},
-
+            {ColorRole::object_hover_outline, 0, 255, 0},
     }} };
     palette.SetDarkMode();
     return palette;
@@ -518,6 +518,14 @@ void node::MainNodeScene::CloseTabRequest(int32_t tab_idx)
     else
     {
         m_sceneComponents[sceneId.manager].manager->SetSubSceneManager(sceneId.subscene, nullptr);
+    }
+}
+
+void node::MainNodeScene::OpenBotPanel()
+{
+    if (m_scene_grid)
+    {
+        m_scene_grid->OpenBotPanel();
     }
 }
 
@@ -1134,7 +1142,7 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
     gScene->Attach(*graphicsObjectsManager);
     gScene->SetToolsManager(m_toolsManager);
     gScene->SetObjectsManager(graphicsObjectsManager);
-    auto handler = std::make_shared<GraphicsToolHandler>(*gScene, graphicsObjectsManager, m_toolsManager);
+    auto handler = std::make_shared<GraphicsToolsHandler>(*gScene, graphicsObjectsManager, m_toolsManager);
     gScene->SetTool(std::move(handler));
 
     scene_mgr.SetSubSceneManager(scene_id.subscene, graphicsObjectsManager);
