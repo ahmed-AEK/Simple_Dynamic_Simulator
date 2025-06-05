@@ -86,7 +86,7 @@ void node::PaletteBlocksViewer::DrawHeader(SDL::Renderer& renderer)
 	SDL_FRect rect = GetSize().ToRect();
 
 	const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
-	SDL_FRect title_rect = m_title_painter.GetRect(renderer, text_color);
+	SDL_FRect title_rect = m_title_painter.GetRect(renderer);
 	title_rect.x = rect.x + rect.w / 2 - title_rect.w / 2;
 	title_rect.y = rect.y + 10;
 	m_title_painter.Draw(renderer, { title_rect.x, title_rect.y }, text_color);
@@ -234,7 +234,7 @@ void node::palette_viewer::BlocksElementsViewer::DrawElementText(SDL::Renderer& 
 
 	SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 
-	SDL_FRect text_rect = element.text_painter->GetRect(renderer, text_color);
+	SDL_FRect text_rect = element.text_painter->GetRect(renderer);
 	text_rect.x = area.x + area.w / 2 - text_rect.w / 2;
 	text_rect.y = area.y + area.h / 2 - text_rect.h / 2 - 10;
 	element.text_painter->Draw(renderer, { text_rect.x, text_rect.y }, text_color);

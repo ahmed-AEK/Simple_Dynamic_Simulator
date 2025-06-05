@@ -24,7 +24,7 @@ void node::TextBlockStyler::DrawBlockDetails(SDL::Renderer& renderer, const mode
 {
 	SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 	SDL_FRect screen_rect = transformer.SpaceToScreenRect(bounds);
-	auto rect = m_textPainter.GetRect(renderer, text_color);
+	auto rect = m_textPainter.GetRect(renderer);
 	SDL_FPoint text_start{ screen_rect.x + screen_rect.w / 2 - rect.w / 2, screen_rect.y + screen_rect.h / 2 - rect.h / 2};
 	m_textPainter.Draw(renderer, text_start, text_color);
 	UNUSED_PARAM(selected);

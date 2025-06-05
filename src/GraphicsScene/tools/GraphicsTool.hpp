@@ -6,6 +6,7 @@ namespace node
 {
 class GraphicsScene;
 class GraphicsObjectsManager;
+class GraphicsObject;
 
 class GraphicsTool
 {
@@ -25,27 +26,18 @@ public:
 	GraphicsTool() {}
 	virtual ~GraphicsTool() = default;
 	bool IsCapturingMouse() const noexcept { return m_capturing_mouse; }
-	virtual MI::ClickEvent OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) 
+	virtual bool IsObjectClickable(GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object)
+	{
+		UNUSED_PARAM(scene); UNUSED_PARAM(manager);  UNUSED_PARAM(object); return false;
+	}
+	virtual MI::ClickEvent OnObjectLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object)
+	{
+		UNUSED_PARAM(e); UNUSED_PARAM(scene); UNUSED_PARAM(manager);  UNUSED_PARAM(object); return MI::ClickEvent::NONE;
+	}
+	virtual MI::ClickEvent OnSpaceLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) 
 	{
 		UNUSED_PARAM(e); UNUSED_PARAM(scene); UNUSED_PARAM(manager);  return MI::ClickEvent::NONE;
 	}
-	virtual MI::ClickEvent OnLMBUp(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
-	{
-		UNUSED_PARAM(e); UNUSED_PARAM(scene); UNUSED_PARAM(manager); return MI::ClickEvent::NONE;
-	}
-	virtual void OnMouseMove(MouseHoverEvent& p, GraphicsScene& scene, GraphicsObjectsManager& manager) 
-	{ 
-		UNUSED_PARAM(p); UNUSED_PARAM(scene); UNUSED_PARAM(manager); 
-	}
-	virtual void OnMouseEnter(MouseHoverEvent& p, GraphicsScene& scene, GraphicsObjectsManager& manager) 
-	{ 
-		UNUSED_PARAM(p); UNUSED_PARAM(scene); UNUSED_PARAM(manager); 
-	}
-	virtual void OnMouseLeave(MouseHoverEvent& p, GraphicsScene& scene, GraphicsObjectsManager& manager) 
-	{ 
-		UNUSED_PARAM(p); UNUSED_PARAM(scene); UNUSED_PARAM(manager); 
-	}
-	virtual void OnDraw(SDL_Renderer* renderer) { UNUSED_PARAM(renderer); }
 	virtual void OnStart() {}; // when tool just changed
 	virtual void OnExit() {}; // when tool is changed
 	virtual void OnCancel() {}; // when escape is pressed

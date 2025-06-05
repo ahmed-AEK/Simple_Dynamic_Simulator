@@ -29,6 +29,7 @@ public:
     bool isAlive() const {if (m_ptr && m_ptr->isAlive()) {return true;} else { return false; }}
     explicit operator bool() const { return isAlive(); }
     T* operator->() const { return GetObjectPtr(); }
+    bool operator==(const HandlePtr&) const = default;
 };
 
 template <typename T, typename U>
@@ -45,6 +46,7 @@ public:
     explicit operator bool() const { return isAlive(); }
     T* operator->() const { return static_cast<T*>(GetObjectPtr()); }
     operator HandlePtr<U>() const { return m_ptr; }
+    bool operator==(const HandlePtrS&) const = default;
 };
 
 template <typename T>

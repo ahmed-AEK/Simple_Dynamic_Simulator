@@ -60,14 +60,8 @@ private:
     std::unordered_map<Key, ValueStore> m_stored_values;
 };
 
-static bool operator==(const SDL_Color& r1, const SDL_Color& r2)
-{
-    return r1.r == r2.r && r1.g == r2.g && r1.b == r2.b;
-}
-
 struct RoundRectSpec
 {
-    SDL_Color color;
     int radius;
     bool operator==(const RoundRectSpec&) const = default;
 };
@@ -78,9 +72,6 @@ struct std::hash<RoundRectSpec>
     std::size_t operator()(const RoundRectSpec& k) const
     {
         size_t hash = 0;
-        boost::hash_combine(hash, k.color.r);
-        boost::hash_combine(hash, k.color.g);
-        boost::hash_combine(hash, k.color.b);
         boost::hash_combine(hash, k.radius);
         return hash;
     }
@@ -135,9 +126,8 @@ void textures::ResetAllTextures()
 
 void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, const SDL_Color& color)
 {
-    if (!m_arc_texture || !m_arc_texture->GetTexture() || radius != stored_radius || color.r != stored_color.r || color.g != stored_color.g || color.b != stored_color.b)
+    if (!m_arc_texture || !m_arc_texture->GetTexture() || radius != stored_radius)
     {
-        stored_color = color;
         stored_radius = radius;
         ReCreateArcTexture(renderer);
     }
@@ -145,11 +135,12 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, 
     rect.y = std::floor(rect.y);
     rect.h = std::ceil(rect.h);
     rect.w = std::ceil(rect.w);
+    SDL_SetTextureColorMod(m_arc_texture->GetTexture(), color.r, color.g, color.b);
 
     float radius_f = static_cast<float>(radius);
     {
         // draw rects
-        SDL_SetRenderDrawColor(renderer, stored_color.r, stored_color.g, stored_color.b, 255);
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
         SDL_FRect rects[]{
             {rect.x + radius_f, rect.y, rect.w - 2 * radius_f, radius_f},
             {rect.x, rect.y + radius_f, rect.w, rect.h - 2 * radius_f},
@@ -158,7 +149,6 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, 
 
         SDL_RenderFillRects(renderer, rects, static_cast<int>(std::size(rects)));
     }
-
     {
         // draw lower right corner
         SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y + rect.h - radius_f, radius_f, radius_f };
@@ -216,7 +206,7 @@ void RoundRectPainter::SetDrawSides(bool NW, bool NE, bool SE, bool SW)
 
 void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
 {
-    RoundRectSpec spec{ stored_color,stored_radius };
+    RoundRectSpec spec{ stored_radius };
     if (auto ptr = g_roundrect_store.GetItem(spec))
     {
         m_arc_texture = std::move(ptr);
@@ -238,7 +228,7 @@ void RoundRectPainter::ReCreateArcTexture(SDL_Renderer* renderer)
         SDL_SetRenderTarget(renderer, m_arc_texture->GetTexture());
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // set color to transparent white
         SDL_RenderClear(renderer); // clear renderer
-        DrawFilledArcAA3(renderer, stored_radius - 1, stored_color);
+        DrawFilledArcAA3(renderer, stored_radius - 1, SDL_Color{255,255,255,255});
         SDL_SetRenderTarget(renderer, old_texture);
     }
 }
@@ -389,7 +379,8 @@ void TextPainter::Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL
         return;
     }
     assert(m_font);
-    AssureTexture(renderer, color);
+    AssureTexture(renderer);
+    SDL_SetTextureColorMod(m_text_texture.GetTexture(), color.r, color.g, color.b);
 
     SDL_FRect text_rect{ 0,0,0,0 };
     SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
@@ -398,10 +389,10 @@ void TextPainter::Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL
     SDL_RenderTexture(renderer, m_text_texture.GetTexture(), NULL, &text_rect);
 }
 
-SDL_FRect TextPainter::GetRect(SDL_Renderer* renderer, const SDL_Color color)
+SDL_FRect TextPainter::GetRect(SDL_Renderer* renderer)
 {
     assert(m_font);
-    AssureTexture(renderer, color);
+    AssureTexture(renderer);
     SDL_FRect text_rect{ 0,0,0,0 };
     SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
     return text_rect;
@@ -418,20 +409,18 @@ void TextPainter::SetText(std::string_view text)
 
 void TextPainter::ReCreateTexture(SDL_Renderer* renderer)
 {
-    SDL_Color color = m_stored_color;
-    auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), m_text.size(), color)};
+    auto textSurface = SDLSurface{ TTF_RenderText_Blended(m_font, m_text.c_str(), m_text.size(), SDL_Color{255,255,255,255})};
     auto texture = SDLTexture{ SDL_CreateTextureFromSurface(renderer, textSurface.get()) };
     m_text_texture.SetTexture(std::move(texture));
     SDL_FRect text_rect{};
     SDL_GetTextureSize(m_text_texture.GetTexture(), &text_rect.w, &text_rect.h);
 }
 
-void TextPainter::AssureTexture(SDL_Renderer* renderer, const SDL_Color& color)
+void TextPainter::AssureTexture(SDL_Renderer* renderer)
 {
     assert(m_font);
-    if (!m_text_texture.GetTexture() || color.r != m_stored_color.r || color.g != m_stored_color.g || color.b != m_stored_color.b)
+    if (!m_text_texture.GetTexture())
     {
-        m_stored_color = color;
         m_text_texture.DropTexture();
         ReCreateTexture(renderer);
     }

@@ -15,9 +15,29 @@ node::model::Rect node::BlockResizeObject::RectForBlockRect(const model::Rect& r
 }
 
 node::BlockResizeObject::BlockResizeObject(BlockObject& parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size)
-	:GraphicsObject{size, ObjectType::interactive, nullptr}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
+	:ObjectAttachment{size, ObjectType::interactive, nullptr}, m_parent_block{parent_block}, m_manager{manager}, m_rotate_rasterizer{"assets/redo.svg",0,0}
 {
 	SetAligned(false);
+}
+
+void node::BlockResizeObject::OnAttachObject(GraphicsObject& object)
+{
+	auto new_rect = RectForBlockRect(object.GetSceneRect());
+	SetPosition({ new_rect.x, new_rect.y });
+	SetSize({ new_rect.w, new_rect.h });
+	SetVisible(true);
+}
+
+void node::BlockResizeObject::OnDetachObject()
+{
+	SetVisible(false);
+}
+
+void node::BlockResizeObject::OnObjectRectUpdate(const model::Rect& rect)
+{
+	auto new_rect = RectForBlockRect(rect);
+	SetPosition({ new_rect.x, new_rect.y });
+	SetSize({ new_rect.w, new_rect.h });
 }
 
 void node::BlockResizeObject::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)

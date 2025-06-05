@@ -179,7 +179,7 @@ void node::ToolBarButton::OnDraw(SDL::Renderer& renderer)
 			}
 
 			const SDL_Color Black = renderer.GetColor(ColorRole::text_normal);
-			SDL_FRect text_rect = m_text_painter->GetRect(renderer, Black);
+			SDL_FRect text_rect = m_text_painter->GetRect(renderer);
 			text_rect.x = inner_rect.x + inner_rect.w / 2 - text_rect.w / 2;
 			text_rect.y = inner_rect.y + inner_rect.h / 2 - text_rect.h / 2;
 			m_text_painter->Draw(renderer, SDL_FPoint{ text_rect.x, text_rect.y }, Black);

@@ -181,8 +181,11 @@ std::optional<node::NetModificationRequest> node::NetUtils::GetDeletionRequestFo
 			assert(id_opt);
 			if (id_opt)
 			{
-				request.removed_segments.push_back(*id_opt);
-				segments_to_remove.insert(net_segment);
+				auto&& [it, inserted] = segments_to_remove.insert(net_segment);
+				if (inserted)
+				{
+					request.removed_segments.push_back(*id_opt);
+				}
 			}
 		}
 		if (object_ptr->GetObjectType() == ObjectType::netNode)
@@ -192,8 +195,11 @@ std::optional<node::NetModificationRequest> node::NetUtils::GetDeletionRequestFo
 			assert(id_opt);
 			if (id_opt)
 			{
-				request.removed_nodes.push_back(*id_opt);
-				nodes_to_remove.insert(netnode);
+				auto&& [it, inserted] = nodes_to_remove.insert(netnode);
+				if (inserted)
+				{
+					request.removed_nodes.push_back(*id_opt);
+				}
 			}
 			if (netnode->GetConnectedSocket())
 			{

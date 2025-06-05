@@ -5,22 +5,18 @@
 #include "BlockSocketObject.hpp"
 #include "NetObject.hpp"
 
-MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager)
+MI::ClickEvent node::NetTool::OnObjectLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object)
 {
     using namespace node::model;
 
 	scene.ClearCurrentSelection();
-	auto* obj = scene.GetObjectAt(e.point);
-	if (!obj)
-	{
-		return MI::ClickEvent::NONE;
-	}
 
-    switch (obj->GetObjectType())
+
+    switch (object.GetObjectType())
     {
     case ObjectType::socket:
     {
-        auto* socket = static_cast<BlockSocketObject*>(obj);
+        auto* socket = static_cast<BlockSocketObject*>(&object);
         if (!socket->GetConnectedNode())
         {
             auto new_logic = logic::NewNetLogic::CreateFromSocket(*socket, &scene, &manager);
@@ -34,7 +30,7 @@ MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scen
     }
     case ObjectType::netSegment:
     {
-        auto* segment = static_cast<NetSegment*>(obj);
+        auto* segment = static_cast<NetSegment*>(&object);
         auto new_logic = logic::NewNetLogic::CreateFromSegment(*segment, e.point, &scene, &manager);
         if (new_logic)
         {
@@ -47,4 +43,28 @@ MI::ClickEvent node::NetTool::OnLMBDown(MouseButtonEvent& e, GraphicsScene& scen
     }
 
     return MI::ClickEvent::CLICKED;
+}
+
+bool node::NetTool::IsObjectClickable(GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object)
+{
+    UNUSED_PARAM(scene); UNUSED_PARAM(manager);
+
+    switch (object.GetObjectType())
+    {
+    case ObjectType::socket:
+    {
+        auto* socket = static_cast<BlockSocketObject*>(&object);
+        if (!socket->GetConnectedNode())
+        {
+            return true;
+        }
+        break;
+    }
+    case ObjectType::netSegment:
+    {
+        return true;
+    }
+    default: break;
+    }
+    return false;
 }

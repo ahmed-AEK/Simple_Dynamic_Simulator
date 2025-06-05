@@ -16,14 +16,16 @@ public:
 
 protected:
 	void OnDraw(SDL::Renderer& renderer) override;
-	void OnMouseOut(MouseHoverEvent& e) override;
 	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
 	MI::ClickEvent OnLMBUp(MouseButtonEvent& e) override;
+	void OnMouseOut(MouseHoverEvent& e) override;
+	void OnMouseIn(MouseHoverEvent& e) override;
 private:
 	RoundRectPainter m_outer_painter;
 	RoundRectPainter m_inner_painter;
 	TextPainter m_text_painter;
 	std::function<void()> m_onClick;
+	bool b_hovered = false;
 	bool b_being_clicked = false;
 };
 

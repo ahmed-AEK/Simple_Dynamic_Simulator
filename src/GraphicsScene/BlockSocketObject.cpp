@@ -59,13 +59,8 @@ void node::BlockSocketObject::Draw(SDL::Renderer& renderer, const SpaceScreenTra
 	UNUSED_PARAM(transformer);
 }
 
-void node::BlockSocketObject::UpdateConnectedNodes()
-{
-}
-
 void node::BlockSocketObject::OnSetPosition(const model::Point& position)
 {
 	GraphicsObject::OnSetPosition(position);
-	UpdateConnectedNodes();
 }
 

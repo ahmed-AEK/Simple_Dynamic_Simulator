@@ -870,7 +870,7 @@ void node::PlotWidget::DrawAxesTicks(SDL::Renderer& renderer)
 		std::array<SDL_FRect, y_ticks_count> painters_rects;
 		for (size_t i = 0; i < painters_rects.size(); i++)
 		{
-			painters_rects[i] = m_y_painters[i].GetRect(renderer, text_color);
+			painters_rects[i] = m_y_painters[i].GetRect(renderer);
 			x_inner_offset = std::max(painters_rects[i].w + 2 * text_margin + tick_length, x_inner_offset);
 		}
 
@@ -909,7 +909,7 @@ void node::PlotWidget::DrawAxesTicks(SDL::Renderer& renderer)
 			{
 				if (draw_text)
 				{					
-					SDL_FRect text_rect = m_x_painters[i].GetRect(renderer, text_color);
+					SDL_FRect text_rect = m_x_painters[i].GetRect(renderer);
 					text_rect.x = x - text_rect.w/2;
 					text_rect.y = inner_rect.y + inner_rect.h + tick_length + 5;
 					m_x_painters[i].Draw(renderer, { text_rect.x, text_rect.y }, text_color);
@@ -931,7 +931,7 @@ void node::PlotWidget::DrawCoords(SDL::Renderer& renderer)
 	{
 		const SDL_Color text_color = renderer.GetColor(ColorRole::text_normal);
 		auto&& rect = GetInnerRect();
-		auto text_rect = m_current_point_painter.GetRect(renderer, text_color);
+		auto text_rect = m_current_point_painter.GetRect(renderer);
 		const SDL_FPoint start_point{ rect.x + rect.w - text_rect.w, rect.y - text_rect.h - 2};
 		m_current_point_painter.Draw(renderer, start_point, text_color);
 	}

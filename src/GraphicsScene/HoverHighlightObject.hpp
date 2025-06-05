@@ -9,11 +9,11 @@ namespace node
 class GraphicsObjectsManager;
 class BlockObject;
 
-class BlockResizeObject : public ObjectAttachment
+class HoverHighlightObject : public ObjectAttachment
 {
 public:
-	static model::Rect RectForBlockRect(const model::Rect& rect);
-	BlockResizeObject(BlockObject& parent_block, GraphicsObjectsManager* manager, const model::ObjectSize& size);
+	static model::Rect RectForObject(const model::Rect& rect);
+	HoverHighlightObject(GraphicsObject& parent_object, GraphicsObjectsManager* manager, const model::ObjectSize& size);
 
 	void OnAttachObject(GraphicsObject& object) override;
 	void OnDetachObject() override;
@@ -22,14 +22,11 @@ public:
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 protected:
 	GraphicsObject* OnGetInteractableAtPoint(const model::Point& point) override;
-	MI::ClickEvent OnLMBDown(MouseButtonEvent& e) override;
-
 private:
 	model::Rect GetInnerRect();
-	HandlePtrS<BlockObject, GraphicsObject> m_parent_block;
+	HandlePtr<GraphicsObject> m_parent_object;
 	GraphicsObjectsManager* m_manager;
-	SVGRasterizer m_rotate_rasterizer;
-	static constexpr int corner_width = 15;
+	static constexpr int side_width = 3;
 	logging::Logger m_logger = logger(logging::LogCategory::GUI);
 };
 

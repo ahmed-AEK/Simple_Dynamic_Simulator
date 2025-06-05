@@ -327,7 +327,7 @@ void node::TabButton::OnDraw(SDL::Renderer& renderer)
 	{
 		auto X_Rect = GetXBtnRect();
 		ThickFilledRoundRect(renderer, X_Rect, 6, 1, outlineColor, background_color, m_X_btn_painter_outer, m_X_btn_painter_inner);
-		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer, text_color);
+		SDL_FRect X_Rect_inner = m_X_painter.GetRect(renderer);
 		m_X_painter.Draw(renderer, { X_Rect.x + X_Rect.w / 2 - X_Rect_inner.w / 2 , X_Rect.y + X_Rect.h / 2 - X_Rect_inner.h / 2 }, text_color);
 	}
 }

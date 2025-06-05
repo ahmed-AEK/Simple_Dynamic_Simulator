@@ -117,7 +117,7 @@ void node::PaletteCategoryPicker::OnDraw(SDL::Renderer& renderer)
 	for (auto&& category : m_categories)
 	{
 		auto&& painter = category.painter;
-		auto&& text_rect = painter.GetRect(renderer, text_color);
+		auto&& text_rect = painter.GetRect(renderer);
 		
 		category.height = text_rect.h; // needed for click events
 

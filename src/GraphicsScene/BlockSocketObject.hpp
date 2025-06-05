@@ -44,7 +44,6 @@ public:
 
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
-	void UpdateConnectedNodes();
 	static constexpr int nodeLength = 15;
 protected:
 	void OnSetPosition(const model::Point& position) override;

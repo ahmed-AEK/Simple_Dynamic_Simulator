@@ -26,10 +26,6 @@ node::BlockObject::BlockObject(const model::ObjectSize& size,
 
 node::BlockObject::~BlockObject()
 {
-    if (m_resizer)
-    {
-        m_resizer->SetVisible(false);
-    }
 }
 
 void node::BlockObject::Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer)
@@ -53,29 +49,18 @@ MI::ClickEvent node::BlockObject::OnLMBDown(MouseButtonEvent& e)
 void node::BlockObject::OnSetPosition(const model::Point& position)
 {
     GraphicsObject::OnSetPosition(position);
-    if (m_resizer)
+    if (auto attachment = GetAttachment())
     {
-        auto new_rect = BlockResizeObject::RectForBlockRect(GetSceneRect());
-        m_resizer->SetPosition({ new_rect.x, new_rect.y });
-    }
-
-    for (auto&& socket : m_sockets)
-    {
-        socket->UpdateConnectedNodes();
+        attachment->OnObjectRectUpdate(GetSceneRect());
     }
 }
 
 void node::BlockObject::OnSetSize(const model::ObjectSize& size)
 {
     GraphicsObject::OnSetSize(size);
-    if (m_resizer)
+    if (auto attachment = GetAttachment())
     {
-        auto new_rect = BlockResizeObject::RectForBlockRect(GetSceneRect());
-        m_resizer->SetSize({ new_rect.w, new_rect.h });
-    }
-    for (auto&& socket : m_sockets)
-    {
-        socket->UpdateConnectedNodes();
+        attachment->OnObjectRectUpdate(GetSceneRect());
     }
 }
 
@@ -127,11 +112,6 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
             socket.GetPosition(), socket.GetConnectionSide());
         AddSocket(std::move(socket_ptr));
     }
-}
-
-void node::BlockObject::SetResizeHandles(BlockResizeObject& resize_object)
-{
-    m_resizer.reset(resize_object);
 }
 
 node::GraphicsObject* node::BlockObject::OnGetInteractableAtPoint(const model::Point& point)

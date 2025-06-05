@@ -99,7 +99,6 @@ private:
     void ReCreateArcTexture(SDL_Renderer* renderer);
 
     std::shared_ptr<DroppableTexture> m_arc_texture;
-    SDL_Color stored_color{ 0,0,0,0 };
     int stored_radius{ 0 };
     std::array<bool, 4> m_draw_sides{ true,true,true,true };
 };
@@ -117,7 +116,7 @@ public:
     TextPainter(TextPainter&&) = default;
 
     void Draw(SDL_Renderer* renderer, const SDL_FPoint point, const SDL_Color color);
-    SDL_FRect GetRect(SDL_Renderer* renderer, const SDL_Color color);
+    SDL_FRect GetRect(SDL_Renderer* renderer);
 
     void SetText(std::string_view text);
     void SetFont(TTF_Font* font);
@@ -125,13 +124,11 @@ public:
     const std::string& GetText() const { return m_text; }
 private:
     void ReCreateTexture(SDL_Renderer* renderer);
-    void AssureTexture(SDL_Renderer* renderer, const SDL_Color& color);
+    void AssureTexture(SDL_Renderer* renderer);
 
     DroppableTexture m_text_texture;
     std::string m_text;
     TTF_Font* m_font;
-    SDL_Color m_stored_color{ 0,0,0,0 };
-
 };
 
 

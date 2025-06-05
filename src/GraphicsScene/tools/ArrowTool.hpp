@@ -20,7 +20,10 @@ class ArrowTool: public GraphicsTool, public SinglePublisher<BlockDoubleClickedE
 {
 public:
 	using GraphicsTool::GraphicsTool;
-	MI::ClickEvent OnLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) override;
+	MI::ClickEvent OnObjectLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object) override;
+	MI::ClickEvent OnSpaceLMBDown(MouseButtonEvent& e, GraphicsScene& scene, GraphicsObjectsManager& manager) override;
+	bool IsObjectClickable(GraphicsScene& scene, GraphicsObjectsManager& manager, GraphicsObject& object) override;
+
 	bool InternalSelectObject(GraphicsObject* object, GraphicsScene& scene);
 	void OnExit() override; // when tool is changed
 private:
