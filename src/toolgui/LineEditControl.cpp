@@ -188,20 +188,86 @@ bool node::LineEditControl::OnKeyPress(KeyboardEvent& e)
 	}
 	else if (key == SDL_SCANCODE_LEFT)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor_position;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		if (m_cursor_position > 0)
 		{
-			m_cursor_position--;
+			if (!(e.e.mod & SDL_KMOD_CTRL))
+			{
+				m_cursor_position--;
+			}
+			else
+			{
+				while (m_cursor_position > 0 && m_value[m_cursor_position - 1] == ' ')
+				{
+					m_cursor_position--;
+				}
+				while (m_cursor_position > 0 && m_value[m_cursor_position - 1] != ' ')
+				{
+					m_cursor_position--;
+				}
+			}
+			if (e.e.mod & SDL_KMOD_SHIFT)
+			{
+				m_selection_anchor = m_cursor_position;
+				m_selection_active = m_selection_start != m_selection_anchor;
+			}
 			ReCalculateCursorsPixelPosition();
 		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_RIGHT)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor_position;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		if (m_cursor_position < m_value.size())
 		{
-			m_cursor_position++;
+			if (!(e.e.mod & SDL_KMOD_CTRL))
+			{
+				m_cursor_position++;
+			}
+			else
+			{
+				while (m_cursor_position < m_value.size() && m_value[m_cursor_position] != ' ')
+				{
+					m_cursor_position++;
+				}
+				while (m_cursor_position < m_value.size() && m_value[m_cursor_position] == ' ')
+				{
+					m_cursor_position++;
+				}
+			}
+			if (e.e.mod & SDL_KMOD_SHIFT)
+			{
+				m_selection_anchor = m_cursor_position;
+				m_selection_active = m_selection_start != m_selection_anchor;
+			}
 			ReCalculateCursorsPixelPosition();
 		}
 		return true;

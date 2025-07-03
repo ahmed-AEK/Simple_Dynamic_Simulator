@@ -2,6 +2,7 @@
 #include "toolgui/NodeMacros.h"
 #include <boost/range/adaptors.hpp>
 #include "optimizer/NLGraphSolver_private.hpp"
+#include <set>
 
 tl::expected<double, std::string> opt::NLGraphSolver_impl::SolveInternal(std::span<const double> x, std::span<double> grad)
 {
@@ -15,7 +16,7 @@ tl::expected<double, std::string> opt::NLGraphSolver_impl::SolveInternal(std::sp
     double main_penalty = *res_temp;
     if (grad.size())
     {
-        for (size_t i = 0; i < x.size(); i++)
+        for (size_t i = 0; i < m_estimated_output_ids.size(); i++)
         {
             const double old_value = m_current_state.get(m_estimated_output_ids[i]);
             const double delta = std::abs(old_value) * 1e-3 + 1e-5;
@@ -28,6 +29,20 @@ tl::expected<double, std::string> opt::NLGraphSolver_impl::SolveInternal(std::sp
             const double new_penalty = *res;
             grad[i] = (new_penalty - main_penalty) / delta;
             m_current_state.modify(m_estimated_output_ids[i], old_value);
+        }
+        for (size_t i = 0; i < m_estimated_flow_nodes.size(); i++)
+        {
+            const double old_value = m_current_state.get(m_estimated_flow_nodes[i]);
+            const double delta = std::abs(old_value) * 1e-3 + 1e-5;
+            m_current_state.modify(m_estimated_flow_nodes[i], old_value + delta);
+            auto res = CalcPenalty(m_current_state);
+            if (!res)
+            {
+                return res;
+            }
+            const double new_penalty = *res;
+            grad[i + m_estimated_output_ids.size()] = (new_penalty - main_penalty) / delta;
+            m_current_state.modify(m_estimated_flow_nodes[i], old_value);
         }
     }
     return main_penalty;
@@ -53,10 +68,14 @@ double opt::NLGraphSolver_impl::CostFunction(unsigned n, const double* x, double
 
 void opt::NLGraphSolver_impl::LoadDatatoMap(std::span<const double> x, FlatMap& state)
 {
-    assert(x.size() == m_estimated_output_ids.size());
-    for (size_t i = 0; i < x.size(); i++)
+    assert(x.size() == (m_estimated_output_ids.size() + m_estimated_flow_nodes.size()));
+    for (size_t i = 0; i < m_estimated_output_ids.size(); i++)
     {
         state.modify(m_estimated_output_ids[i], x[i]);
+    }
+    for (size_t i = 0; i < m_estimated_flow_nodes.size(); i++)
+    {
+        state.modify(m_estimated_flow_nodes[i], x[i + m_estimated_output_ids.size()]);
     }
 }
 
@@ -69,12 +88,24 @@ void opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state, std::vector<double>& 
     {
         output.push_back(state.get(m_estimated_output_ids[i]));
     }
+    for (size_t i = 0; i < m_estimated_flow_nodes.size(); i++)
+    {
+        output.push_back(state.get(m_estimated_flow_nodes[i]));
+    }
 }
 
 tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 {
     {
         auto res = EvalSpecificFunctors(state, m_inner_solve_eqns);
+        if (!res)
+        {
+            return tl::unexpected<std::string>{ std::move(res.error()) };
+        }
+    }
+    if (m_flow_equations.size())
+    {
+        auto res = EvalFlowEquations(state, m_flow_nodes);
         if (!res)
         {
             return tl::unexpected<std::string>{ std::move(res.error()) };
@@ -152,6 +183,11 @@ tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& 
         }
         }
     }
+    for (const auto& node : m_estimated_flow_nodes)
+    {
+        const auto& current_value = m_flow_nodes[m_node_id_to_flow_index[node]].current_value;
+        penalty += current_value * current_value;
+    }
     return std::sqrt(penalty);
 }
 
@@ -194,9 +230,10 @@ opt::NLGraphSolver_impl::NLGraphSolver_impl()
 {
 }
 
-void opt::NLGraphSolver_impl::Initialize()
+void opt::NLGraphSolver_impl::Initialize(std::span<int32_t> fixed_ids)
 {
     std::vector<int32_t> remaining_output_ids;
+    std::set<int32_t> remaining_flow_nodes;
 
     for (const auto& item : m_equations)
     {
@@ -213,6 +250,33 @@ void opt::NLGraphSolver_impl::Initialize()
         auto&& id = item.output_id;
         remaining_output_ids.push_back(id);
     }
+    for (const auto& item : m_flow_equations)
+    {
+        auto&& range = item.output_ids;
+        for (const auto& id : range)
+        {
+            remaining_flow_nodes.insert(id);
+        }
+    }
+    for (const auto& id : remaining_flow_nodes)
+    {
+        m_flow_nodes.push_back(FlowNode{ id, false, 0 });
+        while (m_node_id_to_flow_index.size() <= id)
+        {
+            m_node_id_to_flow_index.push_back(-1);
+        }
+        m_node_id_to_flow_index[static_cast<size_t>(id)] = static_cast<int32_t>(m_flow_nodes.size() - 1);
+        if (auto it = std::find(fixed_ids.begin(), fixed_ids.end(), id); it != fixed_ids.end())
+        {
+            m_flow_nodes.back().fixed = true;
+            continue;
+        }
+        if (auto it = std::find(remaining_output_ids.begin(), remaining_output_ids.end(), id); it != remaining_output_ids.end())
+        {
+            m_flow_nodes.back().fixed = true;
+            continue;
+        }
+    }
 
     FillInitialSolveEqns(remaining_output_ids);
     for (const auto& id: m_initial_solve_output_ids)
@@ -228,7 +292,14 @@ void opt::NLGraphSolver_impl::Initialize()
     {
         FillInnerSolveEqns(remaining_output_ids);
     }
-    m_optimizer = nlopt::opt(nlopt::LD_SLSQP, static_cast<unsigned int>(m_estimated_output_ids.size()));
+    for (const auto& node : m_flow_nodes)
+    {
+        if (!node.fixed)
+        {
+            m_estimated_flow_nodes.push_back(node.node_id);
+        }
+    }
+    m_optimizer = nlopt::opt(nlopt::LD_SLSQP, static_cast<unsigned int>(m_estimated_output_ids.size() + m_estimated_flow_nodes.size()));
     m_optimizer.set_min_objective(opt::NLGraphSolver_impl::CostFunction, this);
     m_optimizer.set_xtol_rel(1e-4);
     m_optimizer.set_xtol_abs(1e-6);
@@ -421,6 +492,42 @@ opt::NLSolveResult opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state,
         }
     }
     return std::monostate{};
+}
+
+opt::NLSolveResult opt::NLGraphSolver_impl::EvalFlowEquations(FlatMap& state, std::span<FlowNode> nodes)
+{
+    for (auto& node : nodes)
+    {
+        node.current_value = 0;
+    }
+    std::array<double, 20> input_temp_buffer;
+    std::array<double, 20> output_temp_buffer;
+    for (auto& eq : m_flow_equations)
+    {
+        auto& input_ids = eq.input_ids;
+        auto input_buffer = std::span{ input_temp_buffer }.subspan(0, input_ids.size());
+        assert(input_buffer.size() == input_ids.size());
+        for (size_t i = 0; i < input_buffer.size(); i++)
+        {
+            const auto val = state.get(input_ids[i]);
+            input_buffer[i] = val;
+        }
+        auto& output_ids = eq.output_ids;
+        auto output_buffer = std::span{ output_temp_buffer }.subspan(0, output_ids.size());
+
+        auto res = eq.equation->Apply(input_buffer, output_buffer);
+        if (res == Status::error)
+        {
+            return tl::unexpected<std::string>{ eq.equation->GetLastError() };
+        }
+        assert(output_buffer.size() == output_ids.size());
+        for (size_t i = 0; i < output_buffer.size(); i++)
+        {
+            const double new_value = output_buffer[i];
+            nodes[m_node_id_to_flow_index[output_ids[i]]].current_value += new_value;
+        }
+    }
+    return NLSolveResult();
 }
 
 void opt::NLGraphSolver_impl::FillInnerSolveEqns(std::vector<int32_t>& remaining_output_ids)
@@ -682,6 +789,11 @@ void opt::NLGraphSolver_impl::AddBufferEq(BufferEquation eq)
     m_buffer_equations.push_back(std::move(eq));
 }
 
+void opt::NLGraphSolver_impl::AddFlowEquation(FlowEquationWrapper eq)
+{
+    m_flow_equations.push_back(std::move(eq));
+}
+
 static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, const std::vector<int32_t>& indicies)
 {
     for (const auto& idx : indicies)
@@ -692,7 +804,7 @@ static void OffloadSpecificIndicies(const opt::FlatMap& src, opt::FlatMap& dst, 
 
 opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& time)
 {
-    if ( 0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size())
+    if ( 0 == m_estimated_output_ids.size() && 0 == m_initial_solve_output_ids.size() && 0 == m_estimated_flow_nodes.size())
     {
         return std::monostate{};
     }
@@ -706,7 +818,7 @@ opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& 
             return res;
         }
     }
-    if (m_estimated_output_ids.size())
+    if (m_estimated_output_ids.size() || m_estimated_flow_nodes.size())
     {
         LoadMaptoVec(m_current_state, m_current_x);
         double min_value;
@@ -724,9 +836,14 @@ opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& 
         }
         OffloadSpecificIndicies(m_current_state, state, m_initial_solve_output_ids);
         OffloadSpecificIndicies(m_current_state, state, m_inner_solve_output_ids);
+        OffloadSpecificIndicies(m_current_state, state, m_estimated_flow_nodes);
         for (size_t idx = 0; idx < m_estimated_output_ids.size(); idx++)
         {
             state.modify(m_estimated_output_ids[idx], m_current_x[idx]);
+        }
+        for (size_t idx = 0; idx < m_estimated_flow_nodes.size(); idx++)
+        {
+            state.modify(m_estimated_flow_nodes[idx], m_current_x[idx + m_estimated_output_ids.size()]);
         }
     }
     else
@@ -761,9 +878,9 @@ opt::NLGraphSolver::NLGraphSolver(NLGraphSolver&&) noexcept = default;
 
 opt::NLGraphSolver& opt::NLGraphSolver::operator=(NLGraphSolver&&) noexcept = default;
 
-void opt::NLGraphSolver::Initialize()
+void opt::NLGraphSolver::Initialize(std::span<int32_t> fixed_ids)
 {
-    m_impl->Initialize();
+    m_impl->Initialize(fixed_ids);
 }
 
 opt::NLSolveResult opt::NLGraphSolver::Solve(FlatMap& state, const double& time)
@@ -789,6 +906,11 @@ void opt::NLGraphSolver::AddStatefulEquation(NLStatefulEquationWrapper eq)
 void opt::NLGraphSolver::AddBufferEquation(BufferEquation eq)
 {
     m_impl->AddBufferEq(std::move(eq));
+}
+
+void opt::NLGraphSolver::AddFlowEquation(FlowEquationWrapper eq)
+{
+    m_impl->AddFlowEquation(std::move(eq));
 }
 
 std::vector<opt::NLStatefulEquationWrapper>& opt::NLGraphSolver::GetStatefulEquations()

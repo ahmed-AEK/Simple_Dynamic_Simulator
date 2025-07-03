@@ -222,10 +222,39 @@ bool node::MultiLineEditControl::OnKeyPress(KeyboardEvent& e)
 	}
 	else if (key == SDL_SCANCODE_LEFT)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		if (m_cursor.position.column > 0)
 		{
-			m_cursor.position.column--;
+			if (!(e.e.mod & SDL_KMOD_CTRL))
+			{
+				m_cursor.position.column--;
+			}
+			else
+			{
+				auto& row = m_text[m_cursor.position.row];
+				while (m_cursor.position.column > 0 && row[m_cursor.position.column - 1] == ' ')
+				{
+					m_cursor.position.column--;
+				}
+				while (m_cursor.position.column > 0 && row[m_cursor.position.column - 1] != ' ')
+				{
+					m_cursor.position.column--;
+				}
+			}
 			m_cursor_dirty = true;
 		}
 		else if (m_cursor.position.row > 0)
@@ -238,17 +267,50 @@ bool node::MultiLineEditControl::OnKeyPress(KeyboardEvent& e)
 			}
 			m_cursor_dirty = true;
 		}
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			m_selection_anchor = m_cursor;
+			m_selection_active = m_selection_start != m_selection_anchor;
+		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_RIGHT)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		if (m_cursor.position.row < m_text.size())
 		{
 			const auto& row = m_text[m_cursor.position.row];
 			if (m_cursor.position.column < row.size())
 			{
-				m_cursor.position.column++;
+				if (!(e.e.mod & SDL_KMOD_CTRL))
+				{
+					m_cursor.position.column++;
+				}
+				else
+				{
+					while (m_cursor.position.column < row.size() && row[m_cursor.position.column] != ' ')
+					{
+						m_cursor.position.column++;
+					}
+					while (m_cursor.position.column < row.size() && row[m_cursor.position.column] == ' ')
+					{
+						m_cursor.position.column++;
+					}
+				}
 			}
 			else
 			{
@@ -256,19 +318,36 @@ bool node::MultiLineEditControl::OnKeyPress(KeyboardEvent& e)
 				m_cursor.position.column = 0;
 			}
 			m_cursor_dirty = true;
-			return true;
-
 		}
 		else
 		{
 			m_cursor.position.row++;
 			m_cursor_dirty = true;
-			return true;
 		}
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			m_selection_anchor = m_cursor;
+			m_selection_active = m_selection_start != m_selection_anchor;
+		}
+		return true;
 	}
 	else if (key == SDL_SCANCODE_UP)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		if (m_cursor.position.row == 0)
 		{
 			m_cursor.position.column = 0;
@@ -287,11 +366,30 @@ bool node::MultiLineEditControl::OnKeyPress(KeyboardEvent& e)
 			}
 			m_cursor_dirty = true;
 		}
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			m_selection_anchor = m_cursor;
+			m_selection_active = m_selection_start != m_selection_anchor;
+		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_DOWN)
 	{
-		m_selection_active = false;
+		// handle selection
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			if (!m_selection_active)
+			{
+				m_selection_active = true;
+				m_selection_start = m_cursor;
+			}
+		}
+		else
+		{
+			m_selection_active = false;
+		}
+
+		// handle motion
 		m_cursor.position.row++;
 		if (m_cursor.position.row >= m_text.size())
 		{
@@ -307,6 +405,11 @@ bool node::MultiLineEditControl::OnKeyPress(KeyboardEvent& e)
 			m_cursor_dirty = true;
 		}
 		m_cursor_dirty = true;
+		if (e.e.mod & SDL_KMOD_SHIFT)
+		{
+			m_selection_anchor = m_cursor;
+			m_selection_active = m_selection_start != m_selection_anchor;
+		}
 		return true;
 	}
 	else if (key == SDL_SCANCODE_RETURN)

@@ -2,6 +2,8 @@
 
 #include "optimizer/NLEquation.hpp"
 #include "optimizer/NLStatefulEquation.hpp"
+#include "optimizer/FlowEquation.hpp"
+
 #include "optimizer/flatmap.hpp"
 #include <nlopt.hpp>
 #include <tl/expected.hpp>
@@ -14,12 +16,13 @@ class NLGraphSolver_impl
 public:
 	explicit NLGraphSolver_impl(std::vector<NLEquationWrapper> equations);
 	NLGraphSolver_impl();
-	void Initialize();
+	void Initialize(std::span<int32_t> fixed_ids);
 	[[nodiscard]] NLSolveResult Solve(FlatMap& state, const double& time);
 	[[nodiscard]] NLSolveResult UpdateState(FlatMap& state, const double& time);
 	void AddEquation(NLEquationWrapper eq);
 	void AddStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEq(BufferEquation eq);
+	void AddFlowEquation(FlowEquationWrapper eq);
 	std::vector<NLStatefulEquationWrapper>& GetStatefulEquations();
 protected:
 	[[nodiscard]] tl::expected<double, std::string> SolveInternal(std::span<const double> x, std::span<double> grad);
@@ -34,6 +37,7 @@ private:
 	std::vector<NLEquationWrapper> m_equations;
 	std::vector<NLStatefulEquationWrapper> m_stateful_equations;
 	std::vector<BufferEquation> m_buffer_equations;
+	std::vector<FlowEquationWrapper> m_flow_equations;
 	double m_last_state_time = 0;
 	opt::FlatMap m_current_state;
 	double m_current_time = 0;
@@ -53,15 +57,26 @@ private:
 		EquationType type;
 	};
 
+	struct FlowNode
+	{
+		int32_t node_id;
+		bool fixed;
+		double current_value;
+	};
+
 	std::vector<EquationIndex> m_initial_solve_eqns;
 	std::vector<int32_t> m_initial_solve_output_ids;
+	std::vector<FlowNode> m_flow_nodes;
 	void FillInitialSolveEqns(std::vector<int32_t>& remaining_output_ids);
 	[[nodiscard]] NLSolveResult EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies);
+	[[nodiscard]] NLSolveResult EvalFlowEquations(FlatMap& state, std::span<FlowNode> nodes);
 
 	std::vector<EquationIndex> m_estimated_eqns;
 	std::vector<int32_t> m_estimated_output_ids;
 	std::vector<EquationIndex> m_inner_solve_eqns;
 	std::vector<int32_t> m_inner_solve_output_ids;
+	std::vector<int32_t> m_estimated_flow_nodes;
+	std::vector<int32_t> m_node_id_to_flow_index;
 	void FillInnerSolveEqns(std::vector<int32_t>& remaining_output_ids);
 };
 

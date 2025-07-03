@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "boost/container_hash/hash.hpp"
+#include "boost/container/static_vector.hpp"
 
 template <typename Key, typename Value>
 class CacheStore
@@ -122,10 +123,105 @@ void textures::ResetAllTextures()
     Texturepainters.clear();
 }
 
+constexpr size_t max_rectangles_in_roundrect = 7;
+using RoundRectVerticies = boost::container::static_vector<SDL_Vertex, 6 * max_rectangles_in_roundrect>;
 
+static void add_rectangle_to_verticies(RoundRectVerticies& verticies, const SDL_FRect& inner_rect, const SDL_FColor& color_float)
+{
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+}
+
+enum class RotationType
+{
+    None,
+    R90,
+    R180,
+    R270,
+};
+
+static void add_rectangle_to_verticies_rotated(RoundRectVerticies& verticies, const SDL_FRect& inner_rect, 
+    const SDL_FColor& color_float, const RotationType rotation)
+{
+    const auto start_index = verticies.size();
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {1.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {1.0f,1.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y},
+        .color = color_float,
+        .tex_coord = {0.0f,0.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x + inner_rect.w,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {1.0f,1.0f} });
+    verticies.push_back(SDL_Vertex{ .position = {inner_rect.x,inner_rect.y + inner_rect.h},
+        .color = color_float,
+        .tex_coord = {0.0f,1.0f} });
+
+    switch (rotation)
+    {
+    case RotationType::R90:
+    {
+        verticies[start_index    ].tex_coord = { 0.0f, 1.0f };
+        verticies[start_index + 1].tex_coord = { 0.0f, 0.0f };
+        verticies[start_index + 2].tex_coord = { 1.0f, 0.0f };
+        verticies[start_index + 3].tex_coord = { 0.0f, 1.0f };
+        verticies[start_index + 4].tex_coord = { 1.0f, 0.0f };
+        verticies[start_index + 5].tex_coord = { 1.0f, 1.0f };
+        break;
+    }
+    case RotationType::R180:
+    {
+        verticies[start_index    ].tex_coord = { 1.0f, 1.0f };
+        verticies[start_index + 1].tex_coord = { 0.0f, 1.0f };
+        verticies[start_index + 2].tex_coord = { 0.0f, 0.0f };
+        verticies[start_index + 3].tex_coord = { 1.0f, 1.0f };
+        verticies[start_index + 4].tex_coord = { 0.0f, 0.0f };
+        verticies[start_index + 5].tex_coord = { 1.0f, 0.0f };
+        break;
+    }
+    case RotationType::R270:
+    {
+        verticies[start_index    ].tex_coord = { 1.0f, 0.0f };
+        verticies[start_index + 1].tex_coord = { 1.0f, 1.0f };
+        verticies[start_index + 2].tex_coord = { 0.0f, 1.0f };
+        verticies[start_index + 3].tex_coord = { 1.0f, 0.0f };
+        verticies[start_index + 4].tex_coord = { 0.0f, 1.0f };
+        verticies[start_index + 5].tex_coord = { 0.0f, 0.0f };
+        break;
+    }
+    case RotationType::None:
+    {
+        break;
+    }
+    }
+}
 
 void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, const SDL_Color& color)
 {
+    const SDL_FColor color_float{ color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, 1.0f };
+
     if (!m_arc_texture || !m_arc_texture->GetTexture() || radius != stored_radius)
     {
         stored_radius = radius;
@@ -135,68 +231,73 @@ void RoundRectPainter::Draw(SDL_Renderer* renderer, SDL_FRect rect, int radius, 
     rect.y = std::floor(rect.y);
     rect.h = std::ceil(rect.h);
     rect.w = std::ceil(rect.w);
-    SDL_SetTextureColorMod(m_arc_texture->GetTexture(), color.r, color.g, color.b);
 
-    float radius_f = static_cast<float>(radius);
+    RoundRectVerticies verticies;
+
+    const float radius_f = static_cast<float>(radius);
     {
         // draw rects
         SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
-        SDL_FRect rects[]{
+        const SDL_FRect rects[]{
             {rect.x + radius_f, rect.y, rect.w - 2 * radius_f, radius_f},
             {rect.x, rect.y + radius_f, rect.w, rect.h - 2 * radius_f},
             {rect.x + radius_f, rect.y + rect.h - radius_f, rect.w - 2 * radius_f, radius_f},
         };
-
-        SDL_RenderFillRects(renderer, rects, static_cast<int>(std::size(rects)));
+        for (const auto& inner_rect : rects)
+        {
+            add_rectangle_to_verticies(verticies, inner_rect, color_float);
+        }
     }
+
     {
         // draw lower right corner
-        SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y + rect.h - radius_f, radius_f, radius_f };
+        const SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y + rect.h - radius_f, radius_f, radius_f };
         if (m_draw_sides[2])
         {
-            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 0, 0, SDL_FLIP_NONE);
+            add_rectangle_to_verticies_rotated(verticies, trgt, color_float, RotationType::None);
         }
         else
         {
-            SDL_RenderFillRect(renderer, &trgt);
+            add_rectangle_to_verticies(verticies, trgt, color_float);
         }
     }
     {
         // draw upper right corner
-        SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y, radius_f, radius_f };
+        const SDL_FRect trgt{ rect.x + rect.w - radius_f, rect.y, radius_f, radius_f };
         if (m_draw_sides[1])
         {
-            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 270, 0, SDL_FLIP_NONE);
+            add_rectangle_to_verticies_rotated(verticies, trgt, color_float, RotationType::R270);
         }
         else
         {
-            SDL_RenderFillRect(renderer, &trgt);
+            add_rectangle_to_verticies(verticies, trgt, color_float);
         }
     }
     {
         // draw upper left corner
-        SDL_FRect trgt{ rect.x, rect.y, radius_f, radius_f };
+        const SDL_FRect trgt{ rect.x, rect.y, radius_f, radius_f };
         if (m_draw_sides[0])
         {
-            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 180, 0, SDL_FLIP_NONE);
+            add_rectangle_to_verticies_rotated(verticies, trgt, color_float, RotationType::R180);
         }
         else
         {
-            SDL_RenderFillRect(renderer, &trgt);
+            add_rectangle_to_verticies(verticies, trgt, color_float);
         }
     }
     {
         // draw lower left corner
-        SDL_FRect trgt{ rect.x, rect.y + rect.h - radius_f, radius_f, radius_f };
+        const SDL_FRect trgt{ rect.x, rect.y + rect.h - radius_f, radius_f, radius_f };
         if (m_draw_sides[3])
         {
-            SDL_RenderTextureRotated(renderer, m_arc_texture->GetTexture(), 0, &trgt, 90, 0, SDL_FLIP_NONE);
+            add_rectangle_to_verticies_rotated(verticies, trgt, color_float, RotationType::R90);
         }
         else
         {
-            SDL_RenderFillRect(renderer, &trgt);
+            add_rectangle_to_verticies(verticies, trgt, color_float);
         }
     }
+    SDL_RenderGeometry(renderer, m_arc_texture->GetTexture(), verticies.data(), static_cast<int>(verticies.size()), nullptr, 0);
 }
 
 void RoundRectPainter::SetDrawSides(bool NW, bool NE, bool SE, bool SW)

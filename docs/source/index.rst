@@ -17,3 +17,4 @@ This is the documentation for the `Simple Dynamic Simulator <https://github.com/
    getting_started
    builtin_blocks
    Lua_blocks
+   simulator_blocks

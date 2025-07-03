@@ -60,6 +60,37 @@ TEST(testNLGraphSolver, testAddBuffer)
 	EXPECT_EQ(second_output, 7);
 }
 
+
+TEST(testNLGraphSolver, testAddFlowEqn)
+{
+	opt::NLGraphSolver solver;
+	solver.AddFlowEquation(opt::FlowEquationWrapper{ { 0, 1 }, { 0, 1 },
+		opt::make_FlowEqn<opt::FunctorFlowEquation>([](auto inputs, auto output) -> void
+			{
+				output[0] = (inputs[0] - inputs[1]);
+				output[1] = -(inputs[0] - inputs[1]);
+			}) });
+	solver.AddFlowEquation(opt::FlowEquationWrapper{ { 1, 2 }, { 1, 2 },
+	opt::make_FlowEqn<opt::FunctorFlowEquation>([](auto inputs, auto output) -> void
+		{
+			output[0] = (inputs[0] - inputs[1]);
+			output[1] = -(inputs[0] - inputs[1]);
+		}) });
+	std::vector<int32_t> fixed_ids{ 0,2 };
+	solver.Initialize(fixed_ids);
+	opt::FlatMap state(3);
+	state.modify(0, 1);
+	state.modify(1, 0);
+	state.modify(2, 0);
+
+	auto result1 = solver.Solve(state, 1);
+	ASSERT_TRUE(result1);
+	
+	EXPECT_NEAR(state.get(0), 1.0, 1e-3);
+	EXPECT_NEAR(state.get(1), 0.5, 1e-3);
+	EXPECT_NEAR(state.get(2), 0.0, 1e-3);
+}
+
 TEST(testNLGraphSolver, testStateful_runs)
 {
 	opt::NLGraphSolver solver;

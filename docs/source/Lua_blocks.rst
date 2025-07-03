@@ -62,7 +62,7 @@ Stateful Block
 --------------
 this can have 5 functions, ``apply`` and ``update`` are mandatory, while ``setup`` and ``cross_trigger`` and ``event_trigger`` are optional.
 
-.. code-lock:: Lua
+.. code-block:: Lua
 
     function apply(input, output, t, data)
         -- apply code here

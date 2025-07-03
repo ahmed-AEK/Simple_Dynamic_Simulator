@@ -15,6 +15,7 @@ SourceEq.cpp SourceEq.hpp
 NLGraphSolver.cpp NLGraphSolver.hpp
 DiffSolver_private.hpp
 NLGraphSolver_private.hpp
+FlowEquation.cpp FlowEquation.hpp
 pch.h
 )
 

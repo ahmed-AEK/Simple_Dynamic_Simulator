@@ -24,7 +24,6 @@ enum class SocketType : char
 class BlockSocketModel
 {
 public:
-	friend class BlockModel;
 
 	using SocketType = model::SocketType;
 
