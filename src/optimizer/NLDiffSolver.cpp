@@ -83,10 +83,30 @@ void opt::NLDiffSolver::AddSource(SourceEqWrapper source)
 	m_sources.push_back(std::move(source));
 }
 
+void opt::NLDiffSolver::AddPotentialEquation(PotentialEquationWrapper eq)
+{
+	m_NLSolver.AddPotentialEquation(std::move(eq));
+}
+
+void opt::NLDiffSolver::AddFlowEquation(FlowEquationWrapper eq)
+{
+	m_NLSolver.AddFlowEquation(std::move(eq));
+}
+
 opt::NLSolveResult opt::NLDiffSolver::Initialize(double start_time, double end_time)
 {
 	m_diffSolver.Initialize(start_time, end_time);
-	m_NLSolver.Initialize();
+	{
+		std::vector<int32_t> fixed_ids;
+		GetSourcesOutputIndicies(fixed_ids);
+		m_diffSolver.GetOutputIndicies(fixed_ids);
+
+		auto result = m_NLSolver.Initialize(fixed_ids);
+		if (!result)
+		{
+			return tl::unexpected<std::string>(std::move(result.error()));
+		}
+	}
 	for (auto& observer : m_observers)
 	{
 		auto res = observer.o.equation->Initialize(start_time, end_time);
@@ -121,6 +141,15 @@ opt::NLSolveResult opt::NLDiffSolver::CalculateInitialConditions(FlatMap& state)
 		return result;
 	}
 	return NotifyZeroCrossings(state, GetCurrentTime());
+}
+
+void opt::NLDiffSolver::GetSourcesOutputIndicies(std::vector<int32_t>& indicies) const
+{
+	for (const auto& eq : m_sources)
+	{
+		auto&& output_ids = eq.output_ids;
+		indicies.insert(indicies.end(), output_ids.begin(), output_ids.end());
+	}
 }
 
 opt::NLSolveResult opt::NLDiffSolver::NotifyObservers(const FlatMap& state, const double t)

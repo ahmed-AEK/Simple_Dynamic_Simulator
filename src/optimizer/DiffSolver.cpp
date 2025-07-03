@@ -258,6 +258,15 @@ void opt::DiffSolver_impl::InterpolateAt(FlatMap& state, const double& t)
     LoadDatatoMap(m_current_interpolation_x, state);
 }
 
+void opt::DiffSolver_impl::GetOutputIndicies(std::vector<int32_t>& indicies) const
+{
+    for (const auto& eq : m_equations)
+    {
+        auto&& output_ids = eq.output_ids;
+        indicies.insert(indicies.end(), output_ids.begin(), output_ids.end());
+    }
+}
+
 opt::DiffSolver::DiffSolver()
     :m_impl(std::make_unique<DiffSolver_impl>())
 {
@@ -338,6 +347,12 @@ void opt::DiffSolver::InterpolateAt(FlatMap& state, const double& t)
 {
     m_impl->InterpolateAt(state, t);
 }
+
+void opt::DiffSolver::GetOutputIndicies(std::vector<int32_t>& indicies) const
+{
+    m_impl->GetOutputIndicies(indicies);
+}
+
 
 
 

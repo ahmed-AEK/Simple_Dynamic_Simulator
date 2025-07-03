@@ -18,7 +18,9 @@ TEST(testNLGraphSolver, testAddStateful)
 		{
 		}), {}
 		});
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(1);
 	state.modify(0,0);
 	
@@ -34,7 +36,9 @@ TEST(testNLGraphSolver, testAddBuffer)
 {
 	opt::NLGraphSolver solver;
 	solver.AddBufferEquation({0, 1});
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(2);
 	state.modify(0, 5);
 	state.modify(1, 0);
@@ -79,7 +83,9 @@ TEST(testNLGraphSolver, testStateful_runs)
 			*state = t;
 		}), {}
 		});
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(1);
 	state.modify(0,0);
 
@@ -107,7 +113,9 @@ TEST(testNLGraphSolver, testEmptyRun)
 {
 	opt::FlatMap state;
 	opt::NLGraphSolver solver;
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	auto result = solver.Solve(state, 0);
 	ASSERT_TRUE(result);
 }
@@ -118,7 +126,9 @@ TEST(testNLGraphSolver, testSolve)
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(2);
 	state.modify(0,3);
 	state.modify(1,0);
@@ -149,7 +159,9 @@ TEST(testNLGraphSolver, testStopOnError)
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(2);
 	state.modify(0, 3);
 	state.modify(1, 0);
@@ -165,7 +177,9 @@ TEST(testNLGraphSolver, testSolve_two_equations)
 	opt::NLGraphSolver solver;
 	solver.AddEquation(std::move(eq1));
 	solver.AddEquation(std::move(eq2));
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(3);
 	state.modify(0,3);
 	state.modify(1,0);
@@ -187,7 +201,9 @@ TEST(testNLGraphSolver, testSolve_two_equations_cyclic)
 
 	solver.AddEquation(std::move(eq1));
 	solver.AddEquation(std::move(eq2));
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(2);
 	state.modify(0,0);
 	state.modify(1,0);
@@ -258,7 +274,9 @@ TEST(testNLGraphSolver, testSolve_multiply_diff)
 	solver.AddEquation(std::move(mul));
 	solver.AddStatefulEquation(std::move(diff));
 
-	solver.Initialize();
+	auto initialized = solver.Initialize();
+	ASSERT_TRUE(initialized);
+
 	opt::FlatMap state(4);
 	state.modify(0, 0);
 	state.modify(1, 0);

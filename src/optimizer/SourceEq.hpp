@@ -51,7 +51,7 @@ class FunctorSourceEq : public ISourceEq
 {
 public:
 	using SourceFunctor = std::function<void(
-		std::span<double>, const double&, SourceEvent&)>;
+		std::span<double> out, const double& t, SourceEvent& ev)>;
 
 	using SourceTrigger = std::function<void(const double&, SourceEvent&)>;
 

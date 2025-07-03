@@ -310,15 +310,15 @@ namespace SDL
     }
 
     RenderClip::RenderClip(RenderClip&& other) noexcept
+        :m_renderer{ std::exchange(other.m_renderer, nullptr) }, 
+        m_success{ std::exchange(other.m_success, false) }
     {
-        m_renderer = std::exchange(other.m_renderer, nullptr);
-        m_success = std::exchange(other.m_success, false);
     }
 
     RenderClip& RenderClip::operator=(RenderClip&& other) noexcept
     {
-        m_renderer = std::exchange(other.m_renderer, nullptr);
-        m_success = std::exchange(other.m_success, false);
+        std::ranges::swap(m_renderer, other.m_renderer);
+        std::ranges::swap(m_renderer, other.m_renderer);
         return *this;
     }
 
@@ -346,11 +346,8 @@ namespace SDL
 
     PaletteScope& PaletteScope::operator=(PaletteScope&& other) noexcept
     {
-        if (this != &other)
-        {
-            m_renderer = std::exchange(other.m_renderer, nullptr);
-            m_palette = std::exchange(other.m_palette, ColorPalette{});
-        }
+        std::ranges::swap(m_renderer, other.m_renderer);
+        std::ranges::swap(m_palette, other.m_palette);
         return *this;
     }
 

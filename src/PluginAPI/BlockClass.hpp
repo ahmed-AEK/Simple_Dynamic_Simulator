@@ -182,10 +182,8 @@ public:
 	}
 	constexpr BlockClassPtr& operator=(const BlockClassPtr& other)
 	{
-		if (this == &other) { return *this; }
-		if (m_ptr) { m_ptr->decrement_ref(); }
-		m_ptr = other.m_ptr;
-		if (m_ptr) { m_ptr->increment_ref(); }
+		BlockClassPtr temp{ other };
+		std::ranges::swap(m_ptr, temp.m_ptr);
 		return *this;
 	}
 
@@ -195,9 +193,7 @@ public:
 	}
 	constexpr BlockClassPtr& operator=(BlockClassPtr&& other) noexcept
 	{
-		if (this == &other) { return *this; }
-		if (m_ptr) { m_ptr->decrement_ref(); }
-		m_ptr = std::exchange(other.m_ptr, nullptr);
+		std::ranges::swap(m_ptr, other.m_ptr);
 		return *this;
 	}
 

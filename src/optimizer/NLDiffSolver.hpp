@@ -24,21 +24,29 @@ public:
 	NLDiffSolver(const NLDiffSolver&) = delete;
 	NLDiffSolver& operator=(const NLDiffSolver&) = delete;
 	~NLDiffSolver();
-	void SetMaxStep(double step_size);
+
 	void AddDiffEquation(DiffEquationWrapper eq);
 	void AddNLEquation(NLEquationWrapper eq);
 	void AddNLStatefulEquation(NLStatefulEquationWrapper eq);
 	void AddBufferEquation(BufferEquation eq);
 	size_t AddObserver(ObserverWrapper obs);
 	void AddSource(SourceEqWrapper source);
-	NLSolveResult Initialize(double start_time, double end_time);
+	void AddPotentialEquation(PotentialEquationWrapper eq);
+	void AddFlowEquation(FlowEquationWrapper eq);
+
+	[[nodiscard]] NLSolveResult Initialize(double start_time, double end_time);
+
+	void SetMaxStep(double step_size);
 	[[nodiscard]] double GetStartTime() const { return m_diffSolver.GetStartTime(); }
 	[[nodiscard]] double GetEndTime() const { return m_diffSolver.GetEndTime(); }
 	[[nodiscard]] double GetCurrentTime() const { return m_diffSolver.GetCurrentTime(); }
-	[[nodiscard]] NLSolveResult CalculateInitialConditions(FlatMap& state);
+
 	[[nodiscard]] NLSolveResult NotifyObservers(const FlatMap& state, const double t);
 	std::vector<ObserverData> GetObserversData();
+
 	[[nodiscard]] StepResult Step(FlatMap& state);
+	[[nodiscard]] NLSolveResult CalculateInitialConditions(FlatMap& state);
+	void GetSourcesOutputIndicies(std::vector<int32_t>& indicies) const;
 private:
 	[[nodiscard]] NLSolveResult ApplySources(FlatMap& state, const double t);
 	void UpdateSources(const double t);

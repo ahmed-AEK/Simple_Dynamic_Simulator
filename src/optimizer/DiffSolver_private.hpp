@@ -39,6 +39,8 @@ public:
     void SetNextEventTime(std::optional<double> t);
     void SetCurrentTime(const double& t);
     void InterpolateAt(FlatMap& state, const double& t);
+
+    void GetOutputIndicies(std::vector<int32_t>& indicies) const;
 protected:
     void LoadDatatoMap(std::span<const double> x, FlatMap& state);
     void LoadMaptoVec(const FlatMap& state, std::vector<double>& target);

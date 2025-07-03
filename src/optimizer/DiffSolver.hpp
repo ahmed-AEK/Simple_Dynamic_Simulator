@@ -39,6 +39,8 @@ public:
     void SetNextEventTime(std::optional<double> t);
     void SetCurrentTime(const double& t) const;
     void InterpolateAt(FlatMap& state, const double& t);
+
+    void GetOutputIndicies(std::vector<int32_t>& indicies) const;
 private:
     std::unique_ptr<DiffSolver_impl> m_impl;
 };

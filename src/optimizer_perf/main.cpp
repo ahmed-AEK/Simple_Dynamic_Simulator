@@ -40,7 +40,7 @@ int main()
         solver.AddDiffEquation(std::move(eq));
         solver.AddNLEquation(std::move(eq2));
         solver.AddNLEquation(std::move(eq3));
-        solver.Initialize(0, 20);
+        [[maybe_unused]] auto _ = solver.Initialize(0, 20);
         opt::FlatMap state(4);
         state.modify(0,1);
         state.modify(1,0);

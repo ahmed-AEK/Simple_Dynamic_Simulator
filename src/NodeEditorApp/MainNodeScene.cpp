@@ -93,7 +93,7 @@ static ColorPalette GetDarkPalette()
 {
     static ColorPalette palette = ColorPalette{ ColorTable{std::initializer_list<ColorTable::ColorEntry>{
             {ColorRole::frame_background, 48, 48, 48},
-            {ColorRole::frame_outline, 63, 63, 63},
+            {ColorRole::frame_outline, 124, 124, 124},
             {ColorRole::frame_background_alternate, 15, 15, 15},
             {ColorRole::frame_outline_alternate, 124, 124, 124},
             {ColorRole::dialog_background, 15, 15, 15},

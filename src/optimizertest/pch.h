@@ -12,6 +12,8 @@
 #include "optimizer/NLEquation.hpp"
 #include "optimizer/NLGraphSolver.hpp"
 #include "optimizer/NLStatefulEquation.hpp"
+#include "optimizer/FlowEquation.hpp"
+#include "optimizer/PotentialEquation.hpp"
 
 #include "toolgui/NodeMacros.h"
 

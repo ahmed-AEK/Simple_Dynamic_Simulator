@@ -8,7 +8,8 @@ TEST(testNLDiffSolver, testConstructor)
 TEST(testNLDiffSolver, testInitialize)
 {
     opt::NLDiffSolver solver;
-    solver.Initialize(0, 10);
+    auto initialized = solver.Initialize(0, 10);
+    ASSERT_TRUE(initialized);
 
     EXPECT_EQ(solver.GetStartTime(), 0);
     EXPECT_EQ(solver.GetEndTime(), 10);
@@ -20,7 +21,9 @@ TEST(testNLDiffSolver, testStep_time_advances)
         opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) { return out[0] = in[0]; UNUSED_PARAM(t);}));
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(2);
     state.modify(0,1);
     state.modify(1,0);
@@ -44,7 +47,9 @@ TEST(testNLDiffSolver, testNLEquations_simple)
     opt::NLEquationWrapper eq({ 0 }, { 1 }, opt::make_NLEqn<opt::FunctorNLEquation>([](auto in, auto out) -> void { out[0] = in[0] * 2; }));
     opt::NLDiffSolver solver;
     solver.AddNLEquation(std::move(eq));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(2);
     state.modify(0,1);
     state.modify(1,0);
@@ -73,7 +78,9 @@ TEST(testNLDiffSolver, testStopOnErrorNL)
     opt::NLDiffSolver solver;
     solver.AddNLEquation(std::move(eq1));
 
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(2);
     state.modify(0, 1);
     state.modify(1, 0);
@@ -106,7 +113,9 @@ TEST(testNLDiffSolver, testStopOnErrorDiff)
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq1));
 
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(2);
     state.modify(0, 1);
     state.modify(1, 0);
@@ -132,7 +141,9 @@ TEST(testNLDiffSolver, testNLEquations_simple_observer)
     solver.AddObserver(std::move(observer));
 
     solver.AddNLEquation(std::move(eq));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(2);
     state.modify(0, 1);
     state.modify(1, 0);
@@ -152,7 +163,9 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n)
     opt::NLDiffSolver solver;
     solver.AddDiffEquation(std::move(eq));
     solver.AddNLEquation(std::move(eq2));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(3);
     state.modify(0,1);
     state.modify(1,0);
@@ -189,7 +202,9 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d1n_observer)
 
     solver.AddDiffEquation(std::move(eq));
     solver.AddNLEquation(std::move(eq2));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(3);
     state.modify(0, 1);
     state.modify(1, 0);
@@ -227,7 +242,9 @@ TEST(testNLDiffSolver, testNLDiffEquations_1d2n)
     solver.AddDiffEquation(std::move(eq));
     solver.AddNLEquation(std::move(eq2));
     solver.AddNLEquation(std::move(eq3));
-    solver.Initialize(0, 2);
+    auto initialized = solver.Initialize(0, 2);
+    ASSERT_TRUE(initialized);
+
     opt::FlatMap state(4);
     state.modify(0,1);
     state.modify(1,0);
@@ -314,7 +331,9 @@ TEST(testNLDiffSolver, testNLDiffEquations_multiply_diff)
     solver.AddSource(std::move(s2));
     solver.AddNLEquation(std::move(mul));
     solver.AddNLStatefulEquation(std::move(diff));
-    solver.Initialize(0, 10);
+    auto initialized = solver.Initialize(0, 10);
+    ASSERT_TRUE(initialized);
+
     solver.SetMaxStep(0.01);
     opt::FlatMap state(4);
     state.modify(0, 1);
@@ -371,7 +390,9 @@ TEST(testNLDiffSolver, test_SourceEvent)
     opt::FlatMap state(2);
     double current_time = 0;
 
-    solver.Initialize(0, 0.5);
+    auto initialized = solver.Initialize(0, 0.5);
+    ASSERT_TRUE(initialized);
+
     solver.SetMaxStep(0.01);
     auto result1 = solver.CalculateInitialConditions(state);
     ASSERT_TRUE(result1);
@@ -434,7 +455,9 @@ TEST(testNLDiffSolver, testZeroCrossing)
 
     double current_time = 0;
 
-    solver.Initialize(0, 1);
+    auto initialized = solver.Initialize(0, 1);
+    ASSERT_TRUE(initialized);
+
     solver.SetMaxStep(0.01);
     auto result1 = solver.CalculateInitialConditions(state);
     ASSERT_TRUE(result1);
@@ -448,4 +471,77 @@ TEST(testNLDiffSolver, testZeroCrossing)
     EXPECT_NEAR(1, solver.GetCurrentTime(), 1e-3);
     EXPECT_EQ(true, triggered);
     EXPECT_NEAR(trigger_planned_time, triggered_time, 1e-4);
+}
+
+
+TEST(testNLDiffSolver, test_PotentialAndDiffEqn)
+{
+ 
+    opt::NLDiffSolver solver;
+
+    solver.AddPotentialEquation(opt::PotentialEquationWrapper{ {}, { 0, 1 }, 2,
+        opt::make_PotentialEqn<opt::FunctorPotentialEquation>([](auto inputs, double flow, double& potential) -> void
+            {
+                UNUSED_PARAM(inputs);
+                UNUSED_PARAM(flow);
+                potential = 1;
+            }) });
+    solver.AddDiffEquation(opt::DiffEquationWrapper({}, { 0 },
+        opt::make_DiffEqn<opt::FunctorDiffEquation>([](auto in, auto out, auto t) { return out[0] = 0; UNUSED_PARAM(t); UNUSED_PARAM(in); }))
+    );
+    opt::FlatMap state(3);
+    double current_time = 0;
+
+    auto initialized = solver.Initialize(0, 0.02);
+    ASSERT_TRUE(initialized);
+
+    solver.SetMaxStep(0.01);
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
+    {
+        EXPECT_GT(solver.GetCurrentTime(), current_time);
+        current_time = solver.GetCurrentTime();
+    }
+
+    EXPECT_EQ(state.get(0), 0);
+    EXPECT_NEAR(state.get(1), 1, 1e-3);
+}
+
+TEST(testNLDiffSolver, test_PotentialAndSource)
+{
+
+    opt::NLDiffSolver solver;
+
+    solver.AddPotentialEquation(opt::PotentialEquationWrapper{ {}, { 0, 1 }, 2,
+        opt::make_PotentialEqn<opt::FunctorPotentialEquation>([](auto inputs, double flow, double& potential) -> void
+            {
+                UNUSED_PARAM(inputs);
+                UNUSED_PARAM(flow);
+                potential = 1;
+            }) });
+    solver.AddSource(opt::SourceEqWrapper({ 0 },
+        opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent& ev) 
+            { return out[0] = 3; UNUSED_PARAM(t); UNUSED_PARAM(ev); }))
+    );
+
+    opt::FlatMap state(3);
+    double current_time = 0;
+
+    auto initialized = solver.Initialize(0, 0.02);
+    ASSERT_TRUE(initialized);
+
+    solver.SetMaxStep(0.01);
+    auto result1 = solver.CalculateInitialConditions(state);
+    ASSERT_TRUE(result1);
+
+    while (solver.Step(state).value() != opt::StepEnd::ReachedEnd)
+    {
+        EXPECT_GT(solver.GetCurrentTime(), current_time);
+        current_time = solver.GetCurrentTime();
+    }
+
+    EXPECT_EQ(state.get(0), 3);
+    EXPECT_NEAR(state.get(1), 4, 1e-3);
 }

@@ -501,12 +501,8 @@ node::Application::ClipboardString::ClipboardString(ClipboardString&& other) noe
 
 node::Application::ClipboardString& node::Application::ClipboardString::operator=(ClipboardString&& other) noexcept
 {
-    if (this == &other)
-    {
-        return *this;
-    }
-    m_str = std::exchange(other.m_str, nullptr);
-    m_size = std::exchange(other.m_size, 0);
+    std::ranges::swap(m_str, other.m_str);
+    std::ranges::swap(m_size, other.m_size);
     return *this;
 }
 

@@ -13,6 +13,9 @@ NLStatefulEquationTest.cpp
 ObserverTest.cpp
 SourceEqTest.cpp
 NLGraphSolverTest.cpp
+FlowEquationTest.cpp
+PotentialEquationTest.cpp
+NLGraphSolverTest_flow.cpp
 pch.h
 )
 

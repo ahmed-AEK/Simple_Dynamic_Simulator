@@ -747,8 +747,13 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 	AddPortsToSolver(solver, subsystems);
 	
 	solver.SetMaxStep(m_settings.max_step);
-	solver.Initialize(m_settings.t_start, m_settings.t_end);
-
+	{
+		auto initialized = solver.Initialize(m_settings.t_start, m_settings.t_end);
+		if (!initialized)
+		{
+			return { SimulationEvent::SimulationError{std::move(initialized.error())} };
+		}
+	}
 	opt::FlatMap simulation_nets{ next_net_id };
 	opt::StepEnd step_result = opt::StepEnd::Success;
 	
