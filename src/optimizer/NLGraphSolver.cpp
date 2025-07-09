@@ -97,6 +97,10 @@ void opt::NLGraphSolver_impl::LoadMaptoVec(FlatMap& state, std::vector<double>& 
 
 tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& state)
 {
+    for (auto& node : m_flow_nodes)
+    {
+        node.current_value = 0;
+    }
     {
         auto res = EvalSpecificFunctors(state, m_inner_solve_eqns);
         if (!res)
@@ -574,10 +578,6 @@ opt::NLSolveResult opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state,
 
 opt::NLSolveResult opt::NLGraphSolver_impl::EvalFlowEquations(FlatMap& state, std::span<FlowNode> nodes)
 {
-    for (auto& node : nodes)
-    {
-        node.current_value = 0;
-    }
     std::array<double, 20> input_temp_buffer;
     std::array<double, 20> output_temp_buffer;
     for (auto& eq : m_flow_equations)

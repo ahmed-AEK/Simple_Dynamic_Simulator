@@ -15,10 +15,12 @@ namespace node::model
 class NetNodeModel
 {
 public:
-	explicit NetNodeModel(const NetNodeId& id, const Point& position = {})
-		:m_Id{ id }, m_position{ position } {}
+	explicit NetNodeModel(const NetNodeId& id, const Point& position = {}, const NetCategory& category = {})
+		:m_Id{ id }, m_position{ position }, m_category{ category } {}
 	const NetNodeId& GetId() const noexcept { return m_Id; }
 	const Point& GetPosition() const noexcept { return m_position; };
+	const NetCategory& GetCategory() const noexcept { return m_category; }
+	void SetCategory(const NetCategory& category) { m_category = category; }
 	void SetPosition(const Point& position) { m_position = position; }
 	std::optional<NetSegmentId> GetSegmentAt(const ConnectedSegmentSide side) const;
 	void SetSegmentAt(const ConnectedSegmentSide side, const std::optional<NetSegmentId> segment);
@@ -28,6 +30,7 @@ private:
 	std::array<bool, 4> m_valid_sides{ false,false,false,false };
 	Point m_position;
 	std::array<NetSegmentId, 4> m_segmentIds{ NetSegmentId{0}, NetSegmentId{0}, NetSegmentId{0}, NetSegmentId{0}};
+	NetCategory m_category;
 };
 
 struct NetSegmentModel

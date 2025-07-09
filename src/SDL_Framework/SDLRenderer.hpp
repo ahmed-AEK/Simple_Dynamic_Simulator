@@ -38,6 +38,7 @@ enum class ColorRole : uint8_t
     block_background,
     input_socket,
     output_socket,
+    inout_socket,
     netnode_normal,
     netnode_selected,
     netsegment_normal,

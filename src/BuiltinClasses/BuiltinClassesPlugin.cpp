@@ -12,6 +12,8 @@
 #include "SineSourceClass.hpp"
 #include "StepSourceClass.hpp"
 #include "ComparatorClass.hpp"
+#include "electrical/ElectricalResistorBlockClass.hpp"
+#include "electrical/ElectricalVDCBlockClass.hpp"
 
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
 #include "NodeSDLStylers/TextBlockStyler.hpp"
@@ -40,7 +42,9 @@ static std::span<node::IBlockClass* const> get_builtin_classes()
         make_BlockClass<MultiplyBlockClass>(),
         make_BlockClass<SineSourceClass>(),
         make_BlockClass<StepSourceClass>(),
-        make_BlockClass<ComparatorBlockClass>()
+        make_BlockClass<ComparatorBlockClass>(),
+        make_BlockClass<ElectricalResistorBlockClass>(),
+        make_BlockClass<ElectricalVDCBlockClass>()
     };
     static auto const classes_raw = [&]()
         {
@@ -214,7 +218,37 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
         }},
         "SVG Styler",
         model::BlockStyleProperties{{{SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/comparator.svg"}}}
-    }
+    },
+    {
+        "Electrical",
+        "Resistor",
+        {model::FunctionalBlockData{
+            "Electrical Resistor",
+            std::vector<model::BlockProperty>{
+                *model::BlockProperty::Create("Resistance", model::BlockPropertyType::FloatNumber, 100)
+            }
+        }},
+        "SVG Styler",
+        model::BlockStyleProperties{{
+            {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/elec_resistor.svg"},
+            {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
+        }
+    },
+    {
+        "Electrical",
+        "Voltage Source",
+        {model::FunctionalBlockData{
+            "Electrical VDC",
+            std::vector<model::BlockProperty>{
+                *model::BlockProperty::Create("Value", model::BlockPropertyType::FloatNumber, 1.0)
+            }
+        }},
+        "SVG Styler",
+        model::BlockStyleProperties{{
+            {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/voltage_source.svg"},
+            {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
+        }
+    },
     };
     return blocks;
 }

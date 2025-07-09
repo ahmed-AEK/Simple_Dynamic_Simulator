@@ -16,7 +16,7 @@ node::ScopeDisplayClass::ScopeDisplayClass()
 {
 }
 
-void node::ScopeDisplayClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
+void node::ScopeDisplayClass::CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const
 {
 	UNUSED_PARAM(properties);	
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
@@ -29,7 +29,7 @@ void node::ScopeDisplayClass::CalculateSockets(std::span<const model::BlockPrope
 	{
 		result.push_back(node::model::BlockSocketModel::SocketType::input);
 	}
-	cb(context, result);
+	cb.add_sockets(result);
 }
 
 int node::ScopeDisplayClass::GetFunctor(std::span<const model::BlockProperty> properties, IGetFunctorCallback& cb) const

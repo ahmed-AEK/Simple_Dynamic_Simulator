@@ -66,7 +66,7 @@ int node::LuaNLEqnClass::ValidateClassProperties(std::span<const model::BlockPro
 	return true;
 }
 
-void node::LuaNLEqnClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
+void node::LuaNLEqnClass::CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const
 {
 	using model::SocketType;
 	if (properties.size() < 2)
@@ -99,7 +99,7 @@ void node::LuaNLEqnClass::CalculateSockets(std::span<const model::BlockProperty>
 	{
 		sockets.push_back(SocketType::output);
 	}
-	cb(context, sockets);
+	cb.add_sockets(sockets);
 }
 
 node::BlockType node::LuaNLEqnClass::GetBlockType(std::span<const model::BlockProperty> properties) const

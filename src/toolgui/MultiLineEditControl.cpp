@@ -48,6 +48,24 @@ MI::ClickEvent node::MultiLineEditControl::OnLMBDown(MouseButtonEvent& e)
 {
 	UNUSED_PARAM(e);
 	auto clicked_character = GetCharacterAtScreenPosition(e.point());
+	if (e.e.clicks == 3)
+	{
+		if (m_text.size() <= clicked_character.character_row)
+		{
+			m_cursor.position = { clicked_character.character_row, clicked_character.character_column };
+			m_cursor_dirty = true;
+			m_selection_active = false;
+			return MI::ClickEvent::CLICKED;
+		}
+		m_selection_start.position = { clicked_character.character_row, 0 };
+		m_selection_anchor.position = { clicked_character.character_row, m_text[clicked_character.character_row].size() };
+		m_cursor.position = m_selection_anchor.position;
+		m_cursor_dirty = true;
+		m_selection_active = m_selection_anchor.position != m_selection_start.position;
+		m_logger.LogDebug("cursor position: {}, {}", m_cursor.position.row, m_cursor.position.column);
+		return MI::ClickEvent::CLICKED;
+	}
+
 	m_cursor.position = { clicked_character.character_row, clicked_character.character_column };
 	m_cursor_dirty = true;
 	m_selection_active = false;
@@ -67,23 +85,6 @@ MI::ClickEvent node::MultiLineEditControl::OnLMBUp(MouseButtonEvent& e)
 	m_dragging = false;
 
 	auto clicked_character = GetCharacterAtScreenPosition(e.point());
-	if (e.e.clicks == 3)
-	{
-		if (m_text.size() <= clicked_character.character_row)
-		{
-			m_cursor.position = { clicked_character.character_row, clicked_character.character_column};
-			m_cursor_dirty = true;
-			m_selection_active = false;
-			return MI::ClickEvent::CAPTURE_END;
-		}
-		m_selection_start.position = { clicked_character.character_row, 0 };
-		m_selection_anchor.position = { clicked_character.character_row, m_text[clicked_character.character_row].size()};
-		m_cursor.position = m_selection_anchor.position;
-		m_cursor_dirty = true;
-		m_selection_active = m_selection_anchor.position != m_selection_start.position;
-		m_logger.LogDebug("cursor position: {}, {}", m_cursor.position.row, m_cursor.position.column);
-		return MI::ClickEvent::CAPTURE_END;
-	}
 
 	m_cursor.position = { clicked_character.character_row, clicked_character.character_column };
 	m_cursor_dirty = true;
@@ -881,7 +882,7 @@ bool node::MultiLineEditControl::InsertText(std::string_view view)
 		m_cursor.position.column = 0;
 		view = view.substr(separator_position + 1);
 		separator_position = view.find('\n');
-	}
+ 	}
 	// add remaining text after all \n to the current line
 	auto& row_text = m_text[m_cursor.position.row];
 	row_text.insert(row_text.begin() + m_cursor.position.column, view.begin(), view.end());

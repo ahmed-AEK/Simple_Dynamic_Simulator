@@ -19,6 +19,7 @@ enum class SocketType : char
 {
 	input = 0,
 	output = 1,
+	inout = 2,
 };
 
 class BlockSocketModel

@@ -16,6 +16,8 @@ StepSourceClass.hpp StepSourceClass.cpp
 ComparatorClass.hpp ComparatorClass.cpp
 BuiltinBasicClass.hpp BuiltinBasicClass.cpp
 BuiltinClassesPlugin.hpp BuiltinClassesPlugin.cpp
+electrical/ElectricalResistorBlockClass.hpp electrical/ElectricalResistorBlockClass.cpp
+electrical/ElectricalVDCBlockClass.hpp electrical/ElectricalVDCBlockClass.cpp
 pch.h
 )
 

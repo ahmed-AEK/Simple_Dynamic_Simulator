@@ -87,6 +87,15 @@ MI::ClickEvent node::LineEditControl::OnLMBDown(MouseButtonEvent& e)
 	}
 	SDL_FPoint current_mouse_point{ e.point() };
 	
+	if (e.e.clicks == 2)
+	{
+		m_selection_active = true;
+		m_selection_start = 0;
+		m_selection_anchor = m_value.size();
+		m_cursor_position = m_value.size();
+		ReCalculateCursorsPixelPosition();
+		return MI::ClickEvent::CLICKED;
+	}
 
 	auto clicked_character = GetCharacterAtScreenPosition(current_mouse_point.x);
 	m_cursor_position = clicked_character.character_offset;
@@ -110,15 +119,6 @@ MI::ClickEvent node::LineEditControl::OnLMBUp(MouseButtonEvent& e)
 
 	if (!m_value.size())
 	{
-		return MI::ClickEvent::CAPTURE_END;
-	}
-	if (e.e.clicks == 2)
-	{
-		m_selection_active = true;
-		m_selection_start = 0;
-		m_selection_anchor = m_value.size();
-		m_cursor_position = m_value.size();
-		ReCalculateCursorsPixelPosition();
 		return MI::ClickEvent::CAPTURE_END;
 	}
 

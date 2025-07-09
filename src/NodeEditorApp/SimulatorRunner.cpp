@@ -20,6 +20,7 @@ struct Net
 {
 	int in_sockets_count = 0;
 	int out_sockets_count = 0;
+	int inout_sockets_count = 0;
 	std::vector<node::model::SocketUniqueId> sockets;
 	std::vector<node::model::NetNodeId> nodes;
 };
@@ -69,6 +70,9 @@ struct BlocksFunctions
 	std::vector<std::pair<opt::DiffEquationWrapper, node::model::BlockId>> diff_eqs;
 	std::vector<std::pair<opt::ObserverWrapper, node::model::BlockId>> observers;
 	std::vector<std::pair<opt::SourceEqWrapper, node::model::BlockId>> sources;
+	std::vector<std::pair<opt::FlowEquationWrapper, node::model::BlockId>> flow_eqs;
+	std::vector<std::pair<opt::PotentialEquationWrapper, node::model::BlockId>> potential_eqs;
+
 	std::vector<std::pair<SubsystemSimulationDescriptor, node::model::BlockId>> subsystem_blocks;
 	std::vector<std::pair<PortBlockSimulationDescriptor, node::model::BlockId>> ports_blocks;
 };
@@ -179,7 +183,9 @@ static tl::expected<std::vector<node::BlockFunctor>, std::string> GetBlockFuncto
 		[&](opt::NLStatefulEquationWrapper& eq) {funcs.nl_st_eqs.push_back({std::move(eq), block.GetId()}); },
 		[&](opt::DiffEquationWrapper& eq) {funcs.diff_eqs.push_back({std::move(eq), block.GetId()}); },
 		[&](opt::ObserverWrapper& eq) {funcs.observers.push_back({std::move(eq), block.GetId()}); },
-		[&](opt::SourceEqWrapper& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); }
+		[&](opt::SourceEqWrapper& eq) {funcs.sources.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::FlowEquationWrapper& eq) {funcs.flow_eqs.push_back({std::move(eq), block.GetId()}); },
+		[&](opt::PotentialEquationWrapper& eq) {funcs.potential_eqs.push_back({std::move(eq), block.GetId()}); },
 			}, functor);
 		};
 	if (!functor_vec.has_value())
@@ -376,13 +382,23 @@ static std::vector<SocketMappings> MapSockets(const node::model::NodeSceneModel&
 			if (it != socket_mapping.end())
 			{
 				nets.nets[it->second].sockets.push_back(SocketUniqueId{ socket_id, block_id });
-				if (socket.GetType() == BlockSocketModel::SocketType::input)
+				switch (socket.GetType())
+				{
+				case BlockSocketModel::SocketType::input:
 				{
 					nets.nets[it->second].in_sockets_count += 1;
+					break;
 				}
-				else
+				case BlockSocketModel::SocketType::output:
 				{
 					nets.nets[it->second].out_sockets_count += 1;
+					break;
+				}
+				case BlockSocketModel::SocketType::inout:
+				{
+					nets.nets[it->second].inout_sockets_count += 1;
+					break;
+				}
 				}
 				mapping.mappings.push_back(SocketMapping{ socket_id, true, socket.GetType(), static_cast<int32_t>(it->second) });
 			}
@@ -429,8 +445,10 @@ static void RemapFunctions(BlocksFunctions& funcs,
 							// if it is part of the nets mapping (block socket), map it if it is connected.
 							if (!it->mappings[id].connected)
 							{
-								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<int32_t>(id), 9999 });
-								id = 9999;
+								// if it is not connected, give it a new net!
+								functors_mapping[block_id].push_back(FunctorTerminalsMapping{ static_cast<int32_t>(id), max_net });
+								id = max_net;
+								max_net++;
 							}
 							else
 							{
@@ -455,31 +473,54 @@ static void RemapFunctions(BlocksFunctions& funcs,
 							}
 						}
 					};
-				if constexpr (requires {func.input_ids; })
-				{
-					for (auto& id : func.input_ids)
+				auto range_mapper = [&](auto&& range)
 					{
-						id_mapper(id);
-					}
-				}
-				if constexpr (requires {func.output_ids; })
-				{
-					for (auto& id : func.output_ids)
+						for (auto& id : range)
+						{
+							id_mapper(id);
+						}
+					};
+				auto func_functor = overloaded{
+				[&](opt::NLEquationWrapper& func) {
+					range_mapper(func.input_ids);
+					range_mapper(func.output_ids);
+					},
+				[&](opt::NLStatefulEquationWrapper& func) {
+					range_mapper(func.input_ids);
+					range_mapper(func.output_ids);
+					},
+				[&](opt::DiffEquationWrapper& func) {
+					range_mapper(func.input_ids);
+					range_mapper(func.output_ids);
+					},
+				[&](opt::ObserverWrapper& func) {
+					range_mapper(func.input_ids);
+					},
+				[&](opt::SourceEqWrapper& func) {
+					range_mapper(func.output_ids);
+					},
+				[&](opt::FlowEquationWrapper& func) {
+					range_mapper(func.input_ids);
+					range_mapper(func.inout_ids);
+					},
+				[&](opt::PotentialEquationWrapper& func) {
+					range_mapper(func.input_ids);
+					range_mapper(func.inout_ids);
+					id_mapper(func.flow_value_id);
+					},
+				[&](SubsystemSimulationDescriptor& func)
 					{
-						id_mapper(id);
-					}
-				}
-				if constexpr (requires {func.sockets; })
-				{
 					for (auto& [socket_id, socket_data] : func.sockets)
 					{
 						id_mapper(socket_id);
 					}
-				}
-				if constexpr (requires {func.net_id; })
-				{
-					id_mapper(func.net_id);
-				}
+					},
+				[&](PortBlockSimulationDescriptor& func)
+					{
+						id_mapper(func.net_id);
+					}
+				};
+				func_functor(func);
 			}
 		};
 	remap(funcs.nl_eqs);
@@ -489,6 +530,9 @@ static void RemapFunctions(BlocksFunctions& funcs,
 	remap(funcs.sources);
 	remap(funcs.subsystem_blocks);
 	remap(funcs.ports_blocks);
+	remap(funcs.flow_eqs);
+	remap(funcs.potential_eqs);
+
 }
 
 struct ObserverMapping
@@ -541,6 +585,24 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 			continue;
 		}
 		solver.AddSource(std::move(func.first));
+	}
+	for (auto& func : funcs.flow_eqs)
+	{
+		auto& out_ids = func.first.inout_ids;
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
+		solver.AddFlowEquation(std::move(func.first));
+	}
+	for (auto& func : funcs.potential_eqs)
+	{
+		auto& out_ids = func.first.inout_ids;
+		if (out_ids.size() && out_ids[0] == 9999)
+		{
+			continue;
+		}
+		solver.AddPotentialEquation(std::move(func.first));
 	}
 	return result;
 }
@@ -653,7 +715,7 @@ static ValidationResult ValidateNets(const NetSplitResult& nets, const std::vect
 	using namespace node;
 	for (auto& [net_id, net] : nets.nets)
 	{
-		if (net.in_sockets_count > 0 && net.out_sockets_count == 0)
+		if (net.in_sockets_count > 0 && net.out_sockets_count == 0 && net.inout_sockets_count == 0)
 		{
 			return { SimulationEvent::NetFloatingError{ std::move(net.nodes) } };
 		}
