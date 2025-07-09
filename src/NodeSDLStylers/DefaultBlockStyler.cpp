@@ -34,6 +34,12 @@ void node::DefaultBlockStyler::DrawBlockSocket(SDL::Renderer& renderer, const mo
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 		break;
 	}
+	case model::BlockSocketModel::SocketType::inout:
+	{
+		const SDL_Color color = renderer.GetColor(ColorRole::inout_socket);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+		break;
+	}
 	default:
 	{
 		assert(false);

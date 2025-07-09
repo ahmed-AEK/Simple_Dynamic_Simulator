@@ -15,13 +15,13 @@ void node::BuiltinBasicClass::GetDefaultClassProperties(GetDefaultClassPropertie
     cb(context, m_defaultProperties);
 }
 
-void node::BuiltinBasicClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
+void node::BuiltinBasicClass::CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const
 {
 	UNUSED_PARAM(properties);
 	[[maybe_unused]] LightValidatePropertiesNotifier notifier;
 	assert(ValidateClassProperties(properties, notifier));
 	assert(!notifier.errored);
-	cb(context, m_sockets);
+	cb.add_sockets(m_sockets);
 }
 
 void node::BuiltinBasicClass::GetDescription(GetDescriptionCallback cb, void* context) const

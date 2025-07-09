@@ -10,22 +10,49 @@ node::SVGRasterizer::SVGRasterizer(std::string path, int width, int height)
 
 bool node::SVGRasterizer::Draw(SDL_Renderer* renderer, float x, float y, bool is_dark_mode)
 {
+    return DrawRotated(renderer, Rotation::None, x, y, is_dark_mode);
+}
+
+bool node::SVGRasterizer::DrawRotated(SDL_Renderer* renderer, Rotation rot, float x, float y, bool is_dark_mode)
+{
     SetDarkMode(is_dark_mode);
-	if (!m_texture.GetTexture())
-	{
+    if (!m_texture.GetTexture())
+    {
         if (!ReCreateTexture(renderer))
         {
             return false;
         }
-	}
+    }
 
-    SDL_FRect draw_area{ 
+    SDL_FRect draw_area{
         std::floor(x + (m_width - m_actual_size.x) / 2),
         std::floor(y + (m_height - m_actual_size.y) / 2),
         static_cast<float>(m_actual_size.x),
         static_cast<float>(m_actual_size.y)
     };
-    SDL_RenderTexture(renderer, m_texture.GetTexture(), nullptr, &draw_area);
+    switch (rot)
+    {
+    case Rotation::None:
+    {
+        SDL_RenderTexture(renderer, m_texture.GetTexture(), nullptr, &draw_area);
+        break;
+    }
+    case Rotation::R90:
+    {
+        SDL_RenderTextureRotated(renderer, m_texture.GetTexture(), nullptr, &draw_area, 90, nullptr, SDL_FLIP_NONE);
+        break;
+    }
+    case Rotation::R180:
+    {
+        SDL_RenderTextureRotated(renderer, m_texture.GetTexture(), nullptr, &draw_area, 180, nullptr, SDL_FLIP_NONE);
+        break;
+    }
+    case Rotation::R270:
+    {
+        SDL_RenderTextureRotated(renderer, m_texture.GetTexture(), nullptr, &draw_area, 270, nullptr, SDL_FLIP_NONE);
+        break;
+    }
+    }
     return true;
 }
 

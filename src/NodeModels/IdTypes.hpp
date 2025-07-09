@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <cassert>
+#include <array>
 
 #include "boost/container_hash/hash.hpp"
 
@@ -97,6 +98,30 @@ struct SocketUniqueId
 	BlockId   block_id;
 };
 
+class NetCategory
+{
+public:
+	constexpr NetCategory(): category{} {}
+	constexpr explicit NetCategory(std::string_view name) : category{}
+	{
+		assert(name.size() <= BUFFER_SIZE);
+		for (size_t i = 0; i < name.size() && i < BUFFER_SIZE; i++)
+		{
+			category[i] = name[i];
+		}
+	}
+	NetCategory(const NetCategory&) = default;
+	NetCategory& operator=(const NetCategory&) = default;
+
+	bool IsEmpty() const { return category[0] == '\0'; }
+	friend bool operator==(const NetCategory&, const NetCategory&) = default;
+
+	auto& buffer() { return category; }
+	auto& buffer() const { return category; }
+private:
+	static constexpr size_t BUFFER_SIZE = 16;
+	std::array<char, BUFFER_SIZE> category;
+};
 
 }
 
@@ -106,6 +131,17 @@ struct std::hash<node::SubSceneId>
 	std::size_t operator()(const node::SubSceneId& k) const
 	{
 		return k.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::NetCategory>
+{
+	std::size_t operator()(const node::model::NetCategory& k) const
+	{
+		size_t hash = 0;
+		boost::hash_combine(hash, k.buffer());
+		return hash;
 	}
 };
 

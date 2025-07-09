@@ -45,27 +45,31 @@ protected:
     void LoadDatatoMap(std::span<const double> x, FlatMap& state);
     void LoadMaptoVec(const FlatMap& state, std::vector<double>& target);
 private:
+
+    // equations
+    std::vector<DiffEquationWrapper> m_equations;
+
+    // per step state
     dense_stepper m_stepper{ controlled_stepper{
         boost::numeric::odeint::default_error_checker< double ,
-        boost::numeric::odeint::range_algebra , boost::numeric::odeint::default_operations
-        >(1e-4 , 1e-4, 1, 1)
+        boost::numeric::odeint::range_algebra , boost::numeric::odeint::default_operations>(1e-4 , 1e-4, 1, 1)
     } };
-
-    std::vector<DiffEquationWrapper> m_equations;
-    boost::container::flat_set<int32_t> m_output_ids;
     controlled_stepper::state_type m_current_x;
     controlled_stepper::state_type m_current_dxdt;
     controlled_stepper::state_type m_current_interpolation_x;
-    opt::FlatMap m_current_state;
-    controlled_stepper::time_type m_start_time = 0;
-    controlled_stepper::time_type m_end_time = 0;
     controlled_stepper::time_type m_current_time = 0;
     controlled_stepper::time_type m_last_dt = 0.1;
+    double m_interpolation_start_time = 0;
+    double m_interpolation_end_time = 0;
+    std::optional<double> m_next_event_time;
+    opt::FlatMap m_current_state;
+
+    // solver configuration
+    boost::container::flat_set<int32_t> m_output_ids;
+    controlled_stepper::time_type m_start_time = 0;
+    controlled_stepper::time_type m_end_time = 0;
     controlled_stepper::time_type m_max_step = 0.1;
     std::function<NLSolveResult(opt::FlatMap&, const double&)> m_preprocessor;
     std::function<NLSolveResult(opt::FlatMap&, const double&)> m_postprocessor;
-    std::optional<double> m_next_event_time;
-    double m_interpolation_start_time = 0;
-    double m_interpolation_end_time = 0;
 };
 }

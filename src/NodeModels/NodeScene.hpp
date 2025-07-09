@@ -57,6 +57,8 @@ public:
 		m_SocketConnections.push_back(connection);
 	}
 	void RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket);
+	node::model::SocketNodeConnection*
+		GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id);
 	const node::model::SocketNodeConnection*
 		GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const;
 	const node::model::SocketNodeConnection*
@@ -80,12 +82,16 @@ public:
 	SubSceneId GetSubSceneId() const { return m_id; };
 	void SetSubSceneId(SubSceneId id) { m_id = id; }
 
+	void AddNet(NetId id, const NetCategory& category);
+	NetModel* GetNet(NetId id);
+	const NetModel* GetNet(NetId id) const;
 private:
 	SubSceneId m_id;
 	std::vector<BlockModel> m_blocks;
 	std::vector<NetNodeModel> m_nodes;
 	std::vector<NetSegmentModel> m_segments;
 	std::vector<SocketNodeConnection> m_SocketConnections;
+	std::vector<NetModel> m_nets;
 	FunctionalBlocksDataManager m_functionalBlocksManager;
 	SubsystemBlocksDataManager m_subsystemBlocksManager;
 	PortBlocksDataManager m_portBlocksManager;

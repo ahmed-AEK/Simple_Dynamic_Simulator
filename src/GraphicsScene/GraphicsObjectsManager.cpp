@@ -7,8 +7,9 @@
 #include "GraphicsLogic/GraphicsLogic.hpp"
 
 
-node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory)
-    :m_scene{scene}, m_blockStylerFactory{std::move(styler_factory)}
+node::GraphicsObjectsManager::GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory,
+    std::shared_ptr<NetCategoriesStyleManager> categories_styler)
+    :m_scene{scene}, m_blockStylerFactory{std::move(styler_factory)}, m_categories_styler{std::move(categories_styler)}
 {
     assert(GetGraphicsScene());
     assert(m_blockStylerFactory);

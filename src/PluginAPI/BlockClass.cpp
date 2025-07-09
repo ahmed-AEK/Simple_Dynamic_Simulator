@@ -42,3 +42,23 @@ int node::ValidateEqualPropertyTypes(std::span<const model::BlockProperty> prope
 	}
 	return true;
 }
+
+
+void node::CalculateSocketCallback::add_sockets(std::span<const model::SocketType> sockets)
+{
+	for (const auto& socket : sockets)
+	{
+		added_sockets.push_back(IBlockClass::SocketIdentification{ .socket_type = socket , .category = {}});
+	}
+}
+void node::CalculateSocketCallback::add_IdentifiedSockets(std::span<const IBlockClass::SocketIdentification> sockets)
+{
+	for (const auto& socket : sockets)
+	{
+		added_sockets.push_back(socket);
+	}
+}
+void node::CalculateSocketCallback::error(const std::string_view& error_text)
+{
+	error_message = error_text;
+}

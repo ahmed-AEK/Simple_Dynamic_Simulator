@@ -3,6 +3,7 @@
 #include "toolgui/Scene.hpp"
 #include "NodeEditorApp/SimulationManager.hpp"
 #include "NodeEditorApp/IdTypes.hpp"
+#include "GraphicsScene/NetCategoriesStyleManager.hpp"
 
 namespace node
 {
@@ -111,7 +112,7 @@ private:
     std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
     std::vector<std::unique_ptr<NodeSceneEventReceiver>> m_event_receivers;
     std::unique_ptr<TabChangeNotifier> m_tab_change_notifier;
-
+    std::shared_ptr<NetCategoriesStyleManager> m_categories_styler;
     SimulationManager m_sim_mgr;
     HandlePtrS<Dialog, Widget> m_settings_dialog;
     HandlePtrS<Dialog, Widget> m_about_dialog;

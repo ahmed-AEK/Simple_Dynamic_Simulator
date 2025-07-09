@@ -523,7 +523,7 @@ TEST(testNLDiffSolver, test_PotentialAndSource)
             }) });
     solver.AddSource(opt::SourceEqWrapper({ 0 },
         opt::make_SourceEqn<opt::FunctorSourceEq>([](std::span<double> out, const double& t, opt::SourceEvent& ev) 
-            { return out[0] = 3; UNUSED_PARAM(t); UNUSED_PARAM(ev); }))
+            { return out[0] = 3; UNUSED_PARAM(t); UNUSED_PARAM(ev); }), {})
     );
 
     opt::FlatMap state(3);

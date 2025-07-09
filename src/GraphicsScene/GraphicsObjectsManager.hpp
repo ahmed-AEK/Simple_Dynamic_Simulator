@@ -2,6 +2,7 @@
 
 #include "NodeModels/SceneModelManager.hpp"
 #include "GraphicsScene/GraphicsScene.hpp"
+#include "GraphicsScene/NetCategoriesStyleManager.hpp"
 #include <unordered_map>
 
 namespace node
@@ -26,7 +27,8 @@ public:
 class GraphicsObjectsManager: public node::SingleObserver<SceneModification>, public node::SingleObserver<BlockObjectDropped>
 {
 public:
-	GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory);
+	GraphicsObjectsManager(GraphicsScene& scene, std::shared_ptr<BlockStylerFactory> styler_factory, 
+		std::shared_ptr<NetCategoriesStyleManager> categories_styler);
 	
 	GraphicsScene* GetGraphicsScene() { return m_scene.GetObjectPtr(); }
 
@@ -52,6 +54,7 @@ private:
 	std::unordered_map<model::NetSegmentId, NetSegment*> m_net_segments;
 	std::unordered_map<model::NetNodeId, NetNode*> m_net_nodes;
 	std::shared_ptr<BlockStylerFactory> m_blockStylerFactory;
+	std::shared_ptr<NetCategoriesStyleManager> m_categories_styler;
 	logging::Logger m_logger = logger(logging::LogCategory::Core);
 };
 

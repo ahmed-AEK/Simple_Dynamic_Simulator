@@ -34,3 +34,14 @@ std::optional<node::model::ConnectedSegmentSide> node::model::NetNodeModel::GetS
 	}
 	return std::nullopt;
 }
+
+
+void node::model::NetModel::removeNode(NetNodeId id)
+{
+	auto it = std::find(m_nodes.begin(), m_nodes.end(), id);
+	assert(it != m_nodes.end());
+	if (it != m_nodes.end())
+	{
+		m_nodes.erase(it);
+	}
+}

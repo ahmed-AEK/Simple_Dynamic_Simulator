@@ -11,6 +11,8 @@ class SVGBlockStyler: public DefaultBlockStyler
 public:
 
 	inline static const std::string SVG_PATH_PROPERTY_STRING{ "svg_path" };
+	inline static const std::string ROTATING_PROPERTY_STRING{ "rotating" };
+
 
 	explicit SVGBlockStyler(const node::model::BlockModel& block);
 	void DrawBlockDetails(SDL::Renderer& renderer, const model::Rect& bounds,
@@ -20,5 +22,6 @@ public:
 private:
 	std::optional<SVGRasterizer> m_svg_rasterizer;
 	std::optional<SDL_FPoint> m_max_rect;
+	bool m_rotating{};
 };
 }

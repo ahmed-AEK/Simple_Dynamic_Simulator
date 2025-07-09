@@ -79,6 +79,7 @@ static ColorPalette GetLightPalette()
             {ColorRole::block_background, 220, 220, 220},
             {ColorRole::input_socket, 0, 255, 0},
             {ColorRole::output_socket, 0, 0, 255},
+            {ColorRole::inout_socket, 255, 0, 0},
             {ColorRole::netnode_normal, 0, 0, 0},
             {ColorRole::netnode_selected, 40, 40, 40},
             {ColorRole::netsegment_normal, 100, 100, 100},
@@ -113,6 +114,7 @@ static ColorPalette GetDarkPalette()
             {ColorRole::block_background, 15, 15, 15},
             {ColorRole::input_socket, 0, 255, 0},
             {ColorRole::output_socket, 0, 0, 255},
+            {ColorRole::inout_socket, 255, 0, 0},
             {ColorRole::netnode_normal, 10, 10, 10},
             {ColorRole::netnode_selected, 40, 40, 40},
             {ColorRole::netsegment_normal, 100, 100, 100},
@@ -123,17 +125,11 @@ static ColorPalette GetDarkPalette()
     return palette;
 }
 
-static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
+static auto CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
 {
-    std::vector<node::model::SocketType> ret;
-    block.CalculateSockets(properties, [](void* context, std::span<const node::model::SocketType> sockets) {
-        for (auto& entry : sockets)
-        {
-            static_cast<std::vector<node::model::SocketType>*>(context)->push_back(entry);
-        }
-
-        }, &ret);
-    return ret;
+    node::CalculateSocketCallback cb;
+    block.CalculateSockets(properties, cb);
+    return std::move(cb.added_sockets);
 }
 
 static void AddInitialNodes_forScene(node::SceneManager& manager)
@@ -434,7 +430,6 @@ void node::MainNodeScene::SaveScene(std::string name)
     }
 
     auto& mgr = m_sceneComponents[m_current_scene_id->manager].manager;
-    auto* db_connector = mgr->GetDBConnector();
     m_logger.LogDebug("scene Saved to {}", name);
     DBConnector connector{ std::move(name), nullptr };
     connector.connector = node::loader::MakeSqlLoader(connector.db_path);
@@ -451,6 +446,7 @@ void node::MainNodeScene::SaveScene(std::string name)
         assert(tab_idx != m_tabbedView->npos);
         if (tab_idx != m_tabbedView->npos)
         {
+            auto* db_connector = mgr->GetDBConnector();
             m_tabbedView->SetTabName(tab_idx, db_connector->connector->GetSceneName());
         }
     }
@@ -777,17 +773,17 @@ public:
 
         bool renew_sockets = false;
         std::vector<model::BlockSocketModel> new_sockets;
-        auto new_sockets_type = CalculateBlockSockets(new_properties, *m_block_class);
+        auto new_sockets_identifiers = CalculateBlockSockets(new_properties, *m_block_class);
         auto old_sockets = block->GetSockets();
-        if (new_sockets_type.size() != old_sockets.size())
+        if (new_sockets_identifiers.size() != old_sockets.size())
         {
             renew_sockets = true;
         }
         else
         {
-            for (size_t i = 0; i < new_sockets_type.size(); i++)
+            for (size_t i = 0; i < new_sockets_identifiers.size(); i++)
             {
-                if (new_sockets_type[i] != old_sockets[i].GetType())
+                if (new_sockets_identifiers[i].socket_type != old_sockets[i].GetType())
                 {
                     renew_sockets = true;
                     break;
@@ -796,10 +792,11 @@ public:
         }
         if (renew_sockets)
         {
-            new_sockets.reserve(new_sockets_type.size());
-            for (size_t i = 0; i < new_sockets_type.size(); i++)
+            new_sockets.reserve(new_sockets_identifiers.size());
+            for (size_t i = 0; i < new_sockets_identifiers.size(); i++)
             {
-                new_sockets.push_back(model::BlockSocketModel{ new_sockets_type[i],model::SocketId{static_cast<model::id_int>(i)} });
+                new_sockets.push_back(model::BlockSocketModel{ new_sockets_identifiers[i].socket_type,model::SocketId{static_cast<model::id_int>(i)},
+                    {}, {}, {}, new_sockets_identifiers[i].category });
             }
 
             auto&& block_registry = scene_manager->getBlocksRegistry();
@@ -1122,8 +1119,7 @@ void node::MainNodeScene::SaveSceneButtonPressed()
 
 node::SceneManagerId node::MainNodeScene::CreateNewScene()
 {
-    auto scene_mgr = std::make_unique<SceneManager>();
-    scene_mgr->SetBlockStylerFactory(m_blockStylerFactory);
+    auto scene_mgr = std::make_unique<SceneManager>(m_blockStylerFactory);
     auto new_id = SceneManagerId{ m_next_manager_id };
     m_sceneComponents.emplace(
         new_id,
@@ -1145,7 +1141,7 @@ bool node::MainNodeScene::CreateSceneForSubsystem(SceneId scene_id)
     
     auto& scene_mgr = *scene_mgr_it->second.manager;
     std::unique_ptr<NodeGraphicsScene> gScene = std::make_unique<NodeGraphicsScene>(GetSize(), nullptr);
-    auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory);
+    auto graphicsObjectsManager = std::make_shared<GraphicsObjectsManager>(*gScene, m_blockStylerFactory, m_categories_styler);
     gScene->Attach(*graphicsObjectsManager);
     gScene->SetToolsManager(m_toolsManager);
     gScene->SetObjectsManager(graphicsObjectsManager);
@@ -1293,6 +1289,8 @@ void node::MainNodeScene::OnInit()
     using namespace node;
 
     m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
+
+    m_categories_styler = std::make_shared<NetCategoriesStyleManager>();
 
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
     m_blockStylerFactory->AddStyler("Default", [](const model::BlockDataCRef&) { return std::make_unique<DefaultBlockStyler>(); });

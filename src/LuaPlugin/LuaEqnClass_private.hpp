@@ -51,7 +51,7 @@ int node::LuaEqnClass<Builder>::ValidateClassProperties(std::span<const model::B
 }
 
 template <typename Builder>
-void node::LuaEqnClass<Builder>::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
+void node::LuaEqnClass<Builder>::CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const
 {
 	using model::SocketType;
 	if (properties.size() < 2)

@@ -4,7 +4,8 @@
 #include "NodeModels/BlockPortsUpdate.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
 
-node::SceneManager::SceneManager()
+node::SceneManager::SceneManager(std::shared_ptr<BlockStylerFactory> block_styler_factory)
+	:m_blockStyleFactory{std::move(block_styler_factory)}
 {
 }
 

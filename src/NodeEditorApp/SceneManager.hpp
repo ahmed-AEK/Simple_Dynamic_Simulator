@@ -52,7 +52,7 @@ class SceneManager : public SubScenesManager, public MultiObserver<model::BlockP
 public:
 
     using DialogStore = std::unordered_map<BlockObject*, DialogSlot>;
-	SceneManager();
+	SceneManager(std::shared_ptr<BlockStylerFactory> block_styler_factory);
     SceneManager(const SceneManager&) = delete;
     SceneManager& operator=(const SceneManager&) = delete;
     ~SceneManager() override;
@@ -79,11 +79,6 @@ public:
     SubSceneId AddNewSubSceneToScene() override;
     
     void OnNotify(model::BlockPortsUpdate& report) override;
-
-    void SetBlockStylerFactory(std::shared_ptr<BlockStylerFactory> blockStyleFactory)
-    {
-        m_blockStyleFactory = blockStyleFactory;
-    }
 
     const auto& GetModels() const
     {

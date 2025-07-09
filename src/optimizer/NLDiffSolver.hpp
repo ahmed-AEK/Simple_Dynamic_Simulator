@@ -56,11 +56,17 @@ private:
 	[[nodiscard]] NLSolveResult InterpolateStateAt(FlatMap& state, const double t);
 
 	static constexpr int ZeroCrossingIterations = 10;
-	double m_last_oberver_time = 0;
+
+	// equations
 	std::vector<SourceEqWrapper> m_sources;
+	std::vector<ObserverSlot> m_observers;
+
+	// sovlers
 	DiffSolver m_diffSolver;
 	NLGraphSolver m_NLSolver;
-	std::vector<ObserverSlot> m_observers;
+
+	// per step state
+	double m_last_oberver_time = 0;
 	std::vector<double> m_source_event_times;
 	std::vector<int32_t> m_new_zero_crossed_blocks;
 	FlatMap m_crossed_states;

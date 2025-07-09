@@ -66,7 +66,7 @@ int node::LuaDiffEqnClass::ValidateClassProperties(std::span<const model::BlockP
 	return true;
 }
 
-void node::LuaDiffEqnClass::CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const
+void node::LuaDiffEqnClass::CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const
 {
 	using model::SocketType;
 	if (properties.size() < 2)
@@ -99,7 +99,7 @@ void node::LuaDiffEqnClass::CalculateSockets(std::span<const model::BlockPropert
 	{
 		sockets.push_back(SocketType::output);
 	}
-	cb(context, sockets);
+	cb.add_sockets(sockets);
 }
 
 node::BlockType node::LuaDiffEqnClass::GetBlockType(std::span<const model::BlockProperty> properties) const

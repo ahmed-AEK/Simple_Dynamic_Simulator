@@ -5,12 +5,6 @@
 
 #include "PluginAPI/BlockClass.hpp"
 
-#include "optimizer/NLEquation.hpp"
-#include "optimizer/DiffEquation.hpp"
-#include "optimizer/NLStatefulEquation.hpp"
-#include "optimizer/Observer.hpp"
-#include "optimizer/SourceEq.hpp"
-
 #include "toolgui/NodeMacros.h"
 #include "toolgui/Widget.hpp"
 #include "toolgui/Dialog.hpp"

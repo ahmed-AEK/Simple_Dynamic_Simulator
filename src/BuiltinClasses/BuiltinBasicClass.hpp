@@ -14,7 +14,7 @@ public:
 		std::string_view description,
 		BlockType block_type);
 	void GetDefaultClassProperties(GetDefaultClassPropertiesCallback cb, void* context) const override;
-	void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const override;
+	void CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const override;
 	void GetDescription(GetDescriptionCallback cb, void* context) const override;
 	int ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const override;
 	BlockType GetBlockType(std::span<const model::BlockProperty> properties) const override;

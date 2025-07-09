@@ -2,7 +2,7 @@
 TEST(testPotentialEquation, testApply)
 {
 
-	opt::PotentialEquationWrapper eq({}, { 0, 1 }, 2,
+	opt::PotentialEquationWrapper eq({}, {{ 0, 1 } }, 2,
 		opt::make_PotentialEqn<opt::FunctorPotentialEquation>([](auto inputs, double flow, double& potential) -> void
 			{
 				UNUSED_PARAM(inputs);

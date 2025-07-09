@@ -19,6 +19,7 @@ enum class SocketType : char
 {
 	input = 0,
 	output = 1,
+	inout = 2,
 };
 
 class BlockSocketModel
@@ -29,15 +30,16 @@ public:
 
 	explicit BlockSocketModel(
 		SocketType type, SocketId id, const Point& position = {}, ConnectedSegmentSide side = {},
-		std::optional<NetNodeId> connectedNetNode = {}
+		std::optional<NetNodeId> connectedNetNode = {}, const NetCategory& category = {}
 	)
 		: m_Id{ id }, m_position{ position }, m_type{ type }, m_side{side},
-		m_connectedNetNode{ connectedNetNode } {}
-
+		m_connectedNetNode{ connectedNetNode }, m_category{ category } {}
 	const Point& GetPosition() const noexcept { return m_position; }
 	void SetPosition(const Point& p) { m_position = p; }
 	const SocketId& GetId() const noexcept { return m_Id; }
 	void SetId(SocketId id) { m_Id = id; };
+
+	const NetCategory& GetCategory() const { return m_category; }
 
 	const SocketType& GetType() const noexcept { return m_type; }
 	ConnectedSegmentSide GetConnectionSide() const { return m_side; }
@@ -52,6 +54,7 @@ private:
 	SocketType m_type;
 	ConnectedSegmentSide m_side;
 	std::optional<NetNodeId> m_connectedNetNode;
+	NetCategory m_category;
 };
 
 

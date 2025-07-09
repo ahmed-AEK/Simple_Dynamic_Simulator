@@ -2,17 +2,11 @@
 #include "PaletteBlocksViewer.hpp"
 
 
-static std::vector<node::model::SocketType> CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
+static auto CalculateBlockSockets(std::span<const node::model::BlockProperty> properties, node::IBlockClass& block)
 {
-	std::vector<node::model::SocketType> ret;
-	block.CalculateSockets(properties, [](void* context, std::span<const node::model::SocketType> sockets) {
-		for (auto& entry : sockets)
-		{
-			static_cast<std::vector<node::model::SocketType>*>(context)->push_back(entry);
-		}
-
-		}, &ret);
-	return ret;
+	node::CalculateSocketCallback cb;
+	block.CalculateSockets(properties, cb);
+	return std::move(cb.added_sockets);
 }
 
 node::PaletteProvider::PaletteProvider(std::shared_ptr<BlockClassesManager> manager, std::shared_ptr<BlockStylerFactory> style_factory)
@@ -84,12 +78,12 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 		m_logger.LogError("Validation of block '{}' in category '{}' failed", temp.template_name, temp.category);
 	}
 
-	auto sockets_types = CalculateBlockSockets(block_data_ptr->properties, *block_class);
+	auto sockets = CalculateBlockSockets(block_data_ptr->properties, *block_class);
 	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Functional, {0,0,PaletteBlocksViewer::ElementWidth, PaletteBlocksViewer::ElementHeight} };
 	model::id_int socket_id = 0;
-	for (const auto& sock_type : sockets_types)
+	for (const auto& socket : sockets)
 	{
-		block.AddSocket(model::BlockSocketModel{ sock_type, model::SocketId{socket_id} });
+		block.AddSocket(model::BlockSocketModel{ socket.socket_type, model::SocketId{socket_id}, {}, {}, {}, socket.category });
 		socket_id++;
 	}
 

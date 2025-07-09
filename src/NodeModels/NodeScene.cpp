@@ -2,13 +2,7 @@
 
 node::model::BlockModel* node::model::NodeSceneModel::GetBlockById(const BlockId& id)
 {
-	auto iter = std::find_if(m_blocks.begin(), m_blocks.end(),
-		[id](const BlockModel& node) {return id == node.GetId(); });
-	if (iter != m_blocks.end())
-	{
-		return &*iter;
-	}
-	return nullptr;
+	return const_cast<node::model::BlockModel*>(std::as_const(*this).GetBlockById(id));
 }
 
 const node::model::BlockModel* node::model::NodeSceneModel::GetBlockById(const BlockId& id) const
@@ -52,13 +46,7 @@ const node::model::NetNodeModel* node::model::NodeSceneModel::GetNetNodeById(con
 
 node::model::NetNodeModel* node::model::NodeSceneModel::GetNetNodeById(const NetNodeId& id)
 {
-	auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
-		[id](const NetNodeModel& node) {return id == node.GetId(); });
-	if (iter != m_nodes.end())
-	{
-		return &*iter;
-	}
-	return nullptr;
+	return const_cast<node::model::NetNodeModel*>(std::as_const(*this).GetNetNodeById(id));
 }
 
 void node::model::NodeSceneModel::RemoveNetSegmentById(const NetSegmentId& id)
@@ -83,13 +71,7 @@ const node::model::NetSegmentModel* node::model::NodeSceneModel::GetNetSegmentBy
 
 node::model::NetSegmentModel* node::model::NodeSceneModel::GetNetSegmentById(const NetSegmentId& id)
 {
-	auto iter = std::find_if(m_segments.begin(), m_segments.end(),
-		[id](const NetSegmentModel& segment) {return id == segment.GetId(); });
-	if (iter != m_segments.end())
-	{
-		return &*iter;
-	}
-	return nullptr;
+	return const_cast<node::model::NetSegmentModel*>(std::as_const(*this).GetNetSegmentById(id));
 }
 
 void node::model::NodeSceneModel::RemoveSocketConnectionForSocket(const model::SocketUniqueId& socket)
@@ -103,6 +85,12 @@ void node::model::NodeSceneModel::RemoveSocketConnectionForSocket(const model::S
 	{
 		m_SocketConnections.erase(iter);
 	}
+}
+
+
+node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id)
+{
+	return const_cast<node::model::SocketNodeConnection*>(std::as_const(*this).GetSocketConnectionForSocket(socket_id));
 }
 
 const node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForSocket(const model::SocketUniqueId& socket_id) const
@@ -133,13 +121,26 @@ const node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketC
 
 node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnectionForNode(const model::NetNodeId& node_id)
 {
-	auto iter = std::find_if(m_SocketConnections.begin(), m_SocketConnections.end(),
-		[&](const SocketNodeConnection& conn) {
-			return conn.NodeId == node_id;
-		});
-	if (iter != m_SocketConnections.end())
+	return const_cast<node::model::SocketNodeConnection*>(std::as_const(*this).GetSocketConnectionForNode(node_id));
+}
+
+
+void node::model::NodeSceneModel::AddNet(NetId id, const NetCategory& category)
+{
+	m_nets.push_back(NetModel{ id, category });
+}
+
+node::model::NetModel* node::model::NodeSceneModel::GetNet(NetId id)
+{
+	return const_cast<node::model::NetModel*>(std::as_const(*this).GetNet(id));
+}
+
+const node::model::NetModel* node::model::NodeSceneModel::GetNet(NetId id) const
+{
+	auto it = std::find_if(m_nets.begin(), m_nets.end(), [&](const NetModel& net) { return net.GetId() == id; });
+	if (it != m_nets.end())
 	{
-		return &*iter;
+		return &*it;
 	}
 	return nullptr;
 }

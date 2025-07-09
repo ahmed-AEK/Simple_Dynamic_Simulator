@@ -36,13 +36,15 @@ protected:
 	[[nodiscard]] NLSolveResult UpdateStateInternal(FlatMap& state);
 
 private:
-
+	
+	// equations
 	std::vector<NLEquationWrapper> m_equations;
 	std::vector<NLStatefulEquationWrapper> m_stateful_equations;
 	std::vector<BufferEquation> m_buffer_equations;
 	std::vector<FlowEquationWrapper> m_flow_equations;
 	std::vector<PotentialEquationWrapper> m_potential_equations;
 
+	// per step state
 	double m_last_state_time = 0;
 	opt::FlatMap m_current_state;
 	double m_current_time = 0;
@@ -70,13 +72,15 @@ private:
 		double current_value;
 	};
 
-	std::vector<EquationIndex> m_initial_solve_eqns;
-	std::vector<int32_t> m_initial_solve_output_ids;
-	std::vector<FlowNode> m_flow_nodes;
 	void FillInitialSolveEqns(std::set<int32_t>& remaining_output_ids);
 	[[nodiscard]] NLSolveResult EvalSpecificFunctors(FlatMap& state, const std::vector<EquationIndex>& indicies);
 	[[nodiscard]] NLSolveResult EvalFlowEquations(FlatMap& state, std::span<FlowNode> nodes);
+	[[nodiscard]] tl::expected<std::monostate, std::string> FillInnerSolveEqns(std::set<int32_t>& remaining_output_ids);
 
+	// solver configuration
+	std::vector<EquationIndex> m_initial_solve_eqns;
+	std::vector<int32_t> m_initial_solve_output_ids;
+	std::vector<FlowNode> m_flow_nodes;
 	std::vector<EquationIndex> m_estimated_eqns;
 	std::vector<int32_t> m_estimated_output_ids;
 	std::vector<EquationIndex> m_inner_solve_eqns;
@@ -84,7 +88,6 @@ private:
 	std::vector<int32_t> m_estimated_flow_nodes;
 	std::vector<int32_t> m_potential_eqn_solved_nodes;
 	std::vector<int32_t> m_node_id_to_flow_index;
-	[[nodiscard]] tl::expected<std::monostate, std::string> FillInnerSolveEqns(std::set<int32_t>& remaining_output_ids);
 };
 
 }

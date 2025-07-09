@@ -33,6 +33,7 @@ HoverHighlightObject.hpp HoverHighlightObject.cpp
 SolverUtils.hpp SolverUtils.cpp
 GraphicsLogic/Anchors.hpp GraphicsLogic/Anchors.cpp
 GraphicsLogic/TemporaryNetManager.hpp GraphicsLogic/TemporaryNetManager.cpp
+NetCategoriesStyleManager.hpp NetCategoriesStyleManager.cpp
 pch.h
 )
 

@@ -5,24 +5,18 @@
 #include "NodeModels/BlockData.hpp"
 #include "NodeModels/SceneModelManager.hpp"
 
+#include "optimizer/NLEquation.hpp"
+#include "optimizer/DiffEquation.hpp"
+#include "optimizer/NLStatefulEquation.hpp"
+#include "optimizer/Observer.hpp"
+#include "optimizer/SourceEq.hpp"
+#include "optimizer/FlowEquation.hpp"
+#include "optimizer/PotentialEquation.hpp"
+
 #include "tl/expected.hpp"
 #include <any>
 #include <variant>
 #include <atomic>
-
-namespace opt
-{
-	struct DiffEquationWrapper;
-	struct DiffEquationView;
-	struct NLEquationWrapper;
-	struct NLEquationView;
-	struct NLStatefulEquationWrapper;
-	struct NLStatefulEquationView;
-	struct ObserverWrapper;
-	struct ObserverView;
-	struct SourceEqWrapper;
-	struct SourceEqView;
-}
 
 namespace node
 {
@@ -37,13 +31,14 @@ enum class BlockType
 	Differential,
 	Stateful,
 	Stateless,
+	Flow,
 };
 
 using BlockFunctor = typename std::variant<opt::DiffEquationWrapper, opt::NLEquationWrapper, 
-	opt::NLStatefulEquationWrapper, opt::ObserverWrapper, opt::SourceEqWrapper>;
+	opt::NLStatefulEquationWrapper, opt::ObserverWrapper, opt::SourceEqWrapper, opt::FlowEquationWrapper, opt::PotentialEquationWrapper>;
 
 using BlockView = typename std::variant<opt::DiffEquationView, opt::NLEquationView,
-	opt::NLStatefulEquationView, opt::ObserverView, opt::SourceEqView>;
+	opt::NLStatefulEquationView, opt::ObserverView, opt::SourceEqView, opt::FlowEquationView, opt::PotentialEquationView>;
 
 struct BlockTemplate
 {
@@ -73,8 +68,20 @@ public:
 	};
 	virtual int ValidateClassProperties(std::span<const model::BlockProperty> properties, IValidatePropertiesNotifier& error_cb) const = 0;
 
-	using CalculateSocketCallback = void(*)(void* context, std::span<const model::SocketType> sockets);
-	virtual void CalculateSockets(std::span<const model::BlockProperty> properties, CalculateSocketCallback cb, void* context) const = 0;
+
+	struct SocketIdentification
+	{
+		model::SocketType socket_type;
+		model::NetCategory category;
+	};
+	class ICalculateSocketCallback
+	{
+	public:
+		virtual void add_sockets(std::span<const model::SocketType> sockets) = 0;
+		virtual void add_IdentifiedSockets(std::span<const SocketIdentification> sockets) = 0;
+		virtual void error(const std::string_view& error_text) = 0;
+	};
+	virtual void CalculateSockets(std::span<const model::BlockProperty> properties, ICalculateSocketCallback& cb) const = 0;
 
 	virtual BlockType GetBlockType(std::span<const model::BlockProperty> properties) const = 0;
 
@@ -117,6 +124,15 @@ struct LightValidatePropertiesNotifier : public IBlockClass::IValidateProperties
 	}
 
 	bool errored = false;
+};
+
+struct CalculateSocketCallback : public IBlockClass::ICalculateSocketCallback
+{
+	std::optional<std::string> error_message;
+	std::vector<IBlockClass::SocketIdentification> added_sockets;
+	void add_sockets(std::span<const model::SocketType> sockets) override;
+	void add_IdentifiedSockets(std::span<const IBlockClass::SocketIdentification> sockets) override;
+	void error(const std::string_view& error_text) override;
 };
 
 class RcBlockClass: public IBlockClass
