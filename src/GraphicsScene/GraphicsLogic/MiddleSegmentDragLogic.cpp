@@ -41,7 +41,7 @@ namespace node
 				request.update_nodes.push_back(NetModificationRequest::UpdateNodeRequest{ *GetBaseNode()->GetId(),
 					{ m_node_start_position.x , last_point.y - m_start_point.y + m_node_start_position.y } });
 			}
-			return { NetModificationRequest::NodeIdType::existing_id, *GetBaseNode()->GetId(), m_segment_side };
+			return { NetModificationRequest::IdType::existing_id, *GetBaseNode()->GetId(), m_segment_side };
 
 		}
 		virtual void OnCancel() override

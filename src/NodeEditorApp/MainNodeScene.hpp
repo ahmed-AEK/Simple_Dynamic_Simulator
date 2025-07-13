@@ -70,6 +70,7 @@ private:
     void InitializeTools();
     void InitializeSidePanel();
     void InitializeBotPanel();
+    void InitCategoriesStlyer();
 
     void OnDarkModeClicked();
 

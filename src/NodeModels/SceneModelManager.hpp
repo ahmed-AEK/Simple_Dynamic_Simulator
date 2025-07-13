@@ -32,6 +32,12 @@ struct NetModificationReport
 		model::Point new_position;
 	};
 
+	struct UpdateNodeNetReport
+	{
+		model::NetNodeId node_id;
+		model::NetId net_id;
+	};
+
 	std::vector<model::SocketUniqueId> removed_connections;
 	std::vector<model::NetSegmentId> removed_segments;
 	std::vector<model::NetNodeId> removed_nodes;
@@ -40,6 +46,7 @@ struct NetModificationReport
 	std::vector<std::reference_wrapper<model::NetSegmentModel>> update_segments;
 	std::vector<std::reference_wrapper<model::NetSegmentModel>> added_segments;
 	std::vector<std::reference_wrapper<model::SocketNodeConnection>> added_connections;
+	std::vector<UpdateNodeNetReport> node_net_changed;
 };
 
 enum class SceneModificationType
@@ -70,7 +77,7 @@ struct SceneModification
 
 struct NetModificationRequest
 {
-	enum class NodeIdType
+	enum class IdType
 	{
 		existing_id,
 		new_id,
@@ -79,17 +86,24 @@ struct NetModificationRequest
 	struct AddNodeRequest
 	{
 		model::Point position;
+		IdType net_type;
+		model::NetId net_id;
 	};
 
 	struct AddSegmentRequest
 	{
-		NodeIdType node1_type;
-		NodeIdType node2_type;
+		IdType node1_type;
+		IdType node2_type;
 		model::ConnectedSegmentSide node1_side;
 		model::ConnectedSegmentSide node2_side;
 		model::NetSegmentOrientation orientation;
 		model::NetNodeId node1;
 		model::NetNodeId node2;
+	};
+
+	struct AddNetRequest
+	{
+		model::NetCategory category;
 	};
 
 	struct UpdateNodeRequest
@@ -100,8 +114,8 @@ struct NetModificationRequest
 
 	struct UpdateSegmentRequest
 	{
-		NodeIdType node1_type;
-		NodeIdType node2_type;
+		IdType node1_type;
+		IdType node2_type;
 		model::ConnectedSegmentSide node1_side;
 		model::ConnectedSegmentSide node2_side;
 		model::NetSegmentOrientation orientation;
@@ -113,18 +127,41 @@ struct NetModificationRequest
 	struct SocketConnectionRequest
 	{
 		model::SocketUniqueId socket;
-		NodeIdType node_type;
+		IdType node_type;
 		model::NetNodeId node;
+	};
+
+	struct NodeNetChange
+	{
+		IdType net_type;
+		model::NetNodeId node;
+		model::NetId net;
+	};
+
+	struct NetCategoryChange
+	{
+		model::NetId net_id;
+		model::NetCategory new_category;
+	};
+	struct MergeNetsRequest
+	{
+		model::NetId original_net;
+		model::NetId merged_net;
 	};
 
 	std::vector<model::SocketUniqueId> removed_connections;
 	std::vector<model::NetSegmentId> removed_segments;
 	std::vector<model::NetNodeId> removed_nodes;
+	std::vector<model::NetId> removed_nets;
 	std::vector<AddNodeRequest> added_nodes;
 	std::vector<UpdateNodeRequest> update_nodes;
 	std::vector<UpdateSegmentRequest> update_segments;
 	std::vector<AddSegmentRequest> added_segments;
 	std::vector<SocketConnectionRequest> added_connections;
+	std::vector<AddNetRequest> added_nets;
+	std::vector<NetCategoryChange> changed_net_categories;
+	std::vector<MergeNetsRequest> merged_nets;
+	std::vector<NodeNetChange> update_nodes_nets;
 };
 
 class ModelAction

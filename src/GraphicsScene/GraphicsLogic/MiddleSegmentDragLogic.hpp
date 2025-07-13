@@ -17,11 +17,11 @@ struct NodeDragHandler
 {
 	struct AddedNode
 	{
-		AddedNode(NetModificationRequest::NodeIdType node_type,
+		AddedNode(NetModificationRequest::IdType node_type,
 			model::NetNodeId node_id,
 			model::ConnectedSegmentSide connected_side)
 			: node_type{ node_type }, node_id{ node_id }, connected_side{ connected_side } {}
-		NetModificationRequest::NodeIdType node_type;
+		NetModificationRequest::IdType node_type;
 		model::NetNodeId node_id;
 		model::ConnectedSegmentSide connected_side;
 	};

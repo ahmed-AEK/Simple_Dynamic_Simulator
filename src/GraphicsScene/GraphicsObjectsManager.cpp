@@ -41,6 +41,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
     {
         auto node = std::make_unique<node::NetNode>(net_node.GetPosition());
         node->SetId(net_node.GetId());
+        node->SetNetId(net_node.GetNetId());
         m_net_nodes.emplace(net_node.GetId(), node.get());
         GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
@@ -55,7 +56,12 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
             m_logger.LogError("broken scene!");
             return;
         }
-        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second);
+        auto net_id = it_node1->second->GetNetId();
+        assert(net_id);
+        auto* net = scene->GetModel().GetNet(*net_id);
+        assert(net);
+        auto styler = m_categories_styler->GetStyle(net->GetCategory());
+        auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, styler);
 
         segment_obj->SetId(net_segment.GetId());
         m_net_segments.emplace(net_segment.GetId(), segment_obj.get());
@@ -302,6 +308,7 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         auto node = std::make_unique<NetNode>(added_node.get().GetPosition());
         m_net_nodes.emplace(added_node.get().GetId(), node.get());
         node->SetId(added_node.get().GetId());
+        node->SetNetId(added_node.get().GetNetId());
         nodes_to_select.push_back(node.get());
         GetGraphicsScene()->AddObject(std::move(node), GraphicsScene::NetNodeLayer);
     }
@@ -316,6 +323,28 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
             it->second->setCenter(updated_node.new_position);
             it->second->UpdateConnectedSegments();
             nodes_to_select.push_back(it->second);
+        }
+    }
+
+    // handle nodes category changes
+    for (const auto& node_update : report.node_net_changed)
+    {
+        auto it = m_net_nodes.find(node_update.node_id);
+        assert(it != m_net_nodes.end());
+        if (it == m_net_nodes.end())
+        {
+            continue;
+        }
+        it->second->SetNetId(node_update.net_id);
+        auto* net = GetSceneModel()->GetModel().GetNet(node_update.net_id);
+        assert(net);
+        auto styler = m_categories_styler->GetStyle(net->GetCategory());
+        for (auto* segment : it->second->getSegments())
+        {
+            if (segment)
+            {
+                segment->SetStyler(styler);
+            }
         }
     }
 
@@ -359,7 +388,12 @@ void node::GraphicsObjectsManager::HandleNetUpdate(NetModificationReport& report
         {
             continue;
         }
-        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second);
+        auto net_id = it1->second->GetNetId();
+        assert(net_id);
+        auto* net = GetSceneModel()->GetModel().GetNet(*net_id);
+        assert(net);
+        auto styler = m_categories_styler->GetStyle(net->GetCategory());
+        auto segment = std::make_unique<NetSegment>(added_segment.get().m_orientation, it1->second, it2->second, styler);
         auto id = added_segment.get().GetId();
         segment->SetId(id);
         m_net_segments.emplace(id, segment.get());

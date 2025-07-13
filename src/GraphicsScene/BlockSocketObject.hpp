@@ -14,7 +14,7 @@ class GRAPHICSSCENE_API BlockSocketObject: public GraphicsObject
 {
 public:	
 	explicit BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id = std::nullopt,
-		model::Point center_in_block = { 0,0 }, model::ConnectedSegmentSide connection_side = {});
+		model::Point center_in_block = { 0,0 }, model::ConnectedSegmentSide connection_side = {}, const model::NetCategory& category = {});
 
 	void SetConnectedNode(NetNode* node);
 	NetNode* GetConnectedNode() noexcept;
@@ -41,6 +41,8 @@ public:
 	model::ConnectedSegmentSide GetConnectionSide() const { return m_connection_side; }
 	void SetSocketType(model::BlockSocketModel::SocketType type) { m_socktType = type; }	
 	void SetConnectionSide(model::ConnectedSegmentSide side) { m_connection_side = side; }
+	void SetCategory(const model::NetCategory& category) { m_category = category; }
+	const model::NetCategory& GetCategory() const { return m_category; }
 
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 
@@ -56,6 +58,7 @@ private:
 	model::ConnectedSegmentSide m_connection_side;
 	std::optional<model::SocketId> m_id;
 	NetNode* m_connected_node = nullptr;
+	model::NetCategory m_category;
 };
 
 }

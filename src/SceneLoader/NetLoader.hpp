@@ -38,6 +38,10 @@ public:
 	virtual bool AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection) = 0;
 	virtual std::vector<model::SocketNodeConnection> GetSocketNodeConnections() = 0;
 
+	// Nets Functions
+	virtual bool AddNet(const node::model::NetModel& net) = 0;
+	virtual std::vector<node::model::NetModel> GetNets() = 0;
+
 	// virtual destructor
 	virtual ~NetLoader() = default;
 	NetLoader() = default;

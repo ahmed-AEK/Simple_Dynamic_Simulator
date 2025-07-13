@@ -2,6 +2,7 @@
 
 #include "GraphicsScene/GraphicsObject.hpp"
 #include "NodeModels/NetModel.hpp"
+#include "GraphicsScene/NetCategoriesStyleManager.hpp"
 #include <vector>
 #include <variant>
 #include <cassert>
@@ -29,6 +30,7 @@ public:
 		assert(static_cast<size_t>(side) < 4);
 		return m_connected_segments[static_cast<size_t>(side)];
 	}
+	std::span<NetSegment* const> getSegments() const { return m_connected_segments; }
 	void setCenter(const model::Point& point) { SetPosition({ point.x - m_width / 2, point.y - m_height / 2 }); }
 	void UpdateConnectedSegments();
 	void SetConnectedSocket(BlockSocketObject* socket);
@@ -41,10 +43,14 @@ public:
 	void SetId(std::optional<model::NetNodeId> id) { m_id = std::move(id); }
 	std::optional<model::NetNodeId> GetId() const noexcept { return m_id; }
 
+	void SetNetId(std::optional<model::NetId> id) { m_net_id = id; }
+	std::optional<model::NetId> GetNetId() const { return m_net_id; }
+
 protected:
 private:
 	std::optional<model::NetNodeId> m_id = std::nullopt;
 	std::array<NetSegment*, 4> m_connected_segments{};
+	std::optional<model::NetId> m_net_id;
 	BlockSocketObject* m_socket = nullptr;
 	static constexpr int m_width = 10;
 	static constexpr int m_height = 10;
@@ -56,7 +62,7 @@ class GRAPHICSSCENE_API NetSegment : public GraphicsObject
 {
 public:
 	explicit NetSegment(const model::NetSegmentOrientation& orientation,
-	NetNode* startNode = nullptr, NetNode* endNode = nullptr);
+		NetNode* startNode = nullptr, NetNode* endNode = nullptr, std::shared_ptr<const NetCategoryStyle> styler = {});
 	void Draw(SDL::Renderer& renderer, const SpaceScreenTransformer& transformer) override;
 	NetNode* getStartNode() const noexcept { return m_startNode; }
 	NetNode* getEndNode() const noexcept { return m_endNode; }
@@ -69,6 +75,9 @@ public:
 	void SetId(std::optional<model::NetSegmentId> id) { m_id = std::move(id); }
 	std::optional<model::NetSegmentId> GetId() const noexcept { return m_id; }
 	model::Point GetCenter() const;
+
+	void SetStyler(std::shared_ptr<const NetCategoryStyle> styler) { m_styler = std::move(styler); }
+	std::shared_ptr<const NetCategoryStyle> GetStyler() const { return m_styler; }
 protected:
 private:
 	static constexpr int c_width = 10;
@@ -77,6 +86,7 @@ private:
 	NetNode* m_startNode;
 	NetNode* m_endNode;
 	model::NetSegmentOrientation m_orientation{};
+	std::shared_ptr<const NetCategoryStyle> m_styler;
 };
 
 struct GRAPHICSSCENE_API NetObject

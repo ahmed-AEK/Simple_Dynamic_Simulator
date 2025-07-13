@@ -32,6 +32,9 @@ private:
 	BlockSocketObject* GetSocketAt(const model::Point& point) const;
 	NetSegment* GetSegmentAt(const model::Point& point) const;
 
+	void AddNetModificationsWithSegment(NetModificationRequest& request, const NetSegment& end_segment) const;
+	void AddNetModificationsWithSocket(NetModificationRequest& request, const BlockSocketObject* end_socket) const;
+
 	void ResetNodes();
 	void PositionNodes(const model::Point& target_point);
 	void CleanUp();

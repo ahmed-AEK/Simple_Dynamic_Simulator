@@ -6,13 +6,16 @@ using namespace node;
 TEST(testNetLoader, testSaveLoadNetNode)
 {
 	NetNodeId node_id{ 1 };
-	NetNodeModel node{ node_id, {10,10} };
+	NetId net_id{ 2 };
+	NetModel net{ net_id };
+	NetNodeModel node{ node_id, {10,10} , net_id};
 
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
 	NodeSceneModel scene;
 	scene.AddNetNode(std::move(node));
+	scene.AddNet(net);
 
 	SQLSceneLoader loader(":memory:");
 	loader.Save(scene, subscene_id, parent_subscene_id);
@@ -29,6 +32,7 @@ TEST(testNetLoader, testSaveLoadNetNode)
 	EXPECT_EQ(loaded_node.GetId(), node_id);
 	Point expected_pos{ 10,10 };
 	EXPECT_EQ(loaded_node.GetPosition(), expected_pos);
+	EXPECT_EQ(loaded_node.GetNetId(), net_id);
 	EXPECT_FALSE(loaded_node.GetSegmentAt(ConnectedSegmentSide::north));
 	EXPECT_FALSE(loaded_node.GetSegmentAt(ConnectedSegmentSide::south));
 	EXPECT_FALSE(loaded_node.GetSegmentAt(ConnectedSegmentSide::west));
@@ -38,17 +42,21 @@ TEST(testNetLoader, testSaveLoadNetNode)
 TEST(testNetLoader, testSaveLoadNetNode2)
 {
 	NetNodeId node_id{ 3 };
+	NetId net_id{ 4 };
 
+	NetModel net{ net_id };
+	
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
 
-	NetNodeModel node{ node_id, {20,20} };
+	NetNodeModel node{ node_id, {20,20}, net_id };
 	node.SetSegmentAt(ConnectedSegmentSide::north, NetSegmentId{ 1 });
 	node.SetSegmentAt(ConnectedSegmentSide::south, NetSegmentId{ 2 });
 	node.SetSegmentAt(ConnectedSegmentSide::west, NetSegmentId{ 3 });
 	node.SetSegmentAt(ConnectedSegmentSide::east, NetSegmentId{ 4 });
 	NodeSceneModel scene;
 	scene.AddNetNode(std::move(node));
+	scene.AddNet(net);
 
 	SQLSceneLoader loader(":memory:");
 	loader.Save(scene, subscene_id, parent_subscene_id);
@@ -65,10 +73,19 @@ TEST(testNetLoader, testSaveLoadNetNode2)
 	EXPECT_EQ(loaded_node.GetId(), node_id);
 	Point expected_pos{ 20,20 };
 	EXPECT_EQ(loaded_node.GetPosition(), expected_pos);
+	EXPECT_EQ(loaded_node.GetId(), node_id);
 	EXPECT_EQ(*loaded_node.GetSegmentAt(ConnectedSegmentSide::north), NetSegmentId{ 1 });
 	EXPECT_EQ(*loaded_node.GetSegmentAt(ConnectedSegmentSide::south), NetSegmentId{ 2 });
 	EXPECT_EQ(*loaded_node.GetSegmentAt(ConnectedSegmentSide::west), NetSegmentId{ 3 });
 	EXPECT_EQ(*loaded_node.GetSegmentAt(ConnectedSegmentSide::east), NetSegmentId{ 4 });
+
+	ASSERT_EQ(new_scene->GetNets().size(),1);
+	auto loaded_net_ptr = new_scene->GetNet(net_id);
+	ASSERT_TRUE(loaded_net_ptr);
+
+	ASSERT_EQ(loaded_net_ptr->GetNodes().size(), 1);
+	EXPECT_EQ(loaded_net_ptr->GetNodes()[0], node_id);
+	EXPECT_EQ(loaded_net_ptr->GetCategory(), NetCategory{});
 }
 
 
@@ -89,7 +106,7 @@ TEST(testNetLoader, testSaveLoadNetSegment)
 
 	SQLSceneLoader loader(":memory:");
 	loader.Save(scene, subscene_id, parent_subscene_id);
-
+	
 	auto new_scene = loader.Load(subscene_id);
 
 	ASSERT_TRUE(new_scene);
@@ -212,3 +229,30 @@ TEST(testNetLoader, testSaveLoadSocketConnection2)
 	EXPECT_EQ(loaded_connection.socketId.block_id, block_id);
 }
 
+TEST(testNetLoader, testSaveLoadNet)
+{
+	NetId net_id{ 2 };
+	NetCategory net_category{ "BAZ" };
+	NetModel net{ net_id, net_category };
+
+	SubSceneId subscene_id{ 1 };
+	SubSceneId parent_subscene_id{ 0 };
+
+	NodeSceneModel scene;
+	scene.AddNet(std::move(net));
+
+	SQLSceneLoader loader(":memory:");
+	loader.Save(scene, subscene_id, parent_subscene_id);
+
+	auto new_scene = loader.Load(subscene_id);
+
+	ASSERT_TRUE(new_scene);
+
+	auto loaded_net_ptr = new_scene->GetNet(net_id);
+	ASSERT_TRUE(loaded_net_ptr);
+	ASSERT_EQ(new_scene->GetNets().size(), 1);
+
+	auto&& loaded_net = *loaded_net_ptr;
+	EXPECT_EQ(loaded_net.GetId(), net_id);
+	EXPECT_EQ(loaded_net.GetCategory(), net_category);
+}

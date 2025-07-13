@@ -26,6 +26,6 @@ private:
 }
 namespace NetUtils
 {
-	std::optional<NetModificationRequest> GetDeletionRequestForNet(std::span<node::HandlePtr<node::GraphicsObject>> objects);
+	std::optional<NetModificationRequest> GetDeletionRequestForNet(std::span<node::HandlePtr<node::GraphicsObject>> objects, const model::NodeSceneModel& scene);
 }
 }

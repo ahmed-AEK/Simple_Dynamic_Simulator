@@ -12,7 +12,7 @@ std::unique_ptr<node::BlockObject> node::BlockObject::Create(const model::BlockM
     for (const auto& socket : model.GetSockets())
     {
         auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(),
-            socket.GetPosition(), socket.GetConnectionSide());
+            socket.GetPosition(), socket.GetConnectionSide(), socket.GetCategory());
         ptr->AddSocket(std::move(socket_ptr));
     }
     return ptr;
@@ -109,7 +109,7 @@ void node::BlockObject::RenewSockets(std::span<const model::BlockSocketModel> ne
     for (const auto& socket : new_sockets)
     {
         auto socket_ptr = std::make_unique<BlockSocketObject>(socket.GetType(), socket.GetId(),
-            socket.GetPosition(), socket.GetConnectionSide());
+            socket.GetPosition(), socket.GetConnectionSide(), socket.GetCategory());
         AddSocket(std::move(socket_ptr));
     }
 }

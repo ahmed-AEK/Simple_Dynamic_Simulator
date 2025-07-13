@@ -108,8 +108,19 @@ std::optional<node::model::NodeSceneModel> node::loader::SQLSceneLoader::Load(Su
         }
 
         SQLNetLoader netLoader{ m_dbname, *m_db, id };
+        for (auto&& net : netLoader.GetNets())
+        {
+            scene->AddNet(std::move(net));
+        }
         for (auto&& net_node : netLoader.GetNetNodes())
         {
+            auto* net = scene->GetNet(net_node.GetNetId());
+            assert(net);
+            if (!net)
+            {
+                return std::nullopt;
+            }
+            net->AddNode(net_node.GetId());
             scene->AddNetNode(std::move(net_node));
         }
         for (auto&& net_segment : netLoader.GetNetSegments())
@@ -193,6 +204,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     type INTEGER NOT NULL,
                     connection_side INTEGER NOT NULL,
                     connected_node_id INTEGER,
+                    category TEXT,
                     PRIMARY KEY (id, parentid)
                     FOREIGN KEY (parentid) REFERENCES blocks(id) );)");
 
@@ -242,7 +254,13 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     north_segment INTEGER,
                     south_segment INTEGER,
                     west_segment INTEGER, 
-                    east_segment INTEGER );)");
+                    east_segment INTEGER,
+                    net_id INTEGER NOT NULL );)");
+
+        m_db->exec(R"(CREATE TABLE Nets_)"
+            + std::to_string(id.value) + R"((
+                    id INTEGER PRIMARY KEY,
+                    category TEXT );)");
 
         m_db->exec(R"(CREATE TABLE NetSegments_)" 
                     + std::to_string(id.value) + R"((
@@ -277,6 +295,10 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
         for (const auto& connection : scene.GetSocketConnections())
         {
             netLoader.AddSocketNodeConnection(connection);
+        }
+        for (const auto& net : scene.GetNets())
+        {
+            netLoader.AddNet(net);
         }
         transaction.commit();
         return true;

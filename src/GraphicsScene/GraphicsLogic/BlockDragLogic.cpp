@@ -176,8 +176,18 @@ node::NetModificationRequest node::logic::BlockDragLogic::PopulateResultNet(cons
         const auto solution = solver.Solve();
         auto report = MakeModificationsReport(solution, net.orig_nodes, net.orig_segments);
         UpdateModificationEndWithSocket(net.orig_nodes, report, end_socket);
+
+        auto net_id_opt = net.orig_nodes.back()->GetNetId();
+        assert(net_id_opt);
+        for (auto& added_node : report.request.added_nodes)
+        {
+            added_node.net_id = *net_id_opt;
+            added_node.net_type = NetModificationRequest::IdType::existing_id;
+        }
+
         MergeModificationRequests(report.request, result);
     }
+
     return result;
 }
 

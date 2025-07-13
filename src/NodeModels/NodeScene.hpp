@@ -82,9 +82,14 @@ public:
 	SubSceneId GetSubSceneId() const { return m_id; };
 	void SetSubSceneId(SubSceneId id) { m_id = id; }
 
+	void AddNet(model::NetModel net);
 	void AddNet(NetId id, const NetCategory& category);
 	NetModel* GetNet(NetId id);
 	const NetModel* GetNet(NetId id) const;
+	std::span<NetModel> GetNets() { return m_nets; }
+	std::span<const NetModel> GetNets() const { return m_nets; }
+	void RemoveNetById(NetId id);
+
 private:
 	SubSceneId m_id;
 	std::vector<BlockModel> m_blocks;

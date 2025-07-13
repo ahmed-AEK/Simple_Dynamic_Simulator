@@ -145,6 +145,7 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 
 	const auto* end_socket = GetSocketAt(current_mouse_point);
 	NetSegment* end_segment = nullptr;
+	NetSegment* start_segment = nullptr;
 	if (!end_socket)
 	{
 		end_segment = GetSegmentAt(current_mouse_point);
@@ -196,14 +197,14 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 
 			request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 				model::SocketUniqueId{*(start_socket->GetId()), *(start_socket->GetParentBlock()->GetModelId())},
-				NetModificationRequest::NodeIdType::new_id,
+				NetModificationRequest::IdType::new_id,
 				NetNodeId{0}
 				});
 		}
 	}
 	else if (std::holds_alternative<SegmentAnchor>(m_net.start_anchor))
 	{
-		auto* start_segment = std::get<SegmentAnchor>(m_net.start_anchor).segment.GetObjectPtr();
+		start_segment = std::get<SegmentAnchor>(m_net.start_anchor).segment.GetObjectPtr();
 		if (start_segment)
 		{
 			UpdateCreationStartWithSegment(request, *start_segment);
@@ -214,16 +215,110 @@ node::NetModificationRequest node::logic::NewNetLogic::PopulateResultNet(const m
 	{
 		request.added_connections.push_back(NetModificationRequest::SocketConnectionRequest{
 			model::SocketUniqueId{*(end_socket->GetId()), *(end_socket->GetParentBlock()->GetModelId())},
-			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::IdType::new_id,
 			solution.nodes.back().GetId()
 			});
 	}
 	if (end_segment)
 	{
 		UpdateModificationEndWithSegment({}, request, 
-			NetNodeModificationInfo{ NetModificationRequest::NodeIdType::new_id, 
+			NetNodeModificationInfo{ NetModificationRequest::IdType::new_id, 
 			NetNodeId{static_cast<model::id_int>(request.added_nodes.size() - 1)},  request.added_nodes.size() - 1 }, 
 			end_segment);
+	}
+	if (!start_segment && !end_segment)
+	{
+		model::NetCategory category;
+		if (start_socket && !start_socket->GetCategory().IsEmpty())
+		{
+			category = start_socket->GetCategory();
+		}
+		if (end_socket && !end_socket->GetCategory().IsEmpty())
+		{
+			assert(category.IsEmpty() || category == end_socket->GetCategory());
+			category = end_socket->GetCategory();
+		}
+		request.added_nets.push_back(NetModificationRequest::AddNetRequest{ .category = category });
+		for (auto& node : request.added_nodes)
+		{
+			node.net_type = NetModificationRequest::IdType::new_id;
+			node.net_id = model::NetId{ 0 };
+		}
+	}
+	else if (start_segment && !end_segment)
+	{
+		auto net_id_opt = start_segment->getStartNode()->GetNetId();
+		assert(net_id_opt);
+
+		for (auto& node : request.added_nodes)
+		{
+			node.net_type = NetModificationRequest::IdType::existing_id;
+			node.net_id = model::NetId{ *net_id_opt };
+		}
+		if (end_socket)
+		{
+			const auto& end_socket_category = end_socket->GetCategory();
+			const auto& current_net_category = GetObjectsManager()->GetSceneModel()->GetModel().GetNet(*net_id_opt)->GetCategory();
+			assert(model::NetCategory::Joinable(end_socket_category, current_net_category));
+			if (current_net_category.IsEmpty() && !end_socket_category.IsEmpty())
+			{
+				request.changed_net_categories.push_back(NetModificationRequest::NetCategoryChange{ .net_id = *net_id_opt, .new_category = end_socket_category });
+			}
+		}
+	}
+	else if (end_segment && !start_segment)
+	{
+		auto net_id_opt = end_segment->getStartNode()->GetNetId();
+		assert(net_id_opt);
+
+		for (auto& node : request.added_nodes)
+		{
+			node.net_type = NetModificationRequest::IdType::existing_id;
+			node.net_id = model::NetId{ *net_id_opt };
+		}
+		if (start_socket)
+		{
+			const auto& start_socket_category = start_socket->GetCategory();
+			const auto& current_net_category = GetObjectsManager()->GetSceneModel()->GetModel().GetNet(*net_id_opt)->GetCategory();
+			assert(model::NetCategory::Joinable(start_socket_category, current_net_category));
+			if (current_net_category.IsEmpty() && !start_socket_category.IsEmpty())
+			{
+				request.changed_net_categories.push_back(NetModificationRequest::NetCategoryChange{ .net_id = *net_id_opt, .new_category = start_socket_category });
+			}
+		}
+	}
+	else
+	{
+		// connecting (possibly) two nets
+		auto net1_id_opt = start_segment->getStartNode()->GetNetId();
+		assert(net1_id_opt);
+
+		auto net2_id_opt = end_segment->getStartNode()->GetNetId();
+		assert(net2_id_opt);
+		if (*net1_id_opt == *net2_id_opt)
+		{
+			// both are the same net, just add new nodes to it
+			for (auto& node : request.added_nodes)
+			{
+				node.net_type = NetModificationRequest::IdType::existing_id;
+				node.net_id = model::NetId{ *net1_id_opt };
+			}
+		}
+		else
+		{
+			// two different nets, check compatiblity then merge them
+			[[maybe_unused]] const auto& net1_category = GetObjectsManager()->GetSceneModel()->GetModel().GetNet(*net1_id_opt)->GetCategory();
+			[[maybe_unused]] const auto& net2_category = GetObjectsManager()->GetSceneModel()->GetModel().GetNet(*net2_id_opt)->GetCategory();
+			assert(model::NetCategory::Joinable(net1_category, net2_category));
+			request.merged_nets.push_back(NetModificationRequest::MergeNetsRequest{ .original_net = *net1_id_opt, .merged_net = *net2_id_opt });
+			
+			// just add new nodes to first one
+			for (auto& node : request.added_nodes)
+			{
+				node.net_type = NetModificationRequest::IdType::existing_id;
+				node.net_id = model::NetId{ *net1_id_opt };
+			}
+		}
 	}
 	return request;
 }

@@ -99,7 +99,7 @@ node::logic::ModificationReport node::logic::MakeModificationsReport(const node:
 				*orig_nodes[current_node]->GetId(),
 				solution.nodes[current_node].GetPosition()
 				});
-			new_nodes.push_back(NetNodeModificationInfo{ NetModificationRequest::NodeIdType::existing_id,
+			new_nodes.push_back(NetNodeModificationInfo{ NetModificationRequest::IdType::existing_id,
 				*orig_nodes[current_node]->GetId(),
 				static_cast<size_t>(current_node)
 				});
@@ -108,12 +108,12 @@ node::logic::ModificationReport node::logic::MakeModificationsReport(const node:
 		while (current_node < solution.nodes.size())
 		{
 			request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-				solution.nodes[current_node].GetPosition()
+				solution.nodes[current_node].GetPosition(), {}, model::NetId{0}
 				});
 			
 
 			new_nodes.push_back(NetNodeModificationInfo{ 
-			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::IdType::new_id,
 			model::NetNodeId{ static_cast<model::id_int>(request.added_nodes.size() - 1) },
 			request.added_nodes.size() - 1
 			});
@@ -174,7 +174,7 @@ node::NetModificationRequest node::logic::MakeCreationReport(const node::NetsSol
 	for (const auto& node : solution.nodes)
 	{
 		request.added_nodes.push_back(NetModificationRequest::AddNodeRequest{
-			node.GetPosition()
+			node.GetPosition(), {}, model::NetId{0}
 			});
 	}
 
@@ -209,8 +209,8 @@ node::NetModificationRequest node::logic::MakeCreationReport(const node::NetsSol
 			}
 		}
 		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-			NetModificationRequest::NodeIdType::new_id,
-			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::IdType::new_id,
+			NetModificationRequest::IdType::new_id,
 			segment1_side,
 			segment2_side,
 			segment.m_orientation,
@@ -263,7 +263,7 @@ void node::logic::UpdateModificationEndWithSocket(
 		}
 	}
 
-	if (report.end_node_info.node_type == NetModificationRequest::NodeIdType::new_id ||
+	if (report.end_node_info.node_type == NetModificationRequest::IdType::new_id ||
 		(orig_nodes.size() && report.end_node_info.node_id != orig_nodes.back()->GetId())
 		)
 	{
@@ -298,8 +298,8 @@ void node::logic::UpdateCreationStartWithSegment(
 	auto node2_side = *node2->GetSegmentSide(start_segment);
 	// make the segment between node1 and our new end node
 	request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
-		NetModificationRequest::NodeIdType::existing_id,
-		NetModificationRequest::NodeIdType::new_id,
+		NetModificationRequest::IdType::existing_id,
+		NetModificationRequest::IdType::new_id,
 		node1_side,
 		model::GetOppositeSegmentSide(node1_side),
 		start_segment.GetOrientation(),
@@ -308,8 +308,8 @@ void node::logic::UpdateCreationStartWithSegment(
 		model::NetNodeId{0}
 		});
 	request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-		NetModificationRequest::NodeIdType::new_id,
-		NetModificationRequest::NodeIdType::existing_id,
+		NetModificationRequest::IdType::new_id,
+		NetModificationRequest::IdType::existing_id,
 		model::GetOppositeSegmentSide(node2_side),
 		node2_side,
 		start_segment.GetOrientation(),
@@ -323,7 +323,7 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 {
 	if (orig_nodes.size())
 	{
-		// no end socket, just desconnect the last node
+		// the end will be a segment not a socket, so just desconnect the last node
 		auto* old_end_socket = orig_nodes.back()->GetConnectedSocket();
 		if (old_end_socket)
 		{
@@ -341,8 +341,8 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 		auto node2_side = *node2->GetSegmentSide(*end_segment);
 		// make the segment between node1 and our new end node
 		request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
-			NetModificationRequest::NodeIdType::existing_id,
-			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::IdType::existing_id,
+			NetModificationRequest::IdType::existing_id,
 			node1_side,
 			model::GetOppositeSegmentSide(node1_side),
 			end_segment->GetOrientation(),
@@ -351,8 +351,8 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 			*orig_node->GetId()
 			});
 		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-			NetModificationRequest::NodeIdType::existing_id,
-			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::IdType::existing_id,
+			NetModificationRequest::IdType::existing_id,
 			model::GetOppositeSegmentSide(node2_side),
 			node2_side,
 			end_segment->GetOrientation(),
@@ -369,8 +369,8 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 		auto node2_side = *node2->GetSegmentSide(*end_segment);
 		// make the segment between node1 and our new end node
 		request.update_segments.push_back(NetModificationRequest::UpdateSegmentRequest{
-			NetModificationRequest::NodeIdType::existing_id,
-			NetModificationRequest::NodeIdType::new_id,
+			NetModificationRequest::IdType::existing_id,
+			NetModificationRequest::IdType::new_id,
 			node1_side,
 			model::GetOppositeSegmentSide(node1_side),
 			end_segment->GetOrientation(),
@@ -379,8 +379,8 @@ void node::logic::UpdateModificationEndWithSegment(std::span<const node::HandleP
 			model::NetNodeId{static_cast<model::id_int>(request.added_nodes.size() - 1)}
 			});
 		request.added_segments.push_back(NetModificationRequest::AddSegmentRequest{
-			NetModificationRequest::NodeIdType::new_id,
-			NetModificationRequest::NodeIdType::existing_id,
+			NetModificationRequest::IdType::new_id,
+			NetModificationRequest::IdType::existing_id,
 			model::GetOppositeSegmentSide(node2_side),
 			node2_side,
 			end_segment->GetOrientation(),
@@ -417,13 +417,13 @@ void node::logic::MergeModificationRequests(const node::NetModificationRequest& 
 	{
 		target.added_segments.push_back(src.added_segments[i]);
 		auto& segment = target.added_segments.back();
-		if (segment.node1_type == NetModificationRequest::NodeIdType::new_id)
+		if (segment.node1_type == NetModificationRequest::IdType::new_id)
 		{
 			auto it = node_id_map.find(segment.node1);
 			assert(it != node_id_map.end());
 			segment.node1 = it->second;
 		}
-		if (segment.node2_type == NetModificationRequest::NodeIdType::new_id)
+		if (segment.node2_type == NetModificationRequest::IdType::new_id)
 		{
 			auto it = node_id_map.find(segment.node2);
 			assert(it != node_id_map.end());
@@ -434,13 +434,13 @@ void node::logic::MergeModificationRequests(const node::NetModificationRequest& 
 	{
 		target.update_segments.push_back(src.update_segments[i]);
 		auto& segment = target.update_segments.back();
-		if (segment.node1_type == NetModificationRequest::NodeIdType::new_id)
+		if (segment.node1_type == NetModificationRequest::IdType::new_id)
 		{
 			auto it = node_id_map.find(segment.node1);
 			assert(it != node_id_map.end());
 			segment.node1 = it->second;
 		}
-		if (segment.node2_type == NetModificationRequest::NodeIdType::new_id)
+		if (segment.node2_type == NetModificationRequest::IdType::new_id)
 		{
 			auto it = node_id_map.find(segment.node2);
 			assert(it != node_id_map.end());
@@ -451,7 +451,7 @@ void node::logic::MergeModificationRequests(const node::NetModificationRequest& 
 	{
 		target.added_connections.push_back(src_conn);
 		auto& conn = target.added_connections.back();
-		if (conn.node_type == NetModificationRequest::NodeIdType::new_id)
+		if (conn.node_type == NetModificationRequest::IdType::new_id)
 		{
 			auto it = node_id_map.find(conn.node);
 			assert(it != node_id_map.end());

@@ -39,6 +39,7 @@ public:
 	const SocketId& GetId() const noexcept { return m_Id; }
 	void SetId(SocketId id) { m_Id = id; };
 
+	void SetCategory(const NetCategory& category) { m_category = category; }
 	const NetCategory& GetCategory() const { return m_category; }
 
 	const SocketType& GetType() const noexcept { return m_type; }

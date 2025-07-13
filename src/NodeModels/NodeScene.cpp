@@ -124,6 +124,10 @@ node::model::SocketNodeConnection* node::model::NodeSceneModel::GetSocketConnect
 	return const_cast<node::model::SocketNodeConnection*>(std::as_const(*this).GetSocketConnectionForNode(node_id));
 }
 
+void node::model::NodeSceneModel::AddNet(model::NetModel net)
+{
+	m_nets.push_back(std::move(net));
+}
 
 void node::model::NodeSceneModel::AddNet(NetId id, const NetCategory& category)
 {
@@ -143,4 +147,14 @@ const node::model::NetModel* node::model::NodeSceneModel::GetNet(NetId id) const
 		return &*it;
 	}
 	return nullptr;
+}
+
+void node::model::NodeSceneModel::RemoveNetById(NetId id)
+{
+	auto it = std::find_if(m_nets.begin(), m_nets.end(), [&](const NetModel& net) { return net.GetId() == id; });
+	assert(it != m_nets.end());
+	if (it != m_nets.end())
+	{
+		m_nets.erase(it);
+	}
 }

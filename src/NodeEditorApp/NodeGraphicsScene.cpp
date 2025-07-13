@@ -228,7 +228,7 @@ bool node::NodeGraphicsScene::DeleteSelection()
         objects_manager->GetSceneModel()->RemoveBlockById(*id);
     }
 
-    auto deletion_request = NetUtils::GetDeletionRequestForNet(selection);
+    auto deletion_request = NetUtils::GetDeletionRequestForNet(selection, objects_manager->GetSceneModel()->GetModel());
     if (deletion_request)
     {
         objects_manager->GetSceneModel()->UpdateNet(std::move(*deletion_request));

@@ -63,6 +63,11 @@ public:
 	
 	void AddNode(NetNodeId id) { m_nodes.push_back(id); }
 	void removeNode(NetNodeId id);
+
+	const NetCategory& GetCategory() const { return m_category; }
+	void SetCategory(const NetCategory& category) { m_category = category; }
+
+	std::span<const NetNodeId> GetNodes() const { return m_nodes; }
 private:
 	NetId m_Id;
 	NetCategory m_category;

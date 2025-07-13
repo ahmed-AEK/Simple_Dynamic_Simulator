@@ -22,7 +22,7 @@ void ApplySolutionToNodes(const node::NetsSolver::NetSolution& solution, std::sp
 
 struct NetNodeModificationInfo
 {
-	NetModificationRequest::NodeIdType node_type{};
+	NetModificationRequest::IdType node_type{};
 	model::NetNodeId node_id{ 0 };
 	size_t index_in_orig{};
 };

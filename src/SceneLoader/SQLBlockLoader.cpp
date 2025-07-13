@@ -158,7 +158,8 @@ bool node::loader::SQLBlockLoader::AddProperty(const node::model::BlockId& block
 bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel& socket,
 	const node::model::BlockId& block_id)
 {
-	SQLite::Statement querySocket{ m_db, "INSERT INTO sockets_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?)" };
+	SQLite::Statement querySocket{ m_db, 
+		"INSERT INTO sockets_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?,?)" };
 	querySocket.bind(1, socket.GetId().value);
 	querySocket.bind(2, block_id.value);
 	querySocket.bind(3, socket.GetPosition().x);
@@ -172,6 +173,14 @@ bool node::loader::SQLBlockLoader::AddSocket(const node::model::BlockSocketModel
 	else
 	{
 		querySocket.bind(7);
+	}
+	if (!socket.GetCategory().IsEmpty())
+	{
+		querySocket.bindNoCopy(8, socket.GetCategory().buffer().data());
+	}
+	else
+	{
+		querySocket.bind(8);
 	}
 	querySocket.exec();
 	return true;
@@ -242,6 +251,11 @@ node::loader::SQLBlockLoader::LoadSocketsForBlock(node::model::BlockModel& block
 		if (!connected_node_column.isNull())
 		{
 			socket.SetConnectedNetNode(NetNodeId{ static_cast<id_int>(connected_node_column) });
+		}
+		auto socket_category_coumn = querySocket.getColumn(7);
+		if (!socket_category_coumn.isNull())
+		{
+			socket.SetCategory(NetCategory{ socket_category_coumn.getString() });
 		}
 		block.AddSocket(std::move(socket));
 	}

@@ -45,9 +45,9 @@ std::optional<node::model::SocketUniqueId> node::BlockSocketObject::GetUniqueId(
 }
 
 node::BlockSocketObject::BlockSocketObject(model::BlockSocketModel::SocketType type, std::optional<model::SocketId> id,
-	model::Point center_in_block, model::ConnectedSegmentSide connection_side)
+	model::Point center_in_block, model::ConnectedSegmentSide connection_side, const model::NetCategory& category)
 	:GraphicsObject{ model::ObjectSize{ nodeLength,nodeLength },ObjectType::socket, nullptr}, 
-	m_socktType(type), m_connection_side{ connection_side }, m_id{ id }
+	m_socktType(type), m_connection_side{ connection_side }, m_id{ id }, m_category{category}
 {
 	SetSelectable(false);
 	SetCenterInBlock(center_in_block);

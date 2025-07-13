@@ -672,6 +672,13 @@ void node::MainNodeScene::InitializeBotPanel()
     m_scene_grid->SetBotPanel(std::move(bot_panel));
 }
 
+void node::MainNodeScene::InitCategoriesStlyer()
+{
+    m_categories_styler = std::make_shared<NetCategoriesStyleManager>();
+    m_categories_styler->SetStyle(model::NetCategory{}, SDL_Color{ 100,100,100,255 });
+    m_categories_styler->SetStyle(model::NetCategory{"electrical"}, SDL_Color{0,0,150,255});
+}
+
 void node::MainNodeScene::OnDarkModeClicked()
 {
     m_dark_mode_active = !m_dark_mode_active;
@@ -1290,7 +1297,7 @@ void node::MainNodeScene::OnInit()
 
     m_sim_mgr.SetSimulationEndCallback([this](const auto& evt) {this->OnSimulationEnd(evt); });
 
-    m_categories_styler = std::make_shared<NetCategoriesStyleManager>();
+    InitCategoriesStlyer();
 
     m_blockStylerFactory = std::make_shared<BlockStylerFactory>();
     m_blockStylerFactory->AddStyler("Default", [](const model::BlockDataCRef&) { return std::make_unique<DefaultBlockStyler>(); });

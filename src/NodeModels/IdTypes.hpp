@@ -104,8 +104,8 @@ public:
 	constexpr NetCategory(): category{} {}
 	constexpr explicit NetCategory(std::string_view name) : category{}
 	{
-		assert(name.size() <= BUFFER_SIZE);
-		for (size_t i = 0; i < name.size() && i < BUFFER_SIZE; i++)
+		assert(name.size() <= TEXT_SIZE);
+		for (size_t i = 0; i < name.size() && i < TEXT_SIZE; i++)
 		{
 			category[i] = name[i];
 		}
@@ -116,10 +116,23 @@ public:
 	bool IsEmpty() const { return category[0] == '\0'; }
 	friend bool operator==(const NetCategory&, const NetCategory&) = default;
 
+	static bool Joinable(const NetCategory& first, const NetCategory& second)
+	{
+		if (first.IsEmpty() || second.IsEmpty())
+		{
+			return true;
+		}
+		if (first == second)
+		{
+			return true;
+		}
+		return false;
+	}
 	auto& buffer() { return category; }
 	auto& buffer() const { return category; }
 private:
 	static constexpr size_t BUFFER_SIZE = 16;
+	static constexpr size_t TEXT_SIZE = BUFFER_SIZE - 1;
 	std::array<char, BUFFER_SIZE> category;
 };
 
@@ -129,6 +142,15 @@ template <>
 struct std::hash<node::SubSceneId>
 {
 	std::size_t operator()(const node::SubSceneId& k) const
+	{
+		return k.value;
+	}
+};
+
+template <>
+struct std::hash<node::model::NetId >
+{
+	std::size_t operator()(const node::model::NetId& k) const
 	{
 		return k.value;
 	}

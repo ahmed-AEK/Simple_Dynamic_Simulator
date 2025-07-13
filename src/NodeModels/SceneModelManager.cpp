@@ -17,6 +17,19 @@ static node::model::NetNodeId GetMaxNodeId(std::span<node::model::NetNodeModel> 
 	return model::NetNodeId{ max_id };
 }
 
+static node::model::NetId GetMaxNetId(std::span<node::model::NetModel> vec)
+{
+	using namespace node;
+	using namespace model;
+
+	model::id_int max_id = 0;
+	for (auto&& it_net : vec)
+	{
+		max_id = std::max(max_id, it_net.GetId().value);
+	}
+	return model::NetId{ max_id };
+}
+
 static node::model::NetSegmentId GetMaxSegmentId(std::span<node::model::NetSegmentModel> vec)
 {
 	using namespace node;
@@ -606,6 +619,24 @@ struct UpdateNetAction : public ModelAction
 		model::ConnectedSegmentSide first_side;
 		model::ConnectedSegmentSide second_side;
 	};
+	struct StoredNetCategoryChange
+	{
+		model::NetId net_id;
+		model::NetCategory old_category;
+	};
+
+	struct StoredNetMerge
+	{
+		model::NetId net1_id;
+		model::NetCategory net1_old_category;
+		model::NetModel second_net;
+	};
+
+	struct StoredNodeNetChange
+	{
+		model::NetNodeId node;
+		model::NetId net;
+	};
 
 	struct StoredEdits
 	{
@@ -617,6 +648,11 @@ struct UpdateNetAction : public ModelAction
 		std::vector<StoredSegmentUpdate> stored_segment_updates;
 		std::vector<StoredAddedSegment> stored_new_segments;
 		std::vector<model::SocketNodeConnection> stored_new_connections;
+		std::vector<model::NetId> stored_new_nets;
+		std::vector<StoredNetCategoryChange> stored_net_category_change;
+		std::vector<StoredNetMerge> stored_merged_net;
+		std::vector<model::NetModel> stored_deleted_nets;
+		std::vector< StoredNodeNetChange> stored_node_net_change;
 	};
 
 	StoredEdits edits;
@@ -723,6 +759,82 @@ struct UpdateNetAction : public ModelAction
 			}
 		}
 
+		// undo merge nets
+		std::vector<NetModificationReport::UpdateNodeNetReport> node_net_changed;
+		for (auto&& merged_net : edits.stored_merged_net)
+		{
+			scene.AddNet(merged_net.second_net);
+			auto net1_id = merged_net.net1_id;
+			auto net2_id = merged_net.second_net.GetId();
+			auto* net1 = scene.GetNet(net1_id);
+			assert(net1);
+
+			for (const auto& node_id : merged_net.second_net.GetNodes())
+			{
+				auto* node = scene.GetNetNodeById(node_id);
+				assert(node);
+				node->SetNetId(net2_id);
+				net1->removeNode(node_id);
+			}
+
+
+			for (const auto& node_id : merged_net.second_net.GetNodes())
+			{
+				auto it = std::find_if(edits.stored_added_nodes.begin(), edits.stored_added_nodes.end(),
+					[&](const model::NetNodeId& target_id) { return target_id == node_id; });
+				if (it == edits.stored_added_nodes.end())
+				{
+					node_net_changed.push_back({ node_id, merged_net.second_net.GetId() });
+				}
+			}
+			if (net1->GetCategory() != merged_net.net1_old_category)
+			{
+				net1->SetCategory(merged_net.net1_old_category);
+				for (auto& node_id : net1->GetNodes())
+				{
+					auto it = std::find_if(edits.stored_added_nodes.begin(), edits.stored_added_nodes.end(),
+						[&](const model::NetNodeId& target_id) { return target_id == node_id; });
+					if (it == edits.stored_added_nodes.end())
+					{
+						node_net_changed.push_back({ node_id, net1->GetId() });
+					}
+				}
+			}
+		}
+
+		// undo net category change
+		for (auto&& net_change : edits.stored_net_category_change)
+		{
+			auto* net = scene.GetNet(net_change.net_id);
+			assert(net);
+			net->SetCategory(net_change.old_category);
+			for (auto& node_id : net->GetNodes())
+			{
+				auto it = std::find_if(edits.stored_added_nodes.begin(), edits.stored_added_nodes.end(), 
+					[&](const model::NetNodeId& target_id) { return target_id == node_id; });
+				if (it == edits.stored_added_nodes.end())
+				{
+					node_net_changed.push_back({ node_id, net->GetId() });
+				}
+			}
+		}
+		
+		// uno node net change
+		for (const auto& node_modification : edits.stored_node_net_change)
+		{
+			auto* node = scene.GetNetNodeById(node_modification.node);
+			assert(node);
+			auto old_net_id = node->GetNetId();
+			auto* old_net = scene.GetNet(old_net_id);
+			old_net->removeNode(node_modification.node);
+			auto* new_net = scene.GetNet(node_modification.net);
+			assert(new_net);
+			node->SetNetId(node_modification.net);
+			new_net->AddNode(node_modification.node);
+			node_net_changed.push_back({ node_modification.node, new_net->GetId() });
+		}
+		
+
 		// undo updated Nodes
 		for (auto&& node_request : edits.stored_node_updates)
 		{
@@ -737,13 +849,38 @@ struct UpdateNetAction : public ModelAction
 		// undo added nodes
 		for (auto&& node_id : edits.stored_added_nodes)
 		{
+			auto* node = scene.GetNetNodeById(node_id);
+			assert(node);
+			auto net_id = node->GetNetId();
 			scene.RemoveNetNodeById(node_id);
+
+			// remove from containing net
+			auto* net = scene.GetNet(net_id);
+			assert(net);
+			net->removeNode(node_id);
+		}
+
+		// undo added nets
+		for (auto&& net_id : edits.stored_new_nets)
+		{
+			scene.RemoveNetById(net_id);
+		}
+
+		{
+			// undo deleted nets
+			for (const auto& stored_net : edits.stored_deleted_nets)
+			{
+				scene.AddNet(stored_net);
+			}
 		}
 
 		// undo deleted nodes
 		for (auto&& deleted_node : edits.stored_deleted_nodes)
 		{
 			scene.AddNetNode(model::NetNodeModel{ deleted_node });
+			auto* net = scene.GetNet(deleted_node.GetNetId());
+			assert(net);
+			net->AddNode(deleted_node.GetId());
 		}
 
 		// undo deleted segments
@@ -795,6 +932,7 @@ struct UpdateNetAction : public ModelAction
 		
 		// setup notification
 		NetModificationReport report;
+		report.node_net_changed = std::move(node_net_changed);
 		{
 			auto transform_range = edits.stored_new_connections | std::ranges::views::transform([](const model::SocketNodeConnection& conn) {return conn.socketId; });
 			report.removed_connections.insert(report.removed_connections.end(), transform_range.begin(), transform_range.end());
@@ -862,6 +1000,11 @@ struct UpdateNetAction : public ModelAction
 		edits.stored_segment_updates.clear();
 		edits.stored_new_segments.clear();
 		edits.stored_new_connections.clear();
+		edits.stored_new_nets.clear();
+		edits.stored_net_category_change.clear();
+		edits.stored_merged_net.clear();
+		edits.stored_deleted_nets.clear();
+		edits.stored_node_net_change.clear();
 
 		auto&& scene = manager.GetModel();
 		// handle deleted connections
@@ -942,8 +1085,40 @@ struct UpdateNetAction : public ModelAction
 				scene.RemoveSocketConnectionForSocket(conn->socketId);
 			}
 			model::NetNodeModel stored_node = *node;
+			auto* net = scene.GetNet(node->GetNetId());
+			assert(net);
+			net->removeNode(node->GetId());
 			scene.RemoveNetNodeById(deleted_node);
 			edits.stored_deleted_nodes.push_back(std::move(stored_node));
+		}
+
+		{
+			// handle deleted nets
+			for (const auto& net_id : update_request.removed_nets)
+			{
+				auto* net = scene.GetNet(net_id);
+				assert(net);
+				assert(net->GetNodes().size() == 0);
+				edits.stored_deleted_nets.push_back(*net);
+				scene.RemoveNetById(net_id);
+			}
+		}
+
+		std::vector<model::NetId> new_nets;
+		{
+			// handle added nets
+			model::NetId max_id{ 0 };
+			if (update_request.added_nets.size())
+			{
+				max_id = GetMaxNetId(scene.GetNets());
+			}
+			for (auto&& net_added : update_request.added_nets)
+			{
+				max_id.value += 1;
+				scene.AddNet(max_id, net_added.category);
+				new_nets.push_back(max_id);
+				edits.stored_new_nets.push_back(max_id);
+			}
 		}
 
 		// handle added nodes
@@ -956,10 +1131,15 @@ struct UpdateNetAction : public ModelAction
 		}
 		for (auto&& node_request : update_request.added_nodes)
 		{
+			model::NetId net_id = node_request.net_type == NetModificationRequest::IdType::existing_id ? 
+				node_request.net_id : edits.stored_new_nets[node_request.net_id.value];
 			max_id.value += 1;
-			scene.AddNetNode(model::NetNodeModel{ max_id,node_request.position });
+			scene.AddNetNode(model::NetNodeModel{ max_id,node_request.position, net_id });
 			edits.stored_added_nodes.push_back(max_id);
 			new_nodes.push_back(max_id);
+			auto* net = scene.GetNet(net_id);
+			assert(net);
+			net->AddNode(max_id);
 		}
 
 		// handle updated Nodes
@@ -973,6 +1153,84 @@ struct UpdateNetAction : public ModelAction
 				node->SetPosition(node_request.new_position);
 				edits.stored_node_updates.push_back(StoredNodeUpdates{ node_request.node_id, old_position });
 			}
+		}
+
+		// handle node net change
+		std::vector<NetModificationReport::UpdateNodeNetReport> node_net_changed;
+		{
+			for (const auto& node_modification : update_request.update_nodes_nets)
+			{
+				auto* node = scene.GetNetNodeById(node_modification.node);
+				assert(node);
+				auto old_net_id = node->GetNetId();
+				edits.stored_node_net_change.push_back(StoredNodeNetChange{ .node = node_modification.node, .net = old_net_id });
+				auto* old_net = scene.GetNet(old_net_id);
+				old_net->removeNode(node_modification.node);
+				if (node_modification.net_type == NetModificationRequest::IdType::existing_id)
+				{
+					auto* new_net = scene.GetNet(node_modification.net);
+					assert(new_net);
+					node->SetNetId(node_modification.net);
+					new_net->AddNode(node_modification.node);
+				}
+				else // new_id
+				{
+					assert(node_modification.net.value < new_nets.size());
+					auto new_net_id = new_nets[node_modification.net.value];
+					auto* new_net = scene.GetNet(new_net_id);
+					assert(new_net);
+					node->SetNetId(new_net_id);
+					new_net->AddNode(node_modification.node);
+				}
+				node_net_changed.push_back({ node_modification.node, node->GetNetId() });
+			}
+		}
+
+		// handle net category change
+		for (auto&& net_change : update_request.changed_net_categories)
+		{
+			auto* net = scene.GetNet(net_change.net_id);
+			assert(net);
+			edits.stored_net_category_change.push_back(StoredNetCategoryChange{ .net_id = net_change.net_id, .old_category = net->GetCategory() });
+			net->SetCategory(net_change.new_category);
+			for (auto& node_id : net->GetNodes())
+			{
+				node_net_changed.push_back({ node_id, net->GetId() });
+			}
+		}
+
+		// handle merge nets
+		for (auto&& merged_net : update_request.merged_nets)
+		{
+			auto* net1 = scene.GetNet(merged_net.original_net);
+			auto* net2 = scene.GetNet(merged_net.merged_net);
+			assert(net1);
+			assert(net2);
+			model::NetCategory new_category = net1->GetCategory();
+			if (!net2->GetCategory().IsEmpty())
+			{
+				new_category = net2->GetCategory();
+			}
+			edits.stored_merged_net.push_back(StoredNetMerge{ 
+				.net1_id = net1->GetId(), .net1_old_category = net1->GetCategory(), .second_net= *net2 });
+			if (net1->GetCategory() != new_category)
+			{
+				net1->SetCategory(new_category);
+				for (auto& node : net1->GetNodes())
+				{
+					node_net_changed.push_back({ node, net1->GetId() });
+				}
+			}
+			for (auto& node : net2->GetNodes())
+			{
+				auto* node_ptr = scene.GetNetNodeById(node);
+				assert(node_ptr);
+				node_ptr->SetNetId(merged_net.original_net);
+				net1->AddNode(node);
+				node_net_changed.push_back({ node, net1->GetId() });
+			}
+			scene.RemoveNetById(merged_net.merged_net);
+
 		}
 
 		// handle updated segments
@@ -1021,7 +1279,7 @@ struct UpdateNetAction : public ModelAction
 			
 
 
-			if (segment_request.node1_type == NetModificationRequest::NodeIdType::existing_id)
+			if (segment_request.node1_type == NetModificationRequest::IdType::existing_id)
 			{
 				updated_segment->m_firstNodeId = segment_request.node1;
 			}
@@ -1033,7 +1291,7 @@ struct UpdateNetAction : public ModelAction
 					updated_segment->m_firstNodeId = new_nodes[segment_request.node1.value];
 				}
 			}
-			if (segment_request.node2_type == NetModificationRequest::NodeIdType::existing_id)
+			if (segment_request.node2_type == NetModificationRequest::IdType::existing_id)
 			{
 				updated_segment->m_secondNodeId = segment_request.node2;
 			}
@@ -1081,7 +1339,7 @@ struct UpdateNetAction : public ModelAction
 			model::NetSegmentId id{ max_segment_id.value };
 			std::optional<model::NetNodeId> node1_id;
 			std::optional<model::NetNodeId> node2_id;
-			if (segment_request.node1_type == NetModificationRequest::NodeIdType::existing_id)
+			if (segment_request.node1_type == NetModificationRequest::IdType::existing_id)
 			{
 				node1_id = segment_request.node1;
 			}
@@ -1093,7 +1351,7 @@ struct UpdateNetAction : public ModelAction
 					node1_id = new_nodes[segment_request.node1.value];
 				}
 			}
-			if (segment_request.node2_type == NetModificationRequest::NodeIdType::existing_id)
+			if (segment_request.node2_type == NetModificationRequest::IdType::existing_id)
 			{
 				node2_id = segment_request.node2;
 			}
@@ -1138,7 +1396,7 @@ struct UpdateNetAction : public ModelAction
 			if (block)
 			{
 				auto node_id = connection.node;
-				if (connection.node_type == NetModificationRequest::NodeIdType::new_id)
+				if (connection.node_type == NetModificationRequest::IdType::new_id)
 				{
 					assert(static_cast<size_t>(connection.node.value) < new_nodes.size());
 
@@ -1158,6 +1416,7 @@ struct UpdateNetAction : public ModelAction
 		report.removed_connections = update_request.removed_connections;
 		report.removed_nodes = update_request.removed_nodes;
 		report.removed_segments = update_request.removed_segments;
+		report.node_net_changed = std::move(node_net_changed);
 
 		report.added_nodes.reserve(update_request.added_nodes.size());
 		for (auto&& node_id : new_nodes)
@@ -1193,7 +1452,7 @@ struct UpdateNetAction : public ModelAction
 		for (auto&& added_connection : update_request.added_connections)
 		{
 			auto node_id = added_connection.node;
-			if (added_connection.node_type == NetModificationRequest::NodeIdType::new_id)
+			if (added_connection.node_type == NetModificationRequest::IdType::new_id)
 			{
 				assert(static_cast<size_t>(added_connection.node.value) < new_nodes.size());
 				node_id = new_nodes[static_cast<size_t>(added_connection.node.value)];

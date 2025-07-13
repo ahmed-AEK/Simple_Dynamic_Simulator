@@ -39,12 +39,19 @@ public:
 		const node::model::id_int id) override;
 	node::model::id_int GetNextSegmentId() override;
 
+	// SocketConnection Functions
 	bool AddSocketNodeConnection(const node::model::SocketNodeConnection& model_connection) override;
 	std::vector<model::SocketNodeConnection> GetSocketNodeConnections() override;
+
+	// Net Functions
+	bool AddNet(const node::model::NetModel& net) override;
+	std::vector<model::NetModel> GetNets() override;
+
 private:
 	std::optional<node::model::NetNodeModel> GetNode_internal(SQLite::Statement& query);
 	std::optional<node::model::NetSegmentModel> GetSegment_internal(SQLite::Statement& query);
 	std::optional<node::model::SocketNodeConnection> GetConnection_internal(SQLite::Statement& query);
+	std::optional<node::model::NetModel> GetNet_internal(SQLite::Statement& query);
 
 	std::string m_dbname;
 	SQLite::Database& m_db;

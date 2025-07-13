@@ -3,9 +3,9 @@
 #include "BlockObject.hpp"
 #include "GraphicsScene/GraphicsScene.hpp"
 
-node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode)
+node::NetSegment::NetSegment(const model::NetSegmentOrientation& orientation, NetNode* startNode, NetNode* endNode, std::shared_ptr<const NetCategoryStyle> styler)
 	: GraphicsObject(model::ObjectSize{ c_width, c_width }, ObjectType::netSegment, nullptr),
-	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation)
+	m_startNode(nullptr), m_endNode(nullptr), m_orientation(orientation), m_styler{ std::move(styler) }
 {
 	SetAligned(false);
 	if (startNode && endNode)
@@ -20,6 +20,11 @@ void node::NetSegment::Draw(SDL::Renderer& renderer, const SpaceScreenTransforme
 	if (IsSelected())
 	{
 		const SDL_Color color = renderer.GetColor(ColorRole::netsegment_selected);
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+	}
+	else if (m_styler)
+	{
+		const SDL_Color color = m_styler->GetColor();
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 	}
 	else

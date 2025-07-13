@@ -258,9 +258,10 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 	auto socket_type = BlockSocketModel::SocketType::input;
 	auto connection_side = ConnectedSegmentSide::west;
 	auto socket_id = SocketId{ 2 };
+	auto socket_category = NetCategory{ "FOO" };
 	Point socket_pos{ 5,5 };
 	NetNodeId connected_node{ 4 };
-	BlockSocketModel socket1{ socket_type, socket_id, socket_pos, connection_side, connected_node};
+	BlockSocketModel socket1{ socket_type, socket_id, socket_pos, connection_side, connected_node, socket_category };
 	original_block.AddSocket(socket1);
 	scene.AddBlock(BlockModel{ original_block });
 
@@ -283,6 +284,7 @@ TEST(testBlockLoader, testSaveLoadBlockSockets)
 	EXPECT_EQ(loaded_socket.GetId(), socket_id);
 	EXPECT_EQ(loaded_socket.GetPosition(), socket_pos);
 	EXPECT_EQ(loaded_socket.GetType(), socket_type);
+	EXPECT_EQ(loaded_socket.GetCategory(), socket_category);
 	ASSERT_TRUE(loaded_socket.GetConnectedNetNode());
 	EXPECT_EQ(*loaded_socket.GetConnectedNetNode(), connected_node);
 	EXPECT_EQ(loaded_socket.GetConnectionSide(), connection_side);
@@ -301,14 +303,16 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 	auto socket_type = BlockSocketModel::SocketType::output;
 	auto connection_side = ConnectedSegmentSide::west;
 	auto socket_id = SocketId{ 3 };
+	auto socket_category = NetCategory{ "BAR" };
 	Point socket_pos{ 5,5 };
-	BlockSocketModel socket1{ socket_type, socket_id, socket_pos, connection_side };
+	BlockSocketModel socket1{ socket_type, socket_id, socket_pos, connection_side, {}, socket_category };
 	original_block.AddSocket(socket1);
 	auto socket_type2 = BlockSocketModel::SocketType::input;
 	auto connection_side2 = ConnectedSegmentSide::east;
 	auto socket_id2 = SocketId{ 0 };
 	Point socket_pos2{ 6,6 };
-	BlockSocketModel socket2{ socket_type2, socket_id2, socket_pos2, connection_side2 };
+	auto socket_category2 = NetCategory{};
+	BlockSocketModel socket2{ socket_type2, socket_id2, socket_pos2, connection_side2, {}, socket_category2 };
 	original_block.AddSocket(socket2);
 	scene.AddBlock(BlockModel{ original_block });
 
@@ -332,12 +336,15 @@ TEST(testBlockLoader, testSaveLoadBlockSockets2)
 	EXPECT_EQ(loaded_socket.GetPosition(), socket_pos);
 	EXPECT_EQ(loaded_socket.GetType(), socket_type);
 	EXPECT_EQ(loaded_socket.GetConnectionSide(), connection_side);
+	EXPECT_EQ(loaded_socket.GetCategory(), socket_category);
 
 	auto&& loaded_socket2 = loaded_block.GetSockets()[1];
 	EXPECT_EQ(loaded_socket2.GetId(), socket_id2);
 	EXPECT_EQ(loaded_socket2.GetPosition(), socket_pos2);
 	EXPECT_EQ(loaded_socket2.GetType(), socket_type2);
 	EXPECT_EQ(loaded_socket2.GetConnectionSide(), connection_side2);
+	EXPECT_EQ(loaded_socket2.GetCategory(), socket_category2);
+
 }
 
 TEST(testBlockLoader, testSaveLoadBlockSubSystem)

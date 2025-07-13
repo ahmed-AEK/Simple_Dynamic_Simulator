@@ -3,7 +3,7 @@
 
 bool node::loader::SQLNetLoader::AddNetNode(const node::model::NetNodeModel& node)
 {
-	SQLite::Statement query{ m_db, "INSERT INTO NetNodes_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?)" };
+	SQLite::Statement query{ m_db, "INSERT INTO NetNodes_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?,?,?,?,?)" };
 	query.bind(1, node.GetId().value);
 	auto&& position = node.GetPosition();
 	query.bind(2, position.x);
@@ -24,6 +24,7 @@ bool node::loader::SQLNetLoader::AddNetNode(const node::model::NetNodeModel& nod
 	{
 		query.bind(7, segment_id->value);
 	}
+	query.bind(8, node.GetNetId().value);
 	query.exec();
 	return true;
 }
@@ -149,6 +150,29 @@ std::vector<node::model::SocketNodeConnection> node::loader::SQLNetLoader::GetSo
 	return connections;
 }
 
+bool node::loader::SQLNetLoader::AddNet(const node::model::NetModel& net)
+{
+	SQLite::Statement query{ m_db, "INSERT INTO Nets_" + std::to_string(m_scene_id.value) + " VALUES (?,?)" };
+	query.bind(1, net.GetId().value);
+	query.bindNoCopy(2, net.GetCategory().buffer().data());
+	query.exec();
+	return true;
+}
+
+std::vector<node::model::NetModel> node::loader::SQLNetLoader::GetNets()
+{
+	std::vector<model::NetModel> nets;
+	SQLite::Statement query{ m_db, "SELECT * FROM Nets_" + std::to_string(m_scene_id.value) };
+	while (query.executeStep())
+	{
+		if (auto net_model = GetNet_internal(query))
+		{
+			nets.push_back(std::move(*net_model));
+		}
+	}
+	return nets;
+}
+
 std::optional<node::model::NetNodeModel> node::loader::SQLNetLoader::GetNode_internal(SQLite::Statement& query)
 {
 	using namespace node::model;
@@ -188,6 +212,8 @@ std::optional<node::model::NetNodeModel> node::loader::SQLNetLoader::GetNode_int
 			node_model.SetSegmentAt(ConnectedSegmentSide::east, segment);
 		}
 	}
+	NetId net_id{ query.getColumn(7) };
+	node_model.SetNetId(net_id);
 	return node_model;
 }
 
@@ -208,4 +234,12 @@ std::optional<node::model::SocketNodeConnection> node::loader::SQLNetLoader::Get
 	SocketUniqueId socket_id{ SocketId{query.getColumn(0)}, BlockId{query.getColumn(1)} };
 	NetNodeId node_id{ query.getColumn(2) };
 	return std::optional<node::model::SocketNodeConnection>{std::in_place, socket_id, node_id};
+}
+
+std::optional<node::model::NetModel> node::loader::SQLNetLoader::GetNet_internal(SQLite::Statement& query)
+{
+	using namespace node::model;
+	NetId net_id{ query.getColumn(0) };
+	NetCategory net_category{ query.getColumn(1).getString() };
+	return std::optional<node::model::NetModel>{std::in_place, net_id, net_category};
 }
