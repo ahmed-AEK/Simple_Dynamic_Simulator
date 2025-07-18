@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.11)
 add_library(NetUtils
 NetsSolver.hpp NetsSolver.cpp
 Utils.hpp Utils.cpp
+DeleteHelpers.hpp DeleteHelpers.cpp
 pch.h
 )
 

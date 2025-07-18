@@ -36,10 +36,16 @@ node::OkCancelModalDialog::OkCancelModalDialog(std::string title, std::vector<st
 	}
 }
 
+node::async::Future<bool> node::OkCancelModalDialog::GetFuture()
+{
+	return m_promise.get_future();
+}
+
 void node::OkCancelModalDialog::OnOk()
 {
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
+	m_promise.set_value(true);
 	scene->SetModalDialog(nullptr);
 }
 
@@ -47,6 +53,7 @@ void node::OkCancelModalDialog::OnClose()
 {
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
+	m_promise.set_value(false);
 	scene->SetModalDialog(nullptr);
 }
 
@@ -131,20 +138,5 @@ void node::SaveSceneDialog::OnOk()
 	auto* scene = static_cast<MainNodeScene*>(GetScene());
 	assert(scene);
 	SingleEntryDialog::OnOk();
-	scene->MaybeSaveScene(std::move(data));
-}
-
-node::ConfirmOverwriteSaveSceneDialog::ConfirmOverwriteSaveSceneDialog(std::string name, 
-	const WidgetSize& size, MainNodeScene* parent)
-	: OkCancelModalDialog{ "Overwrite File!", 
-		{"File already exists!", "Overwrite file : " + name}, size, parent }, m_name{ std::move(name) }
-{
-}
-
-void node::ConfirmOverwriteSaveSceneDialog::OnOk()
-{
-	std::string name = std::move(m_name);
-	auto* scene = static_cast<MainNodeScene*>(GetScene());
-	OkCancelModalDialog::OnOk();
-	scene->SaveScene(std::move(name));
+	scene->SaveScene(std::move(data));
 }

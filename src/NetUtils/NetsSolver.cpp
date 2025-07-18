@@ -524,7 +524,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
         if (start_is_higher)
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y - GetExtensionDistance()},
-                {false, true, true, true} });
+                {false, true, false, true} });
             inner_solver.SetEndDescription(*m_end_node);
         }
         else
@@ -532,7 +532,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
             inner_solver.SetStartDescription(*m_start_node);
             inner_solver.SetEndDescription(
                 NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y - GetExtensionDistance()},
-                    {false, true, true, true} }
+                    {false, true, false, true} }
             );
         }
         auto inner_result = inner_solver.Solve();
@@ -576,7 +576,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
         if (start_is_lower)
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y + GetExtensionDistance()},
-                {false, true, true, true} });
+                {false, true, false, true} });
             inner_solver.SetEndDescription(*m_end_node);
         }
         else
@@ -584,7 +584,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
             inner_solver.SetStartDescription(*m_start_node);
             inner_solver.SetEndDescription(
                 NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y + GetExtensionDistance()},
-                    {false, true, true, true} }
+                    {false, true, false, true} }
             );
         }
         auto inner_result = inner_solver.Solve();
@@ -628,7 +628,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
         if (start_is_right)
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x + GetExtensionDistance(), m_start_node->point.y},
-                {true, true, true, false} });
+                {true, false, true, false} });
             inner_solver.SetEndDescription(*m_end_node);
         }
         else
@@ -636,7 +636,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
             inner_solver.SetStartDescription(*m_start_node);
             inner_solver.SetEndDescription(
                 NetSolutionEndDescription{ {m_end_node->point.x + GetExtensionDistance(), m_end_node->point.y},
-                    {true, true, true, false} }
+                    {true, false, true, false} }
             );
         }
         auto inner_result = inner_solver.Solve();
@@ -680,7 +680,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
         if (start_is_left)
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x - GetExtensionDistance(), m_start_node->point.y},
-                {true, true, true, false} });
+                {true, false, true, false} });
             inner_solver.SetEndDescription(*m_end_node);
         }
         else
@@ -688,7 +688,7 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendOneThenSolve(model::Connec
             inner_solver.SetStartDescription(*m_start_node);
             inner_solver.SetEndDescription(
                 NetSolutionEndDescription{ {m_end_node->point.x - GetExtensionDistance(), m_end_node->point.y},
-                    {true, true, true, false} }
+                    {true, false, true, false} }
             );
         }
         auto inner_result = inner_solver.Solve();
@@ -740,22 +740,22 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
         if (m_start_node->IsSideAllowed(ConnectedSegmentSide::east))
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x + GetExtensionDistance(), m_start_node->point.y},
-                {true, true, true, false} });
+                {true, false, true, false} });
         }
         else
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x - GetExtensionDistance(), m_start_node->point.y},
-                {true, false, true, true} });
+                {true, false, true, false} });
         }
         if (m_end_node->IsSideAllowed(ConnectedSegmentSide::east))
         {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x + GetExtensionDistance(), m_end_node->point.y},
-                {true, true, true, false} });
+                {true, false, true, false} });
         }
         else
         {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x - GetExtensionDistance(), m_end_node->point.y},
-                {true, false, true, true} });
+                {true, false, true, false} });
         }
         auto inner_result = inner_solver.Solve();
 
@@ -789,22 +789,22 @@ node::NetsSolver::NetSolution node::NetsSolver::ExtendTwoThenSolve(model::NetSeg
         if (m_start_node->IsSideAllowed(ConnectedSegmentSide::north))
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y - GetExtensionDistance()},
-                {true, true, false, true} });
+                {false, true, false, true} });
         }
         else
         {
             inner_solver.SetStartDescription(NetSolutionEndDescription{ {m_start_node->point.x, m_start_node->point.y + GetExtensionDistance()},
-                {false, true, true, true} });
+                {false, true, false, true} });
         }
         if (m_end_node->IsSideAllowed(ConnectedSegmentSide::north))
         {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y - GetExtensionDistance()},
-                {true, true, false, true} });
+                {false, true, false, true} });
         }
         else
         {
             inner_solver.SetEndDescription(NetSolutionEndDescription{ {m_end_node->point.x, m_end_node->point.y + GetExtensionDistance()},
-                {false, true, true, true} });
+                {false, true, false, true} });
         }
         auto inner_result = inner_solver.Solve();
 

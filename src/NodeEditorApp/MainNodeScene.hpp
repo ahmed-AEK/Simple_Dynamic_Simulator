@@ -49,7 +49,6 @@ public:
     void LoadScene(std::string name);
     void SaveScene();
     void SaveScene(std::string name);
-    void MaybeSaveScene(std::string name);
     void OnCenterTabChanged(int32_t new_tab);
     void CloseTabRequest(int32_t tab_idx);
     

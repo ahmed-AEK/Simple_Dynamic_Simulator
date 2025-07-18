@@ -33,6 +33,7 @@ endif ()
 
 if (EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    string(APPEND CMAKE_CXX_FLAGS " -fexperimental-library ")
     string(APPEND CMAKE_EXE_LINKER_FLAGS " -sALLOW_MEMORY_GROWTH -Wno-pthreads-mem-growth ")
     set(FILESYSTEM_SUPPORTED FALSE)
 endif (EMSCRIPTEN)

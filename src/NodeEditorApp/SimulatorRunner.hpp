@@ -93,7 +93,6 @@ private:
 	SubSceneId m_main_subscene_id;
 	std::vector<std::unique_ptr<model::NodeSceneModel>> m_models;
 	std::shared_ptr<BlockClassesManager> m_classes_mgr;
-	std::thread m_thread;
 	std::optional<SimulationEvent> m_evt;
 	SimulationSettings m_settings;
 };

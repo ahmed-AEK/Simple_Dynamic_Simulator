@@ -25,6 +25,27 @@ public:
 	std::optional<ConnectedSegmentSide> GetSegmentSide(NetSegmentId segment_id) const;
 	void SetNetId(NetId id) { m_net_id = id; }
 	NetId GetNetId() const { return m_net_id; }
+	std::array<std::optional<NetSegmentId>, 4> GetSegments() const
+	{
+		std::array<std::optional<NetSegmentId>, 4> result;
+		for (size_t i = 0; i < m_valid_sides.size(); i++)
+		{
+			if (m_valid_sides[i])
+			{
+				result[i] = m_segmentIds[i];
+			}
+		}
+		return result;
+	}
+	size_t GetConnectedSegmentsCount() const
+	{
+		size_t result = 0;
+		for (const auto& side : m_valid_sides)
+		{
+			result += side;
+		}
+		return result;
+	}
 private:
 	NetNodeId m_Id;
 	NetId m_net_id;

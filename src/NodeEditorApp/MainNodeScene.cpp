@@ -272,7 +272,7 @@ LoadSceneAndSubscenes(node::loader::SceneLoader& db_conn, node::SubSceneId id, n
 {
     using namespace node;
     std::unordered_map<SubSceneId, std::shared_ptr<model::NodeSceneModel>> scenes;
-    logger.LogDebug("Loading Scene %d", id.value);
+    logger.LogDebug("Loading Scene {}", id.value);
     auto scene = db_conn.Load(id);
     if (!scene)
     {
@@ -461,21 +461,6 @@ void node::MainNodeScene::SaveScene(std::string name)
         std::string str = "Failed to write to File: \n" + connector.db_path;
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Save Failed!", str.c_str(), GetApp()->GetWindow());
 #endif
-    }
-}
-
-void node::MainNodeScene::MaybeSaveScene(std::string name)
-{
-    m_logger.LogDebug("scene Maybe Saved to {}", name);
-    if (std::filesystem::is_regular_file(name))
-    {
-        auto dialog = std::make_unique<ConfirmOverwriteSaveSceneDialog>(std::move(name), WidgetSize{ 0.0f,0.0f }, this);
-        dialog->SetPosition({ 100.0f,100.0f });
-        SetModalDialog(std::move(dialog));
-    }
-    else
-    {
-        SaveScene(std::move(name));
     }
 }
 
@@ -1064,25 +1049,52 @@ void node::MainNodeScene::LoadSceneButtonPressed()
 #ifndef USE_SDL_DIALOGS
     SetModalDialog(std::make_unique<LoadSceneDialog>(SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this));
 #else
-    SDL_DialogFileCallback callback = +[](void* data, const char* const* file_list, int filter)
+    GetApp()->DispatchTask([](node::MainNodeScene* scene) -> Task
         {
-            UNUSED_PARAM(filter);
+            struct CallbackHelperStruct
+            {
+                node::MainNodeScene* scene;
+                async::ThreadedPromise<std::optional<std::string>>* promise;
+            };
+            SDL_DialogFileCallback callback = +[](void* data, const char* const* file_list, int filter)
+                {
+                    UNUSED_PARAM(filter);
 
-            if (!file_list || !file_list[0])
+                    auto* helper = reinterpret_cast<CallbackHelperStruct*>(data);
+                    assert(helper);
+                    if (!helper)
+                    {
+                        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "helper is nullptr! 234");
+                        return;
+                    }
+
+                    if (!file_list)
+                    {
+                        helper->scene->m_logger.LogDebug("Load callback failed: {}", SDL_GetError());
+                        helper->promise->set_value(std::nullopt);
+                        return;
+                    }
+
+                    if (!file_list[0])
+                    {
+                        helper->scene->m_logger.LogDebug("Load callback called with no files");
+                        helper->promise->set_value(std::nullopt);
+                        return;
+                    }
+                    helper->promise->set_value(file_list[0]);
+                };
+            async::ThreadedPromise<std::optional<std::string>> result_promise;
+            CallbackHelperStruct callback_helper{ .scene = scene, .promise = &result_promise};
+
+            static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
+            SDL_ShowOpenFileDialog(callback, &callback_helper, scene->GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks", false);
+
+            auto result = co_await result_promise.get_future();
+            if (result)
             {
-                return;
+                scene->LoadScene(*result);
             }
-            
-            auto* scene = reinterpret_cast<node::MainNodeScene*>(data);
-            assert(scene);
-            if (!scene)
-            {
-                return;
-            }
-            scene->LoadScene(file_list[0]);
-        };
-    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
-    SDL_ShowOpenFileDialog(callback, this, GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks", false);
+        }(this));
 #endif
 }
 
@@ -1102,25 +1114,73 @@ void node::MainNodeScene::SaveSceneButtonPressed()
 #ifndef USE_SDL_DIALOGS
     SetModalDialog(std::make_unique<SaveSceneDialog>(SDL_FRect{ 100.0f,100.0f,0.0f,0.0f }, this));
 #else
-    SDL_DialogFileCallback callback = +[](void* data, const char* const* file_list, int filter)
+    GetApp()->DispatchTask([](node::MainNodeScene* scene) -> Task
         {
-            UNUSED_PARAM(filter);
-
-            if (!file_list || !file_list[0])
+            struct CallbackHelperStruct
             {
-                return;
+                node::MainNodeScene* scene;
+                async::ThreadedPromise<std::optional<std::string>>* promise;
+            };
+            SDL_DialogFileCallback callback = +[](void* data, const char* const* file_list, int filter)
+                {
+                    UNUSED_PARAM(filter);
+
+                    auto* helper = reinterpret_cast<CallbackHelperStruct*>(data);
+                    assert(helper);
+                    if (!helper)
+                    {
+                        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "helper is nullptr! 233");
+                        return;
+                    }
+
+                    if (!file_list)
+                    {
+                        helper->scene->m_logger.LogDebug("Save callback failed: {}", SDL_GetError());
+                        helper->promise->set_value(std::nullopt);
+                        return;
+                    }
+
+                    if (!file_list[0])
+                    {
+                        helper->scene->m_logger.LogDebug("Save callback called with no files");
+                        helper->promise->set_value(std::nullopt);
+                        return;
+                    }
+                    helper->promise->set_value(file_list[0]);
+                };
+            async::ThreadedPromise<std::optional<std::string>> result_promise;
+            CallbackHelperStruct callback_helper{ .scene = scene, .promise = &result_promise };
+
+            static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
+            SDL_ShowSaveFileDialog(callback, &callback_helper, scene->GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks");
+
+            auto result = co_await result_promise.get_future();
+            if (!result)
+            {
+                co_return;
             }
 
-            auto* scene = reinterpret_cast<node::MainNodeScene*>(data);
-            assert(scene);
-            if (!scene)
+            scene->m_logger.LogDebug("scene Maybe Saved to {}", *result);
+
+            if (std::filesystem::is_regular_file(*result))
             {
-                return;
+                auto dialog = std::make_unique<OkCancelModalDialog>("Overwrite File!",
+                    std::vector<std::string>{ "File already exists!", "Overwrite file : " + *result }, WidgetSize{ 0.0f,0.0f }, scene);
+                dialog->SetPosition({ 100.0f,100.0f });
+
+                auto future = dialog->GetFuture();
+                scene->SetModalDialog(std::move(dialog));
+
+                auto to_save = co_await std::move(future);
+                if (!to_save)
+                {
+                    scene->m_logger.LogDebug("Save cancelled");
+                    co_return;
+                }
             }
-            scene->MaybeSaveScene(file_list[0]);
-        };
-    static constexpr SDL_DialogFileFilter filters[]{ {"blocks file (*.blks)", "blks"}, {"Any File (*.*)","*"} };
-    SDL_ShowSaveFileDialog(callback, this, GetApp()->GetWindow(), filters, static_cast<int>(std::size(filters)), "scene.blks");
+            scene->SaveScene(std::move(*result));
+
+        }(this));
 #endif
 }
 

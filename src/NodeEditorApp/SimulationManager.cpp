@@ -26,18 +26,22 @@ void node::SimulationManager::RunSimulator(SceneManagerId scene_session_id,
     SubSceneId main_subscene_id,
     std::shared_ptr<BlockClassesManager> classes_manager, Application& app)
 {
+    assert(!m_current_running_simulator);
     if (!m_current_running_simulator)
     {
         auto runner = std::make_shared<SimulatorRunner>(
             scene_models,
             main_subscene_id,
             std::move(classes_manager),
-            std::function<void()>{
-            [app = &app, this] { app->AddMainThreadTask([this]() { this->CheckSimulatorEnded(); }); } },
+            std::function<void()>{},
             m_simulationSettings);
         m_current_running_simulator = runner;
         m_last_simulation_scene_session_id = scene_session_id;
-        runner->Run();
+        app.DispatchTask([](std::shared_ptr<SimulatorRunner> runner, SimulationManager* manager, Application& app) -> Task
+            {
+                co_await app.DispatchThreadedTask([runner]() { runner->Run(); return 0; });
+                manager->OnSimulationEnd(*runner->GetResult());
+            }(runner, this, app));
     }
 }
 
@@ -46,21 +50,6 @@ void node::SimulationManager::StopSimulator()
     if (m_current_running_simulator)
     {
         m_current_running_simulator->Stop();
-    }
-}
-
-void node::SimulationManager::CheckSimulatorEnded()
-{
-    if (m_current_running_simulator && m_current_running_simulator->IsEnded())
-    {
-        if (auto result = m_current_running_simulator->GetResult())
-        {
-            OnSimulationEnd(*result);
-        }
-        else
-        {
-            assert(false); // simulation ended but no result !!
-        }
     }
 }
 

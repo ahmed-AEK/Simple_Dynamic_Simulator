@@ -12,7 +12,7 @@
 namespace node
 {
     Application::Application(int width, int height, std::string title)
-    :m_title(title), m_framework(), m_width(width), m_height(height),
+    : m_title(title), m_width(width), m_height(height),
         m_rect{ 0,0,width,height }
     {
     }
@@ -143,6 +143,10 @@ namespace node
                     if (e.user.code == 1)
                     {
                         HandleMainThreadTasks();
+                    }
+                    if (e.user.code == 2)
+                    {
+                        MakeTaskReady(std::coroutine_handle<Task::promise>::from_address(e.user.data1));
                     }
                     return true;
                 }
@@ -285,6 +289,7 @@ namespace node
 
     int Application::Initialize()
     {
+        m_async_eventLoop.SetThreadAffinity();
         if (!m_framework.Init(SDL_INIT_VIDEO))
         {
             assert(false);
@@ -355,6 +360,7 @@ namespace node
         {
             DoUpdateTasks();
         }
+        m_async_eventLoop.DispatchReadyTasks();
         SDL_assert(m_scene);
 
         OnUpdateBegin();
@@ -396,6 +402,19 @@ namespace node
         {
             (*func)();
         }
+    }
+
+    void Application::DispatchTask(async::Task task)
+    {
+        m_async_eventLoop.Dispatch(std::move(task));
+    }
+    void Application::PostTask(async::Task task)
+    {
+        m_async_eventLoop.Post(std::move(task));
+    }
+    void Application::MakeTaskReady(std::coroutine_handle<Task::promise> h)
+    {
+        m_async_eventLoop.MakeReady(h);
     }
 
     SDL_FPoint Application::convert_to_renderer_coordinates(float x, float y)
@@ -514,4 +533,19 @@ node::Application::ClipboardString::~ClipboardString()
 std::string_view node::Application::ClipboardString::view() const
 {
     return std::string_view{ m_str, m_size };
+}
+
+void node::Application::DispatchThreadedTaskInner(std::function<void()> func, 
+    async::ThreadedPromise<std::monostate>& p)
+{
+    async::Future<std::monostate> fut = p.get_future();
+    std::jthread t([](std::function<void()> f, async::ThreadedPromise<std::monostate>* p) {
+        f();
+        p->set_value(std::monostate{});
+        }, func, &p);
+
+    DispatchTask([](async::Future<std::monostate> fut, std::jthread t) ->Task { 
+        co_await std::move(fut);  
+        t.join(); 
+        }(std::move(fut), std::move(t)));
 }

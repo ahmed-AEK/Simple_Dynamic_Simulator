@@ -7,6 +7,7 @@ namespace node
 
 class GraphicsObject;
 class NetSegment;
+class BlockObject;
 
 namespace logic
 {

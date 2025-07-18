@@ -32,49 +32,49 @@ public:
 	}
 
 	template <class... Args>
-	void LogInfo(std::format_string<Args...> fmt, Args&&... args)
+	void LogInfo(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_INFO, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogError(std::format_string<Args...> fmt, Args&&... args)
+	void LogError(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_ERROR, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogDebug(std::format_string<Args...> fmt, Args&&... args)
+	void LogDebug(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_DEBUG, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogTrace(std::format_string<Args...> fmt, Args&&... args)
+	void LogTrace(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_TRACE, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogCritical(std::format_string<Args...> fmt, Args&&... args)
+	void LogCritical(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_CRITICAL, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogWarn(std::format_string<Args...> fmt, Args&&... args)
+	void LogWarn(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_WARN, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void LogVerbose(std::format_string<Args...> fmt, Args&&... args)
+	void LogVerbose(std::format_string<Args...> fmt, Args&&... args) const
 	{
 		Log(SDL_LOG_PRIORITY_VERBOSE, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <class... Args>
-	void Log(SDL_LogPriority priority, std::format_string<Args...> fmt, Args&&... args)
+	void Log(SDL_LogPriority priority, std::format_string<Args...> fmt, Args&&... args) const
 	{
 		auto lowest_priority = SDL_GetLogPriority(static_cast<int>(m_category));
 		if (priority < lowest_priority)

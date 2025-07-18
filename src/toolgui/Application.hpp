@@ -6,6 +6,7 @@
 #include "SDL_Framework/SDLRenderer.hpp"
 #include "SDL_Framework/SDLCPP.hpp"
 #include "PluginAPI/Logger.hpp"
+#include "toolgui/async/EventLoop.hpp"
 
 #include <memory>
 #include <string>
@@ -81,6 +82,14 @@ public:
     void AddMainThreadTask(std::function<void()> task);
     void HandleMainThreadTasks();
 
+    void DispatchTask(async::Task task);
+
+    template <typename F>
+    auto DispatchThreadedTask(F&& func) -> async::Future<decltype(std::forward<F>(func)())>;
+
+    void PostTask(async::Task task);
+    void MakeTaskReady(std::coroutine_handle<Task::promise> h);
+
     bool UpdateTasksEmpty() { return m_updateTasks.empty() && m_new_updateTasks.empty(); }
     void DoUpdateTasks();
     int64_t AddUpdateTask(UpdateTask task);
@@ -124,19 +133,13 @@ protected:
     virtual void OnSetScene(std::unique_ptr<Scene>& scene);
     SDL_FPoint convert_to_renderer_coordinates(float x, float y);
 private:
+    void DispatchThreadedTaskInner(std::function<void()> func, async::ThreadedPromise<std::monostate>& p);
     void HandleInputs();
-    std::string m_title;
+
     SDL::SDLFramework m_framework;
     SDLWindow m_window;
     SDL::Renderer m_renderer;
-    std::unique_ptr<Scene> m_scene;
-    int m_width;
-    int m_height;
-    SDL_Rect m_rect;
-    bool b_running = false;
-    bool b_redrawScene = true;
-    std::array<TTFFont,2> m_appFonts;
-
+    async::SDLLoop m_async_eventLoop;
     std::unordered_map<int64_t, UpdateTask> m_updateTasks;
     std::unordered_map<int64_t, UpdateTask> m_new_updateTasks;
     std::vector<int64_t> m_deleted_updateTasks;
@@ -144,5 +147,46 @@ private:
     TaskQueue m_mainThreadTasks;
     FrameRateController m_framerateController;
     logging::Logger m_logger = logger(logging::LogCategory::General);
+
+    std::string m_title;
+    int m_width;
+    int m_height;
+    SDL_Rect m_rect;
+    bool b_running = false;
+    bool b_redrawScene = true;
+    std::array<TTFFont,2> m_appFonts;
+
+    std::unique_ptr<Scene> m_scene;
+
 };
+
+
+template <typename F>
+auto Application::DispatchThreadedTask(F&& func) -> async::Future<decltype(std::forward<F>(func)())>
+{
+    using U = decltype(std::forward<F>(func)());
+    struct shared_state
+    {
+        shared_state(std::function<U()>&& func)
+            :fun{std::move(func)}
+        {
+        }
+        std::function<U()> fun;
+        async::ThreadedPromise<U> promise;
+        async::ThreadedPromise<std::monostate> task_end_promise;
+    };
+    std::shared_ptr<shared_state> state = std::make_shared<shared_state>(std::move(func));
+    async::Future<U> fut = state->promise.get_future();
+    DispatchThreadedTaskInner([state = state]() {
+        try
+        {
+            state->promise.set_value(state->fun());
+        }
+        catch (...)
+        {
+            state->promise.set_error(std::current_exception());
+        }
+        }, state->task_end_promise);
+    return fut;
+}
 }

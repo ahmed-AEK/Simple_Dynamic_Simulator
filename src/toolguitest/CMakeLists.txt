@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.11)
 add_executable(toolguitest 
 NetSegmenttest.cpp
 BlockObjecttest.cpp
+AsyncTasktest.cpp
 pch.h
 )
 target_link_libraries(toolguitest PRIVATE GTest::gtest_main toolgui GraphicsScene)

@@ -10,10 +10,11 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::CreateFromLea
 	assert(leaf_node.GetConnectedSegmentsCount() == 1);
 
 	auto branch = GetNetBranchForLeafNode(leaf_node);
+	assert(branch.segments.size() > 0);
+	std::shared_ptr<const node::NetCategoryStyle> styler = branch.segments[0]->GetStyler();
 
 	std::reverse(branch.nodes.begin(), branch.nodes.end());
 	std::reverse(branch.segments.begin(), branch.segments.end());
-
 	std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes{};
 	std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> temp_segments{};
 	try
@@ -59,7 +60,7 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::CreateFromLea
 		throw;
 	}
 	return TemporaryNetManager{std::move(branch.nodes), std::move(branch.segments), 
-		std::move(temp_nodes), std::move(temp_segments),
+		std::move(temp_nodes), std::move(temp_segments), std::move(styler),
 		scene
 	};
 }
@@ -104,8 +105,7 @@ node::logic::TemporaryNetManager node::logic::TemporaryNetManager::Create(Graphi
 		throw;
 	}
 	return TemporaryNetManager{ {}, {},
-		std::move(temp_nodes), std::move(temp_segments),
-		scene
+		std::move(temp_nodes), std::move(temp_segments), {}, scene
 	};
 }
 
@@ -114,11 +114,11 @@ node::logic::TemporaryNetManager::TemporaryNetManager(
 	std::vector<HandlePtrS<NetSegment, GraphicsObject>> orig_segments_, 
 	std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes_, 
 	std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> temp_segments_,
-	GraphicsScene& scene_
+	std::shared_ptr<const node::NetCategoryStyle> styler, GraphicsScene& scene_
 )
 	:orig_nodes{std::move(orig_nodes_)}, orig_segments{std::move(orig_segments_)},
 	temp_nodes{std::move(temp_nodes_)}, temp_segments{std::move(temp_segments_)},
-	scene{scene_}
+	m_styler{std::move(styler)}, scene{scene_}
 {
 	CreateStartAnchor();
 
@@ -137,6 +137,7 @@ node::logic::TemporaryNetManager::TemporaryNetManager(
 	for (auto& segment : temp_segments)
 	{
 		segment->SetSelected(true);
+		segment->SetStyler(m_styler);
 	}
 	ResetNodes();
 }

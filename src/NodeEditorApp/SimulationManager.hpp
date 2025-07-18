@@ -41,7 +41,6 @@ public:
 		SubSceneId main_subscene_id,
 		std::shared_ptr<BlockClassesManager> classes_manager, Application& app);
 	void StopSimulator();
-	void CheckSimulatorEnded();
 	bool IsSimulationRunning() const { return m_current_running_simulator != nullptr; }
 
 	void SetSimulationSettings(SimulationSettings settings) { m_simulationSettings = settings; }

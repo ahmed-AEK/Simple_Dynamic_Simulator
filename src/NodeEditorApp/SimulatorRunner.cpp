@@ -675,15 +675,11 @@ node::SimulatorRunner::~SimulatorRunner()
 	{
 		Stop();
 	}
-	if (m_thread.joinable())
-	{
-		m_thread.join();
-	}
 }
 
 void node::SimulatorRunner::Run()
 {
-	m_thread = std::thread{ [this]() { this->RunImpl(); } };
+	RunImpl();
 }
 
 void node::SimulatorRunner::Stop()

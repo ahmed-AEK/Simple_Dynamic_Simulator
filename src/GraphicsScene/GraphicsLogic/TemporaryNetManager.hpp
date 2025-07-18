@@ -21,6 +21,7 @@ public:
 		std::vector<HandlePtrS<NetSegment, GraphicsObject>> orig_segments,
 		std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes,
 		std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> temp_segments,
+		std::shared_ptr<const node::NetCategoryStyle> styler,
 		GraphicsScene& scene);
 	TemporaryNetManager();
 	~TemporaryNetManager();
@@ -39,6 +40,7 @@ public:
 	std::vector<HandlePtrS<NetSegment, GraphicsObject>> orig_segments;
 	std::array<HandlePtrS<NetNode, GraphicsObject>, 6> temp_nodes{};
 	std::array<HandlePtrS<NetSegment, GraphicsObject>, 5> temp_segments{};
+	std::shared_ptr<const node::NetCategoryStyle> m_styler;
 	HandlePtrS<GraphicsScene, Widget> scene;
 };
 }

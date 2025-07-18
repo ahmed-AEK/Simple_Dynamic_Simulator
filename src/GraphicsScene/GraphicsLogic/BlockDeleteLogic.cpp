@@ -2,6 +2,7 @@
 #include "GraphicsScene/BlockObject.hpp"
 #include "GraphicsScene.hpp"
 #include "GraphicsObjectsManager.hpp"
+#include "NetUtils/DeleteHelpers.hpp"
 
 node::logic::BlockDeleteLogic::BlockDeleteLogic(BlockObject& block, GraphicsScene* scene, GraphicsObjectsManager* manager)
 	:GraphicsLogic{scene, manager}, m_block{block}
@@ -24,9 +25,17 @@ MI::ClickEvent node::logic::BlockDeleteLogic::OnLMBUp(const model::Point& curren
 	{
 		return MI::ClickEvent::CAPTURE_END;
 	}
+	auto block_id = m_block->GetModelId();
+	if (!block_id)
+	{
+		return MI::ClickEvent::CAPTURE_END;
+	}
 
-	GetObjectsManager()->GetSceneModel()->RemoveBlockById(*m_block->GetModelId());
-
+	auto request = NetUtils::GetDeletionRequestForBlock(*block_id, GetObjectsManager()->GetSceneModel()->GetModel());
+	if (request)
+	{
+		GetObjectsManager()->GetSceneModel()->RemoveBlock(std::move(*request));
+	}
 	return MI::ClickEvent::CAPTURE_END;
 }
 

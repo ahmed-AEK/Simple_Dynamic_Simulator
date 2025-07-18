@@ -8,6 +8,8 @@
 #include "GraphicsScene/GraphicsObjectsManager.hpp"
 #include "NetUtils/Utils.hpp"
 #include "GraphicsScene/GraphicsLogic/NetDeleteLogic.hpp"
+#include "GraphicsScene/GraphicsLogic/BlockDeleteLogic.hpp"
+#include "NetUtils/DeleteHelpers.hpp"
 
 node::NodeGraphicsScene::NodeGraphicsScene(const WidgetSize& size, node::Widget* parent)
     : node::GraphicsScene{ size, parent }
@@ -225,7 +227,11 @@ bool node::NodeGraphicsScene::DeleteSelection()
         {
             continue;
         }
-        objects_manager->GetSceneModel()->RemoveBlockById(*id);
+        auto request = NetUtils::GetDeletionRequestForBlock(*id, objects_manager->GetSceneModel()->GetModel());
+        if (request)
+        {
+            objects_manager->GetSceneModel()->RemoveBlock(std::move(*request));
+        }
     }
 
     auto deletion_request = NetUtils::GetDeletionRequestForNet(selection, objects_manager->GetSceneModel()->GetModel());

@@ -12,10 +12,12 @@ class OkCancelModalDialog : public Dialog
 public:
 	OkCancelModalDialog(std::string title, std::vector<std::string> content, 
 		const WidgetSize& size, MainNodeScene* parent, bool hide_cancel = false);
+	async::Future<bool> GetFuture();
 protected:
 	void OnOk() override;
 	void OnClose() override;
 private:
+	async::ThreadedPromise<bool> m_promise;
 
 };
 
@@ -54,16 +56,6 @@ public:
 	SaveSceneDialog(const WidgetSize& size, MainNodeScene* parent);
 protected:
 	void OnOk() override;
-};
-
-class ConfirmOverwriteSaveSceneDialog : public OkCancelModalDialog
-{
-public:
-	ConfirmOverwriteSaveSceneDialog(std::string name, const WidgetSize& size, MainNodeScene* parent);
-protected:
-	void OnOk() override;
-private:
-	std::string m_name;
 };
 
 }

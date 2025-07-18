@@ -164,6 +164,12 @@ struct NetModificationRequest
 	std::vector<NodeNetChange> update_nodes_nets;
 };
 
+struct BlockDeletionRequest
+{
+	model::BlockId block_id;
+	NetModificationRequest net_modification;
+};
+
 class ModelAction
 {
 public:
@@ -200,7 +206,7 @@ public:
 	void AddNewSubsystemBlock(model::BlockModel&& block, model::SubsystemBlockData&& data);
 	void AddNewFunctionalBlock(model::BlockModel&& block, model::FunctionalBlockData&& data);
 	void AddNewPortBlock(model::BlockModel&& block, model::PortBlockData&& data);
-	void RemoveBlockById(const model::BlockId& id);
+	void RemoveBlock(BlockDeletionRequest&& request);
 	void MoveBlockById(const model::BlockId& id, const model::Point& new_origin, 
 		NetModificationRequest&& net_update);
 	void ResizeBlockById(const model::BlockId& id, const model::Rect& new_rect, 

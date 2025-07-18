@@ -217,136 +217,6 @@ struct AddFuncitonalBlockAction : public ModelAction
 };
 
 
-struct RemoveBlockAction : public ModelAction
-{
-	explicit RemoveBlockAction(model::BlockId id)
-		:id{ id } {}
-	const model::BlockId id;
-	std::optional<model::BlockModel> stored_block;
-	std::vector<model::SocketNodeConnection> stored_connections;
-	model::BlockData block_data;
-
-	bool DoUndo(SceneModelManager& manager) override
-	{
-		assert(stored_block);
-		manager.GetModel().AddBlock(model::BlockModel{ *stored_block });
-
-		if (stored_block->GetType() == model::BlockType::Functional)
-		{
-			auto* functional_data = block_data.GetFunctionalData();
-			assert(functional_data);
-			if (functional_data)
-			{
-				manager.GetModel().GetFunctionalBlocksManager().SetDataForId(stored_block->GetId(), model::FunctionalBlockData{ *functional_data });
-			}
-		}
-		else if (stored_block->GetType() == model::BlockType::SubSystem)
-		{
-			auto* subsystem_data = block_data.GetSubsystemData();
-			assert(subsystem_data);
-			if (subsystem_data)
-			{
-				manager.GetModel().GetSubsystemBlocksManager().SetDataForId(stored_block->GetId(), model::SubsystemBlockData{ *subsystem_data });
-			}
-		}
-		else if (stored_block->GetType() == model::BlockType::Port)
-		{
-			auto* port_data = block_data.GetPortData();
-			assert(port_data);
-			if (port_data)
-			{
-				manager.GetModel().GetPortBlocksManager().AddPortForId(stored_block->GetId(), port_data->port_type);
-			}
-		}
-		else
-		{
-			assert(false);
-		}
-		auto* block_ptr = manager.GetModel().GetBlockById(stored_block->GetId());
-		assert(block_ptr);
-		if (!block_ptr)
-		{
-			return false;
-		}
-
-		for (auto&& connection : stored_connections)
-		{
-			manager.GetModel().AddSocketNodeConnection(connection);
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockAddedWithConnections, SceneModification::data_t{BlockAddWithConnectionsReport{*block_ptr,stored_connections} } });
-		if (stored_block->GetType() == model::BlockType::Port)
-		{
-			manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), stored_block->GetId() });
-		}
-		return true;
-	}
-
-	bool DoRedo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		stored_connections.clear();
-		for (const auto& socket : block->GetSockets())
-		{
-			auto connected_node = socket.GetConnectedNetNode();
-			if (connected_node)
-			{
-				stored_connections.push_back(*manager.GetModel().GetSocketConnectionForNode(*connected_node));
-				manager.GetModel().RemoveSocketConnectionForSocket({ socket.GetId(), block->GetId() });
-			}
-		}
-		stored_block = *block;
-
-		if (block->GetType() == model::BlockType::Functional)
-		{
-			auto* data_ptr = manager.GetModel().GetFunctionalBlocksManager().GetDataForId(block->GetId());
-			assert(data_ptr);
-			if (data_ptr)
-			{
-				block_data = model::BlockData{ std::move(*data_ptr) };
-				manager.GetModel().GetFunctionalBlocksManager().EraseDataForId(block->GetId());
-			}
-		}
-		else if (block->GetType() == model::BlockType::SubSystem)
-		{
-			auto* data_ptr = manager.GetModel().GetSubsystemBlocksManager().GetDataForId(block->GetId());
-			assert(data_ptr);
-			if (data_ptr)
-			{
-				block_data = model::BlockData{ std::move(*data_ptr) };
-				manager.GetModel().GetSubsystemBlocksManager().EraseDataForId(block->GetId());
-			}
-		}
-		else if (block->GetType() == model::BlockType::Port)
-		{
-			auto* data_ptr = manager.GetModel().GetPortBlocksManager().GetDataForId(block->GetId());
-			assert(data_ptr);
-			if (data_ptr)
-			{
-				block_data = model::BlockData{ std::move(*data_ptr) };
-				manager.GetModel().GetPortBlocksManager().RemovePortForId(block->GetId());
-			}
-		}
-		else
-		{
-			assert(false);
-		}
-		
-		manager.GetModel().RemoveBlockById(id);
-		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
-		if (stored_block->GetType() == model::BlockType::Port)
-		{
-			manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), stored_block->GetId() });
-		}
-		return true;
-	}
-};
-
 struct ModifyBlockPropertiesAction : public ModelAction
 {
 	ModifyBlockPropertiesAction(model::BlockId block_id, std::vector<model::BlockProperty> new_properties)
@@ -1175,7 +1045,7 @@ struct UpdateNetAction : public ModelAction
 				}
 				else // new_id
 				{
-					assert(node_modification.net.value < new_nets.size());
+					assert(static_cast<size_t>(node_modification.net.value) < new_nets.size());
 					auto new_net_id = new_nets[node_modification.net.value];
 					auto* new_net = scene.GetNet(new_net_id);
 					assert(new_net);
@@ -1469,6 +1339,133 @@ struct UpdateNetAction : public ModelAction
 };
 
 
+struct RemoveBlockAction : public ModelAction
+{
+	explicit RemoveBlockAction(node::BlockDeletionRequest&& modification)
+		:id{ modification.block_id }, net_update{ std::move(modification.net_modification) } {}
+	const model::BlockId id;
+	std::optional<model::BlockModel> stored_block;
+	model::BlockData block_data;
+	UpdateNetAction net_update;
+
+	bool DoUndo(SceneModelManager& manager) override
+	{
+		if (stored_block)
+		{
+
+
+			manager.GetModel().AddBlock(model::BlockModel{ *stored_block });
+
+			if (stored_block->GetType() == model::BlockType::Functional)
+			{
+				auto* functional_data = block_data.GetFunctionalData();
+				assert(functional_data);
+				if (functional_data)
+				{
+					manager.GetModel().GetFunctionalBlocksManager().SetDataForId(stored_block->GetId(), model::FunctionalBlockData{ *functional_data });
+				}
+			}
+			else if (stored_block->GetType() == model::BlockType::SubSystem)
+			{
+				auto* subsystem_data = block_data.GetSubsystemData();
+				assert(subsystem_data);
+				if (subsystem_data)
+				{
+					manager.GetModel().GetSubsystemBlocksManager().SetDataForId(stored_block->GetId(), model::SubsystemBlockData{ *subsystem_data });
+				}
+			}
+			else if (stored_block->GetType() == model::BlockType::Port)
+			{
+				auto* port_data = block_data.GetPortData();
+				assert(port_data);
+				if (port_data)
+				{
+					manager.GetModel().GetPortBlocksManager().AddPortForId(stored_block->GetId(), port_data->port_type);
+				}
+			}
+			else
+			{
+				assert(false);
+			}
+			auto* block_ptr = manager.GetModel().GetBlockById(stored_block->GetId());
+			assert(block_ptr);
+			if (!block_ptr)
+			{
+				return false;
+			}
+
+
+			manager.Notify(SceneModification{ SceneModificationType::BlockAddedWithConnections, SceneModification::data_t{BlockAddWithConnectionsReport{*block_ptr , {}} } });
+			if (stored_block->GetType() == model::BlockType::Port)
+			{
+				manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), stored_block->GetId() });
+			}
+		}
+
+		return net_update.DoUndo(manager);
+	}
+
+	bool DoRedo(SceneModelManager& manager) override
+	{
+		stored_block = std::nullopt;
+		auto* block = manager.GetModel().GetBlockById(id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		if (!net_update.DoRedo(manager))
+		{
+			return false;
+		}
+		stored_block = *block;
+
+		if (block->GetType() == model::BlockType::Functional)
+		{
+			auto* data_ptr = manager.GetModel().GetFunctionalBlocksManager().GetDataForId(block->GetId());
+			assert(data_ptr);
+			if (data_ptr)
+			{
+				block_data = model::BlockData{ std::move(*data_ptr) };
+				manager.GetModel().GetFunctionalBlocksManager().EraseDataForId(block->GetId());
+			}
+		}
+		else if (block->GetType() == model::BlockType::SubSystem)
+		{
+			auto* data_ptr = manager.GetModel().GetSubsystemBlocksManager().GetDataForId(block->GetId());
+			assert(data_ptr);
+			if (data_ptr)
+			{
+				block_data = model::BlockData{ std::move(*data_ptr) };
+				manager.GetModel().GetSubsystemBlocksManager().EraseDataForId(block->GetId());
+			}
+		}
+		else if (block->GetType() == model::BlockType::Port)
+		{
+			auto* data_ptr = manager.GetModel().GetPortBlocksManager().GetDataForId(block->GetId());
+			assert(data_ptr);
+			if (data_ptr)
+			{
+				block_data = model::BlockData{ std::move(*data_ptr) };
+				manager.GetModel().GetPortBlocksManager().RemovePortForId(block->GetId());
+			}
+		}
+		else
+		{
+			assert(false);
+		}
+
+		manager.GetModel().RemoveBlockById(id);
+		manager.Notify(SceneModification{ SceneModificationType::BlockRemoved, SceneModification::data_t{id} });
+		if (stored_block->GetType() == model::BlockType::Port)
+		{
+			manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), stored_block->GetId() });
+		}
+		return true;
+	}
+};
+
 struct MoveBlockAction : public ModelAction
 {
 	MoveBlockAction(model::Point dst_point, model::BlockId id, NetModificationRequest&& update_request)
@@ -1645,9 +1642,9 @@ void node::SceneModelManager::AddNewPortBlock(model::BlockModel&& block, model::
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::RemoveBlockById(const model::BlockId& id)
+void node::SceneModelManager::RemoveBlock(BlockDeletionRequest&& request)
 {
-	auto action = std::make_unique<RemoveBlockAction>(id);
+	auto action = std::make_unique<RemoveBlockAction>(std::move(request));
 	PushAction(std::move(action));
 }
 
