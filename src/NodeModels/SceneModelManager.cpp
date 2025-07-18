@@ -1175,7 +1175,7 @@ struct UpdateNetAction : public ModelAction
 				}
 				else // new_id
 				{
-					assert(node_modification.net.value < new_nets.size());
+					assert(static_cast<size_t>(node_modification.net.value) < new_nets.size());
 					auto new_net_id = new_nets[node_modification.net.value];
 					auto* new_net = scene.GetNet(new_net_id);
 					assert(new_net);

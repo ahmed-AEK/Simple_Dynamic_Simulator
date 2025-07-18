@@ -25,6 +25,8 @@ ToolTipWidgetMixin.hpp ToolTipWidgetMixin_impl.hpp
 SceneGrid.hpp SceneGrid.cpp
 ScrollView.hpp ScrollView.cpp
 LogView.hpp LogView.cpp
+async/Task.hpp
+async/EventLoop.hpp async/EventLoop.cpp
 pch.h
 )
 

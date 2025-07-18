@@ -58,7 +58,7 @@ void node::GraphicsObjectsManager::SetSceneModel(std::shared_ptr<SceneModelManag
         }
         auto net_id = it_node1->second->GetNetId();
         assert(net_id);
-        auto* net = scene->GetModel().GetNet(*net_id);
+        auto* net = m_sceneModel->GetModel().GetNet(*net_id);
         assert(net);
         auto styler = m_categories_styler->GetStyle(net->GetCategory());
         auto segment_obj = std::make_unique<node::NetSegment>(net_segment.m_orientation, it_node1->second, it_node2->second, styler);
