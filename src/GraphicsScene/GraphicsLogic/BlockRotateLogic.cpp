@@ -77,6 +77,13 @@ MI::ClickEvent node::logic::BlockRotateLogic::OnLMBUp(const model::Point& curren
 		const auto solution = solver.Solve();
 		auto report = MakeModificationsReport(solution, branch.nodes, branch.segments);
 		UpdateModificationEndWithSocket(branch.nodes, report, end_socket);
+		auto net_id_opt = branch.nodes.back()->GetNetId();
+		assert(net_id_opt);
+		for (auto& added_node : report.request.added_nodes)
+		{
+			added_node.net_id = *net_id_opt;
+			added_node.net_type = NetModificationRequest::IdType::existing_id;
+		}
 		MergeModificationRequests(report.request, main_request);
 	}
 	GetObjectsManager()->GetSceneModel()->ResizeBlockById(*block.GetModelId(), new_rect, new_orientation, new_sockets, std::move(main_request));

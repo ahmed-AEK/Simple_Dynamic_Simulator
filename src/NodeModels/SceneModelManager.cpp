@@ -382,77 +382,6 @@ struct ModifyBlockPropertiesAndSocketsAction : public ModelAction
 	}
 };
 
-struct ModifyBlockSocketsAction : public ModelAction
-{
-	ModifyBlockSocketsAction(model::BlockId block_id,
-		std::vector<model::BlockSocketModel> new_sockets)
-		:block_id{ block_id }, new_sockets{ std::move(new_sockets) } {}
-	const model::BlockId block_id;
-	const std::vector<model::BlockSocketModel> new_sockets;
-	std::vector<model::BlockSocketModel> old_sockets;
-	std::vector<model::SocketNodeConnection> stored_connections;
-
-	bool DoUndo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(block_id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		for (auto&& connection : stored_connections)
-		{
-			manager.GetModel().AddSocketNodeConnection(connection);
-		}
-
-		block->ClearSockets();
-		block->ReserveSockets(old_sockets.size());
-		for (auto&& socket : old_sockets)
-		{
-			block->AddSocket(std::move(socket));
-		}
-
-		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
-
-		return true;
-	}
-
-	bool DoRedo(SceneModelManager& manager) override
-	{
-		auto* block = manager.GetModel().GetBlockById(block_id);
-		assert(block);
-		if (!block)
-		{
-			return false;
-		}
-
-		for (const auto& socket : block->GetSockets())
-		{
-			if (auto node_id = socket.GetConnectedNetNode())
-			{
-				stored_connections.push_back(*manager.GetModel().GetSocketConnectionForNode(*node_id));
-				manager.GetModel().RemoveSocketConnectionForSocket({ socket.GetId(), block->GetId() });
-			}
-		}
-		auto&& old_span = block->GetSockets();
-
-		old_sockets.clear();
-		old_sockets.reserve(old_span.size());
-		old_sockets.insert(old_sockets.end(), old_span.begin(), old_span.end());
-
-		block->ClearSockets();
-		block->ReserveSockets(new_sockets.size());
-		for (auto&& socket : new_sockets)
-		{
-			block->AddSocket(socket);
-		}
-		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
-
-		return true;
-	}
-};
-
 struct UpdateNetAction : public ModelAction
 {
 	explicit UpdateNetAction(NetModificationRequest&& update_request)
@@ -523,6 +452,23 @@ struct UpdateNetAction : public ModelAction
 		std::vector<StoredNetMerge> stored_merged_net;
 		std::vector<model::NetModel> stored_deleted_nets;
 		std::vector< StoredNodeNetChange> stored_node_net_change;
+
+		void clear()
+		{
+			stored_deleted_connections.clear();
+			stored_deleted_segments.clear();
+			stored_deleted_nodes.clear();
+			stored_added_nodes.clear();
+			stored_node_updates.clear();
+			stored_segment_updates.clear();
+			stored_new_segments.clear();
+			stored_new_connections.clear();
+			stored_new_nets.clear();
+			stored_net_category_change.clear();
+			stored_merged_net.clear();
+			stored_deleted_nets.clear();
+			stored_node_net_change.clear();
+		}
 	};
 
 	StoredEdits edits;
@@ -531,6 +477,8 @@ struct UpdateNetAction : public ModelAction
 	{
 		auto&& scene = manager.GetModel();
 		// remove added connections
+		std::vector<model::BlockId> updated_port_categories;
+
 		for (auto&& connection : edits.stored_new_connections)
 		{
 			auto* block = scene.GetBlockById(connection.socketId.block_id);
@@ -538,6 +486,11 @@ struct UpdateNetAction : public ModelAction
 			if (!block)
 			{
 				return false;
+			}
+			if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(connection.socketId.block_id))
+			{
+				port_data->category = model::NetCategory{};
+				updated_port_categories.push_back(connection.socketId.block_id);
 			}
 			auto* socket = block->GetSocketById(connection.socketId.socket_id);
 			assert(socket);
@@ -689,7 +642,7 @@ struct UpdateNetAction : public ModelAction
 			}
 		}
 		
-		// uno node net change
+		// undo node net change
 		for (const auto& node_modification : edits.stored_node_net_change)
 		{
 			auto* node = scene.GetNetNodeById(node_modification.node);
@@ -704,7 +657,21 @@ struct UpdateNetAction : public ModelAction
 			node_net_changed.push_back({ node_modification.node, new_net->GetId() });
 		}
 		
-
+		// undo port net category change
+		for (const auto& node : node_net_changed)
+		{
+			if (auto* connection = scene.GetSocketConnectionForNode(node.node_id))
+			{
+				if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(connection->socketId.block_id))
+				{
+					updated_port_categories.push_back(connection->socketId.block_id);
+					auto* net = scene.GetNet(node.net_id);
+					assert(net);
+					port_data->category = net->GetCategory();
+				}
+			}
+		}
+		
 		// undo updated Nodes
 		for (auto&& node_request : edits.stored_node_updates)
 		{
@@ -798,6 +765,15 @@ struct UpdateNetAction : public ModelAction
 			}
 			scene.AddSocketNodeConnection(model::SocketNodeConnection{deleted_connection_report.socketId, deleted_connection_report.NodeId});
 			socket->SetConnectedNetNode(deleted_connection_report.NodeId);
+			if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(block->GetId()))
+			{
+				auto* node = scene.GetNetNodeById(deleted_connection_report.NodeId);
+				assert(node);
+				auto* net = scene.GetNet(node->GetNetId());
+				assert(net);
+				port_data->category = net->GetCategory();
+				updated_port_categories.push_back(block->GetId());
+			}
 		}
 		
 		// setup notification
@@ -855,29 +831,22 @@ struct UpdateNetAction : public ModelAction
 		}
 
 		manager.Notify(SceneModification{ SceneModification::type_t::NetUpdated, SceneModification::data_t{std::ref(report)} });
-
+		for (const auto& port_block_id : updated_port_categories)
+		{
+			manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), port_block_id });
+		}
 		return true;
 
 	}
 
 	bool DoRedo(SceneModelManager& manager) override
 	{
-		edits.stored_deleted_connections.clear();
-		edits.stored_deleted_segments.clear();
-		edits.stored_deleted_nodes.clear();
-		edits.stored_added_nodes.clear();
-		edits.stored_node_updates.clear();
-		edits.stored_segment_updates.clear();
-		edits.stored_new_segments.clear();
-		edits.stored_new_connections.clear();
-		edits.stored_new_nets.clear();
-		edits.stored_net_category_change.clear();
-		edits.stored_merged_net.clear();
-		edits.stored_deleted_nets.clear();
-		edits.stored_node_net_change.clear();
+		edits.clear();
 
 		auto&& scene = manager.GetModel();
 		// handle deleted connections
+		std::vector<model::BlockId> updated_port_categories;
+
 		for (const auto& deleted_connection : update_request.removed_connections)
 		{
 			auto&& conn = scene.GetSocketConnectionForSocket(deleted_connection);
@@ -887,6 +856,11 @@ struct UpdateNetAction : public ModelAction
 			if (!conn || !block)
 			{
 				return false;
+			}
+			if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(conn->socketId.block_id))
+			{
+				port_data->category = model::NetCategory{};
+				updated_port_categories.push_back(conn->socketId.block_id);
 			}
 			auto* socket = block->GetSocketById(deleted_connection.socket_id);
 			assert(socket);
@@ -951,6 +925,11 @@ struct UpdateNetAction : public ModelAction
 			auto* conn = scene.GetSocketConnectionForNode(node->GetId());
 			if (conn)
 			{
+				if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(conn->socketId.block_id))
+				{
+					port_data->category = model::NetCategory{};
+					updated_port_categories.push_back(conn->socketId.block_id);
+				}
 				edits.stored_deleted_connections.push_back(*conn);
 				scene.RemoveSocketConnectionForSocket(conn->socketId);
 			}
@@ -1100,9 +1079,23 @@ struct UpdateNetAction : public ModelAction
 				node_net_changed.push_back({ node, net1->GetId() });
 			}
 			scene.RemoveNetById(merged_net.merged_net);
-
 		}
 
+		// handle port net category change
+		for (const auto& node : node_net_changed)
+		{
+			if (auto* connection = scene.GetSocketConnectionForNode(node.node_id))
+			{
+				if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(connection->socketId.block_id))
+				{
+					updated_port_categories.push_back(connection->socketId.block_id);
+					auto* net = scene.GetNet(node.net_id);
+					assert(net);
+					port_data->category = net->GetCategory();
+				}
+			}
+		}
+		
 		// handle updated segments
 		for (auto&& segment_request : update_request.update_segments)
 		{
@@ -1277,6 +1270,15 @@ struct UpdateNetAction : public ModelAction
 				socket->SetConnectedNetNode(node_id);
 				scene.AddSocketNodeConnection(model::SocketNodeConnection{ connection.socket , node_id });
 				edits.stored_new_connections.push_back({ connection.socket, node_id });
+				if (auto* port_data = scene.GetPortBlocksManager().GetDataForId(connection.socket.block_id))
+				{
+					auto* node = scene.GetNetNodeById(node_id);
+					assert(node);
+					auto* net = scene.GetNet(node->GetNetId());
+					assert(net);
+					port_data->category = net->GetCategory();
+					updated_port_categories.push_back(connection.socket.block_id);
+				}
 			}
 		}
 
@@ -1333,11 +1335,77 @@ struct UpdateNetAction : public ModelAction
 		}
 
 		manager.Notify(SceneModification{ SceneModification::type_t::NetUpdated, SceneModification::data_t{std::ref(report)} });
-
+		for (const auto& port_block_id : updated_port_categories)
+		{
+			manager.Notify(model::BlockPortsUpdate{ manager.GetSubSceneId(), port_block_id });
+		}
 		return true;
 	}
 };
 
+
+struct ModifyBlockSocketsAction : public ModelAction
+{
+	ModifyBlockSocketsAction(model::BlockId block_id,
+		std::vector<model::BlockSocketModel> new_sockets, NetModificationRequest net_modification)
+		:block_id{ block_id }, new_sockets{ std::move(new_sockets) }, 
+		update_net_action{std::move(net_modification)} { }
+	const model::BlockId block_id;
+	const std::vector<model::BlockSocketModel> new_sockets;
+	std::vector<model::BlockSocketModel> old_sockets;
+	UpdateNetAction update_net_action;
+
+	bool DoUndo(SceneModelManager& manager) override
+	{
+		auto* block = manager.GetModel().GetBlockById(block_id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		block->ClearSockets();
+		block->ReserveSockets(old_sockets.size());
+		for (auto&& socket : old_sockets)
+		{
+			block->AddSocket(std::move(socket));
+		}
+
+		update_net_action.DoUndo(manager);
+
+		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
+
+		return true;
+	}
+
+	bool DoRedo(SceneModelManager& manager) override
+	{
+		auto* block = manager.GetModel().GetBlockById(block_id);
+		assert(block);
+		if (!block)
+		{
+			return false;
+		}
+
+		update_net_action.DoRedo(manager);
+
+		auto&& old_span = block->GetSockets();
+
+		old_sockets.clear();
+		old_sockets.reserve(old_span.size());
+		old_sockets.insert(old_sockets.end(), old_span.begin(), old_span.end());
+
+		block->ClearSockets();
+		block->ReserveSockets(new_sockets.size());
+		for (auto&& socket : new_sockets)
+		{
+			block->AddSocket(socket);
+		}
+		manager.Notify(SceneModification{ SceneModificationType::BlockPropertiesAndSocketsModified , SceneModification::data_t{*block} });
+
+		return true;
+	}
+};
 
 struct RemoveBlockAction : public ModelAction
 {
@@ -1676,9 +1744,10 @@ void node::SceneModelManager::ModifyBlockPropertiesAndSockets(model::BlockId id,
 	PushAction(std::move(action));
 }
 
-void node::SceneModelManager::ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets)
+void node::SceneModelManager::ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets,
+	NetModificationRequest net_modification)
 {
-	auto action = std::make_unique<ModifyBlockSocketsAction>(id, std::move(new_sockets));
+	auto action = std::make_unique<ModifyBlockSocketsAction>(id, std::move(new_sockets), std::move(net_modification));
 	PushAction(std::move(action));
 }
 

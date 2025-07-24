@@ -392,6 +392,7 @@ TEST(testBlockLoader, testSaveLoadBlockPort)
 
 	SubSceneId subscene_id{ 1 };
 	SubSceneId parent_subscene_id{ 0 };
+	NetCategory category{ "FAAAZ" };
 
 	model::SocketId socket_id{ 2 };
 	Rect block_rect{ 1,1,10,10 };
@@ -401,6 +402,7 @@ TEST(testBlockLoader, testSaveLoadBlockPort)
 	SubSceneId subsystem_id{ 1 };
 	block_data.port_type = model::SocketType::input;
 	block_data.id = socket_id;
+	block_data.category = category;
 	scene.GetPortBlocksManager().SetDataForId(block_id, std::move(block_data));
 
 	SQLSceneLoader loader(":memory:");
@@ -420,4 +422,5 @@ TEST(testBlockLoader, testSaveLoadBlockPort)
 
 	EXPECT_EQ(loaded_block_data->id, socket_id);
 	EXPECT_EQ(loaded_block_data->port_type, model::SocketType::input);
+	EXPECT_EQ(loaded_block_data->category, category);
 }

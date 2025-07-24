@@ -336,10 +336,18 @@ bool node::loader::SQLBlockLoader::AddPortBlockData(const node::model::BlockId& 
 	}
 
 	{
-		SQLite::Statement query{ m_db, "INSERT INTO PortBlockData_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?)" };
+		SQLite::Statement query{ m_db, "INSERT INTO PortBlockData_" + std::to_string(m_scene_id.value) + " VALUES (?,?,?,?)" };
 		query.bind(1, block_id.value);
 		query.bind(2, block_data->id.value);
 		query.bind(3, static_cast<int32_t>(block_data->port_type));
+		if (block_data->category.IsEmpty())
+		{
+			query.bind(4);
+		}
+		else
+		{
+			query.bindNoCopy(4, block_data->category.buffer().data());
+		}
 		query.exec();
 	}
 	return true;
@@ -404,6 +412,11 @@ std::optional<node::model::BlockData> node::loader::SQLBlockLoader::GetPortBlock
 		{
 			data.id = model::SocketId{ query.getColumn(1) };
 			data.port_type = model::SocketType{ static_cast<char>(query.getColumn(2).getInt()) };
+			auto category_column = query.getColumn(3);
+			if (!category_column.isNull())
+			{
+				data.category = model::NetCategory{ category_column.getText() };
+			}
 		}
 	}
 	return node::model::BlockData{ data };

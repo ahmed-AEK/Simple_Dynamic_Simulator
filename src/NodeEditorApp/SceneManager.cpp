@@ -3,6 +3,7 @@
 #include "NodeEditorApp/SimulatorRunner.hpp"
 #include "NodeModels/BlockPortsUpdate.hpp"
 #include "NodeSDLStylers/BlockStylerFactory.hpp"
+#include "NetUtils/DeleteHelpers.hpp"
 
 node::SceneManager::SceneManager(std::shared_ptr<BlockStylerFactory> block_styler_factory)
 	:m_blockStyleFactory{std::move(block_styler_factory)}
@@ -116,7 +117,7 @@ void node::SceneManager::OnNotify(model::BlockPortsUpdate& report)
 
 	for (auto&& [block_id, port_data] : models_it->second->GetModel().GetPortBlocksManager().GetData())
 	{
-		sockets.push_back(model::BlockSocketModel{ port_data.port_type, port_data.id });
+		sockets.push_back(model::BlockSocketModel{ port_data.port_type, port_data.id, {}, {}, {}, port_data.category });
 	}
 
 	for (auto&& [subscene_id, subscene_model] : m_models)
@@ -139,7 +140,34 @@ void node::SceneManager::OnNotify(model::BlockPortsUpdate& report)
 					continue;
 				}
 				styler->PositionSockets(sockets, block_ptr->GetBounds(), block_ptr->GetOrienation());
-				subscene_model->ModifyBlockSockets(block_id, sockets);
+				std::vector<model::NetNodeId> nodes_to_remove;
+				std::vector<model::NetSegmentId> segments_to_remove;
+				for (const auto& socket : block_ptr->GetSockets())
+				{
+					auto socket_id = model::SocketUniqueId{ .socket_id = socket.GetId(), .block_id = block_id };
+					if (auto* conn = subscene_model->GetModel().GetSocketConnectionForSocket(socket_id))
+					{
+						nodes_to_remove.push_back(conn->NodeId);
+						auto* node = subscene_model->GetModel().GetNetNodeById(conn->NodeId);
+						assert(node);
+
+						for (const auto& segment: node->GetSegments())
+						{
+							if (segment)
+							{
+								segments_to_remove.push_back(*segment);
+							}
+						}
+					}
+				}
+				auto net_modification = 
+					NetUtils::GetDeletionRequestForNet(segments_to_remove, nodes_to_remove, subscene_model->GetModel());
+				if (!net_modification)
+				{
+					net_modification.emplace();
+				}
+				subscene_model->ModifyBlockSockets(block_id, sockets, std::move(*net_modification));
+
 			}
 		}
 	}

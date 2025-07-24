@@ -186,6 +186,11 @@ tl::expected<double, std::string> opt::NLGraphSolver_impl::CalcPenalty(FlatMap& 
             penalty += (new_value - estimated_value) * (new_value - estimated_value);
             break;
         }
+        case EquationType::FlowEquation:
+        {
+            assert(false);
+            break;
+        }
         case EquationType::PotentialEquation:
         {
             assert(false);
@@ -442,6 +447,11 @@ void opt::NLGraphSolver_impl::FillInitialSolveEqns(std::set<int32_t>& remaining_
                 {
                     return { &m_buffer_equations[index.index].output_id, 1 };
                 }
+                case EquationType::FlowEquation:
+                {
+                    assert(false);
+                    return {};
+                }
                 case EquationType::PotentialEquation:
                 {
                     assert(false);
@@ -543,6 +553,11 @@ opt::NLSolveResult opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state,
             state.modify(eq.output_id, new_value);
             break;
         }
+        case EquationType::FlowEquation:
+        {
+            assert(false);
+            break;
+        }
         case EquationType::PotentialEquation:
         {
             auto& eq = m_potential_equations[eq_index.index];
@@ -564,15 +579,15 @@ opt::NLSolveResult opt::NLGraphSolver_impl::EvalSpecificFunctors(FlatMap& state,
             {
                 return tl::unexpected<std::string>{ eq.equation->GetLastError() };
             }
-            if (m_potential_eqn_solved_nodes[eq_index.index] == eq.inout_ids[0])
+            if (m_potential_eqn_id_to_output_id[eq_index.index] == eq.inout_ids[0])
             {
                 double other_value = state.get(eq.inout_ids[1]);
-                state.modify(m_potential_eqn_solved_nodes[eq_index.index], other_value - out_value);
+                state.modify(m_potential_eqn_id_to_output_id[eq_index.index], other_value - out_value);
             }
             else
             {
                 double other_value = state.get(eq.inout_ids[0]);
-                state.modify(m_potential_eqn_solved_nodes[eq_index.index], other_value + out_value);
+                state.modify(m_potential_eqn_id_to_output_id[eq_index.index], other_value + out_value);
             }
             break;
         }
@@ -621,54 +636,90 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
         size_t count;
     };
 
-    std::vector<BlockInputsCount> all_blocks;
+    std::vector<std::optional<BlockInputsCount>> all_blocks;
     std::unordered_map<int32_t, std::vector<size_t>> edges; // map output_id -> all_blocks index
     std::queue<EquationIndex> blocks_to_process;
     std::set<size_t> potential_blocks_unprocessed;
+    std::set<size_t> flow_blocks_unprocessed;
 
     for (size_t i = 0; i < m_equations.size(); i++)
     {
-        all_blocks.push_back({ {i, EquationType::NLEquation}, 0 });
+        all_blocks.push_back(BlockInputsCount{ {i, EquationType::NLEquation}, 0 });
         auto&& inputs = m_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = remaining_output_ids.find(input_id);
             if (it != remaining_output_ids.end())
             {
-                all_blocks.back().count++;
+                all_blocks.back()->count++;
             }
             edges[input_id].push_back(all_blocks.size() - 1);
         }
     }
     for (size_t i = 0; i < m_stateful_equations.size(); i++)
     {
-        all_blocks.push_back({ {i, EquationType::statefulNLEquation}, 0 });
+        all_blocks.push_back(BlockInputsCount{ {i, EquationType::statefulNLEquation}, 0 });
         auto&& inputs = m_stateful_equations[i].input_ids;
         for (auto&& input_id : inputs)
         {
             auto it = remaining_output_ids.find(input_id);
             if (it != remaining_output_ids.end())
             {
-                all_blocks.back().count++;
+                all_blocks.back()->count++;
             }
             edges[input_id].push_back(all_blocks.size() - 1);
         }
     }
     for (size_t i = 0; i < m_buffer_equations.size(); i++)
     {
-        all_blocks.push_back({ {i, EquationType::BufferEquation}, 0 });
+        all_blocks.push_back(BlockInputsCount{ {i, EquationType::BufferEquation}, 0 });
         auto&& input_id = m_buffer_equations[i].input_id;
         auto it = remaining_output_ids.find(input_id);
         if (it != remaining_output_ids.end())
         {
-            all_blocks.back().count++;
+            all_blocks.back()->count++;
         }
         edges[input_id].push_back(all_blocks.size() - 1);
+    }
+    for (size_t i = 0; i < m_flow_equations.size(); i++)
+    {
+        auto& eq = m_flow_equations[i];
+        all_blocks.push_back(BlockInputsCount{ {i, EquationType::FlowEquation}, 0 });
+        flow_blocks_unprocessed.insert(i);
+        auto&& inputs = eq.input_ids;
+        for (auto&& input_id : inputs)
+        {
+            auto it_inout = std::find(eq.inout_ids.begin(), eq.inout_ids.end(), input_id);
+            if (it_inout != eq.inout_ids.end())
+            {
+                continue; // skip it if it is already inout
+            }
+            auto it = remaining_output_ids.find(input_id);
+            if (it != remaining_output_ids.end())
+            {
+                all_blocks.back()->count++;
+            }
+            edges[input_id].push_back(all_blocks.size() - 1);
+        }
+        for (auto&& input_id : eq.inout_ids)
+        {
+            auto it = remaining_output_ids.find(input_id);
+            if (it != remaining_output_ids.end())
+            {
+                all_blocks.back()->count++;
+            }
+            edges[input_id].push_back(all_blocks.size() - 1);
+        }
+        if (all_blocks.back()->count == 0) // try to push it into blocks_to_process if 0 inout nodes left
+        {
+            blocks_to_process.push(all_blocks.back()->index);
+            all_blocks.back() = std::nullopt;
+        }
     }
     for (size_t i = 0; i < m_potential_equations.size(); i++)
     {
         auto& eq = m_potential_equations[i];
-        all_blocks.push_back({ {i, EquationType::PotentialEquation}, 1 }); // one of the two inout nodes is input
+        all_blocks.push_back(BlockInputsCount{ {i, EquationType::PotentialEquation}, 1 }); // one of the two inout nodes is input
         potential_blocks_unprocessed.insert(i);
         auto&& inputs = eq.input_ids;
         for (auto&& input_id : inputs)
@@ -676,21 +727,27 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
             auto it = remaining_output_ids.find(input_id);
             if (it != remaining_output_ids.end())
             {
-                all_blocks.back().count++;
+                all_blocks.back()->count++;
             }
             edges[input_id].push_back(all_blocks.size() - 1);
         }
-        if (all_blocks.back().count == 1) // try to push it into blocks_to_process if only 1 inout node left
+        if (all_blocks.back()->count == 1) // try to push it into blocks_to_process if only 1 inout node left
         {
             if (auto it = remaining_output_ids.find(eq.inout_ids[0]); it == remaining_output_ids.end())
             {
-                all_blocks.back().count = 0;
-                blocks_to_process.push(all_blocks.back().index);
+                if (auto it_other = remaining_output_ids.find(eq.inout_ids[1]); it_other == remaining_output_ids.end())
+                {
+                    return tl::unexpected<std::string>{std::format("Potential Equation With no free nodes: {}", i)};
+                }
+                all_blocks.back()->count = 0;
+                blocks_to_process.push(all_blocks.back()->index);
+                all_blocks.back() = std::nullopt;
             }
             else if (auto it2 = remaining_output_ids.find(eq.inout_ids[1]); it2 == remaining_output_ids.end())
             {
-                all_blocks.back().count = 0;
-                blocks_to_process.push(all_blocks.back().index);
+                all_blocks.back()->count = 0;
+                blocks_to_process.push(all_blocks.back()->index);
+                all_blocks.back() = std::nullopt;
             }
             else
             {
@@ -700,65 +757,36 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
         }
     }
 
-    auto block_has_remaining_id = [&](const EquationIndex& index) -> bool
+    auto decrement_connected_inputs = [&](const int32_t id)
         {
-            switch (index.type)
             {
-            case EquationType::NLEquation:
+                auto it = remaining_output_ids.find(id);
+                assert(it != remaining_output_ids.end());
+                if (it != remaining_output_ids.end())
+                {
+                    remaining_output_ids.erase(it);
+                }
+            }
+            auto it = edges.find(id);
+            if (it == edges.end())
             {
-                for (auto&& id : m_equations[index.index].output_ids)
-                {
-                    if (remaining_output_ids.find(id) != remaining_output_ids.end())
-                    {
-                        return true;
-                    }
-                }
-                break;
+                return;
             }
-            case EquationType::statefulNLEquation:
+            auto&& blocks = it->second;
+            for (auto&& block : blocks)
             {
-                for (auto&& id : m_stateful_equations[index.index].input_ids)
+                if (!all_blocks[block])
                 {
-                    if (remaining_output_ids.find(id) != remaining_output_ids.end())
-                    {
-                        return true;
-                    }
+                    continue;
                 }
-                break;
-            }
-            case EquationType::BufferEquation:
-            {
-                auto&& id = m_buffer_equations[index.index].output_id;
-                if (remaining_output_ids.find(id) != remaining_output_ids.end())
+                all_blocks[block]->count--;
+                if (all_blocks[block]->count == 0)
                 {
-                    return true;
+                    blocks_to_process.push(all_blocks[block]->index);
                 }
-                break;
             }
-            case EquationType::PotentialEquation:
-            {
-                auto& eqn = m_potential_equations[index.index];
-                for (auto&& id : eqn.input_ids)
-                {
-                    if (remaining_output_ids.find(id) != remaining_output_ids.end())
-                    {
-                        return true;
-                    }
-                }
-                bool first_found = remaining_output_ids.find(eqn.inout_ids[0]) != remaining_output_ids.end();
-                bool second_found = remaining_output_ids.find(eqn.inout_ids[1]) != remaining_output_ids.end();
-                if (first_found && second_found)
-                {
-                    return true;
-                }
-                break;
-            }
-            }
-            return false;
         };
-
-
-    while (remaining_output_ids.size())
+    while (remaining_output_ids.size() || blocks_to_process.size())
     {
         if (blocks_to_process.size())
         {
@@ -781,6 +809,10 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
                     {
                         return { &m_buffer_equations[index.index].output_id, 1 };
                     }
+                    case EquationType::FlowEquation:
+                    {
+                        return {};
+                    }
                     case EquationType::PotentialEquation:
                     {
                         auto& eq = m_potential_equations[index.index];
@@ -795,40 +827,31 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
                     }
                     return {};
                 }();
-                for (const auto& id : output_ids)
+            if (index.type == EquationType::PotentialEquation)
+            {
+                const auto id = output_ids[0];
+                m_flow_nodes[m_node_id_to_flow_index[id]].fixed = true;
+                while (m_potential_eqn_id_to_output_id.size() <= index.index)
                 {
-                    m_inner_solve_output_ids.push_back(id);
-                    if (index.type == EquationType::PotentialEquation)
-                    {
-                        m_flow_nodes[m_node_id_to_flow_index[id]].fixed = true;
-                        m_potential_eqn_solved_nodes.push_back(id);
-                        potential_blocks_unprocessed.erase(index.index);
-                    }
-                    {
-                        auto it = remaining_output_ids.find(id);
-                        assert(it != remaining_output_ids.end());
-                        if (it != remaining_output_ids.end())
-                        {
-                            remaining_output_ids.erase(it);
-                        }
-                    }
-                    auto it = edges.find(id);
-                    if (it == edges.end())
-                    {
-                        continue;
-                    }
-                    auto&& blocks = it->second;
-                    for (auto&& block : blocks)
-                    {
-                        all_blocks[block].count--;
-                        if (all_blocks[block].count == 0)
-                        {
-                            blocks_to_process.push(all_blocks[block].index);
-                        }
-                    }
+                    m_potential_eqn_id_to_output_id.push_back(-1);
                 }
+                m_potential_eqn_id_to_output_id[index.index] = id;
+                m_potential_eqn_solved_nodes.push_back(id);
+                potential_blocks_unprocessed.erase(index.index);
+            }
+            else if (index.type == EquationType::FlowEquation)
+            {
+                flow_blocks_unprocessed.erase(index.index);
+                continue; // flow equations are not part of the inner solve!
+            }
+            for (const auto& id : output_ids)
+            {
+                m_inner_solve_output_ids.push_back(id);
+                
+                decrement_connected_inputs(id);
+            }
 
-                m_inner_solve_eqns.push_back(index);
+            m_inner_solve_eqns.push_back(index);
         }
         else
         {
@@ -836,20 +859,37 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
             std::optional<BlockInputsCount> max_block;
             for (const auto& block : all_blocks)
             {
-                if (block.index.type == EquationType::PotentialEquation)
+                if (!block)
+                {
+                    continue;
+                }
+                if (block->index.type == EquationType::PotentialEquation)
                 {
                     continue; // potential blocks cannot be picked, because either of its nodes must have a known potential
                 }
-                if (!block_has_remaining_id(block.index))
+                if (block->index.type == EquationType::FlowEquation)
                 {
-                    continue;
+                    auto& eq = m_flow_equations[block->index.index];
+                    size_t inout_nodes_left = 0;
+                    for (const auto& node : eq.inout_ids)
+                    {
+                        if (auto it = remaining_output_ids.find(node); it != remaining_output_ids.end())
+                        {
+                            inout_nodes_left++;
+                        }
+                    }
+                    assert(inout_nodes_left != 0);
+                    if (inout_nodes_left > 1)
+                    {
+                        continue;
+                    }
                 }
                 if (!max_block.has_value())
                 {
                     max_block = block;
                     continue;
                 }
-                if (block.count >= max_block->count)
+                if (block->count >= max_block->count)
                 {
                     auto get_block_outputs_count = [&](const BlockInputsCount& block_idx)->size_t
                         {
@@ -867,15 +907,20 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
                             {
                                 return 1;
                             }
+                            case EquationType::FlowEquation:
+                            {
+                                return 0; // any other block will be more likely to be picked
+                            }
                             case EquationType::PotentialEquation:
                             {
-                                return 1;
+                                assert(false);
+                                return 0;
                             }
                             }
                             return 0;
                         };
                     size_t first_output_ids_count = get_block_outputs_count(*max_block);
-                    size_t second_output_ids_count = get_block_outputs_count(block);
+                    size_t second_output_ids_count = get_block_outputs_count(*block);
                     if (second_output_ids_count > first_output_ids_count)
                     {
                         max_block = block;
@@ -895,8 +940,6 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
             }
 
             // add it as estimated block
-            m_estimated_eqns.push_back(max_block->index);
-            all_blocks[max_block->index.index].count = 0;
             auto output_ids = [&]()->std::span<const int32_t>
                 {
                     switch (max_block->index.type)
@@ -913,44 +956,41 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
                     {
                         return { &m_buffer_equations[max_block->index.index].output_id, 1 };
                     }
+                    case EquationType::FlowEquation:
+                    {
+                        auto& eq = m_flow_equations[max_block->index.index];
+                        for (const auto& node : eq.inout_ids)
+                        {
+                            if (auto it = remaining_output_ids.find(node); it != remaining_output_ids.end())
+                            {
+                                return { &node, 1 };
+                            }
+                        }
+                        assert(false);
+                        return {};
+                    }
                     case EquationType::PotentialEquation:
                     {
-                        auto& eq = m_potential_equations[max_block->index.index];
-                        if (auto it = remaining_output_ids.find(eq.inout_ids[0]); it != remaining_output_ids.end())
-                        {
-                            return { &eq.inout_ids[0], 1 };
-                        }
-                        [[maybe_unused]] bool other_found = remaining_output_ids.find(eq.inout_ids[1]) != remaining_output_ids.end();
-                        assert(other_found);
-                        return { &eq.inout_ids[1], 1 };
+                        assert(false);
+                        return {};
                     }
                     }
                     return {};
                 }();
-            for (const auto& id : output_ids)
+            if (max_block->index.type == EquationType::FlowEquation)
             {
-                m_estimated_output_ids.push_back(id);
+                m_estimated_flow_nodes.push_back(output_ids[0]);
+                m_flow_nodes[m_node_id_to_flow_index[output_ids[0]]].fixed = true;
+                decrement_connected_inputs(output_ids[0]);
+            }
+            else
+            {
+                m_estimated_eqns.push_back(max_block->index);
+                all_blocks[max_block->index.index] = std::nullopt;
+                for (const auto& id : output_ids)
                 {
-                    auto it = remaining_output_ids.find(id);
-                    assert(it != remaining_output_ids.end());
-                    if (it != remaining_output_ids.end())
-                    {
-                        remaining_output_ids.erase(it);
-                    }
-                }
-                auto it = edges.find(id);
-                if (it == edges.end())
-                {
-                    continue;
-                }
-                auto&& blocks = it->second;
-                for (auto&& block : blocks)
-                {
-                    all_blocks[block].count--;
-                    if (all_blocks[block].count == 0)
-                    {
-                        blocks_to_process.push(all_blocks[block].index);
-                    }
+                    m_estimated_output_ids.push_back(id);
+                    decrement_connected_inputs(id);
                 }
             }
         }
@@ -959,6 +999,10 @@ tl::expected<std::monostate, std::string> opt::NLGraphSolver_impl::FillInnerSolv
     if (potential_blocks_unprocessed.size())
     {
         return tl::unexpected<std::string>{std::format("unprocessed potential blocks: {}", potential_blocks_unprocessed.size())};
+    }
+    if (flow_blocks_unprocessed.size())
+    {
+         return tl::unexpected<std::string>{std::format("unprocessed flow blocks: {}", flow_blocks_unprocessed.size())};
     }
     return {};
 }
@@ -1015,7 +1059,7 @@ opt::NLSolveResult opt::NLGraphSolver_impl::Solve(FlatMap& state, const double& 
     if (m_estimated_output_ids.size() || m_estimated_flow_nodes.size())
     {
         LoadMaptoVec(m_current_state, m_current_x);
-        double min_value;
+        double min_value{};
         [[maybe_unused]] nlopt::result result = m_optimizer.optimize(m_current_x, min_value);
         if (result == nlopt::FORCED_STOP)
         {

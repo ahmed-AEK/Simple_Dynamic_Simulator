@@ -18,6 +18,9 @@ BuiltinBasicClass.hpp BuiltinBasicClass.cpp
 BuiltinClassesPlugin.hpp BuiltinClassesPlugin.cpp
 electrical/ElectricalResistorBlockClass.hpp electrical/ElectricalResistorBlockClass.cpp
 electrical/ElectricalVDCBlockClass.hpp electrical/ElectricalVDCBlockClass.cpp
+electrical/ElectricalControlledVDCBlockClass.hpp electrical/ElectricalControlledVDCBlockClass.cpp
+electrical/ElectricalIDCBlockClass.hpp electrical/ElectricalIDCBlockClass.cpp
+electrical/ElectricalControlledIDCBlockClass.hpp electrical/ElectricalControlledIDCBlockClass.cpp
 pch.h
 )
 

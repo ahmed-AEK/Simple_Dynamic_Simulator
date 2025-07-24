@@ -35,6 +35,6 @@ bool node::model::PortBlocksDataManager::RemovePortForId(BlockId id)
 		return true;
 	}
 	std::sort(sockets.begin(), sockets.end(), [](const BlockandSocketIdStore& lhs, const BlockandSocketIdStore& rhs) { return lhs.data.id.value > rhs.data.id.value; });
-	SetDataForId(sockets[0].block_id, { erased_socket_id, sockets[0].data.port_type });
+	SetDataForId(sockets[0].block_id, { erased_socket_id, sockets[0].data.port_type, {} });
 	return true;
 }

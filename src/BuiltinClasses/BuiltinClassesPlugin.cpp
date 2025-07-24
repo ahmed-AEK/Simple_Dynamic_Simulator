@@ -14,6 +14,9 @@
 #include "ComparatorClass.hpp"
 #include "electrical/ElectricalResistorBlockClass.hpp"
 #include "electrical/ElectricalVDCBlockClass.hpp"
+#include "electrical/ElectricalControlledVDCBlockClass.hpp"
+#include "electrical/ElectricalIDCBlockClass.hpp"
+#include "electrical/ElectricalControlledIDCBlockClass.hpp"
 
 #include "NodeSDLStylers/DefaultBlockStyler.hpp"
 #include "NodeSDLStylers/TextBlockStyler.hpp"
@@ -44,7 +47,10 @@ static std::span<node::IBlockClass* const> get_builtin_classes()
         make_BlockClass<StepSourceClass>(),
         make_BlockClass<ComparatorBlockClass>(),
         make_BlockClass<ElectricalResistorBlockClass>(),
-        make_BlockClass<ElectricalVDCBlockClass>()
+        make_BlockClass<ElectricalVDCBlockClass>(),
+        make_BlockClass<ElectricalControlledVDCBlockClass>(),
+        make_BlockClass<ElectricalIDCBlockClass>(),
+        make_BlockClass<ElectricalControlledIDCBlockClass>(),
     };
     static auto const classes_raw = [&]()
         {
@@ -79,7 +85,8 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
         "Input",
         {model::PortBlockData{
             model::SocketId{0},
-            model::SocketType::input
+            model::SocketType::input,
+            {}
         }},
         "Default",
         model::BlockStyleProperties{}
@@ -89,7 +96,19 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
         "Output",
         {model::PortBlockData{
             model::SocketId{0},
-            model::SocketType::output
+            model::SocketType::output,
+            {}
+        }},
+        "Default",
+        model::BlockStyleProperties{}
+    },
+    {
+        "Subsystem",
+        "InOut",
+        {model::PortBlockData{
+            model::SocketId{0},
+            model::SocketType::inout,
+            {}
         }},
         "Default",
         model::BlockStyleProperties{}
@@ -246,6 +265,47 @@ static std::span<const node::BlockTemplate> get_builtin_blocks()
         "SVG Styler",
         model::BlockStyleProperties{{
             {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/voltage_source.svg"},
+            {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
+        }
+    },
+    {
+        "Electrical",
+        "Controlled Voltage Source",
+        {model::FunctionalBlockData{
+            "Electrical Controlled VDC",
+            {}
+        }},
+        "SVG Styler",
+        model::BlockStyleProperties{{
+            {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/voltage_source.svg"},
+            {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
+        }
+    },
+    {
+        "Electrical",
+        "Current Source",
+        {model::FunctionalBlockData{
+            "Electrical IDC",
+            std::vector<model::BlockProperty>{
+                *model::BlockProperty::Create("Value", model::BlockPropertyType::FloatNumber, 1.0)
+            }
+        }},
+        "SVG Styler",
+        model::BlockStyleProperties{{
+            {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/current_source.svg"},
+            {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
+        }
+    },
+    {
+        "Electrical",
+        "Controlled Current Source",
+        {model::FunctionalBlockData{
+            "Electrical Controlled IDC",
+            {}
+        }},
+        "SVG Styler",
+        model::BlockStyleProperties{{
+            {SVGBlockStyler::SVG_PATH_PROPERTY_STRING, "assets/current_source.svg"},
             {SVGBlockStyler::ROTATING_PROPERTY_STRING, "TRUE"}}
         }
     },

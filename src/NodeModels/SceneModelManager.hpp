@@ -215,7 +215,8 @@ public:
 
 	void ModifyBlockProperties(model::BlockId id, std::vector<model::BlockProperty> new_properties);
 	void ModifyBlockPropertiesAndSockets(model::BlockId id, std::vector<model::BlockProperty> new_properties, std::vector<model::BlockSocketModel> new_sockets);
-	void ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets);
+	void ModifyBlockSockets(model::BlockId id, std::vector<model::BlockSocketModel> new_sockets,
+		NetModificationRequest net_modification);
 	void UpdateNet(NetModificationRequest&& update_request);
 	model::NodeSceneModel& GetModel() { return *m_scene; }
 	const model::NodeSceneModel& GetModel() const { return *m_scene; }

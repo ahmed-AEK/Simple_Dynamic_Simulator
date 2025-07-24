@@ -427,7 +427,7 @@ std::optional<node::BlockDeletionRequest> node::NetUtils::GetDeletionRequestForB
 {
 	using namespace node::model;
 
-	node::BlockDeletionRequest request{ .block_id = block_id };
+	node::BlockDeletionRequest request{ .block_id = block_id, .net_modification={} };
 
 	std::unordered_set<NetSegmentId> segments_to_remove;
 	std::unordered_set<NetNodeId> nodes_to_remove;

@@ -607,8 +607,22 @@ static std::vector<ObserverMapping> AddFuncs(opt::NLDiffSolver& solver, BlocksFu
 	return result;
 }
 
+namespace {
+	struct PotentialBufferEquation : public opt::IPotentialEquation
+	{
+		opt::Status Apply(std::span<const double> input, double flow, double& potential) override
+		{
+			UNUSED_PARAM(input);
+			UNUSED_PARAM(flow);
+			potential = 0;
+			return opt::Status::ok;
+		}
+
+	};
+}
+
 static void AddPortsToSolver(opt::NLDiffSolver& solver,
-	const std::unordered_map<int32_t, BlocksFunctions>& subsystems)
+	const std::unordered_map<int32_t, BlocksFunctions>& subsystems, int32_t& next_net_id)
 {
 	/*
 	loops over all subsystems
@@ -636,9 +650,23 @@ static void AddPortsToSolver(opt::NLDiffSolver& solver,
 				{
 					solver.AddBufferEquation({ net_id, socket_it->first.net_id });
 				}
-				else
+				else if (socket_data.socket_type == model::SocketType::output)
 				{
 					solver.AddBufferEquation({ socket_it->first.net_id, net_id });
+				}
+				else if (socket_data.socket_type == model::SocketType::inout)
+				{
+					solver.AddPotentialEquation(opt::PotentialEquationWrapper{
+							.input_ids = {},
+							.inout_ids = {socket_it->first.net_id, net_id},
+							.flow_value_id = next_net_id,
+							.equation = opt::make_PotentialEqn<PotentialBufferEquation>()
+						});
+					next_net_id++;
+				}
+				else
+				{
+					assert(false);
 				}
 			}
 		}
@@ -802,7 +830,7 @@ node::SimulationEvent node::SimulatorRunner::DoSimulation()
 			observer_mapping.push_back(std::move(observer_mapping_obj));
 		}
 	}
-	AddPortsToSolver(solver, subsystems);
+	AddPortsToSolver(solver, subsystems, next_net_id);
 	
 	solver.SetMaxStep(m_settings.max_step);
 	{

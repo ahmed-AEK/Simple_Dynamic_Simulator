@@ -295,6 +295,7 @@ public:
 	void set_value(T value)
 	{
 		std::unique_lock l{ m_state->mutex };
+		assert(!m_state->object && !m_state->error);
 		m_state->object = std::move(value);
 		if (m_state->on_completed)
 		{
@@ -305,6 +306,7 @@ public:
 	void set_error(std::exception_ptr error)
 	{
 		std::unique_lock l{ m_state->mutex };
+		assert(!m_state->object && !m_state->error);
 		m_state->error = std::move(error);
 		if (m_state->on_completed)
 		{

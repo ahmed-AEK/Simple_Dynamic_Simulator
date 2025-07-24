@@ -57,6 +57,7 @@ private:
 		NLEquation,
 		statefulNLEquation,
 		BufferEquation,
+		FlowEquation,
 		PotentialEquation,
 	};
 	struct EquationIndex
@@ -87,6 +88,7 @@ private:
 	std::vector<int32_t> m_inner_solve_output_ids;
 	std::vector<int32_t> m_estimated_flow_nodes;
 	std::vector<int32_t> m_potential_eqn_solved_nodes;
+	std::vector<int32_t> m_potential_eqn_id_to_output_id;
 	std::vector<int32_t> m_node_id_to_flow_index;
 };
 

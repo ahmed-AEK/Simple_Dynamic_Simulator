@@ -235,6 +235,7 @@ bool node::loader::SQLSceneLoader::Save(const node::model::NodeSceneModel& scene
                     blockid INTEGER NOT NULL,
                     socket_id INTEGER NOT NULL,
                     socket_type INTEGER NOT NULL,
+                    category TEXT,
                     FOREIGN KEY (blockid) REFERENCES blocks(id) );)");
 
         m_db->exec(R"(CREATE TABLE blockStylerProperties_)"

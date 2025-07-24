@@ -94,7 +94,7 @@ namespace helper
 			}
 			if (block_template.block_type == CBlockTypePort)
 			{
-				temp.data = { PortBlockData{SocketId{block_template.port_data.socket_id}, SocketType(block_template.port_data.port_type)} };
+				temp.data = { PortBlockData{SocketId{block_template.port_data.socket_id}, SocketType(block_template.port_data.port_type), {}} };
 			}
 			for (size_t i = 0; i < block_template.style_properties.size; i++)
 			{

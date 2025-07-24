@@ -35,7 +35,8 @@ void node::BlockStyler::PositionSockets(std::span<model::BlockSocketModel> socke
 	}
 	int in_spacing;
 	int out_spacing;
-	int inout_spacing;
+	int inout_spacing_top;
+	int inout_spacing_bot;
 
 	switch (orientation)
 	{
@@ -44,12 +45,14 @@ void node::BlockStyler::PositionSockets(std::span<model::BlockSocketModel> socke
 	case BottomToTop:
 		in_spacing = static_cast<int>(bounds.w / (in_sockets_count + 1));
 		out_spacing = static_cast<int>(bounds.w / (out_sockets_count + 1));
-		inout_spacing = static_cast<int>(bounds.h / (inout_sockets_count / 2 + 1));
+		inout_spacing_top = static_cast<int>(bounds.h / (inout_sockets_count / 2 + 1 + inout_sockets_count % 2));
+		inout_spacing_bot = static_cast<int>(bounds.h / (inout_sockets_count / 2 + 1));
 		break;
 	default:
 		in_spacing = static_cast<int>(bounds.h / (in_sockets_count + 1));
 		out_spacing = static_cast<int>(bounds.h / (out_sockets_count + 1));
-		inout_spacing = static_cast<int>(bounds.w / (inout_sockets_count / 2 + 1));
+		inout_spacing_top = static_cast<int>(bounds.w / (inout_sockets_count / 2 + 1 + inout_sockets_count % 2));
+		inout_spacing_bot = static_cast<int>(bounds.w / (inout_sockets_count / 2 + 1));
 		break;
 	}
 
@@ -119,19 +122,19 @@ void node::BlockStyler::PositionSockets(std::span<model::BlockSocketModel> socke
 				{
 					using enum model::BlockOrientation;
 				case RightToLeft:
-					sock.SetPosition({ inout_spacing * (inout_counter / 2), 2 + SocketLength / 2 });
+					sock.SetPosition({ inout_spacing_bot * (inout_counter / 2), 2 + SocketLength / 2 });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::north);
 					break;
 				case LeftToRight:
-					sock.SetPosition({inout_spacing * (inout_counter / 2), bounds.h - 2 - SocketLength / 2 });
+					sock.SetPosition({ inout_spacing_bot * (inout_counter / 2), bounds.h - 2 - SocketLength / 2 });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::south);
 					break;
 				case BottomToTop:
-					sock.SetPosition({ 2 + SocketLength / 2, inout_spacing * (inout_counter / 2) });
+					sock.SetPosition({ 2 + SocketLength / 2, inout_spacing_bot * (inout_counter / 2) });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::west);
 					break;
 				case TopToBottom:
-					sock.SetPosition({ bounds.w - 2 - SocketLength / 2, inout_spacing * (inout_counter / 2) });
+					sock.SetPosition({ bounds.w - 2 - SocketLength / 2, inout_spacing_bot * (inout_counter / 2) });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::east);
 					break;
 				}
@@ -142,19 +145,19 @@ void node::BlockStyler::PositionSockets(std::span<model::BlockSocketModel> socke
 				{
 					using enum model::BlockOrientation;
 				case LeftToRight:
-					sock.SetPosition({ inout_spacing * (inout_counter / 2), 2 + SocketLength / 2 });
+					sock.SetPosition({ inout_spacing_top * (inout_counter / 2), 2 + SocketLength / 2 });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::north);
 					break;
 				case RightToLeft:
-					sock.SetPosition({ inout_spacing * (inout_counter / 2), bounds.h - 2 - SocketLength / 2 });
+					sock.SetPosition({ inout_spacing_top * (inout_counter / 2), bounds.h - 2 - SocketLength / 2 });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::south);
 					break;
 				case TopToBottom:
-					sock.SetPosition({ 2 + SocketLength / 2, inout_spacing * (inout_counter / 2) });
+					sock.SetPosition({ 2 + SocketLength / 2, inout_spacing_top * (inout_counter / 2) });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::west);
 					break;
 				case BottomToTop:
-					sock.SetPosition({ bounds.w - 2 - SocketLength / 2, inout_spacing * (inout_counter / 2) });
+					sock.SetPosition({ bounds.w - 2 - SocketLength / 2, inout_spacing_top * (inout_counter / 2) });
 					sock.SetConnectionSide(model::ConnectedSegmentSide::east);
 					break;
 				}

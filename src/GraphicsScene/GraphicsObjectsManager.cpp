@@ -450,6 +450,10 @@ void node::GraphicsObjectsManager::UpdateBlockStyler(BlockObject& block, const m
         }
         block.UpdateStyler(model::BlockDataCRef{ model, model::BlockDataCRef::FunctionalRef{*data_ptr} });
     }
+    else if (model.GetType() == model::BlockType::Port)
+    {
+        // nothing for now
+    }
     else
     {
         m_logger.LogError("unsupported styler update for block type requested!");

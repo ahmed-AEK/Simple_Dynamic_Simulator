@@ -152,9 +152,16 @@ std::optional<node::PaletteProvider::ElementUniqueId> node::PaletteProvider::Add
 	assert(block_data_ptr);
 
 	auto sockets_types = std::vector<model::SocketType>{};
-	sockets_types.push_back(
-		block_data_ptr->port_type == model::SocketType::input ? 
-		model::SocketType::output : model::SocketType::input);
+	if (block_data_ptr->port_type == model::SocketType::inout)
+	{
+		sockets_types.push_back(model::SocketType::inout);
+	}
+	else
+	{
+		sockets_types.push_back(
+			block_data_ptr->port_type == model::SocketType::input ?
+			model::SocketType::output : model::SocketType::input);
+	}
 	auto block = model::BlockModel{ model::BlockId{0}, model::BlockType::Port, {0,0,PaletteBlocksViewer::ElementWidth, PaletteBlocksViewer::ElementHeight} };
 	model::id_int socket_id = 0;
 	for (const auto& sock_type : sockets_types)

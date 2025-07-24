@@ -12,6 +12,7 @@ struct PortBlockData
 {
 	SocketId id{ 0 };
 	SocketType port_type{};
+	NetCategory category;
 };
 
 namespace detail
@@ -25,7 +26,7 @@ public:
 	void AddPortForId(BlockId id, SocketType socket_type)
 	{
 		SocketId new_id{ static_cast<model::id_int>(GetData().size()) };
-		SetDataForId(id, { new_id, socket_type });
+		SetDataForId(id, { new_id, socket_type, {} });
 	}
 
 	bool RemovePortForId(BlockId id);
